@@ -1,0 +1,2 @@
+To compile test.cpp
+g++ -std=c++11 test.cpp Query.cpp API/API.cpp API/APIDevice.cpp  -o test
