@@ -56,31 +56,35 @@ int app_main(void)
 {
     nvs_flash_init();
 
-		//init_ota();
-
     tcpip_adapter_init();
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_init(event_handler, NULL) );
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    cfg = WIFI_INIT_CONFIG_DEFAULT();
 
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
 
-    wifi_config_t sta_config;
+		string ssid = "NAT";
+		string password = "NAT123";
 
-    memcpy(sta_config.sta.ssid , "NAT", sizeof("NAT"));
-    memcpy(sta_config.sta.password, "12345678", sizeof("12345678"));
-    sta_config.sta.bssid_set = false;
+		wifi_config_t apConfig;
+		memset(&apConfig, 0, sizeof(apConfig));
+		memcpy(apConfig.ap.ssid, ssid.data(), ssid.size());
 
-    ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &sta_config) );
-    ESP_ERROR_CHECK( esp_wifi_start() );
+		apConfig.ap.ssid_len = 0;
+		memcpy(apConfig.ap.password, password.data(), password.size());
+		apConfig.ap.channel = 0;
+		apConfig.ap.authmode = WIFI_AUTH_OPEN;
+		apConfig.ap.ssid_hidden = 0;
+		apConfig.ap.max_connection = 4;
+		apConfig.ap.beacon_interval = 100;
+
+		ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &apConfig) );
+		ESP_ERROR_CHECK( esp_wifi_start() );
 
 		WebServer.Start();
-
-		//init_ota();
 
     return 0;
 }
