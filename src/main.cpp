@@ -5,7 +5,6 @@ using namespace std;
 #include "stdio.h"
 
 extern "C" {
-
 	#include "esp_wifi.h"
 	#include "esp_system.h"
 	#include "esp_event.h"
@@ -19,12 +18,13 @@ extern "C" {
 	int app_main(void);
 }
 
+#include "../components/curl/include/curl/curl.h"
+
 #include "drivers/OTA/OTA.h"
 
 #include "include/Globals.h"
 #include "include/WebServer.h"
 #include "include/Device.h"
-
 
 static EventGroupHandle_t wifi_event_group;
 WebServer_t 			WebServer;

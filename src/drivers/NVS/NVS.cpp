@@ -1,7 +1,7 @@
 using namespace std;
 
-#include <stdlib.h>
 #include "NVS.h"
+#include <stdlib.h>
 
 NVS::NVS(std::string name, nvs_open_mode openMode) {
 	m_name = name;
