@@ -9,20 +9,37 @@ using namespace std;
 #include <iterator>
 #include <cJSON.h>
 
+#include <esp_log.h>
+
 #include "drivers/NVS/NVS.h"
 
 #include "include/Device.h"
 #include "include/Switch_str.h"
 
+static char tag[] = "Device_t Class";
+
+static string NVSAreaName = "Device";
+
 Device_t::Device_t()
 {
-  NVSAreaName = "Device";
+    ESP_LOGD(tag, "Device_t()");
 
-  Status = DeviceStatus::RUNNING;
+    Type              = DeviceType::PLUG;
+    Status            = DeviceStatus::RUNNING;
+    ID                = "";
+    Name              = "";
+    PowerMode         = DevicePowerMode::CONST;
+    PowerModeVoltage  = 220;
+    FirmwareVersion   = "0";
+}
 
-  NVS Memory(NVSAreaName);
+void Device_t::Init()
+{
+  ESP_LOGD(tag, "InitFromNVS()");
 
-  string TypeStr = Memory.GetString("Type");
+  NVS *Memory = new NVS(NVSAreaName);
+
+  string TypeStr = Memory->GetString("Type");
   if (!TypeStr.empty())
   {
       if (TypeStr == "Plug")
@@ -31,59 +48,61 @@ Device_t::Device_t()
   else
   {
     Type = DeviceType::PLUG;
-    Memory.SetString("Type", "Plug");
+    Memory->SetString("Type", "Plug");
   }
 
-  string IDStr = Memory.GetString("ID");
+  string IDStr = Memory->GetString("ID");
   if (!IDStr.empty())
     ID = IDStr;
   else
   {
     ID = "ABCD1234"; // генерация ID
-    Memory.SetString("ID", ID);
+    Memory->SetString("ID", ID);
   }
 
-  string NameStr = Memory.GetString("Name");
+  string NameStr = Memory->GetString("Name");
   Name = (!NameStr.empty()) ? NameStr : "";
 
-  string PowerModeStr = Memory.GetString("PowerMode");
+  string PowerModeStr = Memory->GetString("PowerMode");
   if (!PowerModeStr.empty())
     PowerMode = (PowerModeStr == "Battery") ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
   else
   {
     PowerMode = DevicePowerMode::CONST;
-    Memory.SetString("PowerMode", "Const");
+    Memory->SetString("PowerMode", "Const");
   }
 
-  uint8_t PowerModeVoltageInt = Memory.GetInt8Bit("PowerModeVoltage");
+  uint8_t PowerModeVoltageInt = Memory->GetInt8Bit("PowerModeVoltage");
   if (PowerModeVoltageInt > 3)
   {
       PowerModeVoltage = PowerModeVoltageInt;
   }
   else
   {
-    switch (Type) {
+    switch (Type)
+    {
       case DeviceType::PLUG: PowerModeVoltage = 220;
     }
-    Memory.SetInt8Bit("PowerModeVoltage", PowerModeVoltage);
+    Memory->SetInt8Bit("PowerModeVoltage", PowerModeVoltage);
   }
 
-  string FirmwareVersionStr = Memory.GetString("FirmwareVersion");
+  string FirmwareVersionStr = Memory->GetString("FirmwareVersion");
   if (!FirmwareVersionStr.empty())
     FirmwareVersion = FirmwareVersionStr;
   else
   {
     FirmwareVersion = "0.1";
-    Memory.SetString("FirmwareVersion", ID);
+    Memory->SetString("FirmwareVersion", ID);
   }
 
-  Memory.Commit();
+  Memory->Commit();
 }
 
-string Device_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
+WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
 
-  string HandleResult = "";
-  NVS Memory(NVSAreaName);
+  ESP_LOGD(tag, "HandleHTTPRequest");
+
+  WebServerResponse_t* Result = new WebServerResponse_t();
 
   // обработка GET запроса - получение данных
   if (Type == QueryType::GET)
@@ -101,19 +120,21 @@ string Device_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<
       cJSON_AddStringToObject(Root, "PowerMode"       ,PowerModeToString().c_str());
       cJSON_AddStringToObject(Root, "FirmwareVersion" ,FirmwareVersionToString().c_str());
 
-      HandleResult = string(cJSON_Print(Root));
+      Result->Body = string(cJSON_Print(Root));
       cJSON_Delete(Root);
     }
 
     // Запрос конкретного параметра
     if (URLParts.size() == 1)
     {
-      if (URLParts[0] == "type")            HandleResult = TypeToString();
-      if (URLParts[0] == "status")          HandleResult = StatusToString();
-      if (URLParts[0] == "id")              HandleResult = IDToString();
-      if (URLParts[0] == "name")            HandleResult = NameToString();
-      if (URLParts[0] == "powermode")       HandleResult = PowerModeToString();
-      if (URLParts[0] == "firmwareversion") HandleResult = FirmwareVersionToString();
+      if (URLParts[0] == "type")            Result->Body = TypeToString();
+      if (URLParts[0] == "status")          Result->Body = StatusToString();
+      if (URLParts[0] == "id")              Result->Body = IDToString();
+      if (URLParts[0] == "name")            Result->Body = NameToString();
+      if (URLParts[0] == "powermode")       Result->Body = PowerModeToString();
+      if (URLParts[0] == "firmwareversion") Result->Body = FirmwareVersionToString();
+
+      Result->ContentType = WebServerResponse_t::TYPE::PLAIN;
     }
   }
 
@@ -127,13 +148,17 @@ string Device_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<
       if (NameIterator != Params.end())
       {
         Name = Params["name"];
-        Memory.SetString("Name", Name);
-        Memory.Commit();
+
+        NVS *Memory = new NVS(NVSAreaName);
+        Memory->SetString("Name", Name);
+        Memory->Commit();
+
+        Result->Body = "{\"success\" : \"true\"}";
       }
     }
   }
 
-  return HandleResult;
+  return Result;
 }
 
 string Device_t::TypeToString() {

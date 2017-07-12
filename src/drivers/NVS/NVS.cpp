@@ -1,6 +1,7 @@
 using namespace std;
 
 #include "NVS.h"
+
 #include <stdlib.h>
 
 NVS::NVS(std::string name, nvs_open_mode openMode) {

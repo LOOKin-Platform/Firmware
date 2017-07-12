@@ -13,8 +13,8 @@ class API {
   public:
     string NVSAreaName;
 
-    static string Handle(Query_t Query);
-    static string Handle(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    static WebServerResponse_t* Handle(Query_t Query);
+    static WebServerResponse_t* Handle(QueryType Type, vector<string> URLParts, map<string,string> Params);
 };
 
 #endif

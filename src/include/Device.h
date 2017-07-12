@@ -8,6 +8,9 @@ using namespace std;
 #include <map>
 #include <stdio.h>
 
+#include "drivers/NVS/NVS.h"
+
+#include "WebServer.h"
 #include "API.h"
 
 enum    DeviceType      { PLUG };
@@ -27,7 +30,8 @@ class Device_t : public API {
     string          FirmwareVersion;
 
     Device_t();
-    string HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    void    Init();
+    WebServerResponse_t*  HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
 
   private:
     string TypeToString();

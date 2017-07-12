@@ -12,7 +12,8 @@ using namespace std;
 #include <map>
 #include <cJSON.h>
 
-#include "include/Device.h"
+#include "Device.h"
+#include "WebServer.h"
 
 class Sensor_t {
   public:
@@ -27,7 +28,7 @@ class Sensor_t {
     static void UpdateSensors();
     static vector<Sensor_t> GetSensorsForDevice();
 
-    static string HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    static WebServerResponse_t* HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
     static cJSON* PrepareValues(map<string, string> ValuesMap);
 };
 

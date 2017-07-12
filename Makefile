@@ -6,5 +6,4 @@
 PROJECT_NAME := Plug
 CFLAGS += -save-temps
 
-
 include $(IDF_PATH)/make/project.mk

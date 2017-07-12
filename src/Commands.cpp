@@ -15,7 +15,7 @@
 vector<Command_t> Command_t::GetCommandsForDevice() {
   vector<Command_t> Commands = {};
 
-  switch (Device.Type) {
+  switch (Device->Type) {
     case DeviceType::PLUG:
       Commands = { CommandSwitch_t() };
       break;
@@ -33,9 +33,9 @@ Command_t Command_t::GetCommandByName(string CommandName) {
   return Command_t();
 }
 
-string Command_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
+WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
 
-    string HandleResult = "";
+    WebServerResponse_t *Result = new WebServerResponse_t();
     cJSON *Root;
 
     // Вывести список всех сенсоров
@@ -46,7 +46,7 @@ string Command_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map
         CommandsNames.push_back(Command.Name.c_str());
 
       Root = cJSON_CreateStringArray(CommandsNames.data(), CommandsNames.size());
-      HandleResult = string(cJSON_Print(Root));
+      Result->Body = string(cJSON_Print(Root));
     }
 
     // Запрос списка действий конкретной команды
@@ -60,7 +60,7 @@ string Command_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map
           EventsNames.push_back(Event.first.c_str());
 
         Root = cJSON_CreateStringArray(EventsNames.data(), EventsNames.size());
-        HandleResult = string(cJSON_Print(Root));
+        Result->Body = string(cJSON_Print(Root));
         cJSON_Delete(Root);
       }
     }
@@ -90,7 +90,7 @@ string Command_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map
       Command.Execute(Action, Params);
     }
 
-    return HandleResult;
+    return Result;
 }
 
 /************************************/

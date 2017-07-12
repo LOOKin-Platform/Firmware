@@ -1,12 +1,14 @@
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 
+using namespace std;
+
+#include <string>
+
+#include "../drivers/Task/Task.h"
+
 extern "C" {
-
-	#include "freertos/FreeRTOS.h"
-
 	#include "freertos/portmacro.h"
-
 	#include "lwip/sys.h"
 	#include "lwip/netdb.h"
 	#include "lwip/api.h"
@@ -18,13 +20,29 @@ class WebServer_t {
     WebServer_t();
     void Start();
     void Stop();
+		static void Handle(struct netconn *conn);
+};
 
-    static void http_server_netconn_serve(struct netconn *);
-    static void http_server(void *);
+class WebServerTask_t: public Task {
+	void run(void *data) override;
+};
 
-  private:
+class WebServerResponse_t
+{
+	public:
+		enum CODE		{ OK, INVALID, ERROR };
+		enum TYPE 	{ PLAIN, JSON };
 
-    TaskHandle_t xHandle;
+    string 		Body;
+		CODE 			ResponseCode;
+		TYPE			ContentType;
+
+		WebServerResponse_t();
+		string toString();
+
+	private:
+		string ResponseCodeToString();
+		string ContentTypeToString();
 };
 
 #endif

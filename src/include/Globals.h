@@ -7,8 +7,12 @@
 #include "Sensors.h"
 #include "Commands.h"
 
-extern WebServer_t        WebServer;
-extern Device_t           Device;
+#include <drivers/WiFi/WiFi.h>
+
+extern WiFi_t             *WiFi;
+extern WebServer_t        *WebServer;
+
+extern Device_t           *Device;
 extern vector<Sensor_t>   Sensors;
 extern vector<Command_t>  Commands;
 

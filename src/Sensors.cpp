@@ -16,7 +16,7 @@ vector<Sensor_t> Sensor_t::GetSensorsForDevice() {
 
   vector<Sensor_t> Sensors = {};
 
-  switch (Device.Type) {
+  switch (Device->Type) {
     case DeviceType::PLUG:
       Sensors = { SensorSwitch_t() };
       break;
@@ -30,10 +30,10 @@ void Sensor_t::UpdateSensors() {
     Sensor.Update();
 }
 
-string Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
+WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
     Sensor_t::UpdateSensors();
 
-    string HandleResult = "";
+    WebServerResponse_t *Result = new WebServerResponse_t();
     cJSON *Root, *Helper;
 
     // Вывести список всех сенсоров
@@ -45,7 +45,7 @@ string Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<
 
       Root = cJSON_CreateStringArray(SensorNames.data(), SensorNames.size());
 
-      HandleResult = string(cJSON_Print(Root));
+      Result->Body = string(cJSON_Print(Root));
     }
 
     // Запрос значений конкретного сенсора
@@ -65,7 +65,7 @@ string Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<
                   }
             }
 
-            HandleResult = string(cJSON_Print(Root));
+            Result->Body = string(cJSON_Print(Root));
             cJSON_Delete(Root);
           }
 
@@ -79,12 +79,12 @@ string Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<
       for (Sensor_t& Sensor : Sensors)
         if (Tools::ToLower(Sensor.Name) == URLParts[0]) {
           if (URLParts[1] == "value") {
-            HandleResult = Sensor.Values["Primary"]["Value"];
+            Result->Body = Sensor.Values["Primary"]["Value"];
             break;
           }
 
           if (URLParts[1] == "updated") {
-            HandleResult = Sensor.Values["Primary"]["Updated"];
+            Result->Body = Sensor.Values["Primary"]["Updated"];
             break;
           }
 
@@ -93,7 +93,7 @@ string Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<
               if (Tools::ToLower(Value.first) == URLParts[1])
               {
                 Root = Sensor_t::PrepareValues(Value.second);
-                HandleResult = string(cJSON_Print(Root));
+                Result->Body = string(cJSON_Print(Root));
                 cJSON_Delete(Root);
                 break;
               }
@@ -112,14 +112,14 @@ string Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<
             {
               map<string, string> ValueItem = Value.second;
 
-              if (URLParts[2] == "value")   HandleResult = ValueItem["Value"];
-              if (URLParts[2] == "updated") HandleResult = ValueItem["Updated"];
+              if (URLParts[2] == "value")   Result->Body = ValueItem["Value"];
+              if (URLParts[2] == "updated") Result->Body = ValueItem["Updated"];
 
               break;
             }
           }
 
-    return HandleResult;
+    return Result;
 }
 
 cJSON* Sensor_t::PrepareValues(map<string, string> Values) {

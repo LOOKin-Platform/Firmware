@@ -5,26 +5,32 @@ using namespace std;
 #include <iterator>
 #include <iostream>
 
+#include <esp_log.h>
+
 #include "include/Globals.h"
 #include "include/API.h"
 #include "include/Device.h"
 #include "include/Switch_str.h"
 
-string API::Handle(Query_t Query) {
+static char tag[] = "API Class";
+
+WebServerResponse_t* API::Handle(Query_t Query) {
   return API::Handle(Query.Type, Query.RequestedUrlParts, Query.Params);
 }
 
-string API::Handle(QueryType Type, vector<string> URLParts, map<string,string> Params) {
+WebServerResponse_t* API::Handle(QueryType Type, vector<string> URLParts, map<string,string> Params) {
 
-  string Response = "";
+  WebServerResponse_t *Response = new WebServerResponse_t();
 
   if (URLParts.size() > 0) {
+
     string APISection = URLParts[0];
+
     URLParts.erase(URLParts.begin(), URLParts.begin() + 1);
 
     SWITCH(APISection) {
       CASE("device"):
-        Response = Device.HandleHTTPRequest(Type, URLParts, Params);
+        Response = Device->HandleHTTPRequest(Type, URLParts, Params);
         break;
       CASE("sensors"):
         Response = Sensor_t::HandleHTTPRequest(Type, URLParts, Params);
@@ -35,13 +41,18 @@ string API::Handle(QueryType Type, vector<string> URLParts, map<string,string> P
       DEFAULT:
         // обработка алиасов комманд
         if (URLParts.size() == 0 && Params.size() == 0) {
-          if (APISection == "on"  && Device.Type == DeviceType::PLUG) Command_t::GetCommandByName("switch").Execute("on");
-          if (APISection == "off" && Device.Type == DeviceType::PLUG) Command_t::GetCommandByName("switch").Execute("off");
+          if (APISection == "on"  && Device->Type == DeviceType::PLUG) Command_t::GetCommandByName("switch").Execute("on");
+          if (APISection == "off" && Device->Type == DeviceType::PLUG) Command_t::GetCommandByName("switch").Execute("off");
           }
       }
   }
 
-  if (Response == "") Response = "The request was incorrectly formatted";
+  if (Response->Body == "")
+  {
+    Response->ResponseCode  = WebServerResponse_t::CODE::INVALID;
+    Response->ContentType   = WebServerResponse_t::TYPE::PLAIN;
+    Response->Body          = "The request was incorrectly formatted";
+  }
 
   return Response;
 }

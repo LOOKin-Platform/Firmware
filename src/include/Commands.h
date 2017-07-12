@@ -12,8 +12,9 @@ using namespace std;
 #include <map>
 #include <cJSON.h>
 
-#include "include/Query.h"
-#include "include/Device.h"
+#include "Query.h"
+#include "Device.h"
+#include "WebServer.h"
 
 class Command_t {
   public:
@@ -23,11 +24,11 @@ class Command_t {
 
     Command_t() {};
 
-    virtual void              Execute(string Action, map<string,string> Operand = map<string,string>()) {};
+    virtual void                Execute(string Action, map<string,string> Operand = map<string,string>()) {};
 
-    static vector<Command_t>  GetCommandsForDevice();
-    static Command_t          GetCommandByName(string CommandName);
-    static string             HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    static vector<Command_t>    GetCommandsForDevice();
+    static Command_t            GetCommandByName(string CommandName);
+    static WebServerResponse_t* HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
 };
 
 class CommandSwitch_t : public Command_t {
