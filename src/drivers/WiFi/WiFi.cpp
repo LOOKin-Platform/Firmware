@@ -29,7 +29,6 @@
 
 static char tag[]= "WiFi";
 
-
 /*
 static void setDNSServer(char *ip) {
 	ip_addr_t dnsserver;
@@ -147,6 +146,8 @@ std::string WiFi_t::getApMac() {
 	s << std::hex << std::setfill('0') << std::setw(2) << (int) mac[0] << ':' << (int) mac[1] << ':' << (int) mac[2] << ':' << (int) mac[3] << ':' << (int) mac[4] << ':' << (int) mac[5];
 	return s.str();
 } // getApMac
+
+
 
 
 /**

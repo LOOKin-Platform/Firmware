@@ -21,12 +21,12 @@ extern "C" {
 
 static char tag[] = "Main";
 
-WiFi_t						*WiFi 			= new WiFi_t();
-WebServer_t 			*WebServer 	= new WebServer_t();
-Device_t					*Device			= new Device_t();
+WiFi_t							*WiFi 			= new WiFi_t();
+WebServer_t 				*WebServer 	= new WebServer_t();
+Device_t						*Device			= new Device_t();
 
-vector<Sensor_t> 	Sensors 		= Sensor_t::GetSensorsForDevice();
-vector<Command_t>	Commands 		= Command_t::GetCommandsForDevice();
+vector<Sensor_t*>		Sensors 		= Sensor_t::GetSensorsForDevice();
+vector<Command_t*>	Commands 		= Command_t::GetCommandsForDevice();
 
 class MyWiFiEventHandler: public WiFiEventHandler {
 
@@ -41,11 +41,24 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		return ESP_OK;
 	}
 
+	esp_err_t apStop() {
+		ESP_LOGD(tag, "MyWiFiEventHandler(Class): apStop");
+		WebServer->Stop();
+		return ESP_OK;
+	}
+
 	esp_err_t staConnected() {
 		ESP_LOGD(tag, "MyWiFiEventHandler(Class): staConnected");
 		WebServer->Start();
 		return ESP_OK;
 	}
+
+	esp_err_t staDisconnected() {
+		ESP_LOGD(tag, "MyWiFiEventHandler(Class): staDisconnected");
+		WebServer->Stop();
+		return ESP_OK;
+	}
+
 };
 
 int app_main(void)

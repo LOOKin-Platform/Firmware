@@ -2,14 +2,14 @@
 using namespace std;
 
 #include "include/Query.h"
-#include "include/API.h"
 #include <stdio.h>
 #include <iostream>
+#include <sstream>
 
 int main() {
 
   char *TestString;
-  TestString = "GET /device/status/?param1=hello&param2=128 HTTP/1.1";
+  TestString = "POST /device/status/?param1=hello&param2=128 HTTP/1.1 \r\n \r\n param3=bugaga&param4=test";
 
   Query_t Query(TestString);
 
@@ -20,15 +20,12 @@ int main() {
 
   cout << "Параметры: " << "\n";
   for (const auto &p : Query.Params) {
-      cout << "m[" << p.first << "] = " << p.second << '\n';
+      cout << "Param[" << p.first << "] = " << p.second << '\n';
   }
 
   cout << "Части пути к API: " << "\n";
   for (const auto &p : Query.RequestedUrlParts) {
       cout << p << '\n';
   }
-
-  cout << API::Handle(Query);
-
 }
 */

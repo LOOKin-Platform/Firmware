@@ -23,13 +23,14 @@ class Sensor_t {
 
     map<string, map<string, string> > Values;
 
-    virtual void Update() {};
+    virtual void                Update() {};
 
-    static void UpdateSensors();
-    static vector<Sensor_t> GetSensorsForDevice();
+    static void                 UpdateSensors();
+    static vector<Sensor_t*>    GetSensorsForDevice();
+    static Sensor_t*            GetSensorByName(string);
 
     static WebServerResponse_t* HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
-    static cJSON* PrepareValues(map<string, string> ValuesMap);
+    static cJSON*               PrepareValues(map<string, string>);
 };
 
 class SensorSwitch_t : public Sensor_t {

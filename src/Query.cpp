@@ -8,12 +8,13 @@ using namespace std;
 #include <string>
 
 #include "include/Query.h"
+#include "include/Tools.h"
 
 Query_t::Query_t(char *buf) {
     Type              = NONE;
     RequestedUrl      = "";
     RequestHeader     = "";
-    SrcRequest        = "";
+    SrcRequest        = string(buf);
 
     FillParams(string(buf));
 }
@@ -39,12 +40,28 @@ void Query_t::FillParams(string Query) {
       }
     }
 
-    if (QueryParts.size() > 1) {
-      for (string& ParamPair : DivideStrBySymbol(QueryParts[1], '&')) {
-        vector<string> Param = DivideStrBySymbol(ParamPair, '=');
+    string ParamStr = "";
+    // Параметры для GET запросов требуется получать из URL
+    if (Type == GET && QueryParts.size() > 1)
+      ParamStr = QueryParts[1];
+    // Для всех остальных типов запросов - из тела запроса
+    else {
+      vector<string>RNDivide = DivideStrBySymbol(SrcRequest, '\n');
 
-        if (Param.size() == 2)
-        {
+      if (RNDivide.size() > 0)
+        ParamStr = RNDivide[RNDivide.size() - 1];
+    }
+
+    Tools::Trim(ParamStr);
+
+    if (!ParamStr.empty()) {
+
+      vector<string> Param;
+
+      for (string& ParamPair : DivideStrBySymbol(ParamStr, '&')) {
+        Param = DivideStrBySymbol(ParamPair, '=');
+
+        if (Param.size() == 2) {
           transform(Param[0].begin(), Param[0].end(), Param[0].begin(), ::tolower);
           Params[Param[0]] = Param[1];
         }

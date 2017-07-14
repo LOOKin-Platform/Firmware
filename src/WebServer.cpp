@@ -11,8 +11,6 @@ using namespace std;
 
 #include "drivers/FreeRTOS/FreeRTOS.h"
 
-#define LED_BUILTIN GPIO_SEL_16
-
 static char tag[] = "WebServer";
 
 static WebServerTask_t WebServerTask = WebServerTask_t();
@@ -74,23 +72,10 @@ void WebServer_t::Handle(struct netconn *conn)
 
 	  Query_t Query(buf);
 
-    SWITCH(Query.RequestedUrl) {
-      CASE("/on"):
-        ESP_LOGD(tag, "GET Command: /on");
-        break;
-      CASE("/off"):
-        ESP_LOGD(tag, "GET Command: /off");
-        break;
-      CASE("/status"):
-        ESP_LOGD(tag, "GET Command: /status");
-        break;
-      DEFAULT:
-        WebServerResponse_t *Response = API::Handle(Query);
-        string StrResponse = Response->toString();
+    WebServerResponse_t *Response = API::Handle(Query);
+    string StrResponse = Response->toString();
 
-        netconn_write(conn, StrResponse.c_str(), StrResponse.length(), NETCONN_NOCOPY);
-        break;
-      }
+    netconn_write(conn, StrResponse.c_str(), StrResponse.length(), NETCONN_NOCOPY);
   }
   netconn_close(conn);
   netbuf_delete(inbuf);
@@ -111,6 +96,19 @@ string WebServerResponse_t::toString() {
 
   return Result;
 }
+
+void WebServerResponse_t::SetSuccess() {
+  ResponseCode  = CODE::OK;
+  ContentType   = TYPE::JSON;
+  Body          = "{\"success\" : \"true\"}";
+}
+
+void WebServerResponse_t::SetFail() {
+  ResponseCode  = CODE::ERROR;
+  ContentType   = TYPE::JSON;
+  Body          = "{\"success\" : \"false\"}";
+}
+
 
 string WebServerResponse_t::ResponseCodeToString()
 {

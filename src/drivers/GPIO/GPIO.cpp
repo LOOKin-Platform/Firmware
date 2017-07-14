@@ -1,8 +1,6 @@
 /*
  * GPIO.cpp
  *
- *  Created on: Feb 28, 2017
- *      Author: kolban
  */
 
 #include "GPIO.h"
@@ -37,7 +35,6 @@ bool GPIO::Read(gpio_num_t pin) {
 	return ::gpio_get_level(pin);
 }
 
-
 /**
  * @brief Write a value to the given pin.
  *
@@ -46,4 +43,15 @@ bool GPIO::Read(gpio_num_t pin) {
  */
 void GPIO::Write(gpio_num_t pin, bool value) {
 	::gpio_set_level(pin, value);
+}
+
+/**
+ * @brief Setting up pin for Output.
+ *
+ * @param [in] pin to setup.
+ */
+
+void GPIO::Setup(gpio_num_t PIN_NUM) {
+	::gpio_pad_select_gpio(PIN_NUM);
+	::gpio_set_direction(PIN_NUM, GPIO_MODE_INPUT_OUTPUT);
 }

@@ -3,12 +3,15 @@
 #include <nvs.h>
 #include <string>
 
+enum TimeFormat { SECONDS };
+
 class Time {
   public:
   	Time();
   	virtual ~Time();
 
-    static string GetUnixTime();
+    static long int GetTime();
+    static string   GetTimeString();
 };
 
 #endif

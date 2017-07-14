@@ -3,6 +3,7 @@ using namespace std;
 #include "NVS.h"
 
 #include <stdlib.h>
+#include <string>
 
 NVS::NVS(std::string name, nvs_open_mode openMode) {
 	m_name = name;
@@ -43,11 +44,18 @@ void NVS::Erase(std::string key) {
  */
 string NVS::GetString(std::string key) {
 	size_t length;
-	nvs_get_str(m_handle, key.c_str(), NULL, &length);
-	char *data = (char *)malloc(length);
-	nvs_get_str(m_handle, key.c_str(), data, &length);
-	string Result = string(data);
-	free(data);
+	string Result = "";
+
+	esp_err_t nvs_err = nvs_get_str(m_handle, key.c_str(), NULL, &length);
+
+	if (nvs_err == ESP_OK && length > 0)
+	{
+		char *data = (char *)malloc(length);
+		nvs_get_str(m_handle, key.c_str(), data, &length);
+		Result = string(data);
+
+		free(data);
+	}
 
 	return Result;
 } // get
@@ -60,7 +68,8 @@ string NVS::GetString(std::string key) {
  * @param [in] data The value to set for the key.
  */
 void NVS::SetString(std::string key, std::string data) {
-	nvs_set_str(m_handle, key.c_str(), data.c_str());
+	string ttt = data;
+	nvs_set_str(m_handle, key.c_str(), ttt.c_str());
 } // set
 
 /**
@@ -71,8 +80,9 @@ void NVS::SetString(std::string key, std::string data) {
  */
 uint8_t NVS::GetInt8Bit(string key) {
 	uint8_t data;
-	nvs_get_u8(m_handle, key.c_str(), &data);
-	return data;
+	esp_err_t nvs_err = nvs_get_u8(m_handle, key.c_str(), &data);
+
+	return (nvs_err == ESP_OK) ? data : +0;
 } // get
 
 /**

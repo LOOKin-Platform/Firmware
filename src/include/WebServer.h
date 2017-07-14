@@ -38,7 +38,10 @@ class WebServerResponse_t
 		TYPE			ContentType;
 
 		WebServerResponse_t();
-		string toString();
+		string 	toString();
+
+		void 		SetSuccess();
+		void 		SetFail();
 
 	private:
 		string ResponseCodeToString();

@@ -24,17 +24,17 @@ class Command_t {
 
     Command_t() {};
 
-    virtual void                Execute(string Action, map<string,string> Operand = map<string,string>()) {};
+    virtual bool                Execute(string Action, map<string,string> Operand = map<string,string>()) { return true; };
 
-    static vector<Command_t>    GetCommandsForDevice();
-    static Command_t            GetCommandByName(string CommandName);
-    static WebServerResponse_t* HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    static vector<Command_t*>   GetCommandsForDevice();
+    static Command_t*           GetCommandByName(string);
+    static WebServerResponse_t* HandleHTTPRequest(QueryType, vector<string>, map<string,string>);
 };
 
 class CommandSwitch_t : public Command_t {
   public:
     CommandSwitch_t();
-    void Execute(string Action, map<string,string> Operand) override;
+    bool Execute(string Action, map<string,string> Operand) override;
 };
 
 #endif

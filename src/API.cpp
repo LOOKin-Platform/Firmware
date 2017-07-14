@@ -12,8 +12,6 @@ using namespace std;
 #include "include/Device.h"
 #include "include/Switch_str.h"
 
-static char tag[] = "API Class";
-
 WebServerResponse_t* API::Handle(Query_t Query) {
   return API::Handle(Query.Type, Query.RequestedUrlParts, Query.Params);
 }
@@ -41,8 +39,27 @@ WebServerResponse_t* API::Handle(QueryType Type, vector<string> URLParts, map<st
       DEFAULT:
         // обработка алиасов комманд
         if (URLParts.size() == 0 && Params.size() == 0) {
-          if (APISection == "on"  && Device->Type == DeviceType::PLUG) Command_t::GetCommandByName("switch").Execute("on");
-          if (APISection == "off" && Device->Type == DeviceType::PLUG) Command_t::GetCommandByName("switch").Execute("off");
+
+          if (APISection == "on")
+            switch (Device->Type) {
+              case DeviceType::PLUG:
+                Response = Command_t::HandleHTTPRequest(Type, { "switch", "on" }, map<string,string>() );
+                break;
+            }
+
+          if (APISection == "off")
+            switch (Device->Type) {
+              case DeviceType::PLUG:
+                Response = Command_t::HandleHTTPRequest(Type, { "switch", "off" }, map<string,string>() );
+                break;
+              }
+
+          if (APISection == "status")
+            switch (Device->Type) {
+              case DeviceType::PLUG:
+                Response = Sensor_t::HandleHTTPRequest(Type, { "switch" }, map<string,string>() );
+                break;
+              }
           }
       }
   }

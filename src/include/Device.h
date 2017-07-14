@@ -34,6 +34,8 @@ class Device_t : public API {
     WebServerResponse_t*  HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
 
   private:
+    string GenerateID();
+
     string TypeToString();
     string StatusToString();
     string IDToString();

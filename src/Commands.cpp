@@ -1,6 +1,7 @@
 /*
   Команды - классы и функции, связанные с /commands
 */
+
 #include "include/Globals.h"
 #include "include/Commands.h"
 #include "include/Device.h"
@@ -8,29 +9,32 @@
 
 #include "include/Switch_str.h"
 
-#include <cJSON.h>
-
 #include "drivers/GPIO/GPIO.h"
 
-vector<Command_t> Command_t::GetCommandsForDevice() {
-  vector<Command_t> Commands = {};
+#include <cJSON.h>
+#include <esp_log.h>
+
+//static char tag[] = "Commands";
+
+vector<Command_t*> Command_t::GetCommandsForDevice() {
+  vector<Command_t*> Commands = {};
 
   switch (Device->Type) {
     case DeviceType::PLUG:
-      Commands = { CommandSwitch_t() };
+      Commands = { new CommandSwitch_t() };
       break;
   }
 
   return Commands;
 }
 
-Command_t Command_t::GetCommandByName(string CommandName) {
+Command_t* Command_t::GetCommandByName(string CommandName) {
 
-  for (Command_t& Command : Commands)
-    if (Tools::ToLower(Command.Name) == Tools::ToLower(CommandName))
+  for (Command_t* Command : Commands)
+    if (Tools::ToLower(Command->Name) == Tools::ToLower(CommandName))
       return Command;
 
-  return Command_t();
+  return new Command_t();
 }
 
 WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
@@ -38,12 +42,12 @@ WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string>
     WebServerResponse_t *Result = new WebServerResponse_t();
     cJSON *Root;
 
-    // Вывести список всех сенсоров
+    // Вывести список всех комманд
     if (URLParts.size() == 0 && Type == QueryType::GET) {
       // Подготовка списка команд для вывода
       vector<const char *> CommandsNames;
-      for (Command_t& Command : Commands)
-        CommandsNames.push_back(Command.Name.c_str());
+      for (Command_t* Command : Commands)
+        CommandsNames.push_back(Command->Name.c_str());
 
       Root = cJSON_CreateStringArray(CommandsNames.data(), CommandsNames.size());
       Result->Body = string(cJSON_Print(Root));
@@ -51,12 +55,12 @@ WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string>
 
     // Запрос списка действий конкретной команды
     if (URLParts.size() == 1 && Type == QueryType::GET) {
-      Command_t Command = Command_t::GetCommandByName(URLParts[0]);
+      Command_t* Command = Command_t::GetCommandByName(URLParts[0]);
 
-      if (Command.Events.size() > 0)
+      if (Command->Events.size() > 0)
       {
         vector<const char *> EventsNames;
-        for (auto& Event: Command.Events)
+        for (auto& Event: Command->Events)
           EventsNames.push_back(Event.first.c_str());
 
         Root = cJSON_CreateStringArray(EventsNames.data(), EventsNames.size());
@@ -86,8 +90,16 @@ WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string>
         Params.erase ( "action" );
       }
 
-      Command_t Command = Command_t::GetCommandByName(CommandName);
-      Command.Execute(Action, Params);
+      Command_t* Command = Command_t::GetCommandByName(CommandName);
+
+      if (Command->Events.find(Action) != Command->Events.end())
+      {
+        if (Command->Execute(Action, Params))
+          Result->SetSuccess();
+        else
+          Result->SetFail();
+      }
+
     }
 
     return Result;
@@ -103,18 +115,24 @@ CommandSwitch_t::CommandSwitch_t() {
 
     Events["on"]  = "0001";
     Events["off"] = "0010";
+
+    GPIO::Setup(SWITCH_PLUG_PIN_NUM);
 }
 
-void CommandSwitch_t::Execute(string Action, map<string,string> Operand) {
+bool CommandSwitch_t::Execute(string Action, map<string,string> Operand) {
 
   SWITCH(Action) {
     CASE("on"):
-      GPIO::Write(SWITCH_PIN_NUM, true);
+      GPIO::Write(SWITCH_PLUG_PIN_NUM, true);
       break;
     CASE("off"):
-      GPIO::Write(SWITCH_PIN_NUM, false);
+      GPIO::Write(SWITCH_PLUG_PIN_NUM, false);
       break;
+    DEFAULT:
+      return false;
   }
 
   Sensor_t::UpdateSensors();
+
+  return true;
 }

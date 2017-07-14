@@ -26,7 +26,7 @@
 test.cpp - служит для проверки работоспособности классов без запуска на устройстве.
 
 Для компиляции из консоли необходимо выполнить следующую команду:
-g++ -std=c++11 test.cpp Query.cpp API/API.cpp API/APIDevice.cpp  -o test
+g++ -std=c++11 test.cpp Query.cpp Tools.cpp  -o test
 
 Комманда для чтения из Serial Monitor
 pio device monitor --port /dev/cu.SLAB_USBtoUART --baud 115200 --filter direct --e

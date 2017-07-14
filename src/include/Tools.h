@@ -7,7 +7,11 @@ using namespace std;
 
 class Tools {
   public:
-    static string ToLower(string);    
+    static string ToLower(string);
+
+    static void lTrim(string &);  // left trim
+    static void rTrim(string &);  // right trim
+    static void Trim(string &);   // trim
 };
 
 #endif

@@ -21,9 +21,8 @@ class Query_t {
 
   private:
     string              SrcRequest;
-
-    void FillParams(string);
-    vector<string> DivideStrBySymbol(string, char);
+    void                FillParams(string);
+    vector<string>      DivideStrBySymbol(string, char);
 };
 
 #endif

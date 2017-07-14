@@ -1,18 +1,17 @@
-using namespace std;
-
-#include <sstream>
 #include <algorithm>
 #include <string>
 #include <iterator>
 #include <iostream>
 #include <sstream>
-#include <iterator>
+
 #include <cJSON.h>
 
 #include <esp_log.h>
+#include <esp_wifi.h>
+
+#include "include/Globals.h"
 
 #include "drivers/NVS/NVS.h"
-
 #include "include/Device.h"
 #include "include/Switch_str.h"
 
@@ -31,11 +30,15 @@ Device_t::Device_t()
     PowerMode         = DevicePowerMode::CONST;
     PowerModeVoltage  = 220;
     FirmwareVersion   = "0";
+
+    switch (Type) {
+      case DeviceType::PLUG: Name = DEFAULTNAME_PLUG; break;
+    }
 }
 
 void Device_t::Init()
 {
-  ESP_LOGD(tag, "InitFromNVS()");
+  ESP_LOGD(tag, "Init()");
 
   NVS *Memory = new NVS(NVSAreaName);
 
@@ -52,12 +55,15 @@ void Device_t::Init()
   }
 
   string IDStr = Memory->GetString("ID");
-  if (!IDStr.empty())
+  if (!IDStr.empty() && IDStr.length() == 8)
     ID = IDStr;
   else
   {
-    ID = "ABCD1234"; // генерация ID
+    // Настройка как нового устройства
+    ID = GenerateID();
     Memory->SetString("ID", ID);
+    Memory->SetString("Name", Name);
+    Memory->Commit();
   }
 
   string NameStr = Memory->GetString("Name");
@@ -73,7 +79,7 @@ void Device_t::Init()
   }
 
   uint8_t PowerModeVoltageInt = Memory->GetInt8Bit("PowerModeVoltage");
-  if (PowerModeVoltageInt > 3)
+  if (PowerModeVoltageInt > +3)
   {
       PowerModeVoltage = PowerModeVoltageInt;
   }
@@ -81,9 +87,9 @@ void Device_t::Init()
   {
     switch (Type)
     {
-      case DeviceType::PLUG: PowerModeVoltage = 220;
+      case DeviceType::PLUG: PowerModeVoltage = +220;
     }
-    Memory->SetInt8Bit("PowerModeVoltage", PowerModeVoltage);
+    Memory->SetInt8Bit("PowerModeVoltage", +PowerModeVoltage);
   }
 
   string FirmwareVersionStr = Memory->GetString("FirmwareVersion");
@@ -92,7 +98,7 @@ void Device_t::Init()
   else
   {
     FirmwareVersion = "0.1";
-    Memory->SetString("FirmwareVersion", ID);
+    Memory->SetString("FirmwareVersion", FirmwareVersion);
   }
 
   Memory->Commit();
@@ -161,6 +167,24 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
   return Result;
 }
 
+// Генерация ID на основе MAC-адреса чипа
+string Device_t::GenerateID() {
+
+  uint8_t mac[6];
+	esp_wifi_get_mac(WIFI_IF_AP, mac);
+
+  stringstream MacString;
+  MacString << std::dec << (int) mac[0] << (int) mac[1] << (int) mac[2] << (int) mac[3] << (int) mac[4] << (int) mac[5];
+
+  hash<std::string> hash_fn;
+  size_t str_hash = hash_fn(MacString.str());
+
+  stringstream Hash;
+  Hash << std::hex << (int)str_hash;
+
+  return Hash.str();
+}
+
 string Device_t::TypeToString() {
   switch (Type)
   {
@@ -179,7 +203,7 @@ string Device_t::StatusToString() {
 }
 
 string Device_t::IDToString() {
-  return ID;
+    return (ID.length() == 8) ? ID : "";
 }
 
 string Device_t::NameToString() {
@@ -187,12 +211,10 @@ string Device_t::NameToString() {
 }
 
 string Device_t::PowerModeToString() {
+  stringstream s;
+	s << std::dec << +PowerModeVoltage;
 
-  ostringstream oss_convert;
-  oss_convert << PowerModeVoltage;
-  string PowerModeVoltageStr = oss_convert.str();
-
-  return (PowerMode == DevicePowerMode::BATTERY) ? "Battery" : PowerModeVoltageStr + "v";
+  return (PowerMode == DevicePowerMode::BATTERY) ? "Battery" : s.str() + "v";
 }
 
 string Device_t::FirmwareVersionToString() {
