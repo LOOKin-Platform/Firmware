@@ -13,6 +13,15 @@ string Tools::ToLower(string Str) {
   return Result;
 }
 
+void Tools::FindAndReplace(string& source, string const& find, string const& replace)
+{
+    for(string::size_type i = 0; (i = source.find(find, i)) != string::npos;)
+    {
+        source.replace(i, find.length(), replace);
+        i += replace.length();
+    }
+}
+
 // trim from start (in place)
 void Tools::lTrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {

@@ -10,6 +10,7 @@ using namespace std;
 #include "include/Globals.h"
 #include "include/API.h"
 #include "include/Device.h"
+#include "include/Network.h"
 #include "include/Switch_str.h"
 
 WebServerResponse_t* API::Handle(Query_t Query) {
@@ -30,12 +31,16 @@ WebServerResponse_t* API::Handle(QueryType Type, vector<string> URLParts, map<st
       CASE("device"):
         Response = Device->HandleHTTPRequest(Type, URLParts, Params);
         break;
+      CASE("network"):
+        Response = Network->HandleHTTPRequest(Type, URLParts, Params);
+        break;
       CASE("sensors"):
         Response = Sensor_t::HandleHTTPRequest(Type, URLParts, Params);
         break;
       CASE("commands"):
         Response = Command_t::HandleHTTPRequest(Type, URLParts, Params);
         break;
+
       DEFAULT:
         // обработка алиасов комманд
         if (URLParts.size() == 0 && Params.size() == 0) {
@@ -64,7 +69,7 @@ WebServerResponse_t* API::Handle(QueryType Type, vector<string> URLParts, map<st
       }
   }
 
-  if (Response->Body == "")
+  if (Response->Body == "" && Response->ResponseCode == WebServerResponse_t::CODE::OK)
   {
     Response->ResponseCode  = WebServerResponse_t::CODE::INVALID;
     Response->ContentType   = WebServerResponse_t::TYPE::PLAIN;

@@ -63,7 +63,8 @@ void Query_t::FillParams(string Query) {
 
         if (Param.size() == 2) {
           transform(Param[0].begin(), Param[0].end(), Param[0].begin(), ::tolower);
-          Params[Param[0]] = Param[1];
+
+          Params[Param[0]] = Query_t::UrlDecode(Param[1]);
         }
       }
     }
@@ -82,6 +83,16 @@ vector<string> Query_t::DivideStrBySymbol(string SourceStr, char Divider) {
 
   while (getline(f, s, Divider))
       Result.push_back(s);
+
+  return Result;
+}
+
+string Query_t::UrlDecode(string srcString) {
+
+  string Result = srcString;
+
+  Tools::FindAndReplace(Result, "+", " ");
+  Tools::FindAndReplace(Result, "%20", " ");
 
   return Result;
 }

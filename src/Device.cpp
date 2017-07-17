@@ -6,22 +6,18 @@
 
 #include <cJSON.h>
 
-#include <esp_log.h>
-#include <esp_wifi.h>
-
 #include "include/Globals.h"
+#include "include/Device.h"
 
 #include "drivers/NVS/NVS.h"
-#include "include/Device.h"
 #include "include/Switch_str.h"
 
-static char tag[] = "Device_t Class";
-
-static string NVSAreaName = "Device";
+static char tag[] = "Device_t";
+static string NVSDeviceArea = "Device";
 
 Device_t::Device_t()
 {
-    ESP_LOGD(tag, "Device_t()");
+    ESP_LOGD(tag, "Constructor");
 
     Type              = DeviceType::PLUG;
     Status            = DeviceStatus::RUNNING;
@@ -38,47 +34,46 @@ Device_t::Device_t()
 
 void Device_t::Init()
 {
-  ESP_LOGD(tag, "Init()");
+  ESP_LOGD(tag, "Init");
 
-  NVS *Memory = new NVS(NVSAreaName);
+  NVS *Memory = new NVS(NVSDeviceArea);
 
-  string TypeStr = Memory->GetString("Type");
+  string TypeStr = Memory->GetString(NVSDeviceType);
   if (!TypeStr.empty())
   {
-      if (TypeStr == "Plug")
-        Type = DeviceType::PLUG;
+      if (TypeStr == "Plug") Type = DeviceType::PLUG;
   }
   else
   {
     Type = DeviceType::PLUG;
-    Memory->SetString("Type", "Plug");
+    Memory->SetString(NVSDeviceType, "Plug");
   }
 
-  string IDStr = Memory->GetString("ID");
+  string IDStr = Memory->GetString(NVSDeviceID);
   if (!IDStr.empty() && IDStr.length() == 8)
     ID = IDStr;
   else
   {
     // Настройка как нового устройства
     ID = GenerateID();
-    Memory->SetString("ID", ID);
-    Memory->SetString("Name", Name);
+    Memory->SetString(NVSDeviceID, ID);
+    Memory->SetString(NVSDeviceName, Name);
     Memory->Commit();
   }
 
-  string NameStr = Memory->GetString("Name");
+  string NameStr = Memory->GetString(NVSDeviceName);
   Name = (!NameStr.empty()) ? NameStr : "";
 
-  string PowerModeStr = Memory->GetString("PowerMode");
+  string PowerModeStr = Memory->GetString(NVSDevicePowerMode);
   if (!PowerModeStr.empty())
     PowerMode = (PowerModeStr == "Battery") ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
   else
   {
     PowerMode = DevicePowerMode::CONST;
-    Memory->SetString("PowerMode", "Const");
+    Memory->SetString(NVSDevicePowerMode, "Const");
   }
 
-  uint8_t PowerModeVoltageInt = Memory->GetInt8Bit("PowerModeVoltage");
+  uint8_t PowerModeVoltageInt = Memory->GetInt8Bit(NVSDevicePowerModeVoltage);
   if (PowerModeVoltageInt > +3)
   {
       PowerModeVoltage = PowerModeVoltageInt;
@@ -89,23 +84,22 @@ void Device_t::Init()
     {
       case DeviceType::PLUG: PowerModeVoltage = +220;
     }
-    Memory->SetInt8Bit("PowerModeVoltage", +PowerModeVoltage);
+    Memory->SetInt8Bit(NVSDevicePowerModeVoltage, +PowerModeVoltage);
   }
 
-  string FirmwareVersionStr = Memory->GetString("FirmwareVersion");
+  string FirmwareVersionStr = Memory->GetString(NVSDeviceFirmwareVersion);
   if (!FirmwareVersionStr.empty())
     FirmwareVersion = FirmwareVersionStr;
   else
   {
     FirmwareVersion = "0.1";
-    Memory->SetString("FirmwareVersion", FirmwareVersion);
+    Memory->SetString(NVSDeviceFirmwareVersion, FirmwareVersion);
   }
 
   Memory->Commit();
 }
 
 WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
-
   ESP_LOGD(tag, "HandleHTTPRequest");
 
   WebServerResponse_t* Result = new WebServerResponse_t();
@@ -155,8 +149,8 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
       {
         Name = Params["name"];
 
-        NVS *Memory = new NVS(NVSAreaName);
-        Memory->SetString("Name", Name);
+        NVS *Memory = new NVS(NVSDeviceArea);
+        Memory->SetString(NVSDeviceName, Name);
         Memory->Commit();
 
         Result->Body = "{\"success\" : \"true\"}";
@@ -180,7 +174,7 @@ string Device_t::GenerateID() {
   size_t str_hash = hash_fn(MacString.str());
 
   stringstream Hash;
-  Hash << std::hex << (int)str_hash;
+  Hash << std::uppercase << std::hex << (int)str_hash;
 
   return Hash.str();
 }

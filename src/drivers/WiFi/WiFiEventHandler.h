@@ -27,7 +27,7 @@
  * * esp_err_t apStart()
  * * esp_err_t apStop()
  * * esp_err_t staConnected()
- * * esp_err_t staDisconnected()
+ * * esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo)
  * * esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip)
  * * esp_err_t staStart()
  * * esp_err_t staStop()
@@ -87,7 +87,7 @@ public:
 	virtual esp_err_t apStart();
 	virtual esp_err_t apStop();
 	virtual esp_err_t staConnected();
-	virtual esp_err_t staDisconnected();
+	virtual esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo);
 	virtual esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip);
 	virtual esp_err_t staStart();
 	virtual esp_err_t staStop();

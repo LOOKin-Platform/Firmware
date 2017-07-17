@@ -1,4 +1,3 @@
-/*
 using namespace std;
 
 #include "include/Query.h"
@@ -9,7 +8,7 @@ using namespace std;
 int main() {
 
   char *TestString;
-  TestString = "POST /device/status/?param1=hello&param2=128 HTTP/1.1 \r\n \r\n param3=bugaga&param4=test";
+  TestString = "POST /device/status/?param1=hello&param2=128 HTTP/1.1 \r\n \r\n param3=bugaga+34&param4=test%20qwerty";
 
   Query_t Query(TestString);
 
@@ -28,4 +27,3 @@ int main() {
       cout << p << '\n';
   }
 }
-*/

@@ -14,6 +14,14 @@
 #include <mdns.h>
 #include "WiFiEventHandler.h"
 
+using namespace std;
+
+#define WIFI_MODE_NULL_STR 		"WIFI_MODE_NULL"
+#define WIFI_MODE_STA_STR  		"WIFI_MODE_STA"
+#define WIFI_MODE_AP_STR 			"WIFI_MODE_AP"
+#define WIFI_MODE_APSTA_STR  	"WIFI_MODE_APSTA"
+#define WIFI_MODE_UNKNOWN_STR "WIFI_MODE_UNKNOWN"
+
 /**
  * @brief Manage mDNS server.
  */
@@ -21,12 +29,12 @@ class MDNS {
 public:
 	MDNS();
 	~MDNS();
-	void serviceAdd(std::string service, std::string proto, uint16_t port);
-	void serviceInstanceSet(std::string service, std::string proto, std::string instance);
-	void servicePortSet(std::string service, std::string proto, uint16_t port);
-	void serviceRemove(std::string service, std::string proto);
-	void setHostname(std::string hostname);
-	void setInstance(std::string instance);
+	void serviceAdd(string service, string proto, uint16_t port);
+	void serviceInstanceSet(string service, string proto, string instance);
+	void servicePortSet(string service, string proto, uint16_t port);
+	void serviceRemove(string service, string proto);
+	void setHostname(string hostname);
+	void setInstance(string instance);
 private:
 	mdns_server_t *m_mdns_server = nullptr;
 };
@@ -55,16 +63,16 @@ public:
 	 * @brief Get the SSID.
 	 * @return the SSID.
 	 */
-	std::string getSSID() {
+	string getSSID() {
 		return m_ssid;
 	}
 
-	std::string toString();
+	string toString();
 
 private:
 	uint8_t m_bssid[6];
 	int8_t m_rssi;
-	std::string m_ssid;
+	string m_ssid;
 	wifi_auth_mode_t m_authMode;
 };
 
@@ -73,53 +81,38 @@ private:
  *
  * Encapsulate control of %WiFi functions.
  *
- * Here is an example fragment that illustrates connecting to an access point.
- * @code{.cpp}
- * #include <WiFi.h>
- * #include <WiFiEventHandler.h>
- *
- * class TargetWiFiEventHandler: public WiFiEventHandler {
- *    esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
- *       ESP_LOGD(tag, "MyWiFiEventHandler(Class): staGotIp");
- *       // Do something ...
- *       return ESP_OK;
- *    }
- * };
- *
  * WiFi wifi;
- *
  * TargetWiFiEventHandler *eventHandler = new TargetWiFiEventHandler();
  * wifi.setWifiEventHandler(eventHandler);
  * wifi.connectAP("myssid", "mypassword");
  * @endcode
  */
+
 class WiFi_t {
 private:
-	std::string      ip;
-	std::string      gw;
-	std::string      netmask;
-	WiFiEventHandler *wifiEventHandler;
+	string      	ip;
+	string      	gw;
+	string      	netmask;
+	WiFiEventHandler 	*wifiEventHandler;
 
 public:
 	WiFi_t();
-	void addDNSServer(std::string ip);
-	struct in_addr getHostByName(std::string hostName);
-	void connectAP(std::string ssid, std::string passwd);
+	void addDNSServer(string ip);
+	struct in_addr getHostByName(string hostName);
 	void dump();
-	static std::string getApMac();
+	static string getApMac();
 	static tcpip_adapter_ip_info_t getApIpInfo();
-	static std::string getApSSID();
-	static std::string getMode();
+	static string getApSSID();
+	static string getMode();
 	static tcpip_adapter_ip_info_t getStaIpInfo();
-	static std::string getStaMac();
-	static std::string getStaSSID();
-	std::vector<WiFiAPRecord> scan();
-	void startAP(std::string ssid, std::string passwd);
-	void setIPInfo(std::string ip, std::string gw, std::string netmask);
+	static string getStaMac();
+	static string getStaSSID();
 
+	vector<WiFiAPRecord> Scan();
+	void ConnectAP(string ssid, string passwd);
+	void StartAP(string ssid, string passwd);
 
-
-
+	void setIPInfo(string ip, string gw, string netmask);
 
 	/**
 	 * Set the event handler to use to process detected events.

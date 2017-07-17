@@ -43,7 +43,7 @@ esp_err_t WiFiEventHandler::eventHandler(void *ctx, system_event_t *event) {
 			rc =  pWiFiEventHandler->staConnected();
 			break;
 		case SYSTEM_EVENT_STA_DISCONNECTED:
-			rc =  pWiFiEventHandler->staDisconnected();
+			rc =  pWiFiEventHandler->staDisconnected(event->event_info.disconnected);
 			break;
 		case SYSTEM_EVENT_STA_GOT_IP:
 			rc = pWiFiEventHandler->staGotIp(event->event_info.got_ip);
@@ -134,7 +134,7 @@ esp_err_t WiFiEventHandler::staConnected() {
 	return ESP_OK;
 } // staConnected
 
-esp_err_t WiFiEventHandler::staDisconnected() {
+esp_err_t WiFiEventHandler::staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 	ESP_LOGD(tag, "default staDisconnected");
 	return ESP_OK;
 } // staDisconnected

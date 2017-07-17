@@ -19,19 +19,21 @@ WebServer_t::WebServer_t() {
 }
 
 void WebServer_t::Start() {
-  ESP_LOGD(tag, "WebServer::Start");
+  ESP_LOGD(tag, "Start");
 
   WebServerTask.setStackSize(8192);
 	WebServerTask.start();
 }
 
 void WebServer_t::Stop() {
+  ESP_LOGD(tag, "Stop");
+
   WebServerTask.stop();
 }
 
 void WebServerTask_t::run(void *data)
 {
-  ESP_LOGD(tag, "WebServerTask::run");
+  ESP_LOGD(tag, "WebServerTask Run");
 
   struct netconn *conn, *newconn;
   err_t err;
@@ -91,7 +93,7 @@ string WebServerResponse_t::toString() {
   string Result = "";
 
   Result = "HTTP/1.1 " + ResponseCodeToString() + "\r\n";
-  Result += "Content-type:" + ContentTypeToString() + "\r\n\r\n";
+  Result += "Content-type:" + ContentTypeToString() + "; charset=utf-8\r\n\r\n";
   Result += Body;
 
   return Result;

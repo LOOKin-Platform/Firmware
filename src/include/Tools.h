@@ -9,6 +9,8 @@ class Tools {
   public:
     static string ToLower(string);
 
+    static void FindAndReplace(string&, string const&, string const&);
+
     static void lTrim(string &);  // left trim
     static void rTrim(string &);  // right trim
     static void Trim(string &);   // trim

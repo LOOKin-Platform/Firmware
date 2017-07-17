@@ -19,10 +19,13 @@ class Query_t {
     map<string,string>  Params;
     Query_t(char *);
 
+    static string       UrlDecode(string);
+
   private:
     string              SrcRequest;
     void                FillParams(string);
     vector<string>      DivideStrBySymbol(string, char);
+
 };
 
 #endif
