@@ -1,8 +1,8 @@
-#include "include/Globals.h"
-#include "include/Network.h"
+#include "Globals.h"
+#include "Network.h"
 
-#include "drivers/WiFi/WiFi.h"
-#include "drivers/NVS/NVS.h"
+#include "WiFi/WiFi.h"
+#include "NVS/NVS.h"
 
 static char tag[] = "Network_t";
 static string NVSNetworkArea = "Network";
@@ -145,8 +145,6 @@ string Network_t::ModeToString() {
 }
 
 string Network_t::IPToString() {
-  tcpip_adapter_ip_info_t IP;
-
   if ((WiFi_t::getMode() == "WIFI_MODE_AP"))
     IP = WiFi->getApIpInfo();
 

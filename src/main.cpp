@@ -5,15 +5,15 @@ using namespace std;
 #include "stdio.h"
 
 #include <esp_log.h>
+#include <nvs.h>
+#include <nvs_flash.h>
 
-#include <drivers/WiFi/WiFi.h>
-#include <drivers/WiFi/WiFiEventHandler.h>
-#include <drivers/OTA/OTA.h>
-#include "../components/curl/include/curl/curl.h"
+#include "WiFi/WiFi.h"
+#include "WiFi/WiFiEventHandler.h"
 
-#include "include/Globals.h"
-#include "include/WebServer.h"
-#include "include/Device.h"
+#include "Globals.h"
+#include "WebServer.h"
+#include "Device.h"
 
 extern "C" {
 	int app_main(void);
@@ -21,8 +21,9 @@ extern "C" {
 
 static char tag[] = "Main";
 
-WiFi_t							*WiFi 			= new WiFi_t();
-WebServer_t 				*WebServer 	= new WebServer_t();
+WiFi_t							*WiFi 				= new WiFi_t();
+WebServer_t 				*WebServer 		= new WebServer_t();
+
 Device_t						*Device			= new Device_t();
 Network_t						*Network		= new Network_t();
 
@@ -33,23 +34,18 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 	esp_err_t apStart() {
 		ESP_LOGD(tag, "MyWiFiEventHandler(Class): apStart");
-		//WebServer->Start();
 		return ESP_OK;
 	}
 
 	esp_err_t apStop() {
 		ESP_LOGD(tag, "MyWiFiEventHandler(Class): apStop");
-		//WebServer->Stop();
 		return ESP_OK;
 	}
 
 	esp_err_t staConnected() {
 		ESP_LOGD(tag, "MyWiFiEventHandler(Class): staConnected");
-		//WebServer->Start();
 		return ESP_OK;
 	}
-
-//	esp_err_t staStop() {}
 
 	esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 		ESP_LOGD(tag, "MyWiFiEventHandler(Class): staDisconnected");
@@ -68,13 +64,12 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			return ESP_OK;
 	}
 
-	esp_err_t staGotIp(tcpip_adapter_ip_info_t IpInfo) {
-		ESP_LOGD(tag, "MyWiFiEventHandler(Class): staGotIp");
-		ESP_LOGI(tag, "!%s", inet_ntoa(IpInfo.ip));
-
+	esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
+		Network->IP = event_sta_got_ip.ip_info;
+		WebServer->UDPSendBroadcastAlive();
+		WebServer->UDPSendBroadcastDiscover();
 		return ESP_OK;
 	}
-
 };
 
 int app_main(void)

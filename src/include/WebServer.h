@@ -5,26 +5,34 @@ using namespace std;
 
 #include <string>
 
-#include "../drivers/Task/Task.h"
+#include "lwip/sys.h"
+#include "lwip/netdb.h"
+#include "lwip/api.h"
+#include "lwip/err.h"
 
-extern "C" {
-	#include "freertos/portmacro.h"
-	#include "lwip/sys.h"
-	#include "lwip/netdb.h"
-	#include "lwip/api.h"
-	#include "lwip/err.h"
-}
+#include "drivers/FreeRTOS/FreeRTOS.h"
 
 class WebServer_t {
   public:
     WebServer_t();
     void Start();
     void Stop();
-		static void Handle(struct netconn *conn);
-};
 
-class WebServerTask_t: public Task {
-	void run(void *data) override;
+		void UDPSendBroadcastAlive();
+		void UDPSendBroadcastDiscover();
+    void UDPSendBroadcast(string);
+
+	private:
+		TaskHandle_t HTTPListenerTaskHandle;
+		TaskHandle_t UDPListenerTaskHandle;
+
+		static string UDPAliveBody();
+		static string UDPDiscoverBody(string ID = "");
+
+		static void UDPListenerTask(void *);
+
+		static void HTTPListenerTask(void *);
+		static void HandleHTTP(struct netconn *);
 };
 
 class WebServerResponse_t

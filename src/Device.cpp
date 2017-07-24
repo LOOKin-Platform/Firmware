@@ -6,11 +6,12 @@
 
 #include <cJSON.h>
 
-#include "include/Globals.h"
-#include "include/Device.h"
+#include "Globals.h"
+#include "Device.h"
+#include "OTA.h"
 
-#include "drivers/NVS/NVS.h"
-#include "include/Switch_str.h"
+#include "NVS/NVS.h"
+#include "Switch_str.h"
 
 static char tag[] = "Device_t";
 static string NVSDeviceArea = "Device";
@@ -25,10 +26,10 @@ Device_t::Device_t()
     Name              = "";
     PowerMode         = DevicePowerMode::CONST;
     PowerModeVoltage  = 220;
-    FirmwareVersion   = "0";
+    FirmwareVersion   = FIRMWARE_VERSION;
 
     switch (Type) {
-      case DeviceType::PLUG: Name = DEFAULTNAME_PLUG; break;
+      case DeviceType::PLUG: Name = DEFAULT_NAME_PLUG; break;
     }
 }
 
@@ -87,15 +88,6 @@ void Device_t::Init()
     Memory->SetInt8Bit(NVSDevicePowerModeVoltage, +PowerModeVoltage);
   }
 
-  string FirmwareVersionStr = Memory->GetString(NVSDeviceFirmwareVersion);
-  if (!FirmwareVersionStr.empty())
-    FirmwareVersion = FirmwareVersionStr;
-  else
-  {
-    FirmwareVersion = "0.1";
-    Memory->SetString(NVSDeviceFirmwareVersion, FirmwareVersion);
-  }
-
   Memory->Commit();
 }
 
@@ -143,18 +135,11 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
   {
     if (URLParts.size() == 0)
     {
-      map<string,string>::iterator NameIterator = Params.find("name");
+      bool isNameSet            = POSTName(Params);
+      bool isFirmwareVersionSet = POSTFirmwareVersion(Params, *Result);
 
-      if (NameIterator != Params.end())
-      {
-        Name = Params["name"];
-
-        NVS *Memory = new NVS(NVSDeviceArea);
-        Memory->SetString(NVSDeviceName, Name);
-        Memory->Commit();
-
+      if ((isNameSet || isFirmwareVersionSet) && Result->Body == "")
         Result->Body = "{\"success\" : \"true\"}";
-      }
     }
   }
 
@@ -177,6 +162,63 @@ string Device_t::GenerateID() {
   Hash << std::uppercase << std::hex << (int)str_hash;
 
   return Hash.str();
+}
+
+bool Device_t::POSTName(map<string,string> Params) {
+  map<string,string>::iterator NameIterator = Params.find("name");
+
+  if (NameIterator != Params.end())
+  {
+    Name = Params["name"];
+
+    NVS *Memory = new NVS(NVSDeviceArea);
+    Memory->SetString(NVSDeviceName, Name);
+    Memory->Commit();
+
+    return true;
+  }
+
+  return false;
+}
+
+bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServerResponse_t& Response) {
+
+  map<string,string>::iterator FirmwareVersionIterator = Params.find("firmwareversion");
+
+  if (FirmwareVersionIterator != Params.end()) {
+    string UpdateVersion = Params["firmwareversion"];
+
+    if (Status == DeviceStatus::RUNNING) {
+        if (WiFi_t::getMode() == WIFI_MODE_STA_STR) {
+
+          string UpdateFilename = "firmware.bin";
+
+          map<string,string>::iterator FilenameIterator = Params.find("Filename");
+          if (FilenameIterator != Params.end())
+            UpdateFilename = Params["Filename"];
+
+          OTA_t *OTA = new OTA_t();
+          OTA->Update(OTA_URL_PREFIX + UpdateVersion + "/" + UpdateFilename);
+
+          Device->Status = DeviceStatus::UPDATING;
+
+          Response.ResponseCode = WebServerResponse_t::CODE::OK;
+          Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update started\"}";
+
+          return true;
+        }
+        else {
+          Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
+          Response.Body = "{\"success\" : \"false\" , \"Error\": \"Device is not connected to the Internet\"}";
+        }
+    }
+    else {
+      Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
+      Response.Body = "{\"success\" : \"false\" , \"Error\": \"The update process has already been started\"}";
+    }
+  }
+
+  return false;
 }
 
 string Device_t::TypeToString() {

@@ -4,6 +4,40 @@
 В случае, если требуется собрать прошивку не в платформио, необходимо перенести все файлы из src на уровень выше.
 В противном случае компилятор выдаст ошибку.
 
+!ВНИМАНИЕ!
+Перед публикацией прошивки на сервере необходимо обновить номер версии в Globals.h!
+
+!ВНИМАНИЕ!
+Platformio не совершенен.
+Для корректной сборки прошивки с OTA нужно внести изменения в файле сборки, иначе прошивка не будет собираться или не будет запускаться.
+Возможно, что это получиться сделать какими-то другими способами, но пока они не найдены.
+Все правки должны быть внесены в файле espidf.py
+
+1. Для исправления ошибки линковки:
+Для того, чтобы прошивка корректно собиралась в файле необходимо убрать сроку «bootloader_support» из переменной ignore_dirs
+
+2. Для исправления ошибки с тем, что partition_table всегда «single app»
+В том же файле строку:
+join(FRAMEWORK_DIR, "components", "partition_table", "partitions_singleapp.csv"),
+необходимо заменить на:
+ join(FRAMEWORK_DIR, "components", "partition_table", "partitions_custom.csv»),
+
+После этого необходимо перенести файлик «partitions_custom.csv» из корня (есть в комите) в папку (директория платформио)/packages/framework-espidf/components/partition_table/
+
+3. Для загрузки прошивки по правильному адресу.
+
+UPLOADERFLAGS=[
+        "0x1000", join("$BUILD_DIR", "bootloader.bin"),
+        "0x8000", join("$BUILD_DIR", "partitions_table.bin"),
+        "0x10000"
+    ]
+
+Меняем на: 0x10000 на 0x200000
+
+4. Для того, чтобы заставить нормально собираться libcurl (работа с сетью)
+- скопировать папку components/curl в папку компонентов (platformio)/packages/platform-espressif32/components/
+- добавить в espidf.py
+
 Структура прошивки:
 -> src
 |--> drivers
@@ -29,7 +63,10 @@ test.cpp - служит для проверки работоспособност
 g++ -std=c++11 test.cpp Query.cpp Tools.cpp  -o test
 
 Комманда для чтения из Serial Monitor
-pio device monitor --port /dev/cu.SLAB_USBtoUART --baud 115200 --filter direct --e
-cho
+pio device monitor --port /dev/cu.SLAB_USBtoUART --baud 115200 --filter direct --echo
 
 IP адрес при старте в режиме точки доступа: 192.164.4.1
+
+Обновление espressif32 до -dev версии
+pio platform uninstall espressif32
+pio platform install https://github.com/platformio/platform-espressif32/archive/develop.zip

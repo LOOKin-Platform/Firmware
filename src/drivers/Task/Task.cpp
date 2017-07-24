@@ -5,7 +5,6 @@
  *      Author: kolban
  */
 
-
 #include <esp_log.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
@@ -40,7 +39,7 @@ Task::~Task() {
  * @return N/A.
  */
 
-void Task::delay(int ms) {
+void Task::Delay(int ms) {
 	::vTaskDelay(ms/portTICK_PERIOD_MS);
 } // delay
 
@@ -50,11 +49,11 @@ void Task::delay(int ms) {
  * The code here will run on the task thread.
  * @param [in] pTaskInstance The task to run.
  */
-void Task::runTask(void *pTaskInstance) {
-	ESP_LOGD(tag, ">> runTask");
+void Task::RunTask(void *pTaskInstance) {
+	ESP_LOGD(tag, ">> RunTask");
 	Task *pTask = (Task *)pTaskInstance;
-	pTask->run(pTask->taskData);
-	pTask->stop();
+	pTask->Run(pTask->taskData);
+	pTask->Stop();
 } // runTask
 
 /**
@@ -63,12 +62,12 @@ void Task::runTask(void *pTaskInstance) {
  * @param [in] taskData Data to be passed into the task.
  * @return N/A.
  */
-void Task::start(void *taskData) {
+void Task::Start(void *taskData) {
 	if (handle != nullptr) {
 		ESP_LOGW(tag, "Task::start - There might be a task already running!");
 	}
 	this->taskData = taskData;
-	::xTaskCreate(&runTask, taskName.c_str(), stackSize, this, 5, &handle);
+	::xTaskCreate(&RunTask, taskName.c_str(), stackSize, this, 5, &handle);
 } // start
 
 
@@ -77,7 +76,7 @@ void Task::start(void *taskData) {
  *
  * @return N/A.
  */
-void Task::stop() {
+void Task::Stop() {
 	if (handle == nullptr) {
 		return;
 	}
@@ -92,6 +91,6 @@ void Task::stop() {
  * @param [in] stackSize The size of the stack for the task.
  * @return N/A.
  */
-void Task::setStackSize(uint16_t stackSize) {
+void Task::SetStackSize(uint16_t stackSize) {
 	this->stackSize = stackSize;
 } // setStackSize

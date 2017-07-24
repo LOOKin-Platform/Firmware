@@ -2,14 +2,14 @@
   Команды - классы и функции, связанные с /commands
 */
 
-#include "include/Globals.h"
-#include "include/Commands.h"
-#include "include/Device.h"
-#include "include/Tools.h"
+#include "Globals.h"
+#include "Commands.h"
+#include "Device.h"
+#include "Tools.h"
 
-#include "include/Switch_str.h"
+#include "Switch_str.h"
 
-#include "drivers/GPIO/GPIO.h"
+#include "GPIO/GPIO.h"
 
 #include <cJSON.h>
 #include <esp_log.h>

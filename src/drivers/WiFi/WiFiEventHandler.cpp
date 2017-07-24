@@ -23,6 +23,7 @@ static char tag[] = "WiFiEventHandler";
  * @param [in] event
  * @return ESP_OK if the event was handled otherwise an error.
  */
+
 esp_err_t WiFiEventHandler::eventHandler(void *ctx, system_event_t *event) {
 	ESP_LOGD(tag, "eventHandler called");
 	WiFiEventHandler *pWiFiEventHandler = (WiFiEventHandler *)ctx;

@@ -7,11 +7,11 @@ using namespace std;
 
 #include <esp_log.h>
 
-#include "include/Globals.h"
-#include "include/API.h"
-#include "include/Device.h"
-#include "include/Network.h"
-#include "include/Switch_str.h"
+#include "Globals.h"
+#include "API.h"
+#include "Device.h"
+#include "Network.h"
+#include "Switch_str.h"
 
 WebServerResponse_t* API::Handle(Query_t Query) {
   return API::Handle(Query.Type, Query.RequestedUrlParts, Query.Params);

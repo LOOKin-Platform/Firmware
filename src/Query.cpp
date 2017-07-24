@@ -7,8 +7,8 @@ using namespace std;
 #include <vector>
 #include <string>
 
-#include "include/Query.h"
-#include "include/Tools.h"
+#include "Query.h"
+#include "Tools.h"
 
 Query_t::Query_t(char *buf) {
     Type              = NONE;

@@ -11,7 +11,7 @@ using namespace std;
 #include <esp_wifi.h>
 #include <esp_log.h>
 
-#include "drivers/NVS/NVS.h"
+#include "NVS/NVS.h"
 
 #include "WebServer.h"
 #include "API.h"
@@ -21,8 +21,6 @@ using namespace std;
 #define  NVSDeviceName              "Name"
 #define  NVSDevicePowerMode         "PowerMode"
 #define  NVSDevicePowerModeVoltage  "PowerModeVoltage"
-#define  NVSDeviceFirmwareVersion   "FirmwareVersion"
-
 
 enum    DeviceType      { PLUG };
 enum    DeviceStatus    { RUNNING, UPDATING };
@@ -47,6 +45,9 @@ class Device_t : public API {
     string TypeToString();
   private:
     string GenerateID();
+
+    bool POSTName(map<string,string>);
+    bool POSTFirmwareVersion(map<string,string>, WebServerResponse_t &);
 
     string StatusToString();
     string IDToString();

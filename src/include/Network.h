@@ -12,8 +12,8 @@ using namespace std;
 #include "API.h"
 #include "Device.h"
 
-#define  NVSNetworkWiFiSSID      "WiFiSSID"
-#define  NVSNetworkWiFiPassword  "WiFiPassword"
+#define  NVSNetworkWiFiSSID     "WiFiSSID"
+#define  NVSNetworkWiFiPassword "WiFiPassword"
 
 struct NetworkDevice {
   DeviceType  Type;
@@ -24,10 +24,12 @@ struct NetworkDevice {
 
 class Network_t : public API {
   public:
-    string          WiFiSSID;
-    string          WiFiPassword;
-    vector<string>  WiFiList;
-    vector<NetworkDevice> Devices;
+    string                  WiFiSSID;
+    string                  WiFiPassword;
+    vector<string>          WiFiList;
+    vector<NetworkDevice>   Devices;
+    tcpip_adapter_ip_info_t IP;
+
 
     Network_t();
 
@@ -35,6 +37,7 @@ class Network_t : public API {
     WebServerResponse_t*  HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
 
   private:
+
     bool   POSTWiFiSSID(map<string,string>);
     bool   POSTWiFiPassword(map<string,string>);
 

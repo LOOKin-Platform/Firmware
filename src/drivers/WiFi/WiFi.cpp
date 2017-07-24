@@ -18,14 +18,12 @@
 #include <esp_log.h>
 #include <esp_system.h>
 #include <esp_wifi.h>
-#include <nvs_flash.h>
 #include <freertos/FreeRTOS.h>
 #include <lwip/dns.h>
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
 
 #include <string.h>
-#include <drivers/Task/Task.h>
 
 static char tag[]= "WiFi";
 

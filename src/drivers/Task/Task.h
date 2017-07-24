@@ -5,8 +5,8 @@
  *      Author: kolban
  */
 
-#ifndef COMPONENTS_CPP_UTILS_TASK_H_
-#define COMPONENTS_CPP_UTILS_TASK_H_
+#ifndef DRIVERS_TASK_H_
+#define DRIVERS_TASK_H_
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <string>
@@ -35,9 +35,9 @@ class Task {
 public:
 	Task(std::string taskName="Task", uint16_t stackSize=2048);
 	virtual ~Task();
-	void setStackSize(uint16_t stackSize);
-	void start(void *taskData=nullptr);
-	void stop();
+	void SetStackSize(uint16_t stackSize);
+	void Start(void *taskData=nullptr);
+	void Stop();
 	/**
 	 * @brief Body of the task to execute.
 	 *
@@ -47,15 +47,15 @@ public:
 	 *
 	 * @param [in] data The data passed in to the newly started task.
 	 */
-	virtual void run(void *data) = 0; // Make run pure virtual
-	void delay(int ms);
+	virtual void Run(void *data) = 0; // Make run pure virtual
+	void Delay(int ms);
 
 private:
 	xTaskHandle handle;
 	void *taskData;
-	static void runTask(void *data);
+	static void RunTask(void *data);
 	std::string taskName;
 	uint16_t stackSize;
 };
 
-#endif /* COMPONENTS_CPP_UTILS_TASK_H_ */
+#endif /* DRIVERS_TASK_H_ */

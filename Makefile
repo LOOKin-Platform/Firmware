@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := Plug
+PROJECT_NAME := Firmware
 CFLAGS += -save-temps
 
 include $(IDF_PATH)/make/project.mk

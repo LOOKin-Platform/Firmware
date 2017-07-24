@@ -1,11 +1,11 @@
 /*
- * FreeRTOS.cpp
+ * FreeRTOS_t.cpp
  *
  *  Created on: Feb 24, 2017
  *      Author: kolban
  */
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
+#include <FreeRTOS/FreeRTOS.h>
+#include <FreeRTOS/task.h>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -27,7 +27,7 @@ FreeRTOS::~FreeRTOS() {
  * Sleep for the specified number of milliseconds.
  * @param[in] ms The period in milliseconds for which to sleep.
  */
-void FreeRTOS::sleep(uint32_t ms) {
+void FreeRTOS::Sleep(uint32_t ms) {
 	::vTaskDelay(ms/portTICK_PERIOD_MS);
 } // sleep
 
@@ -38,9 +38,12 @@ void FreeRTOS::sleep(uint32_t ms) {
  * @param[in] taskName A string identifier for the task.
  * @param[in] param An optional parameter to be passed to the started task.
  * @param[in] stackSize An optional paremeter supplying the size of the stack in which to run the task.
+ * @param[out] Handle to the created Task;
  */
-void FreeRTOS::startTask(void task(void*), std::string taskName, void *param, int stackSize) {
-	::xTaskCreate(task, taskName.data(), stackSize, param, 5, NULL);
+TaskHandle_t FreeRTOS::StartTask(void task(void*), std::string taskName, void *param, int stackSize) {
+	TaskHandle_t TaskHandle = NULL;
+	::xTaskCreate(task, taskName.data(), stackSize, param, 5, &TaskHandle);
+	return TaskHandle;
 } // startTask
 
 
@@ -48,16 +51,16 @@ void FreeRTOS::startTask(void task(void*), std::string taskName, void *param, in
  * Delete the task.
  * @param[in] pTask An optional handle to the task to be deleted.  If not supplied the calling task will be deleted.
  */
-void FreeRTOS::deleteTask(TaskHandle_t pTask) {
+void FreeRTOS::DeleteTask(TaskHandle_t pTask) {
 	::vTaskDelete(pTask);
 } // deleteTask
 
 
 /**
- * Get the time in milliseconds since the %FreeRTOS scheduler started.
- * @return The time in milliseconds since the %FreeRTOS scheduler started.
+ * Get the time in milliseconds since the %FreeRTOS_t scheduler started.
+ * @return The time in milliseconds since the %FreeRTOS_t scheduler started.
  */
-uint32_t FreeRTOS::getTimeSinceStart() {
+uint32_t FreeRTOS::GetTimeSinceStart() {
 	return (uint32_t)(xTaskGetTickCount()*portTICK_PERIOD_MS);
 } // getTimeSinceStart
 

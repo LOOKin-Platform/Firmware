@@ -2,10 +2,10 @@
   Сенсоры - классы и функции, связанные с /sensors
 */
 
-#include "include/Globals.h"
-#include "include/Sensors.h"
-#include "include/Device.h"
-#include "include/Tools.h"
+#include "Globals.h"
+#include "Sensors.h"
+#include "Device.h"
+#include "Tools.h"
 
 #include <cJSON.h>
 #include <esp_log.h>

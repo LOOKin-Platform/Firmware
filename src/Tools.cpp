@@ -4,7 +4,7 @@ using namespace std;
 #include <cctype>
 #include <locale>
 
-#include "include/Tools.h"
+#include "Tools.h"
 
 string Tools::ToLower(string Str) {
   string Result = Str;

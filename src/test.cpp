@@ -1,3 +1,4 @@
+/*
 using namespace std;
 
 #include "include/Query.h"
@@ -27,3 +28,4 @@ int main() {
       cout << p << '\n';
   }
 }
+*/
