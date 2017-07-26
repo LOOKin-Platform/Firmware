@@ -13,8 +13,10 @@ using namespace std;
 
 #include "NVS/NVS.h"
 
+#include "Globals.h"
 #include "WebServer.h"
 #include "API.h"
+#include "Tools.h"
 
 #define  NVSDeviceType              "Type"
 #define  NVSDeviceID                "ID"
@@ -22,13 +24,28 @@ using namespace std;
 #define  NVSDevicePowerMode         "PowerMode"
 #define  NVSDevicePowerModeVoltage  "PowerModeVoltage"
 
-enum    DeviceType      { PLUG };
+class DeviceType_t {
+  public:
+    uint8_t Hex = 0x00;    // : 3   (3 bits)
+
+    DeviceType_t(string);
+    DeviceType_t(uint8_t);
+
+    bool   IsBattery();
+    string ToString();
+    string ToHexString();
+
+    static string ToString(uint8_t);
+    static string ToHexString(uint8_t);
+    static map<uint8_t, string> TypeMap;
+};
+
 enum    DeviceStatus    { RUNNING, UPDATING };
 enum    DevicePowerMode { BATTERY, CONST };
 
 class Device_t : public API {
   public:
-    DeviceType      Type;
+    DeviceType_t    *Type;
     DeviceStatus    Status;
     string          ID;
     string          Name;

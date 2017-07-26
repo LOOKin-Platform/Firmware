@@ -8,12 +8,14 @@ using namespace std;
 #include <nvs.h>
 #include <nvs_flash.h>
 
-#include "WiFi/WiFi.h"
-#include "WiFi/WiFiEventHandler.h"
-
 #include "Globals.h"
 #include "WebServer.h"
 #include "Device.h"
+
+#include "WiFi/WiFi.h"
+#include "WiFi/WiFiEventHandler.h"
+#include "drivers/FreeRTOS/Timer.h"
+
 
 extern "C" {
 	int app_main(void);
@@ -21,14 +23,17 @@ extern "C" {
 
 static char tag[] = "Main";
 
-WiFi_t							*WiFi 				= new WiFi_t();
-WebServer_t 				*WebServer 		= new WebServer_t();
+WiFi_t							*WiFi 			= new WiFi_t();
+WebServer_t 				*WebServer 	= new WebServer_t();
 
 Device_t						*Device			= new Device_t();
 Network_t						*Network		= new Network_t();
 
 vector<Sensor_t*>		Sensors 		= Sensor_t::GetSensorsForDevice();
 vector<Command_t*>	Commands 		= Command_t::GetCommandsForDevice();
+
+Timer_t *IPDidntGetTimer;
+static void IPDidntGetCallback(Timer_t *pTimer) { WiFi->StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD); }
 
 class MyWiFiEventHandler: public WiFiEventHandler {
 
@@ -44,6 +49,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 	esp_err_t staConnected() {
 		ESP_LOGD(tag, "MyWiFiEventHandler(Class): staConnected");
+		IPDidntGetTimer->Start();
+
 		return ESP_OK;
 	}
 
@@ -65,6 +72,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	}
 
 	esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
+		IPDidntGetTimer->Stop();
+
 		Network->IP = event_sta_got_ip.ip_info;
 		WebServer->UDPSendBroadcastAlive();
 		WebServer->UDPSendBroadcastDiscover();
@@ -72,8 +81,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	}
 };
 
-int app_main(void)
-{
+int app_main(void) {
+
 	esp_log_level_set("*", ESP_LOG_DEBUG);
 	ESP_LOGD(tag, "App started");
 
@@ -83,6 +92,7 @@ int app_main(void)
 	Network->Init();
 
 	WiFi->setWifiEventHandler(new MyWiFiEventHandler());
+	IPDidntGetTimer =	new Timer_t("IPDidntGetTimer",WIFI_IP_COUNTDOWN/portTICK_PERIOD_MS, pdFALSE, NULL, IPDidntGetCallback);
 
 	if (Network->WiFiSSID != "")
 		WiFi->ConnectAP(Network->WiFiSSID, Network->WiFiPassword);

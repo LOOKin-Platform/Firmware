@@ -3,10 +3,10 @@ using namespace std;
 #include <stdio.h>
 #include <string.h>
 
-#include "drivers/FreeRTOS/FreeRTOS.h"
-
 #include "Globals.h"
 #include "WebServer.h"
+
+#include "drivers/FreeRTOS/FreeRTOS.h"
 
 #include "Query.h"
 #include "Switch_str.h"
@@ -28,7 +28,7 @@ void WebServer_t::Start() {
   ESP_LOGD(tag, "Start");
 
   HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 8192);
-  UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask, "UDPListenerTask"  , NULL, 2056);
+  UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask, "UDPListenerTask"  , NULL, 4096);
 }
 
 void WebServer_t::Stop() {
@@ -47,19 +47,19 @@ void WebServer_t::UDPSendBroadcastDiscover() {
 }
 
 string WebServer_t::UDPAliveBody() {
-  return "Alive!" + Device->ID + ":" + inet_ntoa(Network->IP);
+  string Message = "Alive!" + Device->Type->ToHexString() + ":" +  Device->ID + ":" + inet_ntoa(Network->IP);
+  return UDP_PACKET_PREFIX + Message;
 }
 
 string WebServer_t::UDPDiscoverBody(string ID) {
-  return "Discover!" + (ID != "") ? ID : "";
+  string Message = (ID != "") ? ("Discover!" + ID) : "Discover!";
+  return UDP_PACKET_PREFIX + Message;
 }
 
-void WebServer_t::UDPSendBroadcast(string Datagram) {
+void WebServer_t::UDPSendBroadcast(string Message) {
   struct netconn *Connection;
   struct netbuf *Buffer;
   char *Data;
-
-  string Message = UDP_PACKET_PREFIX + Datagram;
 
   Connection = netconn_new( NETCONN_UDP );
   netconn_connect(Connection, IP_ADDR_BROADCAST, UDP_SERVER_PORT );
@@ -71,7 +71,7 @@ void WebServer_t::UDPSendBroadcast(string Datagram) {
 
   netbuf_delete(Buffer); // De-allocate packet buffer
 
-  ESP_LOGI(tag, "UDP broadcast %s sended", Message.c_str());
+  ESP_LOGI(tag, "UDP broadcast \"%s\" sended", Message.c_str());
 }
 
 void WebServer_t::UDPListenerTask(void *data)
@@ -79,47 +79,56 @@ void WebServer_t::UDPListenerTask(void *data)
   ESP_LOGD(tag, "UDPListenerTask Run");
 
   struct netconn *Connection;
-  struct netbuf *Buffer;
-  char *Data;
-  u16_t DataLen;
-
+  struct netbuf *inBuffer, *outBuffer;
+  char *inData, *outData;
+  u16_t inDataLen;
   err_t err;
 
   Connection = netconn_new(NETCONN_UDP);
   netconn_bind(Connection, IP_ADDR_ANY, UDP_SERVER_PORT);
 
   do {
-    err = netconn_recv(Connection, &Buffer);
+    err = netconn_recv(Connection, &inBuffer);
 
-    if (err == ERR_OK)
-    {
-      netbuf_data(Buffer, (void * *)&Data, &DataLen);
-      ESP_LOGI(tag, "UDP RECEIVED %s", Data);
+    if (err == ERR_OK) {
+      netbuf_data(inBuffer, (void * *)&inData, &inDataLen);
+      string Datagram = inData;
 
-      string Datagram = Data;
+      ESP_LOGI(tag, "UDP RECEIVED \"%s\"", Datagram.c_str());
 
-      if (Data == WebServer_t::UDPDiscoverBody() || Data == WebServer_t::UDPDiscoverBody(Device->ID))
-      {
+      outBuffer = netbuf_new();
+
+      // answer to the Discover query
+      if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device->ID)) {
+
         string Answer = WebServer_t::UDPAliveBody();
 
-        struct netconn *AnswerConnection = netconn_new(NETCONN_UDP);
-        struct netbuf *AnswerBuffer = netbuf_new();
+        outData = (char *)netbuf_alloc(outBuffer, Answer.length());
+        memcpy (outData, Answer.c_str(), Answer.length());
 
-        netconn_bind(AnswerConnection, &Buffer->addr, UDP_SERVER_PORT);
-
-        char *Data = (char *)netbuf_alloc(AnswerBuffer, Answer.length());
-        memcpy (Data, Answer.c_str(), Answer.length());
-        netconn_send(AnswerConnection, AnswerBuffer);
-
-        netbuf_delete(AnswerBuffer);
-        netconn_close(AnswerConnection);
-        netconn_delete(AnswerConnection);
+        netconn_sendto(Connection, outBuffer, &inBuffer->addr, inBuffer->port);
       }
+
+      string AliveText = UDP_PACKET_PREFIX + string("Alive!");
+      size_t AliveFound = Datagram.find(AliveText);
+
+      if (AliveFound != string::npos) {
+        string Alive = Datagram;
+        Alive.replace(Alive.find(AliveText),AliveText.length(),"");
+        vector<string> Data = Tools::DivideStrBySymbol(Alive, ':');
+
+        if (Data.size() > 2)
+          Network->DeviceInfoReceived(Data[0], Data[1], Data[2]);
+      }
+
+
+      netbuf_delete(outBuffer);
+      netbuf_delete(inBuffer);
     }
 
   } while(err == ERR_OK);
 
-  netbuf_delete(Buffer);
+  netbuf_delete(inBuffer);
   netconn_close(Connection);
   netconn_delete(Connection);
 }
@@ -135,12 +144,10 @@ void WebServer_t::HTTPListenerTask(void *data)
   netconn_bind(conn, NULL, 80);
   netconn_listen(conn);
 
-  do
-  {
+  do {
     err = netconn_accept(conn, &newconn);
 
-    if (err == ERR_OK)
-    {
+    if (err == ERR_OK) {
       WebServer_t::HandleHTTP(newconn);
       netconn_delete(newconn);
     }

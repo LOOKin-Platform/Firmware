@@ -19,8 +19,8 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 
   vector<Sensor_t*> Sensors = {};
 
-  switch (Device->Type) {
-    case DeviceType::PLUG:
+  switch (Device->Type->Hex) {
+    case DEVICE_TYPE_PLUG_HEX:
       Sensors = { new SensorSwitch_t() };
       break;
   }

@@ -19,8 +19,8 @@
 vector<Command_t*> Command_t::GetCommandsForDevice() {
   vector<Command_t*> Commands = {};
 
-  switch (Device->Type) {
-    case DeviceType::PLUG:
+  switch (Device->Type->Hex) {
+    case DEVICE_TYPE_PLUG_HEX:
       Commands = { new CommandSwitch_t() };
       break;
   }

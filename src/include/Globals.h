@@ -1,6 +1,9 @@
-/* Глобальные переменные */
+#ifndef GLOBALS_H
+#define GLOBALS_H
 
-#include <vector>
+/*
+  Глобальные переменные прошивки
+*/
 
 #include "WebServer.h"
 
@@ -8,6 +11,8 @@
 #include "Sensors.h"
 #include "Commands.h"
 #include "Network.h"
+
+#include <vector>
 
 #include <WiFi/WiFi.h>
 
@@ -19,7 +24,7 @@ extern Network_t            *Network;
 extern vector<Sensor_t*>    Sensors;
 extern vector<Command_t*>   Commands;
 
-#define FIRMWARE_VERSION    "0.61"
+#define FIRMWARE_VERSION    "0.65"
 
 #define OTA_SERVER_IP       "92.63.203.74"
 #define OTA_SERVER_HOST     "download.look-in.club"
@@ -28,12 +33,16 @@ extern vector<Command_t*>   Commands;
 
 #define WIFI_AP_NAME        "Beeline_" + Device->TypeToString() + "_" + Device->ID
 #define WIFI_AP_PASSWORD    Device->ID
+#define WIFI_IP_COUNTDOWN   10000
 
 #define UDP_SERVER_PORT     61201
 #define UDP_PACKET_PREFIX   "BEELINE:"
 
-// Имена устройств по-умолчанию
-#define DEFAULT_NAME_PLUG   "Plug"
+// Devices definitions
+#define DEVICE_TYPE_PLUG_HEX      0x03
+#define DEVICE_TYPE_PLUG_STRING   "Plug"
 
 // Commands and Sensors Pin Map
 #define SWITCH_PLUG_PIN_NUM GPIO_NUM_2
+
+#endif

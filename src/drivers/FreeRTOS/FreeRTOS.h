@@ -5,8 +5,8 @@
  *      Author: kolban
  */
 
-#ifndef DRIVERS_FreeRTOS_H_
-#define DRIVERS_FreeRTOS_H_
+#ifndef DRIVERS_FREERTOS_H_
+#define DRIVERS_FREERTOS_H_
 #include <stdint.h>
 #include <string>
 
@@ -44,4 +44,4 @@ public:
 	};
 };
 
-#endif /* DRIVERS_FreeRTOS_H_ */
+#endif /* DRIVERS_FREERTOS_H_ */

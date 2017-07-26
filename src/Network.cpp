@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "Globals.h"
 #include "Network.h"
 
@@ -13,7 +15,7 @@ Network_t::Network_t() {
   WiFiSSID      = "";
   WiFiPassword  = "";
   WiFiList      = vector<string>();
-  Devices       = vector<NetworkDevice>();
+  Devices       = vector<NetworkDevice_t *>();
 }
 
 void Network_t::Init() {
@@ -24,9 +26,104 @@ void Network_t::Init() {
   WiFiSSID     = Memory->GetString(NVSNetworkWiFiSSID);
   WiFiPassword = Memory->GetString(NVSNetworkWiFiPassword);
 
+  //Memory->ArrayEraseAll(NVSNetworkDevicesArray);
+
+  // Read info from network scan
   for (WiFiAPRecord APRecord : WiFi->Scan())
       WiFiList.push_back(APRecord.getSSID());
 
+  // Load saved network devices from NVS
+  uint8_t ArrayCount = Memory->ArrayCount(NVSNetworkDevicesArray);
+  for (int i=0; i < ArrayCount; i++) {
+
+    NetworkDevice_t *NetworkDevice = DeserializeNetworkDevice(Memory->ArrayGet(NVSNetworkDevicesArray, i));
+
+    if (NetworkDevice->ID != "") {
+      NetworkDevice->IsActive = false;
+      Devices.push_back(NetworkDevice);
+    }
+  }
+}
+
+void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
+  ESP_LOGD(tag, "DeviceInfoReceived");
+
+  NVS *Memory = new NVS(NVSNetworkArea);
+
+  bool isIDFound = false;
+  uint8_t TypeHex = +0;
+
+  int TypeTmp = atoi(Type.c_str());
+  if (TypeTmp < +255)
+    TypeHex = +TypeTmp;
+
+  for (int i=0; i < Devices.size(); i++) {
+    if (Devices.at(i)->ID == ID) {
+        isIDFound = true;
+
+        // If IP of the device changed - change it and save
+        if (Devices.at(i)->IP != IP) {
+          Devices.at(i)->IP       = IP;
+          Devices.at(i)->IsActive = false;
+
+          char *Data = SerializeNetworkDevice(Devices.at(i));
+          size_t DataLength = strlen(Data);
+          Memory->ArrayReplace(NVSNetworkDevicesArray, i, Data, DataLength);
+          Memory->Commit();
+        }
+
+        Devices.at(i)->IsActive = true;
+    }
+  }
+
+  // Add new device if no found in routing table
+  if (!isIDFound) {
+    NetworkDevice_t *Device = new NetworkDevice_t();
+
+    Device->TypeHex   = TypeHex;
+    Device->ID        = ID;
+    Device->IP        = IP;
+    Device->IsActive  = true;
+
+    Devices.push_back(Device);
+
+    char *Data = SerializeNetworkDevice(Device);
+    size_t DataLength = strlen(Data);
+
+    Memory->ArrayAdd(NVSNetworkDevicesArray, Data, DataLength);
+    Memory->Commit();
+  }
+}
+
+
+char * Network_t::SerializeNetworkDevice(NetworkDevice_t* Item) {
+  string SerialString = "";
+
+  if (Item != NULL)
+    SerialString = DeviceType_t::ToHexString(Item->TypeHex) + "|" + Item->ID + "|" + Item->IP + "|";
+
+  char *Result = new char[SerialString.length() + 1]; //
+  strcpy(Result, SerialString.c_str());
+
+  //ESP_LOGI(tag, "SERIALIZED: %s", Result);
+
+  return Result;
+}
+
+NetworkDevice_t* Network_t::DeserializeNetworkDevice(void *Blob) {
+
+  char *Data = (char *)Blob;
+
+  //ESP_LOGI(tag, "DESERIALIZED %s", Data);
+
+  vector<string> StructData = Tools::DivideStrBySymbol(string(Data), '|');
+  NetworkDevice_t *Result = new NetworkDevice_t();
+
+  if (StructData.size() > 0) Result->TypeHex = atoi(StructData[0].c_str());
+  if (StructData.size() > 1) Result->ID = StructData[1];
+  if (StructData.size() > 2) Result->IP = StructData[2];
+
+  return Result;
 }
 
 WebServerResponse_t* Network_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
@@ -46,7 +143,7 @@ WebServerResponse_t* Network_t::HandleHTTPRequest(QueryType Type, vector<string>
       cJSON_AddStringToObject(Root, "Mode", ModeToString().c_str());
       cJSON_AddStringToObject(Root, "IP"  , IPToString().c_str());
       cJSON_AddStringToObject(Root, "WiFiSSID", WiFiSSIDToString().c_str());
-      cJSON_AddItemToObject  (Root, "ApList", APListToJSON());
+      cJSON_AddItemToObject  (Root, "Devices", DevicesToJSON());
 
       Result->Body = string(cJSON_Print(Root));
 
@@ -170,5 +267,26 @@ cJSON* Network_t::APListToJSON() {
   Helper = cJSON_CreateStringArray(WiFiListChar.data(), WiFiListChar.size());
 
   return Helper;
+}
 
+cJSON* Network_t::DevicesToJSON() {
+
+  cJSON *Result, *Helper;
+
+  Result = cJSON_CreateArray();
+
+  //  for (int i; i < Devices->length(); i++) {
+
+  for (auto& Device: Devices) {
+    Helper = cJSON_CreateObject();
+
+    cJSON_AddStringToObject(Helper, "Type", DeviceType_t::ToString(Device->TypeHex).c_str());
+    cJSON_AddStringToObject(Helper, "ID", Device->ID.c_str());
+    cJSON_AddStringToObject(Helper, "IP", Device->IP.c_str());
+    cJSON_AddStringToObject(Helper, "IsActive", (Device->IsActive) ? "1" : "0");
+
+    cJSON_AddItemToArray(Result, Helper);
+  }
+
+  return Result;
 }

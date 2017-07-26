@@ -3,6 +3,7 @@
 #include <iterator>
 #include <iostream>
 #include <sstream>
+#include <iomanip>
 
 #include <cJSON.h>
 
@@ -16,21 +17,61 @@
 static char tag[] = "Device_t";
 static string NVSDeviceArea = "Device";
 
+map<uint8_t, string> DeviceType_t::TypeMap = {
+  { DEVICE_TYPE_PLUG_HEX, DEVICE_TYPE_PLUG_STRING }
+};
+
+DeviceType_t::DeviceType_t(string TypeStr) {
+  for(auto const &TypeItem : TypeMap) {
+    if (Tools::ToLower(TypeItem.second) == Tools::ToLower(TypeStr))
+      Hex = TypeItem.first;
+  }
+}
+
+DeviceType_t::DeviceType_t(uint8_t Type) {
+  Hex = Type;
+}
+
+bool DeviceType_t::IsBattery() {
+  return (Hex > 0x7F) ? true : false; // First bit in device type describe is it battery or not
+}
+
+string DeviceType_t::ToString() {
+  return ToString(Hex);
+}
+
+string DeviceType_t::ToHexString() {
+  return ToHexString(Hex);
+}
+
+string DeviceType_t::ToString(uint8_t Hex) {
+  string Result = "";
+
+  map<uint8_t, string>::iterator it = TypeMap.find(Hex);
+  if (it != TypeMap.end()) {
+    Result = TypeMap[Hex];
+  }
+
+  return Result;
+}
+
+string DeviceType_t::ToHexString(uint8_t Hex) {
+  stringstream sstream;
+  sstream << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << (int)Hex;
+  return (sstream.str());
+}
+
 Device_t::Device_t()
 {
     ESP_LOGD(tag, "Constructor");
 
-    Type              = DeviceType::PLUG;
+    Type              = new DeviceType_t(DEVICE_TYPE_PLUG_HEX);
     Status            = DeviceStatus::RUNNING;
     ID                = "";
     Name              = "";
     PowerMode         = DevicePowerMode::CONST;
     PowerModeVoltage  = 220;
     FirmwareVersion   = FIRMWARE_VERSION;
-
-    switch (Type) {
-      case DeviceType::PLUG: Name = DEFAULT_NAME_PLUG; break;
-    }
 }
 
 void Device_t::Init()
@@ -39,16 +80,7 @@ void Device_t::Init()
 
   NVS *Memory = new NVS(NVSDeviceArea);
 
-  string TypeStr = Memory->GetString(NVSDeviceType);
-  if (!TypeStr.empty())
-  {
-      if (TypeStr == "Plug") Type = DeviceType::PLUG;
-  }
-  else
-  {
-    Type = DeviceType::PLUG;
-    Memory->SetString(NVSDeviceType, "Plug");
-  }
+  //Type = new DeviceType_t(Memory->GetInt8Bit(NVSDeviceType));
 
   string IDStr = Memory->GetString(NVSDeviceID);
   if (!IDStr.empty() && IDStr.length() == 8)
@@ -58,32 +90,20 @@ void Device_t::Init()
     // Настройка как нового устройства
     ID = GenerateID();
     Memory->SetString(NVSDeviceID, ID);
-    Memory->SetString(NVSDeviceName, Name);
     Memory->Commit();
   }
 
-  string NameStr = Memory->GetString(NVSDeviceName);
-  Name = (!NameStr.empty()) ? NameStr : "";
+  Name = Memory->GetString(NVSDeviceName);
 
-  string PowerModeStr = Memory->GetString(NVSDevicePowerMode);
-  if (!PowerModeStr.empty())
-    PowerMode = (PowerModeStr == "Battery") ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
-  else
-  {
-    PowerMode = DevicePowerMode::CONST;
-    Memory->SetString(NVSDevicePowerMode, "Const");
-  }
+  PowerMode = (Type->IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
   uint8_t PowerModeVoltageInt = Memory->GetInt8Bit(NVSDevicePowerModeVoltage);
-  if (PowerModeVoltageInt > +3)
-  {
+  if (PowerModeVoltageInt > +3) {
       PowerModeVoltage = PowerModeVoltageInt;
   }
-  else
-  {
-    switch (Type)
-    {
-      case DeviceType::PLUG: PowerModeVoltage = +220;
+  else {
+    switch (Type->Hex) {
+      case DEVICE_TYPE_PLUG_HEX: PowerModeVoltage = +220;
     }
     Memory->SetInt8Bit(NVSDevicePowerModeVoltage, +PowerModeVoltage);
   }
@@ -222,11 +242,7 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServerResponse_
 }
 
 string Device_t::TypeToString() {
-  switch (Type)
-  {
-    case DeviceType::PLUG: return "Plug"; break;
-    default: return "";
-  }
+  return Type->ToString();
 }
 
 string Device_t::StatusToString() {

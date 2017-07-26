@@ -1,6 +1,7 @@
 using namespace std;
 
 #include <algorithm>
+#include <sstream>
 #include <cctype>
 #include <locale>
 
@@ -41,3 +42,40 @@ void Tools::Trim(std::string &s) {
     lTrim(s);
     rTrim(s);
 }
+
+string Tools::ToString(uint8_t Number) {
+  ostringstream Convert;
+  Convert << +Number;
+  return Convert.str();
+}
+
+vector<string> Tools::DivideStrBySymbol(string SourceStr, char Divider) {
+
+  vector<string> Result;
+
+  istringstream f(SourceStr);
+  string s;
+
+  while (getline(f, s, Divider))
+      Result.push_back(s);
+
+  return Result;
+}
+
+/*
+// case-independent (ci) compare_less binary function
+struct CompareNoCase : binary_function<string, string, bool> {
+  struct NocaseCompare : public binary_function<unsigned char,unsigned char,bool>
+  {
+    bool operator() (const unsigned char& c1, const unsigned char& c2) const {
+        return tolower (c1) < tolower (c2);
+    }
+  };
+  bool operator() (const string & s1, const string & s2) const {
+    return lexicographical_compare
+      (s1.begin (), s1.end (),    // source range
+      s2.begin (), s2.end (),     // dest range
+      NocaseCompare ());         // comparison
+  }
+};
+*/
