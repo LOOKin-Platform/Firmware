@@ -10,7 +10,8 @@ using namespace std;
 #include <string>
 #include <vector>
 #include <map>
-#include <cJSON.h>
+
+#include <esp_log.h>
 
 #include "Query.h"
 #include "Device.h"

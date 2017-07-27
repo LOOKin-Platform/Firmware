@@ -1,3 +1,7 @@
+/*
+  Классы для работы с API /device
+*/
+
 #include <algorithm>
 #include <string>
 #include <iterator>
@@ -5,7 +9,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include <cJSON.h>
+#include <RapidJSON.h>
 
 #include "Globals.h"
 #include "Device.h"
@@ -122,18 +126,21 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
     // Запрос JSON со всеми параметрами
     if (URLParts.size() == 0)
     {
-      cJSON *Root;
-    	Root = cJSON_CreateObject();
+      StringBuffer sb;
+      Writer<StringBuffer> Writer(sb);
 
-      cJSON_AddStringToObject(Root, "Type"            ,TypeToString().c_str());
-      cJSON_AddStringToObject(Root, "Status"          ,StatusToString().c_str());
-      cJSON_AddStringToObject(Root, "ID"              ,IDToString().c_str());
-      cJSON_AddStringToObject(Root, "Name"            ,NameToString().c_str());
-      cJSON_AddStringToObject(Root, "PowerMode"       ,PowerModeToString().c_str());
-      cJSON_AddStringToObject(Root, "FirmwareVersion" ,FirmwareVersionToString().c_str());
+      Writer.StartObject();
+      Writer.Key("Type");             Writer.String(TypeToString().c_str());
+      Writer.Key("Status");           Writer.String(StatusToString().c_str());
+      Writer.Key("ID");               Writer.String(IDToString().c_str());
+      Writer.Key("Name");             Writer.String(NameToString().c_str());
+      Writer.Key("PowerMode");        Writer.String(PowerModeToString().c_str());
+      Writer.Key("FirmwareVersion");  Writer.String(FirmwareVersionToString().c_str());
+      Writer.EndObject();
 
-      Result->Body = string(cJSON_Print(Root));
-      cJSON_Delete(Root);
+      Result->Body = string(sb.GetString());
+
+      sb.Clear();
     }
 
     // Запрос конкретного параметра

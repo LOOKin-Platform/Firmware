@@ -1,3 +1,9 @@
+/*
+  Класс для работы с API /network
+*/
+
+#include <RapidJSON.h>
+
 #include <string.h>
 
 #include "Globals.h"
@@ -137,17 +143,24 @@ WebServerResponse_t* Network_t::HandleHTTPRequest(QueryType Type, vector<string>
     // Запрос JSON со всеми параметрами
     if (URLParts.size() == 0)
     {
-      cJSON *Root;
-    	Root = cJSON_CreateObject();
 
-      cJSON_AddStringToObject(Root, "Mode", ModeToString().c_str());
-      cJSON_AddStringToObject(Root, "IP"  , IPToString().c_str());
-      cJSON_AddStringToObject(Root, "WiFiSSID", WiFiSSIDToString().c_str());
-      cJSON_AddItemToObject  (Root, "Devices", DevicesToJSON());
+      StringBuffer sb;
+      Writer<StringBuffer> Writer(sb);
 
-      Result->Body = string(cJSON_Print(Root));
+      Writer.StartObject();
+      Writer.Key("Mode");             Writer.String(ModeToString().c_str());
+      Writer.Key("IP");               Writer.String(IPToString().c_str());
+      Writer.Key("WiFiSSID");         Writer.String(WiFiSSIDToString().c_str());
 
-      cJSON_Delete(Root);
+      Writer.Key("Devices");
+      Writer.StartArray();
+      for (auto& Device: Devices)
+        DeviceToJSON(Device, Writer);
+      Writer.EndArray();
+
+      Writer.EndObject();
+
+      Result->Body = string(sb.GetString());
     }
 
     // Запрос конкретного параметра или команды секции API
@@ -178,7 +191,15 @@ WebServerResponse_t* Network_t::HandleHTTPRequest(QueryType Type, vector<string>
       }
 
       if (URLParts[0] == "aplist") {
-        Result->Body = cJSON_Print(APListToJSON());
+        StringBuffer sb;
+        Writer<StringBuffer> Writer(sb);
+
+        Writer.StartArray();
+        for (auto& WiFiItem : WiFiList)
+          Writer.String(WiFiItem.c_str());
+        Writer.EndArray();
+
+        Result->Body = string(sb.GetString());
         Result->ContentType = WebServerResponse_t::TYPE::JSON;
       }
     }
@@ -255,38 +276,14 @@ string Network_t::WiFiSSIDToString() {
   return WiFiSSID;
 }
 
-cJSON* Network_t::APListToJSON() {
+void Network_t::DeviceToJSON(NetworkDevice_t * NetworkDevice, Writer<StringBuffer> &Writer) {
 
-  cJSON *Helper;
+  Writer.StartObject();
+  Writer.Key("Type");       Writer.String(DeviceType_t::ToString(NetworkDevice->TypeHex).c_str());
+  Writer.Key("ID");         Writer.String(NetworkDevice->ID.c_str());
+  Writer.Key("IP");         Writer.String(NetworkDevice->IP.c_str());
+  Writer.Key("IsActive");   Writer.Bool(NetworkDevice->IsActive);
+  Writer.EndObject();
 
-  vector<const char *> WiFiListChar = {};
-
-  for (auto& WiFiItem : WiFiList)
-    WiFiListChar.push_back(WiFiItem.c_str());
-
-  Helper = cJSON_CreateStringArray(WiFiListChar.data(), WiFiListChar.size());
-
-  return Helper;
-}
-
-cJSON* Network_t::DevicesToJSON() {
-
-  cJSON *Result, *Helper;
-
-  Result = cJSON_CreateArray();
-
-  //  for (int i; i < Devices->length(); i++) {
-
-  for (auto& Device: Devices) {
-    Helper = cJSON_CreateObject();
-
-    cJSON_AddStringToObject(Helper, "Type", DeviceType_t::ToString(Device->TypeHex).c_str());
-    cJSON_AddStringToObject(Helper, "ID", Device->ID.c_str());
-    cJSON_AddStringToObject(Helper, "IP", Device->IP.c_str());
-    cJSON_AddStringToObject(Helper, "IsActive", (Device->IsActive) ? "1" : "0");
-
-    cJSON_AddItemToArray(Result, Helper);
-  }
-
-  return Result;
+  return;
 }

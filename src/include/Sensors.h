@@ -5,12 +5,17 @@
   Сенсоры - классы и функции, связанные с /sensors
 */
 
+#include "../../lib/RapidJSON/include/rapidjson/stringbuffer.h"
+#include "../../lib/RapidJSON/include/rapidjson/writer.h"
+
 using namespace std;
+using namespace rapidjson;
 
 #include <string>
 #include <vector>
 #include <map>
-#include <cJSON.h>
+
+#include <esp_log.h>
 
 #include "Device.h"
 #include "WebServer.h"
@@ -30,7 +35,7 @@ class Sensor_t {
     static Sensor_t*            GetSensorByName(string);
 
     static WebServerResponse_t* HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
-    static cJSON*               PrepareValues(map<string, string>);
+    static void                 PrepareValues(map<string, string>, Writer<StringBuffer> &Writer);
 };
 
 class SensorSwitch_t : public Sensor_t {

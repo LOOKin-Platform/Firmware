@@ -5,7 +5,12 @@
   Раздел API /network
 */
 
+
+#include "../../lib/RapidJSON/include/rapidjson/stringbuffer.h"
+#include "../../lib/RapidJSON/include/rapidjson/Writer.h"
+
 using namespace std;
+using namespace rapidjson;
 
 #include <string>
 #include <vector>
@@ -53,8 +58,9 @@ class Network_t : public API {
     string IPToString();
     string ModeToString();
     string WiFiSSIDToString();
-    cJSON* APListToJSON();
-    cJSON* DevicesToJSON();
+
+    void DeviceToJSON(NetworkDevice_t * NetworkDevice, Writer<StringBuffer> &Writer);
+
 };
 
 #endif

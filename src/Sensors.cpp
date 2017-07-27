@@ -2,13 +2,12 @@
   Сенсоры - классы и функции, связанные с /sensors
 */
 
+#include <RapidJSON.h>
+
 #include "Globals.h"
 #include "Sensors.h"
 #include "Device.h"
 #include "Tools.h"
-
-#include <cJSON.h>
-#include <esp_log.h>
 
 #include "drivers/GPIO/GPIO.h"
 #include "drivers/Time/Time.h"
@@ -49,18 +48,20 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
     Sensor_t::UpdateSensors();
 
     WebServerResponse_t *Result = new WebServerResponse_t();
-    cJSON *Root, *Helper;
 
     // Вывести список всех сенсоров
     if (URLParts.size() == 0) {
-      // Подготовка списка сенсоров для вывода
-      vector<const char *> SensorNames;
+      StringBuffer sb;
+      Writer<StringBuffer> Writer(sb);
+
+      Writer.StartArray();
+
       for (Sensor_t* Sensor : Sensors)
-        SensorNames.push_back(Sensor->Name.c_str());
+        Writer.String(Sensor->Name.c_str());
 
-      Root = cJSON_CreateStringArray(SensorNames.data(), SensorNames.size());
+      Writer.EndArray();
 
-      Result->Body = string(cJSON_Print(Root));
+      Result->Body = string(sb.GetString());
     }
 
     // Запрос значений конкретного сенсора
@@ -70,20 +71,23 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
 
       if (Sensor->Values.size() > 0) {
 
-        Root = Sensor_t::PrepareValues(Sensor->Values["Primary"]);
+        StringBuffer sb;
+        Writer<StringBuffer> Writer(sb);
+
+        Sensor_t::PrepareValues(Sensor->Values["Primary"], Writer);
+
         // Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
         if (Sensor->Values.size() > 1) {
-
           for (const auto &Value : Sensor->Values)
-              if (Value.first != "Primary") {
-                  Helper = Sensor_t::PrepareValues(Value.second);
-                  cJSON_AddItemToObject   (Root, Value.first.c_str(), Helper);
-                  cJSON_Delete(Helper);
-              }
+            if (Value.first != "Primary") {
+              Writer.StartObject();
+              Writer.Key(Value.first.c_str());
+              Sensor_t::PrepareValues(Value.second, Writer);
+              Writer.EndObject();
+            }
         }
 
-        Result->Body = string(cJSON_Print(Root));
-        cJSON_Delete(Root);
+        Result->Body = string(sb.GetString());
       }
 
     }
@@ -105,11 +109,13 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
 
           if (Sensor->Values.size() > 0)
             for (const auto &Value : Sensor->Values) {
-              if (Tools::ToLower(Value.first) == URLParts[1])
-              {
-                Root = Sensor_t::PrepareValues(Value.second);
-                Result->Body = string(cJSON_Print(Root));
-                cJSON_Delete(Root);
+              if (Tools::ToLower(Value.first) == URLParts[1]) {
+
+                StringBuffer sb;
+                Writer<StringBuffer> Writer(sb);
+                Sensor_t::PrepareValues(Value.second, Writer);
+
+                Result->Body = string(sb.GetString());
                 break;
               }
           break;
@@ -137,14 +143,14 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
     return Result;
 }
 
-cJSON* Sensor_t::PrepareValues(map<string, string> Values) {
+void Sensor_t::PrepareValues(map<string, string> Values, Writer<StringBuffer> &Writer) {
 
-  cJSON *JSON = cJSON_CreateObject();
+  Writer.StartObject();
+  Writer.Key("Value");     Writer.String(Values["Value"].c_str());
+  Writer.Key("Updated");   Writer.String(Values["Updated"].c_str());
+  Writer.EndObject();
 
-  cJSON_AddStringToObject (JSON, "Value"    , Values["Value"].c_str());
-  cJSON_AddStringToObject (JSON, "Updated"  , Values["Updated"].c_str());
-
-  return JSON;
+  return;
 }
 
 /************************************/

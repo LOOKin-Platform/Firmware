@@ -1,6 +1,10 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
+/*
+  Классы для работы с API /device
+*/
+
 using namespace std;
 
 #include <string>

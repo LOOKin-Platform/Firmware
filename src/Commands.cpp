@@ -2,6 +2,8 @@
   Команды - классы и функции, связанные с /commands
 */
 
+#include <RapidJSON.h>
+
 #include "Globals.h"
 #include "Commands.h"
 #include "Device.h"
@@ -10,9 +12,6 @@
 #include "Switch_str.h"
 
 #include "GPIO/GPIO.h"
-
-#include <cJSON.h>
-#include <esp_log.h>
 
 //static char tag[] = "Commands";
 
@@ -40,17 +39,20 @@ Command_t* Command_t::GetCommandByName(string CommandName) {
 WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
 
     WebServerResponse_t *Result = new WebServerResponse_t();
-    cJSON *Root;
 
     // Вывести список всех комманд
     if (URLParts.size() == 0 && Type == QueryType::GET) {
-      // Подготовка списка команд для вывода
-      vector<const char *> CommandsNames;
-      for (Command_t* Command : Commands)
-        CommandsNames.push_back(Command->Name.c_str());
+      StringBuffer sb;
+      Writer<StringBuffer> Writer(sb);
 
-      Root = cJSON_CreateStringArray(CommandsNames.data(), CommandsNames.size());
-      Result->Body = string(cJSON_Print(Root));
+      Writer.StartArray();
+
+      for (Command_t* Command : Commands)
+        Writer.String(Command->Name.c_str());
+
+      Writer.EndArray();
+
+      Result->Body = string(sb.GetString());
     }
 
     // Запрос списка действий конкретной команды
@@ -59,13 +61,15 @@ WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string>
 
       if (Command->Events.size() > 0)
       {
-        vector<const char *> EventsNames;
-        for (auto& Event: Command->Events)
-          EventsNames.push_back(Event.first.c_str());
+        StringBuffer sb;
+        Writer<StringBuffer> Writer(sb);
 
-        Root = cJSON_CreateStringArray(EventsNames.data(), EventsNames.size());
-        Result->Body = string(cJSON_Print(Root));
-        cJSON_Delete(Root);
+        Writer.StartArray();
+        for (auto& Event: Command->Events)
+          Writer.String(Event.first.c_str());
+        Writer.EndArray();
+
+        Result->Body = string(sb.GetString());
       }
     }
 
