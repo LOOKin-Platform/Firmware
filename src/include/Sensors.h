@@ -5,11 +5,7 @@
   Сенсоры - классы и функции, связанные с /sensors
 */
 
-#include "../../lib/RapidJSON/include/rapidjson/stringbuffer.h"
-#include "../../lib/RapidJSON/include/rapidjson/writer.h"
-
-using namespace std;
-using namespace rapidjson;
+#include "JSON.h"
 
 #include <string>
 #include <vector>
@@ -19,6 +15,9 @@ using namespace rapidjson;
 
 #include "Device.h"
 #include "WebServer.h"
+
+using namespace std;
+using namespace rapidjson;
 
 class Sensor_t {
   public:

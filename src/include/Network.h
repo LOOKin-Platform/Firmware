@@ -5,12 +5,8 @@
   Раздел API /network
 */
 
-
-#include "../../lib/RapidJSON/include/rapidjson/stringbuffer.h"
-#include "../../lib/RapidJSON/include/rapidjson/Writer.h"
-
-using namespace std;
-using namespace rapidjson;
+#include "stringbuffer.h"
+#include "writer.h"
 
 #include <string>
 #include <vector>
@@ -20,6 +16,9 @@ using namespace rapidjson;
 #include "WebServer.h"
 #include "API.h"
 #include "Device.h"
+
+using namespace std;
+using namespace rapidjson;
 
 #define  NVSNetworkWiFiSSID     "WiFiSSID"
 #define  NVSNetworkWiFiPassword "WiFiPassword"
@@ -59,7 +58,7 @@ class Network_t : public API {
     string ModeToString();
     string WiFiSSIDToString();
 
-    void DeviceToJSON(NetworkDevice_t * NetworkDevice, Writer<StringBuffer> &Writer);
+    void DeviceToJSON(NetworkDevice_t *NetworkDevice, Writer<StringBuffer> &Writer);
 
 };
 

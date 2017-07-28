@@ -45,12 +45,11 @@ WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string>
       StringBuffer sb;
       Writer<StringBuffer> Writer(sb);
 
-      Writer.StartArray();
-
+      vector<string> *JSONVector = new vector<string>();
       for (Command_t* Command : Commands)
-        Writer.String(Command->Name.c_str());
+        JSONVector->push_back(Command->Name);
 
-      Writer.EndArray();
+      JSON_t::CreateArrayFromVector(*JSONVector, Writer);
 
       Result->Body = string(sb.GetString());
     }
@@ -64,10 +63,11 @@ WebServerResponse_t* Command_t::HandleHTTPRequest(QueryType Type, vector<string>
         StringBuffer sb;
         Writer<StringBuffer> Writer(sb);
 
-        Writer.StartArray();
+        vector<string> *JSONVector = new vector<string>();
         for (auto& Event: Command->Events)
-          Writer.String(Event.first.c_str());
-        Writer.EndArray();
+          JSONVector->push_back(Event.first);
+
+        JSON_t::CreateArrayFromVector(*JSONVector, Writer);
 
         Result->Body = string(sb.GetString());
       }

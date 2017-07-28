@@ -2,7 +2,7 @@
   Класс для работы с API /network
 */
 
-#include <RapidJSON.h>
+#include "JSON.h"
 
 #include <string.h>
 
@@ -148,9 +148,14 @@ WebServerResponse_t* Network_t::HandleHTTPRequest(QueryType Type, vector<string>
       Writer<StringBuffer> Writer(sb);
 
       Writer.StartObject();
-      Writer.Key("Mode");             Writer.String(ModeToString().c_str());
-      Writer.Key("IP");               Writer.String(IPToString().c_str());
-      Writer.Key("WiFiSSID");         Writer.String(WiFiSSIDToString().c_str());
+
+      map<string,string> JSONMap = {
+        {"Mode"     , ModeToString()},
+        {"IP"       , IPToString()},
+        {"WiFiSSID" , WiFiSSIDToString()}
+      };
+
+      JSON_t::AddToObjectFromMap(JSONMap, Writer);
 
       Writer.Key("Devices");
       Writer.StartArray();
@@ -276,14 +281,16 @@ string Network_t::WiFiSSIDToString() {
   return WiFiSSID;
 }
 
-void Network_t::DeviceToJSON(NetworkDevice_t * NetworkDevice, Writer<StringBuffer> &Writer) {
+void Network_t::DeviceToJSON(NetworkDevice_t *NetworkDevice, Writer<StringBuffer> &Writer) {
 
-  Writer.StartObject();
-  Writer.Key("Type");       Writer.String(DeviceType_t::ToString(NetworkDevice->TypeHex).c_str());
-  Writer.Key("ID");         Writer.String(NetworkDevice->ID.c_str());
-  Writer.Key("IP");         Writer.String(NetworkDevice->IP.c_str());
-  Writer.Key("IsActive");   Writer.Bool(NetworkDevice->IsActive);
-  Writer.EndObject();
+  map<string,string> JSONMap = {
+    {"Type"     , DeviceType_t::ToString(NetworkDevice->TypeHex)},
+    {"ID"       , NetworkDevice->ID},
+    {"IP"       , NetworkDevice->IP},
+    {"IsActive" , (NetworkDevice->IsActive == true) ? "1" : "0" }
+  };
+
+  JSON_t::CreateObjectFromMap(JSONMap, Writer);
 
   return;
 }

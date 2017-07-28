@@ -2,8 +2,6 @@
   Сенсоры - классы и функции, связанные с /sensors
 */
 
-#include <RapidJSON.h>
-
 #include "Globals.h"
 #include "Sensors.h"
 #include "Device.h"
@@ -30,8 +28,7 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 Sensor_t* Sensor_t::GetSensorByName(string SensorName) {
 
   for (Sensor_t* Sensor : Sensors)
-    if (Tools::ToLower(Sensor->Name) == Tools::ToLower(SensorName))
-    {
+    if (Tools::ToLower(Sensor->Name) == Tools::ToLower(SensorName)) {
       return Sensor;
     }
 
@@ -54,12 +51,11 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
       StringBuffer sb;
       Writer<StringBuffer> Writer(sb);
 
-      Writer.StartArray();
-
+      vector<string> *JSONVector = new vector<string>();
       for (Sensor_t* Sensor : Sensors)
-        Writer.String(Sensor->Name.c_str());
+        JSONVector->push_back(Sensor->Name);
 
-      Writer.EndArray();
+      JSON_t::CreateArrayFromVector(*JSONVector, Writer);
 
       Result->Body = string(sb.GetString());
     }
@@ -145,10 +141,12 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
 
 void Sensor_t::PrepareValues(map<string, string> Values, Writer<StringBuffer> &Writer) {
 
-  Writer.StartObject();
-  Writer.Key("Value");     Writer.String(Values["Value"].c_str());
-  Writer.Key("Updated");   Writer.String(Values["Updated"].c_str());
-  Writer.EndObject();
+  map<string,string> JSONMap = {
+    {"Value"               , Values["Value"]},
+    {"Updated"             , Values["Updated"]}
+  };
+
+  JSON_t::CreateObjectFromMap(JSONMap, Writer);
 
   return;
 }

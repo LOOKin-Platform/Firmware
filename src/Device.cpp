@@ -9,7 +9,9 @@
 #include <sstream>
 #include <iomanip>
 
-#include <RapidJSON.h>
+#include "JSON.h"
+//#include "stringbuffer.h"
+//#include "writer.h"
 
 #include "Globals.h"
 #include "Device.h"
@@ -129,18 +131,18 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
       StringBuffer sb;
       Writer<StringBuffer> Writer(sb);
 
-      Writer.StartObject();
-      Writer.Key("Type");             Writer.String(TypeToString().c_str());
-      Writer.Key("Status");           Writer.String(StatusToString().c_str());
-      Writer.Key("ID");               Writer.String(IDToString().c_str());
-      Writer.Key("Name");             Writer.String(NameToString().c_str());
-      Writer.Key("PowerMode");        Writer.String(PowerModeToString().c_str());
-      Writer.Key("FirmwareVersion");  Writer.String(FirmwareVersionToString().c_str());
-      Writer.EndObject();
+      map<string,string> JSONMap = {
+        {"Type"               , TypeToString()},
+        {"Status"             , StatusToString()},
+        {"ID"                 , IDToString()},
+        {"Name"               , NameToString()},
+        {"PowerMode"          , PowerModeToString()},
+        {"FirmwareVersion"    , FirmwareVersionToString()}
+      };
+
+      JSON_t::CreateObjectFromMap(JSONMap, Writer);
 
       Result->Body = string(sb.GetString());
-
-      sb.Clear();
     }
 
     // Запрос конкретного параметра
