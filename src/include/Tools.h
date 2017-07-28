@@ -1,10 +1,12 @@
 #ifndef TOOLS_H
 #define TOOLS_H
 
-using namespace std;
-
 #include <string>
 #include <vector>
+
+#include <Tools.h>
+
+using namespace std;
 
 class Tools {
   public:
@@ -16,7 +18,10 @@ class Tools {
     static void     rTrim(string &);  // right trim
     static void     Trim(string &);   // trim
 
+    static string   ToString(int8_t);
     static string   ToString(uint8_t);
+    static string   ToString(uint32_t);
+
     static vector<string>  DivideStrBySymbol(string, char);
 };
 #endif

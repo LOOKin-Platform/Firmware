@@ -15,6 +15,7 @@ using namespace std;
 #include "WiFi/WiFi.h"
 #include "WiFi/WiFiEventHandler.h"
 #include "drivers/FreeRTOS/Timer.h"
+#include "Time/Time.h"
 
 
 extern "C" {
@@ -77,6 +78,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		Network->IP = event_sta_got_ip.ip_info;
 		WebServer->UDPSendBroadcastAlive();
 		WebServer->UDPSendBroadcastDiscover();
+
+		Time::ServerSync(TIME_SERVER_HOST, TIME_API_URL);
 		return ESP_OK;
 	}
 };
@@ -87,6 +90,8 @@ int app_main(void) {
 	ESP_LOGD(tag, "App started");
 
 	::nvs_flash_init();
+
+	Time::SetTimezone();
 
 	Device->Init();
 	Network->Init();

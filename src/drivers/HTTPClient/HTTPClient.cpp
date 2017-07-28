@@ -6,9 +6,8 @@ HTTPClient_t::HTTPClient_t() {
   SocketID        = -1;
   HTTPRequest[128]= {0};
   BufferSize      = 1024;
-
+  Port            = "80";
   Method          = "GET";
-
   Task            = new HTTPClientTask_t();
 }
 
@@ -91,6 +90,21 @@ void HTTPClientTask_t::Run(void *data) {
 bool HTTPClient_t::HttpConnect() {
   int  http_connect_flag = -1;
   struct sockaddr_in sock_info;
+
+  if (IP.empty()) {
+    ESP_LOGI(tag, "IP not specified. Trying to resolve IP address");
+
+    struct hostent *hp = gethostbyname(Hostname.c_str());
+    if(hp == NULL) {
+      ESP_LOGE(tag, "Can't resolve IP adress");
+      task_fatal_error();
+    }
+    else {
+      IP = inet_ntoa(*( struct in_addr*)( hp -> h_addr_list[0]));
+      ESP_LOGI(tag, "IP adress resolved %s", IP.c_str());
+    }
+  }
+
 
   SocketID = socket(AF_INET, SOCK_STREAM, 0);
 

@@ -45,8 +45,6 @@ class HTTPClient_t {
     int   ReadUntil(char *buffer, char delim, int len);
     bool  ReadPastHttpHeader(char text[], int total_len);
     void __attribute__((noreturn)) task_fatal_error();
-    //ip_addr_t ResolveHostname(string);
-
 };
 
 #endif /* DRIVERS_HTTPCLIENT_H_ */

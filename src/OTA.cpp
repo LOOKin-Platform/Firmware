@@ -16,7 +16,6 @@ void OTA_t::Update(string URL) {
   ESP_LOGI(tag, "Starting OTA...");
 
   OTAHTTPClient_t* HTTPClient = new OTAHTTPClient_t();
-  HTTPClient->IP              = OTA_SERVER_IP;
   HTTPClient->Port            = OTA_SERVER_PORT;
   HTTPClient->Hostname        = OTA_SERVER_HOST;
   HTTPClient->ContentURI      = URL;

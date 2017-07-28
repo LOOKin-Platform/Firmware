@@ -162,7 +162,7 @@ void NVS::BlobArrayRemove(string ArrayName, uint8_t Index) {
 	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
 
 	for (uint8_t i = Index; i < (ArrayCount-1) ; i++) {
-		void * tmp = GetBlob(ArrayName + "_" + Tools::ToString(i+1));
+		void * tmp = GetBlob(ArrayName + "_" + Tools::ToString((uint8_t)(i+1)));
 		SetBlob(ArrayName + "_" + Tools::ToString(i), tmp);
 	}
 
@@ -218,11 +218,11 @@ void NVS::StringArrayRemove(string ArrayName, uint8_t Index) {
 	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
 
 	for (uint8_t i = Index; i < (ArrayCount-1) ; i++) {
-		string tmp = GetString(ArrayName + "_" + Tools::ToString(i+1));
-		SetString(ArrayName + "_" + Tools::ToString(i), tmp);
+		string tmp = GetString(ArrayName + "_" + Tools::ToString((uint8_t)(i+1)));
+		SetString(ArrayName + "_" + Tools::ToString((uint8_t)i), tmp);
 	}
 
-	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
+	Erase(ArrayName + "_" + Tools::ToString((uint8_t)ArrayCount));
 	ArrayCountSet(ArrayName, (ArrayCount-1));
 }
 

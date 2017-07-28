@@ -24,12 +24,14 @@ extern Network_t            *Network;
 extern vector<Sensor_t*>    Sensors;
 extern vector<Command_t*>   Commands;
 
-#define FIRMWARE_VERSION    "0.68"
+#define FIRMWARE_VERSION    "0.69"
 
-#define OTA_SERVER_IP       "92.63.203.74"
 #define OTA_SERVER_HOST     "download.look-in.club"
 #define OTA_SERVER_PORT     "80"
 #define OTA_URL_PREFIX      "/firmwares/"
+
+#define TIME_SERVER_HOST    "api.look-in.club"
+#define TIME_API_URL        "/v1/time"
 
 #define WIFI_AP_NAME        "Beeline_" + Device->TypeToString() + "_" + Device->ID
 #define WIFI_AP_PASSWORD    Device->ID

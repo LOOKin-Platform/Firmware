@@ -43,7 +43,19 @@ void Tools::Trim(std::string &s) {
     rTrim(s);
 }
 
+string Tools::ToString(int8_t Number) {
+  ostringstream Convert;
+  Convert << +Number;
+  return Convert.str();
+}
+
 string Tools::ToString(uint8_t Number) {
+  ostringstream Convert;
+  Convert << +Number;
+  return Convert.str();
+}
+
+string Tools::ToString(uint32_t Number) {
   ostringstream Convert;
   Convert << +Number;
   return Convert.str();

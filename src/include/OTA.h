@@ -1,5 +1,3 @@
-using namespace std;
-
 #ifndef DRIVERS_OTA_H_
 #define DRIVERS_OTA_H_
 
@@ -9,6 +7,8 @@ using namespace std;
 
 #include "HTTPClient/HTTPClient.h"
 #include "Globals.h"
+
+using namespace std;
 
 #define BUFFSIZE      1024
 #define TEXT_BUFFSIZE 1024

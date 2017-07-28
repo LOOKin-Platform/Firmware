@@ -171,13 +171,13 @@ void SensorSwitch_t::Update() {
     if (Values["Primary"]["Value"] != Value)
     {
       Values["Primary"]["Value"] = Value;
-      Values["Primary"]["Updated"] = Time::GetTimeString();
+      Values["Primary"]["Updated"] = Time::UnixtimeString();
     }
   }
   else
   {
     Values["Primary"]["Value"] = Value;
-    Values["Primary"]["Updated"] = Time::GetTimeString();
+    Values["Primary"]["Updated"] = Time::UnixtimeString();
   }
 
 }

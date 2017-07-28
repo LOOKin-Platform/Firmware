@@ -68,6 +68,8 @@ class Device_t : public API {
     string GenerateID();
 
     bool POSTName(map<string,string>);
+    bool POSTTime(map<string,string>);
+    bool POSTTimezone(map<string,string>);
     bool POSTFirmwareVersion(map<string,string>, WebServerResponse_t &);
 
     string StatusToString();

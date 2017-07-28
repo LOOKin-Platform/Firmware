@@ -10,14 +10,13 @@
 #include <iomanip>
 
 #include "JSON.h"
-//#include "stringbuffer.h"
-//#include "writer.h"
 
 #include "Globals.h"
 #include "Device.h"
 #include "OTA.h"
 
 #include "NVS/NVS.h"
+#include "Time/Time.h"
 #include "Switch_str.h"
 
 static char tag[] = "Device_t";
@@ -136,6 +135,8 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
         {"Status"             , StatusToString()},
         {"ID"                 , IDToString()},
         {"Name"               , NameToString()},
+        {"Time"               , Time::UnixtimeString()},
+        {"Timezone"           , Time::TimezoneStr()},
         {"PowerMode"          , PowerModeToString()},
         {"FirmwareVersion"    , FirmwareVersionToString()}
       };
@@ -152,6 +153,8 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
       if (URLParts[0] == "status")          Result->Body = StatusToString();
       if (URLParts[0] == "id")              Result->Body = IDToString();
       if (URLParts[0] == "name")            Result->Body = NameToString();
+      if (URLParts[0] == "time")            Result->Body = Time::UnixtimeString();
+      if (URLParts[0] == "timezone")        Result->Body = Time::TimezoneStr();
       if (URLParts[0] == "powermode")       Result->Body = PowerModeToString();
       if (URLParts[0] == "firmwareversion") Result->Body = FirmwareVersionToString();
 
@@ -165,9 +168,11 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
     if (URLParts.size() == 0)
     {
       bool isNameSet            = POSTName(Params);
+      bool isTimeSet            = POSTTime(Params);
+      bool isTimezoneSet        = POSTTimezone(Params);
       bool isFirmwareVersionSet = POSTFirmwareVersion(Params, *Result);
 
-      if ((isNameSet || isFirmwareVersionSet) && Result->Body == "")
+      if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet) && Result->Body == "")
         Result->Body = "{\"success\" : \"true\"}";
     }
   }
@@ -204,6 +209,24 @@ bool Device_t::POSTName(map<string,string> Params) {
     Memory->SetString(NVSDeviceName, Name);
     Memory->Commit();
 
+    return true;
+  }
+
+  return false;
+}
+
+bool Device_t::POSTTime(map<string,string> Params) {
+  if (Params.count("time") > 0) {
+    Time::SetTime(Params["time"]);
+    return true;
+  }
+
+  return false;
+}
+
+bool Device_t::POSTTimezone(map<string,string> Params) {
+  if (Params.count("timezone") > 0) {
+    Time::SetTimezone(Params["timezone"]);
     return true;
   }
 
