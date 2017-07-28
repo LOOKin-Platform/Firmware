@@ -1,5 +1,7 @@
 #include "JSON.h"
 
+#include "document.h"
+
 void JSON_t::CreateArrayFromVector(vector<string> JSONVector, Writer<StringBuffer> &Writer) {
   Writer.StartArray();
 
@@ -20,4 +22,25 @@ void JSON_t::AddToObjectFromMap(map<string,string> JSONMap, Writer<StringBuffer>
     Writer.Key(JSONItem.first.c_str());
     Writer.String(JSONItem.second.c_str());
   }
+}
+
+string JSON_t::JSONString(map<string,string> JSONMap) {
+  StringBuffer sb;
+  Writer<StringBuffer> Writer(sb);
+
+  CreateObjectFromMap(JSONMap, Writer);
+
+  return string(sb.GetString());
+}
+
+map<string,string> JSON_t::MapFromJsonString(string JSON) {
+  map<string,string> Result = map<string,string>();
+
+  Document document;
+  document.Parse(JSON.c_str());
+
+  for (Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr)
+    Result[itr->name.GetString()] = itr->value.GetString();
+
+  return Result;
 }

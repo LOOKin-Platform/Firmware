@@ -40,10 +40,9 @@ void Network_t::Init() {
 
   // Load saved network devices from NVS
   uint8_t ArrayCount = Memory->ArrayCount(NVSNetworkDevicesArray);
+
   for (int i=0; i < ArrayCount; i++) {
-
-    NetworkDevice_t *NetworkDevice = DeserializeNetworkDevice(Memory->ArrayGet(NVSNetworkDevicesArray, i));
-
+    NetworkDevice_t *NetworkDevice = DeserializeNetworkDevice(Memory->StringArrayGet(NVSNetworkDevicesArray, i));
     if (NetworkDevice->ID != "") {
       NetworkDevice->IsActive = false;
       Devices.push_back(NetworkDevice);
@@ -72,9 +71,8 @@ void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
           Devices.at(i)->IP       = IP;
           Devices.at(i)->IsActive = false;
 
-          char *Data = SerializeNetworkDevice(Devices.at(i));
-          size_t DataLength = strlen(Data);
-          Memory->ArrayReplace(NVSNetworkDevicesArray, i, Data, DataLength);
+          string Data = SerializeNetworkDevice(Devices.at(i));
+          Memory->StringArrayReplace(NVSNetworkDevicesArray, i, Data);
           Memory->Commit();
         }
 
@@ -93,41 +91,40 @@ void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
 
     Devices.push_back(Device);
 
-    char *Data = SerializeNetworkDevice(Device);
-    size_t DataLength = strlen(Data);
+    string Data = SerializeNetworkDevice(Device);
 
-    Memory->ArrayAdd(NVSNetworkDevicesArray, Data, DataLength);
+    Memory->StringArrayAdd(NVSNetworkDevicesArray, Data);
     Memory->Commit();
   }
 }
 
 
-char * Network_t::SerializeNetworkDevice(NetworkDevice_t* Item) {
-  string SerialString = "";
+string Network_t::SerializeNetworkDevice(NetworkDevice_t* Item) {
+  string Result = "";
 
-  if (Item != NULL)
-    SerialString = DeviceType_t::ToHexString(Item->TypeHex) + "|" + Item->ID + "|" + Item->IP + "|";
+  map<string,string> ItemMap = {
+    {"TypeHex"  , DeviceType_t::ToHexString(Item->TypeHex)},
+    {"ID"       , Item->ID},
+    {"IP"       , Item->IP}
+  };
 
-  char *Result = new char[SerialString.length() + 1]; //
-  strcpy(Result, SerialString.c_str());
-
-  //ESP_LOGI(tag, "SERIALIZED: %s", Result);
+  Result =  JSON_t::JSONString(ItemMap);
+  //ESP_LOGI(tag, "SERIALIZED: %s", Result.c_str());
 
   return Result;
 }
 
-NetworkDevice_t* Network_t::DeserializeNetworkDevice(void *Blob) {
+NetworkDevice_t* Network_t::DeserializeNetworkDevice(string Data) {
+  //ESP_LOGI(tag, "DESERIALIZATION START %s", Data.c_str());
 
-  char *Data = (char *)Blob;
+  NetworkDevice_t* Result = new NetworkDevice_t();
+  map<string,string> Values = JSON_t::MapFromJsonString(Data);
 
-  //ESP_LOGI(tag, "DESERIALIZED %s", Data);
+  if (Values.count("ID"))        Result->ID = Values["ID"];
+  if (Values.count("IP"))        Result->IP = Values["IP"];
+  if (Values.count("TypeHex"))   Result->TypeHex = (uint8_t)strtol((Values["TypeHex"]).c_str(), NULL, 16);
 
-  vector<string> StructData = Tools::DivideStrBySymbol(string(Data), '|');
-  NetworkDevice_t *Result = new NetworkDevice_t();
-
-  if (StructData.size() > 0) Result->TypeHex = atoi(StructData[0].c_str());
-  if (StructData.size() > 1) Result->ID = StructData[1];
-  if (StructData.size() > 2) Result->IP = StructData[2];
+  Result->IsActive = false;
 
   return Result;
 }

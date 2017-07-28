@@ -45,8 +45,8 @@ class Network_t : public API {
 
     void  DeviceInfoReceived(string Type, string ID, string IP);
 
-    static char * SerializeNetworkDevice(NetworkDevice_t *);
-    static NetworkDevice_t* DeserializeNetworkDevice(void *);
+    static string SerializeNetworkDevice(NetworkDevice_t *);
+    static NetworkDevice_t* DeserializeNetworkDevice(string);
 
     WebServerResponse_t*  HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
 

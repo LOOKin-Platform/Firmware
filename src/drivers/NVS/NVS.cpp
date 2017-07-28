@@ -131,7 +131,7 @@ void NVS::SetBlob(string key, void *Data, size_t datalen) {
  * @param [in] ArrayName Array name.
  * @param [in] Item The value to add in the array.
  */
-void NVS::ArrayAdd(string ArrayName, void *Item, size_t DataLength) {
+void NVS::BlobArrayAdd(string ArrayName, void *Item, size_t DataLength) {
 	uint8_t Count = ArrayCount(ArrayName);
 	if (Count < +128) {
 		SetBlob(ArrayName + "_" + Tools::ToString(Count), Item, DataLength);
@@ -146,7 +146,7 @@ void NVS::ArrayAdd(string ArrayName, void *Item, size_t DataLength) {
  * @param [in] Index The index of the neccessary array element.
  * @param [out] result void * read from the NVS array by given index. NULL if none result.
  */
-void * NVS::ArrayGet(string ArrayName, uint8_t Index) {
+void * NVS::BlobArrayGet(string ArrayName, uint8_t Index) {
 	 return GetBlob(ArrayName + "_" + Tools::ToString(Index));
 }
 
@@ -156,7 +156,7 @@ void * NVS::ArrayGet(string ArrayName, uint8_t Index) {
  * @param [in] ArrayName Array name.
  * @param [in] Index The index of the neccessary array element.
  */
-void NVS::ArrayRemove(string ArrayName, uint8_t Index) {
+void NVS::BlobArrayRemove(string ArrayName, uint8_t Index) {
 	uint8_t ArrayCount = GetInt8Bit(ArrayName);
 
 	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
@@ -177,8 +177,64 @@ void NVS::ArrayRemove(string ArrayName, uint8_t Index) {
  * @param [in] Index The index of the neccessary array element.
  * @param [in] Item Item to replace item in NVS.
  */
-void NVS::ArrayReplace(string ArrayName, uint8_t Index, void *Item, size_t DataLength) {
+void NVS::BlobArrayReplace(string ArrayName, uint8_t Index, void *Item, size_t DataLength) {
 	 return SetBlob(ArrayName + "_" + Tools::ToString(Index), Item, DataLength);
+}
+
+/**
+ * @brief Add item in the string array .
+ *
+ * @param [in] ArrayName Array name.
+ * @param [in] Item The value to add in the array.
+ */
+void NVS::StringArrayAdd(string ArrayName, string Item) {
+	uint8_t Count = ArrayCount(ArrayName);
+	if (Count < +128) {
+		SetString(ArrayName + "_" + Tools::ToString(Count), Item);
+		ArrayCountSet(ArrayName, Count+1);
+	}
+}
+
+/**
+ * @brief Retriev data from the string array by index .
+ *
+ * @param [in] ArrayName Array name.
+ * @param [in] Index The index of the neccessary array element.
+ * @param [out] result string read from the NVS array by given index. NULL if none result.
+ */
+string NVS::StringArrayGet(string ArrayName, uint8_t Index) {
+	 return GetString(ArrayName + "_" + Tools::ToString(Index));
+}
+
+/**
+ * @brief Remove row from the string array by index .
+ *
+ * @param [in] ArrayName Array name.
+ * @param [in] Index The index of the neccessary array element.
+ */
+void NVS::StringArrayRemove(string ArrayName, uint8_t Index) {
+	uint8_t ArrayCount = GetInt8Bit(ArrayName);
+
+	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
+
+	for (uint8_t i = Index; i < (ArrayCount-1) ; i++) {
+		string tmp = GetString(ArrayName + "_" + Tools::ToString(i+1));
+		SetString(ArrayName + "_" + Tools::ToString(i), tmp);
+	}
+
+	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
+	ArrayCountSet(ArrayName, (ArrayCount-1));
+}
+
+/**
+ * @brief Replace data in the array by index .
+ *
+ * @param [in] ArrayName Array name.
+ * @param [in] Index The index of the neccessary array element.
+ * @param [in] Item Item to replace item in NVS.
+ */
+void NVS::StringArrayReplace(string ArrayName, uint8_t Index, string Item) {
+	 return SetString(ArrayName + "_" + Tools::ToString(Index), Item);
 }
 
 void NVS::ArrayCountSet(string ArrayName, uint8_t Count) {
