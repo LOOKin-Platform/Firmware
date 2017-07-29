@@ -24,7 +24,7 @@ extern Network_t            *Network;
 extern vector<Sensor_t*>    Sensors;
 extern vector<Command_t*>   Commands;
 
-#define FIRMWARE_VERSION    "0.69"
+#define FIRMWARE_VERSION    "0.70"
 
 #define OTA_SERVER_HOST     "download.look-in.club"
 #define OTA_SERVER_PORT     "80"
