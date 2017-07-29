@@ -223,7 +223,7 @@ void NVS::StringArrayRemove(string ArrayName, uint8_t Index) {
 	}
 
 	Erase(ArrayName + "_" + Tools::ToString((uint8_t)ArrayCount));
-	ArrayCountSet(ArrayName, (ArrayCount-1));
+	ArrayCountSet(ArrayName, (ArrayCount == 0) ? (ArrayCount-1) : 0);
 }
 
 /**
@@ -238,11 +238,13 @@ void NVS::StringArrayReplace(string ArrayName, uint8_t Index, string Item) {
 }
 
 void NVS::ArrayCountSet(string ArrayName, uint8_t Count) {
-	 SetInt8Bit(ArrayName + ArrayCountName, Count);
+	uint8_t ArrayCount = (Count >= +128) ? 0 : Count; 	// проверка на переполнение
+	SetInt8Bit(ArrayName + ArrayCountName, ArrayCount);
 }
 
 uint8_t NVS::ArrayCount(string ArrayName) {
-	return GetInt8Bit(ArrayName + ArrayCountName);
+	uint8_t ArrayCount = GetInt8Bit(ArrayName + ArrayCountName);
+	return (ArrayCount >= +128) ? 0 : ArrayCount; 			// проверка на переполнение
 }
 
 void NVS::ArrayEraseAll(string ArrayName) {

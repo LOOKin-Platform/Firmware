@@ -47,6 +47,10 @@ void Network_t::Init() {
       NetworkDevice->IsActive = false;
       Devices.push_back(NetworkDevice);
     }
+    else {
+      Memory->StringArrayRemove(NVSNetworkDevicesArray, i);
+      Memory->Commit();
+    }
   }
 }
 

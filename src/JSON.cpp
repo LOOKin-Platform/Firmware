@@ -39,8 +39,9 @@ map<string,string> JSON_t::MapFromJsonString(string JSON) {
   Document document;
   document.Parse(JSON.c_str());
 
-  for (Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr)
-    Result[itr->name.GetString()] = itr->value.GetString();
+  if (document.IsObject())
+    for (Value::ConstMemberIterator itr = document.MemberBegin(); itr != document.MemberEnd(); ++itr)
+      Result[itr->name.GetString()] = itr->value.GetString();
 
   return Result;
 }
