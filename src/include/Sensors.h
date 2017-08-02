@@ -5,8 +5,6 @@
   Сенсоры - классы и функции, связанные с /sensors
 */
 
-#include "JSON.h"
-
 #include <string>
 #include <vector>
 #include <map>
@@ -17,13 +15,12 @@
 #include "WebServer.h"
 
 using namespace std;
-using namespace rapidjson;
 
 class Sensor_t {
   public:
-    string          ID;
-    string          Name;
-    vector<string>  EventCodes;
+    uint8_t           ID;
+    string            Name;
+    vector<uint8_t>   EventCodes;
 
     map<string, map<string, string> > Values;
 
@@ -33,14 +30,13 @@ class Sensor_t {
     static vector<Sensor_t*>    GetSensorsForDevice();
     static Sensor_t*            GetSensorByName(string);
 
-    static WebServerResponse_t* HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
-    static void                 PrepareValues(map<string, string>, Writer<StringBuffer> &Writer);
+    static void HandleHTTPRequest(WebServerResponse_t* &, QueryType, vector<string>, map<string,string>);
 };
 
 class SensorSwitch_t : public Sensor_t {
   public:
-
     SensorSwitch_t();
+
     void Update() override;
 };
 

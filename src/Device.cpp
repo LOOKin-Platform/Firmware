@@ -17,7 +17,6 @@
 
 #include "NVS/NVS.h"
 #include "Time/Time.h"
-#include "Switch_str.h"
 
 static char tag[] = "Device_t";
 static string NVSDeviceArea = "Device";
@@ -28,7 +27,7 @@ map<uint8_t, string> DeviceType_t::TypeMap = {
 
 DeviceType_t::DeviceType_t(string TypeStr) {
   for(auto const &TypeItem : TypeMap) {
-    if (Tools::ToLower(TypeItem.second) == Tools::ToLower(TypeStr))
+    if (Converter::ToLower(TypeItem.second) == Converter::ToLower(TypeStr))
       Hex = TypeItem.first;
   }
 }
@@ -46,7 +45,7 @@ string DeviceType_t::ToString() {
 }
 
 string DeviceType_t::ToHexString() {
-  return ToHexString(Hex);
+  return Converter::ToHexString(Hex,2);
 }
 
 string DeviceType_t::ToString(uint8_t Hex) {
@@ -60,41 +59,27 @@ string DeviceType_t::ToString(uint8_t Hex) {
   return Result;
 }
 
-string DeviceType_t::ToHexString(uint8_t Hex) {
-  stringstream sstream;
-  sstream << std::uppercase << std::setfill('0') << std::setw(2) << std::hex << (int)Hex;
-  return (sstream.str());
-}
-
-Device_t::Device_t()
-{
+Device_t::Device_t() {
     ESP_LOGD(tag, "Constructor");
 
     Type              = new DeviceType_t(DEVICE_TYPE_PLUG_HEX);
     Status            = DeviceStatus::RUNNING;
-    ID                = "";
+    ID                = 0;
     Name              = "";
     PowerMode         = DevicePowerMode::CONST;
     PowerModeVoltage  = 220;
     FirmwareVersion   = FIRMWARE_VERSION;
 }
 
-void Device_t::Init()
-{
+void Device_t::Init() {
   ESP_LOGD(tag, "Init");
 
   NVS *Memory = new NVS(NVSDeviceArea);
 
-  //Type = new DeviceType_t(Memory->GetInt8Bit(NVSDeviceType));
-
-  string IDStr = Memory->GetString(NVSDeviceID);
-  if (!IDStr.empty() && IDStr.length() == 8)
-    ID = IDStr;
-  else
-  {
-    // Настройка как нового устройства
+  ID = Memory->GetUInt32Bit(NVSDeviceID);
+  if (ID == 0) {
     ID = GenerateID();
-    Memory->SetString(NVSDeviceID, ID);
+    Memory->SetUInt32Bit(NVSDeviceID, ID);
     Memory->Commit();
   }
 
@@ -114,23 +99,19 @@ void Device_t::Init()
   }
 
   Memory->Commit();
+  delete Memory;
 }
 
-WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Device_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
   ESP_LOGD(tag, "HandleHTTPRequest");
 
-  WebServerResponse_t* Result = new WebServerResponse_t();
-
   // обработка GET запроса - получение данных
-  if (Type == QueryType::GET)
-  {
+  if (Type == QueryType::GET) {
     // Запрос JSON со всеми параметрами
-    if (URLParts.size() == 0)
-    {
-      StringBuffer sb;
-      Writer<StringBuffer> Writer(sb);
+    if (URLParts.size() == 0) {
+      JSON_t *JSON = new JSON_t();
 
-      map<string,string> JSONMap = {
+      JSON->SetParam({
         {"Type"               , TypeToString()},
         {"Status"             , StatusToString()},
         {"ID"                 , IDToString()},
@@ -139,16 +120,14 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
         {"Timezone"           , Time::TimezoneStr()},
         {"PowerMode"          , PowerModeToString()},
         {"FirmwareVersion"    , FirmwareVersionToString()}
-      };
+      });
 
-      JSON_t::CreateObjectFromMap(JSONMap, Writer);
-
-      Result->Body = string(sb.GetString());
+      Result->Body = JSON->ToString();
+      delete JSON;
     }
 
     // Запрос конкретного параметра
-    if (URLParts.size() == 1)
-    {
+    if (URLParts.size() == 1) {
       if (URLParts[0] == "type")            Result->Body = TypeToString();
       if (URLParts[0] == "status")          Result->Body = StatusToString();
       if (URLParts[0] == "id")              Result->Body = IDToString();
@@ -176,12 +155,10 @@ WebServerResponse_t* Device_t::HandleHTTPRequest(QueryType Type, vector<string> 
         Result->Body = "{\"success\" : \"true\"}";
     }
   }
-
-  return Result;
 }
 
 // Генерация ID на основе MAC-адреса чипа
-string Device_t::GenerateID() {
+uint32_t Device_t::GenerateID() {
 
   uint8_t mac[6];
 	esp_wifi_get_mac(WIFI_IF_AP, mac);
@@ -195,7 +172,7 @@ string Device_t::GenerateID() {
   stringstream Hash;
   Hash << std::uppercase << std::hex << (int)str_hash;
 
-  return Hash.str();
+  return Converter::UintFromHexString<uint32_t>(Hash.str());
 }
 
 bool Device_t::POSTName(map<string,string> Params) {
@@ -208,6 +185,7 @@ bool Device_t::POSTName(map<string,string> Params) {
     NVS *Memory = new NVS(NVSDeviceArea);
     Memory->SetString(NVSDeviceName, Name);
     Memory->Commit();
+    delete Memory;
 
     return true;
   }
@@ -287,7 +265,7 @@ string Device_t::StatusToString() {
 }
 
 string Device_t::IDToString() {
-    return (ID.length() == 8) ? ID : "";
+    return (ID > 0) ? Converter::ToHexString(ID, 8) : "";
 }
 
 string Device_t::NameToString() {

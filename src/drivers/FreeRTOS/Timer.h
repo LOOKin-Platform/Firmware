@@ -4,12 +4,16 @@
 #include <FreeRTOS/task.h>
 #include <FreeRTOS/timers.h>
 
+#include <string>
+
+using namespace std;
+
 /**
  * @brief Wrapper around the %FreeRTOS timer functions.
  */
 class Timer_t {
 public:
-	Timer_t(char *Name, TickType_t period, UBaseType_t reload, void *data, void (*callback)(Timer_t *pTimer));
+	Timer_t(string Name, TickType_t period, UBaseType_t reload, void *data, void (*callback)(Timer_t *pTimer));
 	virtual ~Timer_t();
 	void ChangePeriod(TickType_t newPeriod, TickType_t blockTime=portMAX_DELAY);
 	void *GetData();

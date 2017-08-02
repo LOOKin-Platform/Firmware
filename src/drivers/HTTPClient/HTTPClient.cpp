@@ -8,7 +8,7 @@ HTTPClient_t::HTTPClient_t() {
   BufferSize      = 1024;
   Port            = "80";
   Method          = "GET";
-  Task            = new HTTPClientTask_t();
+  Task            = nullptr;
 }
 
 void HTTPClient_t::Request() {
@@ -18,20 +18,21 @@ void HTTPClient_t::Request() {
   sprintf(HTTPRequest, "%s %s HTTP/1.1\r\nHost: %s:%s \r\n\r\n", Method.c_str(), ContentURI.c_str(), Hostname.c_str(), Port.c_str());
 
   Task = new HTTPClientTask_t();
+
   Task->SetStackSize(8096);
   Task->Start((void *)this);
 }
 
 void HTTPClientTask_t::Run(void *data) {
-  HTTPClient_t* HTTPClient = (HTTPClient_t*)data;
+  HTTPClient_t *HTTPClient = (HTTPClient_t*)data;
 
   /*connect to http server*/
   if (HTTPClient->HttpConnect()) {
-      ESP_LOGI(tag, "Connected to http server");
+    ESP_LOGI(tag, "Connected to http server");
   }
   else {
-      ESP_LOGE(tag, "Connect to http server failed!");
-      HTTPClient->task_fatal_error();
+    ESP_LOGE(tag, "Connect to http server failed!");
+    HTTPClient->task_fatal_error();
   }
 
   int res = -1;
@@ -82,6 +83,7 @@ void HTTPClientTask_t::Run(void *data) {
   if (!HTTPClient->ReadFinished())
     HTTPClient->task_fatal_error();
 
+  delete HTTPClient;
   Stop();
 
   return ;
@@ -154,13 +156,11 @@ bool HTTPClient_t::ReadPastHttpHeader(char text[], int total_len) {
     int i = 0, i_read_len = 0;
     char ReadData[BufferSize + 1] = { 0 };
 
-    while (text[i] != 0 && i < total_len)
-    {
+    while (text[i] != 0 && i < total_len) {
         i_read_len = ReadUntil(&text[i], '\n', total_len);
         // if we resolve \r\n line,we think packet header is finished
 
-        if (i_read_len == 2)
-        {
+        if (i_read_len == 2) {
             int i_write_len = total_len - (i + 2);
 
             memset(ReadData, 0, BufferSize);
@@ -181,9 +181,8 @@ void __attribute__((noreturn)) HTTPClient_t::task_fatal_error()
 {
     ESP_LOGE(tag, "Exiting HTTPClient task due to fatal error...");
     close(SocketID);
-    Task->Stop();
-
     Aborted();
+    Task->Stop();
 
     while (1) {
         ;

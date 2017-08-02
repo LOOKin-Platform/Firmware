@@ -8,13 +8,14 @@ using namespace std;
 #include <map>
 
 #include "Query.h"
+#include "WebServer.h"
 
 class API {
   public:
     string NVSAreaName;
 
-    static WebServerResponse_t* Handle(Query_t Query);
-    static WebServerResponse_t* Handle(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    static void Handle(WebServerResponse_t* &, Query_t Query);
+    static void Handle(WebServerResponse_t* &, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody = "");
 };
 
 #endif

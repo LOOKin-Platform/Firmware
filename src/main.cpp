@@ -17,7 +17,6 @@ using namespace std;
 #include "drivers/FreeRTOS/Timer.h"
 #include "Time/Time.h"
 
-
 extern "C" {
 	int app_main(void);
 }
@@ -29,6 +28,7 @@ WebServer_t 				*WebServer 	= new WebServer_t();
 
 Device_t						*Device			= new Device_t();
 Network_t						*Network		= new Network_t();
+Automation_t				*Automation	= new Automation_t();
 
 vector<Sensor_t*>		Sensors 		= Sensor_t::GetSensorsForDevice();
 vector<Command_t*>	Commands 		= Command_t::GetCommandsForDevice();
@@ -95,6 +95,7 @@ int app_main(void) {
 
 	Device->Init();
 	Network->Init();
+	Automation->Init();
 
 	WiFi->setWifiEventHandler(new MyWiFiEventHandler());
 	IPDidntGetTimer =	new Timer_t("IPDidntGetTimer",WIFI_IP_COUNTDOWN/portTICK_PERIOD_MS, pdFALSE, NULL, IPDidntGetCallback);

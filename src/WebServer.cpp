@@ -1,3 +1,9 @@
+/*
+*    Webserver.cpp
+*    Class for handling TCP and UDP connections
+*
+*/
+
 using namespace std;
 
 #include <stdio.h>
@@ -9,19 +15,15 @@ using namespace std;
 #include "drivers/FreeRTOS/FreeRTOS.h"
 
 #include "Query.h"
-#include "Switch_str.h"
 #include "API.h"
 
 #include <esp_log.h>
 
 static char tag[] = "WebServer";
 
-/*
-  WebServer_t - class for manage UDP and TCP connections
-*/
-
 WebServer_t::WebServer_t() {
-  HTTPListenerTaskHandle = NULL;
+  HTTPListenerTaskHandle  = NULL;
+  UDPListenerTaskHandle   = NULL;
 }
 
 void WebServer_t::Start() {
@@ -47,7 +49,7 @@ void WebServer_t::UDPSendBroadcastDiscover() {
 }
 
 string WebServer_t::UDPAliveBody() {
-  string Message = "Alive!" + Device->Type->ToHexString() + ":" +  Device->ID + ":" + inet_ntoa(Network->IP);
+  string Message = "Alive!" + Device->Type->ToHexString() + ":" +  Device->IDToString() + ":" + inet_ntoa(Network->IP);
   return UDP_PACKET_PREFIX + Message;
 }
 
@@ -70,6 +72,7 @@ void WebServer_t::UDPSendBroadcast(string Message) {
   netconn_send(Connection, Buffer);
 
   netbuf_delete(Buffer); // De-allocate packet buffer
+  netconn_close(Connection);
 
   ESP_LOGI(tag, "UDP broadcast \"%s\" sended", Message.c_str());
 }
@@ -99,7 +102,7 @@ void WebServer_t::UDPListenerTask(void *data)
       outBuffer = netbuf_new();
 
       // answer to the Discover query
-      if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device->ID)) {
+      if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device->IDToString())) {
 
         string Answer = WebServer_t::UDPAliveBody();
 
@@ -115,7 +118,7 @@ void WebServer_t::UDPListenerTask(void *data)
       if (AliveFound != string::npos) {
         string Alive = Datagram;
         Alive.replace(Alive.find(AliveText),AliveText.length(),"");
-        vector<string> Data = Tools::DivideStrBySymbol(Alive, ':');
+        vector<string> Data = Converter::StringToVector(Alive, ":");
 
         if (Data.size() > 2)
           Network->DeviceInfoReceived(Data[0], Data[1], Data[2]);
@@ -133,8 +136,7 @@ void WebServer_t::UDPListenerTask(void *data)
   netconn_delete(Connection);
 }
 
-void WebServer_t::HTTPListenerTask(void *data)
-{
+void WebServer_t::HTTPListenerTask(void *data) {
   ESP_LOGD(tag, "HTTPListenerTask Run");
 
   struct netconn *conn, *newconn;
@@ -157,9 +159,8 @@ void WebServer_t::HTTPListenerTask(void *data)
   netconn_delete(conn);
 }
 
-void WebServer_t::HandleHTTP(struct netconn *conn)
-{
-  ESP_LOGD(tag, "WebServer HandleHTTP");
+void WebServer_t::HandleHTTP(struct netconn *conn) {
+  ESP_LOGD(tag, "Handle HTTP Query");
 
   struct netbuf *inbuf;
   char *buf;
@@ -174,11 +175,16 @@ void WebServer_t::HandleHTTP(struct netconn *conn)
 
 	  Query_t Query(buf);
 
-    WebServerResponse_t *Response = API::Handle(Query);
-    string StrResponse = Response->toString();
+    WebServerResponse_t *Response =  new WebServerResponse_t();
 
+    API::Handle(Response, Query);
+
+    string StrResponse = Response->toString();
     netconn_write(conn, StrResponse.c_str(), StrResponse.length(), NETCONN_NOCOPY);
+
+    delete Response;
   }
+
   netconn_close(conn);
   netbuf_delete(inbuf);
 }
@@ -216,20 +222,16 @@ void WebServerResponse_t::SetFail() {
 }
 
 
-string WebServerResponse_t::ResponseCodeToString()
-{
-  switch (ResponseCode)
-  {
+string WebServerResponse_t::ResponseCodeToString() {
+  switch (ResponseCode) {
     case CODE::INVALID  : return "400"; break;
     case CODE::ERROR    : return "500"; break;
     default             : return "200"; break;
   }
 }
 
-string WebServerResponse_t::ContentTypeToString()
-{
-  switch (ContentType)
-  {
+string WebServerResponse_t::ContentTypeToString() {
+  switch (ContentType) {
     case TYPE::PLAIN  : return "text/plain"; break;
     case TYPE::JSON   : return "application/json"; break;
     default           : return "";

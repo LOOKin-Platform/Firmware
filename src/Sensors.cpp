@@ -5,7 +5,8 @@
 #include "Globals.h"
 #include "Sensors.h"
 #include "Device.h"
-#include "Tools.h"
+#include "Converter.h"
+#include "JSON.h"
 
 #include "drivers/GPIO/GPIO.h"
 #include "drivers/Time/Time.h"
@@ -28,7 +29,7 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 Sensor_t* Sensor_t::GetSensorByName(string SensorName) {
 
   for (Sensor_t* Sensor : Sensors)
-    if (Tools::ToLower(Sensor->Name) == Tools::ToLower(SensorName)) {
+    if (Converter::ToLower(Sensor->Name) == Converter::ToLower(SensorName)) {
       return Sensor;
     }
 
@@ -40,24 +41,19 @@ void Sensor_t::UpdateSensors() {
     Sensor->Update();
 }
 
-WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
 
     Sensor_t::UpdateSensors();
 
-    WebServerResponse_t *Result = new WebServerResponse_t();
-
     // Вывести список всех сенсоров
     if (URLParts.size() == 0) {
-      StringBuffer sb;
-      Writer<StringBuffer> Writer(sb);
+      JSON_t *JSON = new JSON_t();
 
-      vector<string> *JSONVector = new vector<string>();
       for (Sensor_t* Sensor : Sensors)
-        JSONVector->push_back(Sensor->Name);
+        JSON->AddToVector(Sensor->Name);
 
-      JSON_t::CreateArrayFromVector(*JSONVector, Writer);
-
-      Result->Body = string(sb.GetString());
+      Result->Body = JSON->ToString(true);
+      delete JSON;
     }
 
     // Запрос значений конкретного сенсора
@@ -66,33 +62,38 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
       Sensor_t* Sensor = Sensor_t::GetSensorByName(URLParts[0]);
 
       if (Sensor->Values.size() > 0) {
+        JSON_t *JSON = new JSON_t();
 
-        StringBuffer sb;
-        Writer<StringBuffer> Writer(sb);
-
-        Sensor_t::PrepareValues(Sensor->Values["Primary"], Writer);
+        JSON->SetParam({
+          {"Value"               , Sensor->Values["Primary"]["Value"]},
+          {"Updated"             , Sensor->Values["Primary"]["Updated"]}
+        });
 
         // Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
         if (Sensor->Values.size() > 1) {
           for (const auto &Value : Sensor->Values)
             if (Value.first != "Primary") {
-              Writer.StartObject();
-              Writer.Key(Value.first.c_str());
-              Sensor_t::PrepareValues(Value.second, Writer);
-              Writer.EndObject();
+              map<string,string> SensorValue = Value.second;
+
+              JSON->SetObjectParam(Value.first, {
+                { "Value"   , SensorValue["Value"]},
+                { "Updated" , SensorValue["Updated"]}
+              });
             }
         }
 
-        Result->Body = string(sb.GetString());
-      }
+        Result->Body = JSON->ToString();
 
+        //delete Sensor;
+        delete JSON;
+      }
     }
 
     // Запрос строковых значений состояния конкретного сенсора
     // Или - получение JSON дополнительных значений
     if (URLParts.size() == 2)
       for (Sensor_t* Sensor : Sensors)
-        if (Tools::ToLower(Sensor->Name) == URLParts[0]) {
+        if (Converter::ToLower(Sensor->Name) == URLParts[0]) {
           if (URLParts[1] == "value") {
             Result->Body = Sensor->Values["Primary"]["Value"];
             break;
@@ -105,13 +106,18 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
 
           if (Sensor->Values.size() > 0)
             for (const auto &Value : Sensor->Values) {
-              if (Tools::ToLower(Value.first) == URLParts[1]) {
+              if (Converter::ToLower(Value.first) == URLParts[1]) {
 
-                StringBuffer sb;
-                Writer<StringBuffer> Writer(sb);
-                Sensor_t::PrepareValues(Value.second, Writer);
+                JSON_t *JSON = new JSON_t();
 
-                Result->Body = string(sb.GetString());
+                map<string,string> SensorValue = Value.second;
+                JSON->SetObjectParam(Value.first, {
+                  { "Value"   , SensorValue["Value"]},
+                  { "Updated" , SensorValue["Updated"]}
+                });
+
+                Result->Body = JSON->ToString();
+                delete JSON;
                 break;
               }
           break;
@@ -121,7 +127,7 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
     // Запрос строковых значений состояния дополнительного поля конкретного сенсора
     if (URLParts.size() == 3)
       for (Sensor_t* Sensor : Sensors)
-        if (Tools::ToLower(Sensor->Name) == URLParts[0])
+        if (Converter::ToLower(Sensor->Name) == URLParts[0])
           for (const auto &Value : Sensor->Values) {
             string ValueItemName = Value.first;
 
@@ -135,20 +141,6 @@ WebServerResponse_t* Sensor_t::HandleHTTPRequest(QueryType Type, vector<string> 
               break;
             }
           }
-
-    return Result;
-}
-
-void Sensor_t::PrepareValues(map<string, string> Values, Writer<StringBuffer> &Writer) {
-
-  map<string,string> JSONMap = {
-    {"Value"               , Values["Value"]},
-    {"Updated"             , Values["Updated"]}
-  };
-
-  JSON_t::CreateObjectFromMap(JSONMap, Writer);
-
-  return;
 }
 
 /************************************/
@@ -156,28 +148,22 @@ void Sensor_t::PrepareValues(map<string, string> Values, Writer<StringBuffer> &W
 /************************************/
 
 SensorSwitch_t::SensorSwitch_t() {
-    ID          = "10000001";
+    ID          = 0x81;
     Name        = "Switch";
-    EventCodes  = { "0000", "0001", "0010" };
+    EventCodes  = { 0x00, 0x01, 0x02 };
 }
 
 void SensorSwitch_t::Update() {
-  string Value = (GPIO::Read(SWITCH_PLUG_PIN_NUM) == true) ? "1" : "0";
+  string newValue = (GPIO::Read(SWITCH_PLUG_PIN_NUM) == true) ? "1" : "0";
+  string oldValue = "";
 
-   map<string,map<string, string>>::iterator It = Values.find("Primary");
+  if (Values.count("Primary"))
+    oldValue = Values["Primary"]["Value"];
 
-  if (It != Values.end())
-  {
-    if (Values["Primary"]["Value"] != Value)
-    {
-      Values["Primary"]["Value"] = Value;
-      Values["Primary"]["Updated"] = Time::UnixtimeString();
-    }
+  if (oldValue != newValue || Values.count("Primary") == 0) {
+    Values["Primary"]["Value"]    = newValue;
+    Values["Primary"]["Updated"]  = Time::UnixtimeString();
+
+    Automation->SensorChanged(ID, (newValue == "1") ? 0x01 : 0x02 );
   }
-  else
-  {
-    Values["Primary"]["Value"] = Value;
-    Values["Primary"]["Updated"] = Time::UnixtimeString();
-  }
-
 }

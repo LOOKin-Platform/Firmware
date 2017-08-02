@@ -13,7 +13,6 @@ NVS::~NVS() {
 	nvs_close(m_handle);
 } // ~NVS
 
-
 void NVS::Commit() {
 	nvs_commit(m_handle);
 } // commit
@@ -89,6 +88,28 @@ void NVS::SetInt8Bit(string key, uint8_t data) {
 	nvs_set_u8(m_handle, key.c_str(), data);
 } // set
 
+/**
+ * @brief Retrieve a uint 32 bit value by key.
+ *
+ * @param [in] key The key to read from the namespace.
+ * @param [out] result The uint read from the %NVS storage.
+ */
+uint32_t NVS::GetUInt32Bit(string key) {
+	uint32_t data;
+	esp_err_t nvs_err = nvs_get_u32(m_handle, key.c_str(), &data);
+
+	return (nvs_err == ESP_OK) ? data : +0;
+} // get
+
+/**
+ * @brief Set the uint 32 bit value by key.
+ *
+ * @param [in] key The key to set from the namespace.
+ * @param [in] data The value to set for the key.
+ */
+void NVS::SetUInt32Bit(string key, uint32_t data) {
+	nvs_set_u32(m_handle, key.c_str(), data);
+} // set
 
 /**
  * @brief Retrieve a blob value by key.
@@ -133,9 +154,9 @@ void NVS::SetBlob(string key, void *Data, size_t datalen) {
  */
 void NVS::BlobArrayAdd(string ArrayName, void *Item, size_t DataLength) {
 	uint8_t Count = ArrayCount(ArrayName);
-	if (Count < +128) {
-		SetBlob(ArrayName + "_" + Tools::ToString(Count), Item, DataLength);
-		ArrayCountSet(ArrayName, Count+1);
+	if (Count < +MAX_NVSARRAY_INDEX) {
+		SetBlob(ArrayName + "_" + Converter::ToString(Count), Item, DataLength);
+		ArrayCountSet(ArrayName, Count);
 	}
 }
 
@@ -147,7 +168,7 @@ void NVS::BlobArrayAdd(string ArrayName, void *Item, size_t DataLength) {
  * @param [out] result void * read from the NVS array by given index. NULL if none result.
  */
 void * NVS::BlobArrayGet(string ArrayName, uint8_t Index) {
-	 return GetBlob(ArrayName + "_" + Tools::ToString(Index));
+	 return GetBlob(ArrayName + "_" + Converter::ToString(Index));
 }
 
 /**
@@ -157,17 +178,17 @@ void * NVS::BlobArrayGet(string ArrayName, uint8_t Index) {
  * @param [in] Index The index of the neccessary array element.
  */
 void NVS::BlobArrayRemove(string ArrayName, uint8_t Index) {
-	uint8_t ArrayCount = GetInt8Bit(ArrayName);
+	uint8_t Count = ArrayCount(ArrayName);
 
-	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
+	Erase(ArrayName + "_" + Converter::ToString(Index));
 
-	for (uint8_t i = Index; i < (ArrayCount-1) ; i++) {
-		void * tmp = GetBlob(ArrayName + "_" + Tools::ToString((uint8_t)(i+1)));
-		SetBlob(ArrayName + "_" + Tools::ToString(i), tmp);
+	for (uint8_t i = Index; i < (Count-1) ; i++) {
+		void * tmp = GetBlob(ArrayName + "_" + Converter::ToString((uint8_t)(i+1)));
+		SetBlob(ArrayName + "_" + Converter::ToString((uint8_t)i), tmp);
 	}
 
-	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
-	ArrayCountSet(ArrayName, (ArrayCount-1));
+	Erase(ArrayName + "_" + Converter::ToString((uint8_t)(Count-1)));
+	ArrayCountSet(ArrayName, (Count != 0) ? (Count-1) : 0);
 }
 
 /**
@@ -178,7 +199,7 @@ void NVS::BlobArrayRemove(string ArrayName, uint8_t Index) {
  * @param [in] Item Item to replace item in NVS.
  */
 void NVS::BlobArrayReplace(string ArrayName, uint8_t Index, void *Item, size_t DataLength) {
-	 return SetBlob(ArrayName + "_" + Tools::ToString(Index), Item, DataLength);
+	 return SetBlob(ArrayName + "_" + Converter::ToString(Index), Item, DataLength);
 }
 
 /**
@@ -186,13 +207,17 @@ void NVS::BlobArrayReplace(string ArrayName, uint8_t Index, void *Item, size_t D
  *
  * @param [in] ArrayName Array name.
  * @param [in] Item The value to add in the array.
+ * @param [out] Inserted item index. If Failed = 255
  */
-void NVS::StringArrayAdd(string ArrayName, string Item) {
+uint8_t NVS::StringArrayAdd(string ArrayName, string Item) {
 	uint8_t Count = ArrayCount(ArrayName);
-	if (Count < +128) {
-		SetString(ArrayName + "_" + Tools::ToString(Count), Item);
+	if (Count < +MAX_NVSARRAY_INDEX) {
+		SetString(ArrayName + "_" + Converter::ToString(Count), Item);
 		ArrayCountSet(ArrayName, Count+1);
+		return Count;
 	}
+
+	return MAX_NVSARRAY_INDEX +1;
 }
 
 /**
@@ -203,7 +228,7 @@ void NVS::StringArrayAdd(string ArrayName, string Item) {
  * @param [out] result string read from the NVS array by given index. NULL if none result.
  */
 string NVS::StringArrayGet(string ArrayName, uint8_t Index) {
-	 return GetString(ArrayName + "_" + Tools::ToString(Index));
+	 return GetString(ArrayName + "_" + Converter::ToString(Index));
 }
 
 /**
@@ -213,17 +238,17 @@ string NVS::StringArrayGet(string ArrayName, uint8_t Index) {
  * @param [in] Index The index of the neccessary array element.
  */
 void NVS::StringArrayRemove(string ArrayName, uint8_t Index) {
-	uint8_t ArrayCount = GetInt8Bit(ArrayName);
+	uint8_t Count = ArrayCount(ArrayName);
 
-	Erase(ArrayName + "_" + Tools::ToString(ArrayCount));
+	Erase(ArrayName + "_" + Converter::ToString(Index));
 
-	for (uint8_t i = Index; i < (ArrayCount-1) ; i++) {
-		string tmp = GetString(ArrayName + "_" + Tools::ToString((uint8_t)(i+1)));
-		SetString(ArrayName + "_" + Tools::ToString((uint8_t)i), tmp);
+	for (uint8_t i = Index; i < (Count-1) ; i++) {
+		string tmp = GetString(ArrayName + "_" + Converter::ToString((uint8_t)(i+1)));
+		SetString(ArrayName + "_" + Converter::ToString((uint8_t)i), tmp);
 	}
 
-	Erase(ArrayName + "_" + Tools::ToString((uint8_t)ArrayCount));
-	ArrayCountSet(ArrayName, (ArrayCount == 0) ? (ArrayCount-1) : 0);
+	Erase(ArrayName + "_" + Converter::ToString((uint8_t)(Count-1)));
+	ArrayCountSet(ArrayName, (Count != 0) ? (Count-1) : 0);
 }
 
 /**
@@ -234,7 +259,7 @@ void NVS::StringArrayRemove(string ArrayName, uint8_t Index) {
  * @param [in] Item Item to replace item in NVS.
  */
 void NVS::StringArrayReplace(string ArrayName, uint8_t Index, string Item) {
-	 return SetString(ArrayName + "_" + Tools::ToString(Index), Item);
+	 return SetString(ArrayName + "_" + Converter::ToString(Index), Item);
 }
 
 void NVS::ArrayCountSet(string ArrayName, uint8_t Count) {
@@ -250,7 +275,7 @@ uint8_t NVS::ArrayCount(string ArrayName) {
 void NVS::ArrayEraseAll(string ArrayName) {
 
 	for (uint8_t i = 0; i < 128; i++)
-		Erase(ArrayName + "_" + Tools::ToString(i));
+		Erase(ArrayName + "_" + Converter::ToString(i));
 
 	Erase(ArrayName + ArrayCountName);
 }

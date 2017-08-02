@@ -10,18 +10,42 @@
 #include <vector>
 #include <string>
 
+#include <esp_log.h>
+
 using namespace std;
 using namespace rapidjson;
 
 class JSON_t {
   public:
-    static void   CreateArrayFromVector(vector<string> JSONVector, Writer<StringBuffer> &Writer);
+    JSON_t(string = "");
+    void    Parse(string);
+    string  ToString(bool isArray = false);
 
-    static void   CreateObjectFromMap(map<string,string> JSONMap, Writer<StringBuffer> &Writer);
-    static void   AddToObjectFromMap(map<string,string> JSONMap, Writer<StringBuffer> &Writer);
+    map<string,string>          GetParam();
+    string                      GetParam(string);
+    map<string,string>          GetObjectParam(string);
+    vector<string>              GetVector(string = "");
+    vector<map<string,string>>  GetMapsArray(string);
 
-    static string JSONString(map<string,string> JSONMap);
-    static map<string,string> MapFromJsonString(string JSON);
+    void                        SetParam(string, string);
+    void                        SetParam(map<string,string>);
+    void                        SetObjectParam(string,map<string,string>);
+    void                        SetVector(vector<string>);
+    void                        SetVector(string, vector<string>);
+    void                        SetMapsArray(string, vector<map<string,string>>);
+
+    void                        AddToVector(string);
+    void                        AddToVector(string, string);
+
+  private:
+    map<string,string>              Params;
+    vector<string>                  Vector;
+    map<string,map<string,string>>  ObjectsParams;
+    map<string,vector<string>>      Arrays;
+    map<string,vector<map<string,string>>> ArraysOfObjects;
+
+  void  AddToObjectFromMap(map<string,string> JSONMap, Writer<StringBuffer> &Writer);
+  void  CreateArrayFromVector(vector<string> JSONVector, Writer<StringBuffer> &Writer, string Key = "");
 };
 
 #endif

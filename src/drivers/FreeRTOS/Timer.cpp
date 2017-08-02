@@ -42,7 +42,7 @@ void Timer_t::internalCallback(TimerHandle_t xTimer) {
  * @param [in] callback Callback function to be fired when the timer expires.
  */
 Timer_t::Timer_t(
-	char          *Name,
+	string				Name,
 	TickType_t		period,
 	UBaseType_t		reload,
 	void 					*data,
@@ -57,7 +57,7 @@ Timer_t::Timer_t(
 	assert(callback != nullptr);
 	this->period = period;
 	this->callback = callback;
-	timerHandle = ::xTimerCreate(Name, period, reload, data, internalCallback);
+	timerHandle = ::xTimerCreate(Name.c_str(), period, reload, data, internalCallback);
 
 	// Add the association between the timer handle and this class instance into the map.
 	timersMap.insert(std::make_pair(timerHandle, this));

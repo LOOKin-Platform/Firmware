@@ -19,23 +19,30 @@ using namespace std;
 
 class Command_t {
   public:
-    string              ID;
-    string              Name;
-    map<string,string>  Events;
+    uint8_t               ID;
+    string                Name;
+    map<string,uint8_t>   Events;
 
     Command_t() {};
+    virtual ~Command_t() = default;
 
-    virtual bool                Execute(string Action, map<string,string> Operand = map<string,string>()) { return true; };
+    virtual bool                Execute(uint8_t EventCode, uint32_t Operand = 0) { return true; };
+
+    uint8_t                     GetEventCode(string Action);
+
+    static Command_t*           GetCommandByName(string);
+    static Command_t*           GetCommandByID(uint8_t);
 
     static vector<Command_t*>   GetCommandsForDevice();
-    static Command_t*           GetCommandByName(string);
-    static WebServerResponse_t* HandleHTTPRequest(QueryType, vector<string>, map<string,string>);
+    static void                 HandleHTTPRequest(WebServerResponse_t* &, QueryType, vector<string>, map<string,string>);
 };
 
 class CommandSwitch_t : public Command_t {
   public:
     CommandSwitch_t();
-    bool Execute(string Action, map<string,string> Operand) override;
+    ~CommandSwitch_t() {};
+
+    bool Execute(uint8_t EventCode, uint32_t Operand) override;
 };
 
 #endif

@@ -1,0 +1,32 @@
+#define FIRMWARE_VERSION          "0.81"
+
+#define OTA_SERVER_HOST           "download.look-in.club"
+#define OTA_SERVER_PORT           "80"
+#define OTA_URL_PREFIX            "/firmwares/"
+
+#define TIME_SERVER_HOST          "api.look-in.club"
+#define TIME_API_URL              "/v1/time"
+
+#define WIFI_AP_NAME              "Beeline_" + Device->TypeToString() + "_" + Device->IDToString()
+#define WIFI_AP_PASSWORD          Device->IDToString()
+#define WIFI_IP_COUNTDOWN         10000
+
+#define UDP_SERVER_PORT           61201
+#define UDP_PACKET_PREFIX         "BEELINE:"
+
+// Devices definitions
+#define DEVICE_TYPE_PLUG_HEX      0x03
+#define DEVICE_TYPE_PLUG_STRING   "Plug"
+
+// Commands and Sensors Pin Map
+#define SWITCH_PLUG_PIN_NUM       GPIO_NUM_2
+
+// Scenarios globals
+#define SCENARIO_OPERAND_BIT_LEN    64
+#define SCENARIO_CACHE_BIT_LEN      32
+
+#define SCENARIO_TIME_INTERVAL      5
+
+#define SCENARIO_TYPE_EVENT_HEX     0x00
+#define SCENARIO_TYPE_TIMER_HEX     0x01
+#define SCENARIO_TYPE_CALENDAR_HEX  0x02

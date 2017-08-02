@@ -1,3 +1,8 @@
+/*
+*    OTA class
+*
+*/
+
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 
@@ -8,7 +13,7 @@
 #include "OTA.h"
 #include "Globals.h"
 
-static const char *tag = "OTA";
+static char tag[] = "OTA";
 
 OTA_t::OTA_t() {};
 

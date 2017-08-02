@@ -27,6 +27,8 @@ class HTTPClient_t {
     string Method;
 
     HTTPClient_t();
+    virtual ~HTTPClient_t() = default;
+
     void  Request();
 
     virtual void ReadStarted()					{};
@@ -39,12 +41,12 @@ class HTTPClient_t {
     int   SocketID;
     char  HTTPRequest[128];
 
-    HTTPClientTask_t*     Task;
+    HTTPClientTask_t  *Task;
 
     bool  HttpConnect();
     int   ReadUntil(char *buffer, char delim, int len);
     bool  ReadPastHttpHeader(char text[], int total_len);
-    void __attribute__((noreturn)) task_fatal_error();
+    void  __attribute__((noreturn)) task_fatal_error();
 };
 
 #endif /* DRIVERS_HTTPCLIENT_H_ */

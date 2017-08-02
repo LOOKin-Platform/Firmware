@@ -4,10 +4,6 @@
 /*
   Раздел API /network
 */
-
-#include "stringbuffer.h"
-#include "writer.h"
-
 #include <string>
 #include <vector>
 #include <map>
@@ -18,7 +14,6 @@
 #include "Device.h"
 
 using namespace std;
-using namespace rapidjson;
 
 #define  NVSNetworkWiFiSSID     "WiFiSSID"
 #define  NVSNetworkWiFiPassword "WiFiPassword"
@@ -27,7 +22,7 @@ using namespace rapidjson;
 struct NetworkDevice_t {
   uint8_t   TypeHex   = 0x00;
   bool      IsActive  = 0;
-  string    ID        = "";
+  uint32_t  ID        = 0;
   string    IP        = "";
 };
 
@@ -36,30 +31,27 @@ class Network_t : public API {
     string                    WiFiSSID;
     string                    WiFiPassword;
     vector<string>            WiFiList;
-    vector<NetworkDevice_t *> Devices;
+    vector<NetworkDevice_t>   Devices;
     tcpip_adapter_ip_info_t   IP;
 
     Network_t();
 
-    void    Init();
-
+    void  Init();
+    NetworkDevice_t GetNetworkDeviceByID(uint32_t);
     void  DeviceInfoReceived(string Type, string ID, string IP);
 
-    static string SerializeNetworkDevice(NetworkDevice_t *);
-    static NetworkDevice_t* DeserializeNetworkDevice(string);
+    static string SerializeNetworkDevice(NetworkDevice_t);
+    static NetworkDevice_t DeserializeNetworkDevice(string);
 
-    WebServerResponse_t*  HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    void HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
   private:
-    bool   POSTWiFiSSID(map<string,string>);
-    bool   POSTWiFiPassword(map<string,string>);
+    bool   POSTWiFiSSID     (map<string,string>);
+    bool   POSTWiFiPassword (map<string,string>);
 
     string IPToString();
     string ModeToString();
     string WiFiSSIDToString();
-
-    void DeviceToJSON(NetworkDevice_t *NetworkDevice, Writer<StringBuffer> &Writer);
-
 };
 
 #endif

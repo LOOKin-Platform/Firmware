@@ -7,6 +7,8 @@
 
 using namespace std;
 
+#include "Settings.h"
+
 #include <string>
 #include <vector>
 #include <map>
@@ -17,10 +19,9 @@ using namespace std;
 
 #include "NVS/NVS.h"
 
-#include "Globals.h"
 #include "WebServer.h"
 #include "API.h"
-#include "Tools.h"
+#include "Converter.h"
 
 #define  NVSDeviceType              "Type"
 #define  NVSDeviceID                "ID"
@@ -40,7 +41,6 @@ class DeviceType_t {
     string ToHexString();
 
     static string ToString(uint8_t);
-    static string ToHexString(uint8_t);
     static map<uint8_t, string> TypeMap;
 };
 
@@ -51,7 +51,7 @@ class Device_t : public API {
   public:
     DeviceType_t    *Type;
     DeviceStatus    Status;
-    string          ID;
+    uint32_t        ID;
     string          Name;
 
     DevicePowerMode PowerMode;
@@ -61,11 +61,12 @@ class Device_t : public API {
 
     Device_t();
     void    Init();
-    WebServerResponse_t*  HandleHTTPRequest(QueryType Type, vector<string> URLParts, map<string,string> Params);
+    void    HandleHTTPRequest(WebServerResponse_t* &, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
     string TypeToString();
+    string IDToString();
   private:
-    string GenerateID();
+    uint32_t GenerateID();
 
     bool POSTName(map<string,string>);
     bool POSTTime(map<string,string>);
@@ -73,7 +74,6 @@ class Device_t : public API {
     bool POSTFirmwareVersion(map<string,string>, WebServerResponse_t &);
 
     string StatusToString();
-    string IDToString();
     string NameToString();
     string PowerModeToString();
     string FirmwareVersionToString();

@@ -7,7 +7,7 @@ using namespace std;
 #include <vector>
 #include <map>
 
-enum    QueryType { NONE, POST, GET };
+enum    QueryType { NONE, POST, GET, DELETE };
 
 class Query_t {
   public:
@@ -16,7 +16,9 @@ class Query_t {
     string              RequestedUrl;
     vector<string>      RequestedUrlParts;
 
+    string              RequestBody;
     map<string,string>  Params;
+
     Query_t(char *);
 
     static string       UrlDecode(string);

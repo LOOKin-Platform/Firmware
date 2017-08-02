@@ -1,3 +1,8 @@
+/*
+*    Webserver.cpp
+*    Class for handling TCP and UDP connections
+*
+*/
 #ifndef WEBSERVER_H
 #define WEBSERVER_H
 

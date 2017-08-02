@@ -1,14 +1,13 @@
-#ifndef TOOLS_H
-#define TOOLS_H
+#ifndef CONVERTER_H
+#define CONVERTER_H
 
 #include <string>
 #include <vector>
-
-#include <Tools.h>
+#include <bitset>
 
 using namespace std;
 
-class Tools {
+class Converter {
   public:
     static string   ToLower(string);
 
@@ -22,6 +21,11 @@ class Tools {
     static string   ToString(uint8_t);
     static string   ToString(uint32_t);
 
-    static vector<string>  DivideStrBySymbol(string, char);
+    static string   ToHexString(uint64_t, size_t);
+
+    template <typename T>
+    static T        UintFromHexString(string);
+
+    static vector<string> StringToVector(string SourceStr, string Delimeter);
 };
 #endif
