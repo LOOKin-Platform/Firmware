@@ -61,10 +61,6 @@ class Scenario_t {
     static vector<ScenesCommandItem_t> CommandsCacheGet(uint32_t);
     static void   CommandsCacheErase(uint32_t);
 
-    static void   CommandsCacheTaskHandleSet(uint32_t, TaskHandle_t);
-    static TaskHandle_t CommandsCacheTaskHandleGet(uint32_t);
-    static void   CommandsCacheTaskHandleErase(uint32_t);
-
     static string       SerializeScene(Scenario_t *);
     static Scenario_t*  DeserializeScene(string);
 
@@ -73,7 +69,6 @@ class Scenario_t {
     static bitset<8> Bitset4To8(bitset<4>);
 
   private:
-    static map<string, TaskHandle_t> CommandsCacheTaskHandleMap;
     static map<string, vector<ScenesCommandItem_t>> CommandsCacheMap;
 };
 

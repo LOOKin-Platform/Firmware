@@ -21,10 +21,7 @@ static char tag[] = "Scenarios";
 /*         Scenario class           */
 /************************************/
 
-map<string, vector<ScenesCommandItem_t>>
-              Scenario_t::CommandsCacheMap = map<string, vector<ScenesCommandItem_t>>();
-map<string,TaskHandle_t>
-              Scenario_t::CommandsCacheTaskHandleMap = map<string,TaskHandle_t>();
+map<string, vector<ScenesCommandItem_t>> Scenario_t::CommandsCacheMap = map<string, vector<ScenesCommandItem_t>>();
 
 Scenario_t::Scenario_t(uint8_t TypeHex) {
   this->Type                  = TypeHex;
@@ -56,8 +53,7 @@ bool Scenario_t::Empty() {
 }
 
 void Scenario_t::ExecuteCommands(uint32_t ScenarioID) {
-  TaskHandle_t CurrentHandle = FreeRTOS::StartTask(ExecuteCommandsTask, "ExecuteCommandsTask", ( void * ) ScenarioID, 4096);
-  CommandsCacheTaskHandleSet(ScenarioID, CurrentHandle);
+  FreeRTOS::StartTask(ExecuteCommandsTask, "ExecuteCommandsTask", ( void * ) ScenarioID, 4096);
 }
 
 void Scenario_t::ExecuteCommandsTask(void *Data) {
@@ -98,9 +94,8 @@ void Scenario_t::ExecuteCommandsTask(void *Data) {
     }
   }
 
-  FreeRTOS::DeleteTask(Scenario_t::CommandsCacheTaskHandleGet(ScenarioID));
   CommandsCacheErase(ScenarioID);
-  CommandsCacheTaskHandleErase(ScenarioID);
+  FreeRTOS::DeleteTask(NULL);
 }
 
 void Scenario_t::CommandsCacheSet(uint32_t ScenarioID, vector<ScenesCommandItem_t> CommandsToExecute) {
@@ -118,23 +113,6 @@ vector<ScenesCommandItem_t> Scenario_t::CommandsCacheGet(uint32_t ScenarioID) {
 
 void Scenario_t::CommandsCacheErase(uint32_t ScenarioID) {
   CommandsCacheMap.erase(Converter::ToHexString(ScenarioID, 8));
-}
-
-
-void Scenario_t::CommandsCacheTaskHandleSet(uint32_t ScenarioID, TaskHandle_t TaskHandle) {
-  CommandsCacheTaskHandleMap[Converter::ToHexString(ScenarioID, 8)] = TaskHandle;
-}
-
-TaskHandle_t Scenario_t::CommandsCacheTaskHandleGet(uint32_t ScenarioID) {
-  string Key = Converter::ToHexString(ScenarioID, 8);
-  if (Scenario_t::CommandsCacheTaskHandleMap.count(Key) > 0)
-    return Scenario_t::CommandsCacheTaskHandleMap[Key];
-  else
-    return nullptr;
-}
-
-void Scenario_t::CommandsCacheTaskHandleErase(uint32_t ScenarioID) {
-  Scenario_t::CommandsCacheTaskHandleMap.erase(Converter::ToHexString(ScenarioID, 8));
 }
 
 string Scenario_t::SerializeScene(Scenario_t *Scene) {
