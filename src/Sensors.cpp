@@ -37,7 +37,7 @@ Sensor_t* Sensor_t::GetSensorByName(string SensorName) {
 }
 
 void Sensor_t::UpdateSensors() {
-  for (auto Sensor : Sensors)
+  for (auto& Sensor : Sensors)
     Sensor->Update();
 }
 

@@ -80,6 +80,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		WebServer->UDPSendBroadcastDiscover();
 
 		Time::ServerSync(TIME_SERVER_HOST, TIME_API_URL);
+
 		return ESP_OK;
 	}
 };

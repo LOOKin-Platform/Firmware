@@ -62,13 +62,13 @@ void Scenario_t::ExecuteCommandsTask(void *Data) {
   if (ScenarioID > 0) {
     vector<ScenesCommandItem_t> CommandsToExecute = CommandsCacheGet(ScenarioID);
 
+    Command_t *CommandToExecute;
     for (auto& Command : CommandsToExecute) {
         if (Command.DeviceID == Device->ID) {
           // выполнить локальную команду
-          Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
+          CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
           if (CommandToExecute!=nullptr)
             CommandToExecute->Execute(Command.EventCode, Command.Operand);
-          //delete CommandToExecute
         }
         else {
           // отправить команду по HTTP
@@ -76,19 +76,15 @@ void Scenario_t::ExecuteCommandsTask(void *Data) {
 
           if (!NetworkDevice.IP.empty() && NetworkDevice.IsActive) {
 
-            ScenariosHTTPClient_t* HTTPClient  = new ScenariosHTTPClient_t();
-
-            HTTPClient->IP            = NetworkDevice.IP;
-            HTTPClient->ContentURI    = "/commands?command=" +
+            string URL = "/commands?command=" +
                                         Converter::ToHexString(Command.CommandID,2) +
                                         "&action=" +
                                         Converter::ToHexString(Command.EventCode,2) +
                                         "&operand=" +
                                         Converter::ToHexString(Command.Operand, 8);
 
-            HTTPClient->Request();
-
-            delete HTTPClient;
+            HTTPClient::Query("", 80, URL, QueryType::GET, NetworkDevice.IP,
+                                  true, NULL, NULL, &ReadFinished, &Aborted);
           }
         }
     }
@@ -201,13 +197,14 @@ bitset<8> Bitset4To8(bitset<4> Src) {
 /*      Scenarios HTTP client       */
 /************************************/
 
-bool ScenariosHTTPClient_t::ReadFinished() {
+bool Scenario_t::ReadFinished(char IP[]) {
   ESP_LOGI(tag,"HTTP Command sent");
   return true;
 }
 
-void ScenariosHTTPClient_t::Aborted() {
-  ESP_LOGE(tag,"HTTP Command sending failed");
+void Scenario_t::Aborted(char IP[]) {
+  ESP_LOGE(tag,"HTTP Command sending to device with IP %s failed", IP);
+  Network->SetNetworkDeviceFlagByIP(IP, false);
 }
 
 /************************************/
@@ -290,13 +287,13 @@ bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t SensorEvent
 void TimerData_t::ExecuteCommands(const vector<ScenesCommandItem_t> CommandsToExecute, uint32_t ScenarioID) {
   if (ScenarioID != 0) {
     Scenario_t::CommandsCacheSet(ScenarioID, CommandsToExecute);
-    Timer_t *ScenarioTimer = new Timer_t("ScenarioTimer", (TimerDelay*1000)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
+    Timer_t *ScenarioTimer = new Timer_t("ScenarioTimer", (TimerDelay * 1000)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
     ScenarioTimer->Start();
   }
 };
 
 void TimerData_t::TimerCallback(Timer_t *pTimer) {
-  uint32_t ScenarioID =  (uint32_t) pTimer->GetData();
+  uint32_t ScenarioID = (uint32_t) pTimer->GetData();
   Scenario_t::ExecuteCommands(ScenarioID);
   ESP_LOGI(tag, "Scenario %s timer executed", Converter::ToHexString(ScenarioID, 8).c_str());
 

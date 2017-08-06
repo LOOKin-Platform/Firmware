@@ -50,14 +50,13 @@ void API::Handle(WebServerResponse_t* &Response, QueryType Type, vector<string> 
       if (APISection == "status")
         switch (Device->Type->Hex) {
           case DEVICE_TYPE_PLUG_HEX:
-            Sensor_t::HandleHTTPRequest(Response, Type, { "switch" }, map<string,string>() );
+            Sensor_t::HandleHTTPRequest(Response, Type, { "switch" }, map<string,string>());
             break;
         }
     }
   }
 
-  if (Response->Body == "" && Response->ResponseCode == WebServerResponse_t::CODE::OK)
-  {
+  if (Response->Body == "" && Response->ResponseCode == WebServerResponse_t::CODE::OK) {
     Response->ResponseCode  = WebServerResponse_t::CODE::INVALID;
     Response->ContentType   = WebServerResponse_t::TYPE::PLAIN;
     Response->Body          = "The request was incorrectly formatted";

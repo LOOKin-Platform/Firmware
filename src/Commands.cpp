@@ -26,7 +26,7 @@ uint8_t Command_t::GetEventCode(string Action) {
 }
 
 Command_t* Command_t::GetCommandByName(string CommandName) {
-  for (Command_t* Command : Commands)
+  for (auto& Command : Commands)
     if (Converter::ToLower(Command->Name) == Converter::ToLower(CommandName))
       return Command;
 
@@ -34,7 +34,7 @@ Command_t* Command_t::GetCommandByName(string CommandName) {
 }
 
 Command_t* Command_t::GetCommandByID(uint8_t CommandID) {
-  for (Command_t* Command : Commands)
+  for (auto& Command : Commands)
     if (Command->ID == CommandID)
       return Command;
 

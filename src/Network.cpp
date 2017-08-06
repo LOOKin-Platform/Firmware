@@ -64,6 +64,13 @@ NetworkDevice_t Network_t::GetNetworkDeviceByID(uint32_t ID) {
   return NetworkDevice_t();
 }
 
+void Network_t::SetNetworkDeviceFlagByIP(string IP, bool Flag) {
+  for (int i=0; i < Devices.size(); i++)
+    if (Devices[i].IP == IP) {
+      Devices[i].IsActive = Flag;
+      return;
+    }
+}
 
 void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
   ESP_LOGD(tag, "DeviceInfoReceived");

@@ -7,7 +7,7 @@ using namespace std;
 #include <vector>
 #include <map>
 
-enum    QueryType { NONE, POST, GET, DELETE };
+#include "HTTPClient/HTTPClient.h"
 
 class Query_t {
   public:

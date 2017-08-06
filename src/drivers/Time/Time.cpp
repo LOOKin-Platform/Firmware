@@ -18,6 +18,7 @@ static string NVSTimeArea = "Time";
 
 uint32_t  Time::Offset = 0;
 int8_t    Time::TimezoneOffset = 0;
+string    Time::ReadBuffer = "";
 
 uint32_t Time::Uptime() {
   struct timeval Now;
@@ -93,23 +94,20 @@ void Time::ServerSync(string Host, string Path) {
 
   ESP_LOGI(tag, "Time sync started");
 
-  TimeHTTPClient_t* HTTPClient = new TimeHTTPClient_t();
-  HTTPClient->Hostname        = Host;
-  HTTPClient->ContentURI      = Path;
-
-  HTTPClient->Request();
+  HTTPClient::Query(Host, 80, Path, QueryType::GET, "", true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
 }
 
-void TimeHTTPClient_t::ReadStarted() {
+void Time::ReadStarted(char IP[]) {
   ReadBuffer = "";
 }
 
-bool TimeHTTPClient_t::ReadBody(char Data[], int DataLen) {
+bool Time::ReadBody(char Data[], int DataLen, char IP[]) {
   ReadBuffer += Data;
   return true;
 };
 
-bool TimeHTTPClient_t::ReadFinished() {
+bool Time::ReadFinished(char IP[]) {
+
   if (ReadBuffer.length() == 0) return false;
 
   JSON_t *JSON = new JSON_t(ReadBuffer);
@@ -136,3 +134,7 @@ bool TimeHTTPClient_t::ReadFinished() {
 
   return true;
 };
+
+void Time::Aborted(char IP[]) {
+  ESP_LOGE(tag, "Failed to retrieve time from server");
+}

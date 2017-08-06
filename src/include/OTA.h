@@ -21,20 +21,17 @@ class OTA_t {
   public:
     OTA_t();
     void Update(string URL);
-    //void ChangeBootPartition();
-};
 
-class OTAHTTPClient_t: public HTTPClient_t {
-  public:
-    void ReadStarted() override;
-    bool ReadBody(char Data[], int DataLen) override;
-    bool ReadFinished() override;
+    // HTTP Callbacks
+    static void ReadStarted(char []);
+    static bool ReadBody(char Data[], int DataLen, char[]);
+    static bool ReadFinished(char []);
+    static void Aborted(char []);
 
-    void Aborted() override;
   private:
-    int               BinaryFileLength;
-    esp_ota_handle_t  OutHandle;
-    esp_partition_t   OperatePartition;
+    static int               BinaryFileLength;
+    static esp_ota_handle_t  OutHandle;
+    static esp_partition_t   OperatePartition;
 };
 
 #endif

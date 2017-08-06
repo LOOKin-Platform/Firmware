@@ -13,6 +13,11 @@
 #include "FreeRTOS.h"
 #include <esp_log.h>
 
+
+
+#include "HTTPClient/HTTPClient.h"
+
+
 static char TAG[] = "FreeRTOS";
 
 FreeRTOS::FreeRTOS() {
@@ -134,4 +139,24 @@ std::string FreeRTOS::Semaphore::toString() {
 
 void FreeRTOS::Semaphore::setName(std::string name) {
 	m_name = name;
+}
+
+QueueHandle_t FreeRTOS::Queue::Create(uint16_t Items, uint16_t ItemSize ) {
+	return ::xQueueCreate(Items, ItemSize);
+}
+
+BaseType_t FreeRTOS::Queue::SendToBack(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait) {
+	return ::xQueueSendToBack(QueueHandle, Item, xTicksToWait);
+}
+
+BaseType_t FreeRTOS::Queue::SendToFront(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait) {
+	return ::xQueueSendToFront(QueueHandle, Item, xTicksToWait);
+}
+
+BaseType_t FreeRTOS::Queue::Receive(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait) {
+	return ::xQueueReceive(QueueHandle, Item, xTicksToWait);
+}
+
+uint8_t FreeRTOS::Queue::Count(QueueHandle_t QueueHandle) {
+	return ::uxQueueMessagesWaiting(QueueHandle);
 }

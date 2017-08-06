@@ -80,7 +80,6 @@ void Device_t::Init() {
   if (ID == 0) {
     ID = GenerateID();
     Memory->SetUInt32Bit(NVSDeviceID, ID);
-    Memory->Commit();
   }
 
   Name = Memory->GetString(NVSDeviceName);
@@ -219,7 +218,7 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServerResponse_
     string UpdateVersion = Params["firmwareversion"];
 
     if (Status == DeviceStatus::RUNNING) {
-        if (WiFi_t::getMode() == WIFI_MODE_STA_STR) {
+        if (WiFi_t::getMode() == WIFI_MODE_STA_STR && Device->Status != UPDATING) {
 
           string UpdateFilename = "firmware.bin";
 

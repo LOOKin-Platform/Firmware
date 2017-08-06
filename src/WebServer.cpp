@@ -176,11 +176,9 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 	  Query_t Query(buf);
 
     WebServerResponse_t *Response =  new WebServerResponse_t();
-
+    
     API::Handle(Response, Query);
-
-    string StrResponse = Response->toString();
-    netconn_write(conn, StrResponse.c_str(), StrResponse.length(), NETCONN_NOCOPY);
+    netconn_write(conn, Response->toString().c_str(), Response->toString().length(), NETCONN_NOCOPY);
 
     delete Response;
   }

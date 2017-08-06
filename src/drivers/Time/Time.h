@@ -43,15 +43,15 @@ class Time {
     static string     TimezoneStr();
 
     static void       ServerSync(string Host, string Path);
-};
 
-class TimeHTTPClient_t: public HTTPClient_t {
-  public:
-    void ReadStarted() override;
-    bool ReadBody(char Data[], int DataLen) override;
-    bool ReadFinished() override;
+    // HTTP Callbacks
+    static void ReadStarted(char IP[]);
+    static bool ReadBody(char Data[], int DataLen, char IP[]);
+    static bool ReadFinished(char IP[]);
+    static void Aborted(char IP[]);
+
   private:
-    string ReadBuffer;
+    static string ReadBuffer;
 };
 
 #endif

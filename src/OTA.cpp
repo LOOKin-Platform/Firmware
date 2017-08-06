@@ -15,24 +15,22 @@
 
 static char tag[] = "OTA";
 
+int              OTA_t::BinaryFileLength  = 0;
+esp_ota_handle_t OTA_t::OutHandle         = 0;
+esp_partition_t  OTA_t::OperatePartition;
+
 OTA_t::OTA_t() {};
 
 void OTA_t::Update(string URL) {
   ESP_LOGI(tag, "Starting OTA...");
 
-  OTAHTTPClient_t* HTTPClient = new OTAHTTPClient_t();
-  HTTPClient->Port            = OTA_SERVER_PORT;
-  HTTPClient->Hostname        = OTA_SERVER_HOST;
-  HTTPClient->ContentURI      = URL;
+  HTTPClient::Query(OTA_SERVER_HOST, OTA_SERVER_PORT, URL, QueryType::GET, "",
+                        true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
 
-  HTTPClient->Request();
 }
 
-void OTAHTTPClient_t::ReadStarted() {
+void OTA_t::ReadStarted(char IP[]) {
   ESP_LOGD(tag, "ReadStarted");
-
-  BinaryFileLength  = 0;
-  OutHandle         = 0;
 
   bool isInitSucceed = false;
 
@@ -82,7 +80,7 @@ void OTAHTTPClient_t::ReadStarted() {
   }
 }
 
-bool OTAHTTPClient_t::ReadBody(char Data[], int DataLen) {
+bool OTA_t::ReadBody(char Data[], int DataLen, char IP[]) {
   esp_err_t err = esp_ota_write(OutHandle, (const void *)Data, DataLen);
 
   if (err != ESP_OK) {
@@ -96,7 +94,7 @@ bool OTAHTTPClient_t::ReadBody(char Data[], int DataLen) {
   return true;
 }
 
-bool OTAHTTPClient_t::ReadFinished() {
+bool OTA_t::ReadFinished(char IP[]) {
   ESP_LOGI(tag, "Total Write binary data length : %d", BinaryFileLength);
 
   if (esp_ota_end(OutHandle) != ESP_OK) {
@@ -116,6 +114,6 @@ bool OTAHTTPClient_t::ReadFinished() {
   return true;
 }
 
-void OTAHTTPClient_t::Aborted() {
+void OTA_t::Aborted(char IP[]) {
   Device->Status = DeviceStatus::RUNNING;
 }

@@ -68,14 +68,12 @@ class Scenario_t {
     template <size_t SrcSize>     static void AddRangeTo(bitset<SCENARIO_OPERAND_BIT_LEN> &, bitset<SrcSize>, size_t Position);
     static bitset<8> Bitset4To8(bitset<4>);
 
+    // HTTP Callbacks
+    static bool ReadFinished(char[]);
+    static void Aborted(char[]);
+
   private:
     static map<string, vector<ScenesCommandItem_t>> CommandsCacheMap;
-};
-
-class ScenariosHTTPClient_t: public HTTPClient_t {
-  public:
-    bool ReadFinished() override;
-    void Aborted() override;
 };
 
 class Data_t {
