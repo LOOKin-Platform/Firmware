@@ -1,15 +1,15 @@
 /*
-  Команды - классы и функции, связанные с /commands
+*    Commands.cpp
+*    Class to handle API /Commands
+*
 */
-
-#include <RapidJSON.h>
 
 #include "Globals.h"
 #include "Commands.h"
 #include "Device.h"
 #include "Converter.h"
-#include "JSON.h"
 
+#include "JSON/JSON.h"
 #include "GPIO/GPIO.h"
 
 static char tag[] = "Commands";
@@ -56,13 +56,12 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 void Command_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
     // Вывести список всех комманд
     if (URLParts.size() == 0 && Type == QueryType::GET) {
-      JSON_t *JSON = new JSON_t();
 
-      for (Command_t* Command : Commands)
-        JSON->AddToVector(Command->Name);
+      vector<string> Vector = vector<string>();
+      for (auto& Command : Commands)
+        Vector.push_back(Command->Name);
 
-      Result->Body = JSON->ToString(true);
-      delete JSON;
+      Result->Body = JSON::CreateStringFromVector(Vector);
     }
 
     // Запрос списка действий конкретной команды
@@ -70,16 +69,13 @@ void Command_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, 
       Command_t* Command = Command_t::GetCommandByName(URLParts[0]);
 
       if (Command!=nullptr)
-        if (Command->Events.size() > 0)
-        {
-          JSON_t *JSON = new JSON_t();
+        if (Command->Events.size() > 0) {
 
+          vector<string> Vector = vector<string>();
           for (auto& Event: Command->Events)
-            JSON->AddToVector(Event.first);
+            Vector.push_back(Event.first);
 
-          Result->Body = JSON->ToString(true);
-
-          delete JSON;
+          Result->Body = JSON::CreateStringFromVector(Vector);
         }
     }
 

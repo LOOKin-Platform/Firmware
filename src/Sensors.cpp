@@ -1,20 +1,21 @@
 /*
-  Сенсоры - классы и функции, связанные с /sensors
+*    Sensors.cpp
+*    Class to handle API /Sensors
+*
 */
 
 #include "Globals.h"
 #include "Sensors.h"
 #include "Device.h"
 #include "Converter.h"
-#include "JSON.h"
 
-#include "drivers/GPIO/GPIO.h"
-#include "drivers/Time/Time.h"
+#include "GPIO/GPIO.h"
+#include "Time/Time.h"
+#include "JSON/JSON.h"
 
 //static char tag[] = "Sensors";
 
 vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
-
   vector<Sensor_t*> Sensors = {};
 
   switch (Device->Type->Hex) {
@@ -45,15 +46,14 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
 
     Sensor_t::UpdateSensors();
 
-    // Вывести список всех сенсоров
+    // Echo list of all sensors
     if (URLParts.size() == 0) {
-      JSON_t *JSON = new JSON_t();
 
-      for (Sensor_t* Sensor : Sensors)
-        JSON->AddToVector(Sensor->Name);
+      vector<string> Vector = vector<string>();
+      for (auto& Sensor : Sensors)
+        Vector.push_back(Sensor->Name);
 
-      Result->Body = JSON->ToString(true);
-      delete JSON;
+      Result->Body = JSON::CreateStringFromVector(Vector);
     }
 
     // Запрос значений конкретного сенсора
@@ -62,9 +62,10 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
       Sensor_t* Sensor = Sensor_t::GetSensorByName(URLParts[0]);
 
       if (Sensor->Values.size() > 0) {
-        JSON_t *JSON = new JSON_t();
 
-        JSON->SetParam({
+        JSON JSONObject;
+
+        JSONObject.SetItems({
           {"Value"               , Sensor->Values["Primary"]["Value"]},
           {"Updated"             , Sensor->Values["Primary"]["Updated"]}
         });
@@ -75,17 +76,14 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
             if (Value.first != "Primary") {
               map<string,string> SensorValue = Value.second;
 
-              JSON->SetObjectParam(Value.first, {
+              JSONObject.SetObject(Value.first, {
                 { "Value"   , SensorValue["Value"]},
                 { "Updated" , SensorValue["Updated"]}
               });
             }
         }
 
-        Result->Body = JSON->ToString();
-
-        //delete Sensor;
-        delete JSON;
+        Result->Body = JSONObject.ToString();
       }
     }
 
@@ -107,17 +105,15 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
           if (Sensor->Values.size() > 0)
             for (const auto &Value : Sensor->Values) {
               if (Converter::ToLower(Value.first) == URLParts[1]) {
-
-                JSON_t *JSON = new JSON_t();
+                JSON JSONObject;
 
                 map<string,string> SensorValue = Value.second;
-                JSON->SetObjectParam(Value.first, {
-                  { "Value"   , SensorValue["Value"]},
+                JSONObject.SetObject(Value.first, {
+                  { "Value"   , SensorValue["Value"]  },
                   { "Updated" , SensorValue["Updated"]}
                 });
 
-                Result->Body = JSON->ToString();
-                delete JSON;
+                Result->Body = JSONObject.ToString();
                 break;
               }
           break;

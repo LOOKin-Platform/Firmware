@@ -2,7 +2,7 @@
   Класс для работы с API /network
 */
 
-#include "JSON.h"
+#include "JSON/JSON.h"
 
 #include <string.h>
 
@@ -32,12 +32,6 @@ void Network_t::Init() {
   WiFiSSID     = Memory->GetString(NVSNetworkWiFiSSID);
   WiFiPassword = Memory->GetString(NVSNetworkWiFiPassword);
 
-  //Memory->ArrayEraseAll(NVSNetworkDevicesArray);
-
-  // Read info from network scan
-  for (WiFiAPRecord APRecord : WiFi->Scan())
-      WiFiList.push_back(APRecord.getSSID());
-
   // Load saved network devices from NVS
   uint8_t ArrayCount = Memory->ArrayCount(NVSNetworkDevicesArray);
 
@@ -54,6 +48,10 @@ void Network_t::Init() {
   }
 
   delete Memory;
+
+  // Read info from network scan
+  for (WiFiAPRecord APRecord : WiFi->Scan())
+      WiFiList.push_back(APRecord.getSSID());
 }
 
 NetworkDevice_t Network_t::GetNetworkDeviceByID(uint32_t ID) {
@@ -100,52 +98,50 @@ void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
 
         Devices.at(i).IsActive = true;
     }
+    else if (Devices.at(i).IP == IP)
+      Devices.at(i).IsActive = false;
   }
 
   // Add new device if no found in routing table
   if (!isIDFound) {
-    NetworkDevice_t Device;
+    NetworkDevice_t NetworkDevice;
 
-    Device.TypeHex   = TypeHex;
-    Device.ID        = Converter::UintFromHexString<uint32_t>(ID);
-    Device.IP        = IP;
-    Device.IsActive  = true;
+    NetworkDevice.TypeHex   = TypeHex;
+    NetworkDevice.ID        = Converter::UintFromHexString<uint32_t>(ID);
+    NetworkDevice.IP        = IP;
+    NetworkDevice.IsActive  = true;
 
-    Devices.push_back(Device);
+    Devices.push_back(NetworkDevice);
 
-    string Data = SerializeNetworkDevice(Device);
-
-    Memory->StringArrayAdd(NVSNetworkDevicesArray, Data);
+    Memory->StringArrayAdd(NVSNetworkDevicesArray, SerializeNetworkDevice(NetworkDevice));
     Memory->Commit();
   }
+
+  delete Memory;
 }
 
 
 string Network_t::SerializeNetworkDevice(NetworkDevice_t Item) {
-  JSON_t *JSON = new JSON_t();
 
-  JSON->SetParam({
+  JSON JSONObject;
+  JSONObject.SetItems({
     {"TypeHex"  , Converter::ToHexString(Item.TypeHex,2)},
     {"ID"       , Converter::ToHexString(Item.ID,8) },
-    {"IP"       , Item.IP}
+    {"IP"       , Item.IP }
   });
 
-  string Result = JSON->ToString();
-  delete JSON;
-
-  return Result;
+  return JSONObject.ToString();
 }
 
 NetworkDevice_t Network_t::DeserializeNetworkDevice(string Data) {
-
   NetworkDevice_t Result;
-  JSON_t *JSON = new JSON_t(Data);
 
-  if (!(JSON->GetParam("ID").empty()))      Result.ID      = Converter::UintFromHexString<uint32_t>(JSON->GetParam("ID"));
-  if (!(JSON->GetParam("IP").empty()))      Result.IP      = JSON->GetParam("IP");
-  if (!(JSON->GetParam("TypeHex").empty())) Result.TypeHex = (uint8_t)strtol((JSON->GetParam("TypeHex")).c_str(), NULL, 16);
+  JSON JSONObject;
 
-  delete JSON;
+  if (!(JSONObject.GetItem("ID").empty()))      Result.ID      = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("ID"));
+  if (!(JSONObject.GetItem("IP").empty()))      Result.IP      = JSONObject.GetItem("IP");
+  if (!(JSONObject.GetItem("TypeHex").empty())) Result.TypeHex = (uint8_t)strtol((JSONObject.GetItem("TypeHex")).c_str(), NULL, 16);
+
   Result.IsActive = false;
 
   return Result;
@@ -156,10 +152,9 @@ void Network_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, 
   if (Type == QueryType::GET) {
     // Запрос JSON со всеми параметрами
     if (URLParts.size() == 0) {
+      JSON JSONObject;
 
-      JSON_t *JSON = new JSON_t();
-
-      JSON->SetParam({
+      JSONObject.SetItems({
         {"Mode"     , ModeToString()},
         {"IP"       , IPToString()},
         {"WiFiSSID" , WiFiSSIDToString()}
@@ -174,11 +169,9 @@ void Network_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, 
           {"IsActive" , (NetworkDevice.IsActive == true) ? "1" : "0" }
         });
 
-      JSON->SetMapsArray("Map", NetworkMap);
+      JSONObject.SetObjectsArray("Map", NetworkMap);
 
-      Result->Body = JSON->ToString();
-
-      delete JSON;
+      Result->Body = JSONObject.ToString();
     }
 
     // Запрос конкретного параметра или команды секции API
@@ -209,12 +202,8 @@ void Network_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, 
       }
 
       if (URLParts[0] == "wifilist") {
-        JSON_t *JSON = new JSON_t();
-        JSON->SetVector(WiFiList);
-
-        Result->Body = JSON->ToString(true);
+        Result->Body = JSON::CreateStringFromVector(WiFiList);
         Result->ContentType = WebServerResponse_t::TYPE::JSON;
-        delete JSON;
       }
     }
   }

@@ -1,3 +1,9 @@
+/*
+*    Query.cpp
+*    Class designed to parse HTTP query and make suitable struct to work with it's data
+*
+*/
+
 using namespace std;
 
 #include <sstream>
@@ -7,7 +13,7 @@ using namespace std;
 #include <vector>
 #include <string>
 
-#include "JSON.h"
+#include "JSON/JSON.h"
 #include "Query.h"
 #include "Converter.h"
 
@@ -59,7 +65,6 @@ void Query_t::FillParams(string Query) {
 
           if (Param.size() == 2)
             Params[Converter::ToLower(Param[0])] = Query_t::UrlDecode(Param[1]);
-
         }
       }
     }
@@ -68,9 +73,12 @@ void Query_t::FillParams(string Query) {
       vector<string>RNDivide = Converter::StringToVector(SrcRequest, "\r\n");
       RequestBody = RNDivide[RNDivide.size() - 1];
 
-      JSON_t *JSON = new JSON_t(RequestBody);
-      Params = JSON->GetParam();
-      delete JSON;
+      JSON JSONItem(RequestBody);
+      Params = JSONItem.GetItems();
+
+      for(auto const &Item : Params) {
+        ESP_LOGI("tag","MAP [%s] = %s", Item.first.c_str(), Item.second.c_str());
+      }
     }
   }
 

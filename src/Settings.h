@@ -7,12 +7,12 @@
 #define TIME_SERVER_HOST            "api.look-in.club"
 #define TIME_API_URL                "/v1/time"
 
-#define WIFI_AP_NAME                "Beeline_" + Device->TypeToString() + "_" + Device->IDToString()
+#define WIFI_AP_NAME                "LOOK.in_" + Device->TypeToString() + "_" + Device->IDToString()
 #define WIFI_AP_PASSWORD            Device->IDToString()
 #define WIFI_IP_COUNTDOWN           10000
 
 #define UDP_SERVER_PORT             61201
-#define UDP_PACKET_PREFIX           "BEELINE:"
+#define UDP_PACKET_PREFIX           "LOOK.in:"
 
 // Devices definitions
 #define DEVICE_TYPE_PLUG_HEX        0x03
@@ -30,11 +30,14 @@
 #define HTTPCLIENT_TASK_STACKSIZE   4096
 
 // Scenarios globals
-#define SCENARIO_OPERAND_BIT_LEN    64
-#define SCENARIO_CACHE_BIT_LEN      32
+#define SCENARIOS_QUEUE_SIZE        64
+#define SCENARIOS_BLOCK_TICKS       50
+#define SCENARIOS_TASK_STACKSIZE    8192
+#define SCENARIOS_OPERAND_BIT_LEN   64
+#define SCENARIOS_CACHE_BIT_LEN     32
 
-#define SCENARIO_TIME_INTERVAL      5
+#define SCENARIOS_TIME_INTERVAL     5
 
-#define SCENARIO_TYPE_EVENT_HEX     0x00
-#define SCENARIO_TYPE_TIMER_HEX     0x01
-#define SCENARIO_TYPE_CALENDAR_HEX  0x02
+#define SCENARIOS_TYPE_EVENT_HEX    0x00
+#define SCENARIOS_TYPE_TIMER_HEX    0x01
+#define SCENARIOS_TYPE_CALENDAR_HEX 0x02

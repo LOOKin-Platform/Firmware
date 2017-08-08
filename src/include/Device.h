@@ -1,9 +1,11 @@
+/*
+*    Device.h
+*    Class to handle API /Device
+*
+*/
+
 #ifndef DEVICE_H
 #define DEVICE_H
-
-/*
-  Классы для работы с API /device
-*/
 
 using namespace std;
 

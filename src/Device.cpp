@@ -1,5 +1,7 @@
 /*
-  Классы для работы с API /device
+*    Device.cpp
+*    Class to handle API /Device
+*
 */
 
 #include <algorithm>
@@ -9,7 +11,7 @@
 #include <sstream>
 #include <iomanip>
 
-#include "JSON.h"
+#include "JSON/JSON.h"
 
 #include "Globals.h"
 #include "Device.h"
@@ -108,21 +110,20 @@ void Device_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
   if (Type == QueryType::GET) {
     // Запрос JSON со всеми параметрами
     if (URLParts.size() == 0) {
-      JSON_t *JSON = new JSON_t();
 
-      JSON->SetParam({
-        {"Type"               , TypeToString()},
-        {"Status"             , StatusToString()},
-        {"ID"                 , IDToString()},
-        {"Name"               , NameToString()},
-        {"Time"               , Time::UnixtimeString()},
-        {"Timezone"           , Time::TimezoneStr()},
-        {"PowerMode"          , PowerModeToString()},
-        {"FirmwareVersion"    , FirmwareVersionToString()}
+      JSON JSONObject;
+      JSONObject.SetItems({
+        {"Type"             , TypeToString()},
+        {"Status"           , StatusToString()},
+        {"ID"               , IDToString()},
+        {"Name"             , NameToString()},
+        {"Time"             , Time::UnixtimeString()},
+        {"Timezone"         , Time::TimezoneStr()},
+        {"PowerMode"        , PowerModeToString()},
+        {"FirmwareVersion"  , FirmwareVersionToString()}
       });
 
-      Result->Body = JSON->ToString();
-      delete JSON;
+      Result->Body = JSONObject.ToString();
     }
 
     // Запрос конкретного параметра
@@ -211,43 +212,41 @@ bool Device_t::POSTTimezone(map<string,string> Params) {
 }
 
 bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServerResponse_t& Response) {
+  if (Params.count("firmwareversion") == 0)
+    return false;
 
-  map<string,string>::iterator FirmwareVersionIterator = Params.find("firmwareversion");
-
-  if (FirmwareVersionIterator != Params.end()) {
-    string UpdateVersion = Params["firmwareversion"];
-
-    if (Status == DeviceStatus::RUNNING) {
-        if (WiFi_t::getMode() == WIFI_MODE_STA_STR && Device->Status != UPDATING) {
-
-          string UpdateFilename = "firmware.bin";
-
-          map<string,string>::iterator FilenameIterator = Params.find("Filename");
-          if (FilenameIterator != Params.end())
-            UpdateFilename = Params["Filename"];
-
-          OTA_t *OTA = new OTA_t();
-          OTA->Update(OTA_URL_PREFIX + UpdateVersion + "/" + UpdateFilename);
-
-          Device->Status = DeviceStatus::UPDATING;
-
-          Response.ResponseCode = WebServerResponse_t::CODE::OK;
-          Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update started\"}";
-
-          return true;
-        }
-        else {
-          Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
-          Response.Body = "{\"success\" : \"false\" , \"Error\": \"Device is not connected to the Internet\"}";
-        }
-    }
-    else {
-      Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
-      Response.Body = "{\"success\" : \"false\" , \"Error\": \"The update process has already been started\"}";
-    }
+  if (Converter::ToFloat(FIRMWARE_VERSION) > Converter::ToFloat(Params["firmwareversion"])) {
+    Response.ResponseCode = WebServerResponse_t::CODE::OK;
+    Response.Body = "{\"success\" : \"false\" , \"Message\": \"Attempt to update to the old version\"}";
+    return false;
   }
 
-  return false;
+  if (Status == DeviceStatus::UPDATING) {
+    Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
+    Response.Body = "{\"success\" : \"false\" , \"Error\": \"The update process has already been started\"}";
+    return false;
+  }
+
+  if (WiFi_t::getMode() != WIFI_MODE_STA_STR) {
+    Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
+    Response.Body = "{\"success\" : \"false\" , \"Error\": \"Device is not connected to the Internet\"}";
+    return false;
+  }
+
+  string UpdateFilename = "firmware.bin";
+
+  if (Params.count("filename") > 0)
+    UpdateFilename = Params["filename"];
+
+  OTA_t *OTA = new OTA_t();
+  OTA->Update(OTA_URL_PREFIX + Params["firmwareversion"] + "/" + UpdateFilename);
+
+  Device->Status = DeviceStatus::UPDATING;
+
+  Response.ResponseCode = WebServerResponse_t::CODE::OK;
+  Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update started\"}";
+
+  return true;
 }
 
 string Device_t::TypeToString() {

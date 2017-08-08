@@ -1,10 +1,12 @@
 /*
-  Классы для работы со временем на уровне устройства
+*    Time.cpp
+*    Class designed to work with time
+*
 */
 
 #include "Time.h"
 
-#include "JSON.h"
+#include "JSON/JSON.h"
 #include <string>
 #include <sys/time.h>
 #include <cmath>
@@ -93,7 +95,6 @@ void Time::ServerSync(string Host, string Path) {
   if (Offset != 0) return;
 
   ESP_LOGI(tag, "Time sync started");
-
   HTTPClient::Query(Host, 80, Path, QueryType::GET, "", true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
 }
 
@@ -107,30 +108,18 @@ bool Time::ReadBody(char Data[], int DataLen, char IP[]) {
 };
 
 bool Time::ReadFinished(char IP[]) {
-
   if (ReadBuffer.length() == 0) return false;
 
-  JSON_t *JSON = new JSON_t(ReadBuffer);
+  JSON JSONObject(ReadBuffer);
 
-  if (JSON->GetParam().size() == 0) {
-    ESP_LOGE(tag, "Incorrect Time info received");
-    delete JSON;
-    return false;
-  }
-
-  if (JSON->GetParam("GMT").empty()) {
+  string GMTTime = JSONObject.GetItem("GMT");
+  if (GMTTime.empty()) {
     ESP_LOGE(tag, "No time info found");
-    delete JSON;
     return false;
   }
-  else {
-    Time::SetTime(JSON->GetParam("GMT"));
-    ESP_LOGI(tag, "Time received: %s", Time::UnixtimeString().c_str());
-    delete JSON;
-    return true;
-  }
 
-  delete JSON;
+  Time::SetTime(GMTTime);
+  ESP_LOGI(tag, "Time received: %s", Time::UnixtimeString().c_str());
 
   return true;
 };

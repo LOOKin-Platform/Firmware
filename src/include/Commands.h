@@ -1,9 +1,11 @@
+/*
+*    Commands.h
+*    Class to handle API /Commands
+*
+*/
+
 #ifndef COMMANDS_H
 #define COMMANDS_H
-
-/*
-  Команды - классы и функции, связанные с /commands
-*/
 
 using namespace std;
 
@@ -40,8 +42,6 @@ class Command_t {
 class CommandSwitch_t : public Command_t {
   public:
     CommandSwitch_t();
-    ~CommandSwitch_t() {};
-
     bool Execute(uint8_t EventCode, uint32_t Operand) override;
 };
 

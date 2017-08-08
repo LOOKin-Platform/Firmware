@@ -1,3 +1,9 @@
+/*
+*    Converter.h
+*    Class to convert types between each other
+*
+*/
+
 #ifndef CONVERTER_H
 #define CONVERTER_H
 
@@ -22,6 +28,8 @@ class Converter {
     static string   ToString(uint32_t);
 
     static string   ToHexString(uint64_t, size_t);
+
+    static float    ToFloat(string);
 
     template <typename T>
     static T        UintFromHexString(string);

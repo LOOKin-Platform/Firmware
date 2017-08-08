@@ -28,7 +28,6 @@ public:
 	uint32_t 	GetUInt32Bit(string key);
 	void 			SetUInt32Bit(string key, uint32_t data);
 
-
 	void * 		GetBlob(string key);
 	void 			SetBlob(string key, void *data, size_t datalen = 0);
 

@@ -37,7 +37,7 @@ struct HTTPClientData_t {
   char      ContentURI[32]= "\0";
   QueryType Method        = GET;
 
-  int       SocketID  = -1;
+  int       SocketID      = -1;
 
   ReadStarted   ReadStartedCallback   = NULL;
   ReadBody      ReadBodyCallback      = NULL;

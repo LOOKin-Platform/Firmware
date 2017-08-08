@@ -1,9 +1,11 @@
+/*
+*    Time.cpp
+*    Class designed to work with time
+*
+*/
+
 #ifndef DRIVERS_TIME_H_
 #define DRIVERS_TIME_H_
-
-/*
-  Классы для работы со временем на уровне устройства
-*/
 
 #include <nvs.h>
 #include <string>
@@ -27,6 +29,7 @@ struct DateTime_t {
 };
 
 class Time {
+
   public:
     static uint32_t   Offset;
     static int8_t     TimezoneOffset;
@@ -45,10 +48,10 @@ class Time {
     static void       ServerSync(string Host, string Path);
 
     // HTTP Callbacks
-    static void ReadStarted(char IP[]);
-    static bool ReadBody(char Data[], int DataLen, char IP[]);
+    static void ReadStarted (char IP[]);
+    static bool ReadBody    (char Data[], int DataLen, char IP[]);
     static bool ReadFinished(char IP[]);
-    static void Aborted(char IP[]);
+    static void Aborted     (char IP[]);
 
   private:
     static string ReadBuffer;

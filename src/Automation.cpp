@@ -7,7 +7,6 @@
 #include "Globals.h"
 
 static char tag[] = "Automation";
-static string NVSAutomationArea = "Automation";
 
 Automation_t::Automation_t() {
   ScenariosCache  = vector<ScenarioCacheItem_t>();
@@ -17,19 +16,7 @@ Automation_t::Automation_t() {
 void Automation_t::Init() {
   ESP_LOGD(tag, "Init");
 
-  NVS *Memory = new NVS(NVSAutomationArea);
-
-  // Create scenarious cache from scenarios saved in NVS
-  uint8_t ArrayCount = Memory->ArrayCount(NVSScenariosArray);
-
-  for (int i=0; i < ArrayCount; i++) {
-    Scenario_t *Scenario = Scenario_t::DeserializeScene(Memory->StringArrayGet(NVSScenariosArray, i));
-    AddScenarioCacheItem(Scenario, i);
-    delete Scenario;
-  }
-
-  ESP_LOGI(tag, "Loaded %i scenarios", ArrayCount);
-  delete Memory;
+  Scenario_t::LoadScenarios();
 
   TimeChangedHandle = FreeRTOS::StartTask(TimeChangedTask, "TimeChangedTask", NULL, 4096);
 }
@@ -49,33 +36,24 @@ void Automation_t::SensorChanged(uint8_t SensorID, uint8_t EventCode) {
                       Converter::ToHexString(SensorID, 2).c_str(),
                       Converter::ToHexString(EventCode, 2).c_str());
 
-  NVS *Memory = new NVS(NVSAutomationArea);
-
   for (auto& ScenarioCacheItem : ScenariosCache)
     if (ScenarioCacheItem.IsLinked == true) {
       Scenario_t *Scenario = new Scenario_t(ScenarioCacheItem.ScenarioType);
+
+      if (Scenario != nullptr) {
       Scenario->SetData(ScenarioCacheItem.Operand);
 
-      if (Scenario->Data->SensorUpdatedIsTriggered(SensorID, EventCode)) {
-        Scenario_t *ScenarioToExecute = Scenario_t::DeserializeScene(Memory->StringArrayGet(NVSScenariosArray,ScenarioCacheItem.ArrayID));
-
-        if (ScenarioToExecute!=nullptr) {
-          ScenarioToExecute->Data->ExecuteCommands(ScenarioToExecute->Commands, ScenarioCacheItem.ScenarioID);
-          delete ScenarioToExecute;
-        }
-
+      if (Scenario->Data->SensorUpdatedIsTriggered(SensorID, EventCode))
+        Scenario->Data->ExecuteCommands(ScenarioCacheItem.ScenarioID);
       }
-
       delete Scenario;
     }
-
-  delete Memory;
 }
 
 void Automation_t::TimeChangedTask(void *) {
   while (1) {
 
-    while (Time::Unixtime()%SCENARIO_TIME_INTERVAL!=0)
+    while (Time::Unixtime()%SCENARIOS_TIME_INTERVAL!=0)
       FreeRTOS::Sleep(1000);
 
     for (auto& ScenarioCacheItem : Automation->ScenariosCache)
@@ -83,19 +61,13 @@ void Automation_t::TimeChangedTask(void *) {
         Scenario_t *Scenario = new Scenario_t(ScenarioCacheItem.ScenarioType);
         Scenario->SetData(ScenarioCacheItem.Operand);
 
-        if (Scenario->Data->TimeUpdatedIsTriggered()) {
-          NVS *Memory = new NVS(NVSAutomationArea);
-          Scenario_t *ScenarioToExecute = Scenario_t::DeserializeScene(Memory->StringArrayGet(NVSScenariosArray,ScenarioCacheItem.ArrayID));
-          if (ScenarioToExecute!=nullptr) {
-            ScenarioToExecute->Data->ExecuteCommands(ScenarioToExecute->Commands, ScenarioCacheItem.ScenarioID);
-            delete ScenarioToExecute;
-          }
-          delete Memory;
-        }
+        if (Scenario->Data->TimeUpdatedIsTriggered())
+          Scenario->Data->ExecuteCommands(ScenarioCacheItem.ScenarioID);
+
         delete Scenario;
       }
 
-    if (SCENARIO_TIME_INTERVAL > 1)
+    if (SCENARIOS_TIME_INTERVAL > 1)
       FreeRTOS::Sleep(1000);
 
   }
@@ -113,14 +85,6 @@ uint8_t Automation_t::CacheGetArrayID(uint32_t ScenarioID) {
   return MAX_NVSARRAY_INDEX+1;
 }
 
-string Automation_t::MemoryGetScenarioByID(uint32_t ScenarioID) {
-  NVS *Memory = new NVS(NVSAutomationArea);
-  string Result = Memory->StringArrayGet(NVSScenariosArray, CacheGetArrayID(ScenarioID));
-  delete Memory;
-  return Result;
-}
-
-
 void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts,
                                                   map<string,string> Params, string RequestBody) {
   // обработка GET запроса - получение данных
@@ -128,9 +92,10 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
     // Запрос корневого JSON /scenes
     if (URLParts.size() == 0) {
 
-      JSON_t *JSON = new JSON_t();
+      JSON JSONObject;
 
-      JSON->SetParam("Version", Converter::ToHexString(CurrentVersion(), 8));
+      JSONObject.SetItem("Version", Converter::ToHexString(CurrentVersion(), 8));
+
 
       vector<map<string,string>> tmpVector = vector<map<string,string>>();
       for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
@@ -140,38 +105,33 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
         });
       }
 
-      JSON->SetMapsArray("VersionMap", tmpVector);
+      JSONObject.SetObjectsArray("VersionMap", tmpVector);
 
       vector<string> SceneIDs;
       for (auto& Scenario : ScenariosCache)
         SceneIDs.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
 
-      JSON->SetVector("Scenarios", SceneIDs);
+      JSONObject.SetStringArray("Scenarios", SceneIDs);
 
-      Result->Body = JSON->ToString();
-      delete JSON;
+      Result->Body = JSONObject.ToString();
     }
 
     // Запрос конкретного параметра или команды секции API
     if (URLParts.size() == 1) {
       if (URLParts[0] == "version")   Result->Body = Converter::ToHexString(CurrentVersion(), 8);
       if (URLParts[0] == "scenarios") {
-        JSON_t *JSON = new JSON_t();
 
+        vector<string> Scenarios = vector<string>();
         for (auto& Scenario : ScenariosCache)
-          JSON->AddToVector(Converter::ToHexString(Scenario.ScenarioID, 8));
+          Scenarios.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
 
-        Result->Body = JSON->ToString(true);
-        delete JSON;
+        Result->Body = JSON::CreateStringFromVector(Scenarios);
       }
     }
 
     if (URLParts.size() == 2) {
-      if (URLParts[0] == "scenarios") {
-        NVS *Memory = new NVS(NVSAutomationArea);
-        Result->Body = Memory->StringArrayGet(NVSScenariosArray,CacheGetArrayID(URLParts[1]));
-        delete Memory;
-      }
+      if (URLParts[0] == "scenarios")
+        Result->Body = Scenario_t::LoadScenario(CacheGetArrayID(URLParts[1]));
     }
   }
 
@@ -190,7 +150,7 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
           }
 
         if (!IsFound) {
-          if (AddScenario(Scenario))
+          if (Scenario_t::SaveScenario(Scenario))
             Result->Body = "{\"success\" : \"true\"}";
           else {
             Result->ResponseCode = WebServerResponse_t::CODE::ERROR;
@@ -212,7 +172,7 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
     if (URLParts.size() == 2) {
       if (URLParts[0] == "scenarios") {
         uint32_t ScenarioID = Converter::UintFromHexString<uint32_t>(URLParts[1]);
-        RemoveScenario(ScenarioID);
+        Scenario_t::RemoveScenario(CacheGetArrayID(ScenarioID));
         RemoveScenarioCacheItem(ScenarioID);
 
         Result->ResponseCode = WebServerResponse_t::CODE::OK;
@@ -220,20 +180,6 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
       }
     }
   }
-}
-
-bool Automation_t::AddScenario(Scenario_t * &Scenario) {
-  bool Result = false;
-  NVS *Memory = new NVS(NVSAutomationArea);
-  uint8_t Index = Memory->StringArrayAdd(NVSScenariosArray, Scenario_t::SerializeScene(Scenario));
-  Memory->Commit();
-  if (Index != MAX_NVSARRAY_INDEX+1) {
-    AddScenarioCacheItem(Scenario, Index);
-    Result = true;
-  }
-
-  delete Memory;
-  return Result;
 }
 
 void Automation_t::AddScenarioCacheItem(Scenario_t* &Scenario, int ArrayIndex) {
@@ -246,13 +192,6 @@ void Automation_t::AddScenarioCacheItem(Scenario_t* &Scenario, int ArrayIndex) {
   NewCacheItem.ArrayID        = ArrayIndex;
 
   ScenariosCache.push_back(NewCacheItem);
-}
-
-void Automation_t::RemoveScenario(uint32_t ScenarioID) {
-  NVS *Memory = new NVS(NVSAutomationArea);
-  Memory->StringArrayRemove(NVSScenariosArray, +CacheGetArrayID(ScenarioID));
-  Memory->Commit();
-  delete Memory;
 }
 
 void Automation_t::RemoveScenarioCacheItem(uint32_t ScenarioID) {
@@ -278,13 +217,13 @@ void Automation_t::Debug(Scenario_t* &Scene) {
   ESP_LOGI(tag, "Scene Name = %s"   , Scene->Name);
 
   /*
-  if (Scene->Type == SCENARIO_TYPE_EVENT_HEX) {
+  if (Scene->Type == SCENARIOS_TYPE_EVENT_HEX) {
     ESP_LOGI(tag, "DeviceID          = %s", Converter::ToHexString(Scene->EventData->DeviceID,8).c_str());
   	ESP_LOGI(tag, "SensorIdentifier  = %s", Converter::ToHexString(Scene->EventData->SensorIdentifier,2).c_str());
   	ESP_LOGI(tag, "EventCode         = %s", Converter::ToHexString(Scene->EventData->EventCode,2).c_str());
   }
 
-  if (Scene->Type == SCENARIO_TYPE_TIMER_HEX) {
+  if (Scene->Type == SCENARIOS_TYPE_TIMER_HEX) {
     ESP_LOGI(tag, "DeviceID          = %s", Converter::ToHexString(Scene->TimerData->DeviceID,8).c_str());
   	ESP_LOGI(tag, "SensorIdentifier  = %s", Converter::ToHexString(Scene->TimerData->SensorIdentifier,2).c_str());
     ESP_LOGI(tag, "EventCode         = %s", Converter::ToHexString(Scene->TimerData->EventCode,2).c_str());

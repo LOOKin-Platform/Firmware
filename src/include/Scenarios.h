@@ -54,18 +54,19 @@ class Scenario_t {
     /*    Execute Scenario commands     */
     /************************************/
 
-    static void   ExecuteCommands(uint32_t ScenarioID);
-    static void   ExecuteCommandsTask(void *);
+    static void         ExecuteScenario(uint32_t ScenarioID);
+    static void         ExecuteCommandsTask(void *);
 
-    static void   CommandsCacheSet(uint32_t, vector<ScenesCommandItem_t>);
-    static vector<ScenesCommandItem_t> CommandsCacheGet(uint32_t);
-    static void   CommandsCacheErase(uint32_t);
+    static void         LoadScenarios();
+    static string       LoadScenario(uint8_t Index);
+    static bool         SaveScenario(Scenario_t *);
+    static void         RemoveScenario(uint8_t Index);
 
     static string       SerializeScene(Scenario_t *);
     static Scenario_t*  DeserializeScene(string);
 
-    template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<SCENARIO_OPERAND_BIT_LEN>, size_t Start, size_t Length);
-    template <size_t SrcSize>     static void AddRangeTo(bitset<SCENARIO_OPERAND_BIT_LEN> &, bitset<SrcSize>, size_t Position);
+    template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<SCENARIOS_OPERAND_BIT_LEN>, size_t Start, size_t Length);
+    template <size_t SrcSize>     static void AddRangeTo(bitset<SCENARIOS_OPERAND_BIT_LEN> &, bitset<SrcSize>, size_t Position);
     static bitset<8> Bitset4To8(bitset<4>);
 
     // HTTP Callbacks
@@ -73,16 +74,18 @@ class Scenario_t {
     static void Aborted(char[]);
 
   private:
-    static map<string, vector<ScenesCommandItem_t>> CommandsCacheMap;
+    static QueueHandle_t  Queue;
+    static uint8_t        ThreadsCounter;
 };
 
 class Data_t {
   public:
     virtual bool      IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  { return false; };
-    virtual void      SetData(bitset<SCENARIO_OPERAND_BIT_LEN>) {};
+    virtual void      SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) {};
     virtual string    ToString() { return ""; };
 
-    virtual void      ExecuteCommands(const vector<ScenesCommandItem_t>, uint32_t ScenarioID = 0)  {};
+    virtual bool      IsCommandNeedToExecute(ScenesCommandItem_t &) {return true;};
+    virtual void      ExecuteCommands(uint32_t ScenarioID)  {};
     virtual bool      SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode) { return false; };
     virtual bool      TimeUpdatedIsTriggered() { return false; };
 };
@@ -94,25 +97,30 @@ class EventData_t : public Data_t {
 		uint8_t     EventCode         = 0;
 
     bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void        SetData(bitset<SCENARIO_OPERAND_BIT_LEN>) override;
+    void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
     string      ToString() override;
 
-    void        ExecuteCommands(const vector<ScenesCommandItem_t>, uint32_t ScenarioID = 0)  override;
+    void        ExecuteCommands(uint32_t ScenarioID)  override;
     bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode) override;
 };
 
 class TimerData_t : public Data_t {
   public:
+    struct TimerDataStruct {
+      uint32_t ScenarioID = 0;
+      uint16_t TimerDelay = 0;
+    };
+
   	uint32_t    DeviceID          = 0;
   	uint8_t     SensorIdentifier  = 0;
   	uint8_t     EventCode         = 0;
     uint16_t    TimerDelay        = 0; // максимально - 12 бит или 4096 секунд
 
     bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void        SetData(bitset<SCENARIO_OPERAND_BIT_LEN>) override;
+    void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
     string      ToString() override;
 
-    void        ExecuteCommands(const vector<ScenesCommandItem_t>, uint32_t ScenarioID = 0) override;
+    void        ExecuteCommands(uint32_t ScenarioID) override;
     bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode) override;
 
     static void TimerCallback(Timer_t *pTimer);
@@ -125,10 +133,11 @@ class CalendarData_t : public Data_t {
     bitset<8>   ScheduledDays;
 
     bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void        SetData(bitset<SCENARIO_OPERAND_BIT_LEN>) override;
+    void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
     string      ToString() override;
 
-    void        ExecuteCommands(const vector<ScenesCommandItem_t>, uint32_t ScenarioID = 0) override;
+    bool        IsCommandNeedToExecute(ScenesCommandItem_t &) override;
+    void        ExecuteCommands(uint32_t ScenarioID) override;
     bool        TimeUpdatedIsTriggered() override;
 };
 

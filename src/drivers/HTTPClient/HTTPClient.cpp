@@ -39,7 +39,7 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
   }
 
   if (ToFront)
-  FreeRTOS::Queue::SendToFront(Queue, &Query, (TickType_t) HTTPCLIENT_BLOCK_TICKS );
+    FreeRTOS::Queue::SendToFront(Queue, &Query, (TickType_t) HTTPCLIENT_BLOCK_TICKS );
   else
     FreeRTOS::Queue::SendToBack(Queue, &Query, (TickType_t) HTTPCLIENT_BLOCK_TICKS );
 
@@ -59,7 +59,6 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
   HTTPClientData_t ClientData;
 
   if (Queue != 0)
-    //while (FreeRTOS::Queue::Count(HTTPClient::Queue) > 0)
     while (FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) HTTPCLIENT_BLOCK_TICKS)) {
       if (HTTPClient::Connect(ClientData)) {
         ESP_LOGI(tag, "Connected to http server");
@@ -130,11 +129,12 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
           ESP_LOGE(tag, "Unexpected recv result");
       }
 
-      if (ClientData.ReadFinishedCallback != NULL)
+      if (ClientData.ReadFinishedCallback != NULL) {
         if (!ClientData.ReadFinishedCallback(ClientData.IP)) {
           HTTPClient::Failed(ClientData);
           continue;
         }
+      }
     }
 
     ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);

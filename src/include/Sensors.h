@@ -1,9 +1,11 @@
+/*
+*    Sensors.h
+*    Class to handle API /Sensors
+*
+*/
+
 #ifndef SENSORS_H
 #define SENSORS_H
-
-/*
-  Сенсоры - классы и функции, связанные с /sensors
-*/
 
 #include <string>
 #include <vector>
@@ -36,7 +38,6 @@ class Sensor_t {
 class SensorSwitch_t : public Sensor_t {
   public:
     SensorSwitch_t();
-
     void Update() override;
 };
 

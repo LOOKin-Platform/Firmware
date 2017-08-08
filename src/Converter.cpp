@@ -1,4 +1,8 @@
-using namespace std;
+/*
+*    Converter.cpp
+*    Class to convert types between each other
+*
+*/
 
 #include <algorithm>
 #include <sstream>
@@ -7,8 +11,6 @@ using namespace std;
 #include <locale>
 
 #include "Converter.h"
-
-#include <esp_log.h>
 
 string Converter::ToLower(string Str) {
   string Result = Str;
@@ -66,6 +68,10 @@ string Converter::ToHexString(uint64_t Number, size_t Length) {
   stringstream sstream;
   sstream << std::uppercase << std::setfill('0') << std::setw(Length) << std::hex << (uint64_t)Number;
   return (sstream.str());
+}
+
+float Converter::ToFloat(string Str) {
+  return atof(Str.c_str());
 }
 
 template <typename T>

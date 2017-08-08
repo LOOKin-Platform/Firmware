@@ -42,8 +42,7 @@ string NVS::GetString(string key) {
 
 	esp_err_t nvs_err = nvs_get_str(m_handle, key.c_str(), NULL, &length);
 
-	if (nvs_err == ESP_OK && length > 0)
-	{
+	if (nvs_err == ESP_OK && length > 0) {
 		char *data = (char *)malloc(length);
 		nvs_get_str(m_handle, key.c_str(), data, &length);
 		Result = string(data);
@@ -53,6 +52,7 @@ string NVS::GetString(string key) {
 
 	return Result;
 } // get
+
 
 /**
  * @brief Set the string value by key.
@@ -231,6 +231,7 @@ string NVS::StringArrayGet(string ArrayName, uint8_t Index) {
 	 return GetString(ArrayName + "_" + Converter::ToString(Index));
 }
 
+
 /**
  * @brief Remove row from the string array by index .
  *
@@ -269,7 +270,7 @@ void NVS::ArrayCountSet(string ArrayName, uint8_t Count) {
 
 uint8_t NVS::ArrayCount(string ArrayName) {
 	uint8_t ArrayCount = GetInt8Bit(ArrayName + ArrayCountName);
-	return (ArrayCount >= +128) ? 0 : ArrayCount; 			// проверка на переполнение
+	return (ArrayCount >= +128) ? 0 : ArrayCount; // проверка на переполнение
 }
 
 void NVS::ArrayEraseAll(string ArrayName) {

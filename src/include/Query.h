@@ -1,3 +1,9 @@
+/*
+*    Query.h
+*    Class designed to parse HTTP query and make suitable struct to work with it's data
+*
+*/
+
 #ifndef QUERY_H
 #define QUERY_H
 
