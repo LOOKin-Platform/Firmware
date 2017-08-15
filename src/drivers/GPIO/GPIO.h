@@ -1,6 +1,8 @@
 /*
- * GPIO.h
- */
+*    GPIO.h
+*    Class to rule pin outputs and inputs
+*
+*/
 
 #ifndef DRIVERS_GPIO_H_
 #define DRIVERS_GPIO_H_

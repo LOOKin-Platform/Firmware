@@ -107,22 +107,23 @@ bool Time::ReadBody(char Data[], int DataLen, char IP[]) {
   return true;
 };
 
-bool Time::ReadFinished(char IP[]) {
-  if (ReadBuffer.length() == 0) return false;
+void Time::ReadFinished(char IP[]) {
+  if (ReadBuffer.length() == 0) {
+    ESP_LOGE(tag, "Empty data received");
+    return;
+  }
 
   JSON JSONObject(ReadBuffer);
 
   string GMTTime = JSONObject.GetItem("GMT");
   if (GMTTime.empty()) {
     ESP_LOGE(tag, "No time info found");
-    return false;
+    return;
   }
 
   Time::SetTime(GMTTime);
   ESP_LOGI(tag, "Time received: %s", Time::UnixtimeString().c_str());
-
-  return true;
-};
+}
 
 void Time::Aborted(char IP[]) {
   ESP_LOGE(tag, "Failed to retrieve time from server");

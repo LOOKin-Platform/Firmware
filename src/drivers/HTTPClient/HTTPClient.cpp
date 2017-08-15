@@ -11,6 +11,20 @@ static char tag[] = "HTTPClient";
 QueueHandle_t HTTPClient::Queue = FreeRTOS::Queue::Create(HTTPCLIENT_QUEUE_SIZE, sizeof( struct HTTPClientData_t ));
 uint8_t HTTPClient::ThreadsCounter = 0;
 
+/**
+ * @brief Add query to the request queue.
+ *
+ * @param [in] Hostname e. g. look-in.club
+ * @param [in] Port Server port, e. g. 80
+ * @param [in] ContentURI Path to the content in the server
+ * @param [in] Type Query type, e. g. QueryType::POST
+ * @param [in] IP Server IP. If empty firmware will try to resolve hostname and fill that field
+ * @param [in] ToFront If query is primary it will be better to send it to the front of queue
+ * @param [in] ReadStartedCallback Callback function invoked while class started to read data from server
+ * @param [in] ReadBodyCallback Callback function invoked while server data reading process
+ * @param [in] ReadFinishedCallback Callback function invoked when reading process is over
+ * @param [in] AbortedCallback Callback function invoked when reading failed
+ */
 void HTTPClient::Query(string Hostname, uint8_t Port, string ContentURI, QueryType Type, string IP, bool ToFront,
         ReadStarted ReadStartedCallback, ReadBody ReadBodyCallback, ReadFinished ReadFinishedCallback, Aborted AbortedCallback) {
 
@@ -32,6 +46,13 @@ void HTTPClient::Query(string Hostname, uint8_t Port, string ContentURI, QueryTy
   Query(QueryData, ToFront);
 }
 
+/**
+ * @brief Add query to the request queue.
+ *
+ * @param [in] Query HTTPClientData_t struct with query info
+ * @param [in] ToFront If query is primary it will be better to send it to the front of queue
+ */
+
 void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
   if( Queue == 0 ) {
     ESP_LOGE(tag, "Failed to create queue");
@@ -52,6 +73,12 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
     FreeRTOS::StartTask(HTTPClient::HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, HTTPCLIENT_TASK_STACKSIZE);
   }
 }
+
+/**
+ * @brief The task of processing the HTTP requests in queue
+ *
+ * @param [in] TaskData Data - passed in task. Used for task identifier (number)
+ */
 
 void HTTPClient::HTTPClientTask(void *TaskData) {
   ESP_LOGD(tag, "Task %u created", (uint32_t)TaskData);
@@ -108,7 +135,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
         if (BuffLen < 0) {
           ESP_LOGE(tag, "Error: receive data error! errno=%d", errno);
           HTTPClient::Failed(ClientData);
-          continue;
+          break;
         }
         else if (BuffLen > 0 && !resp_body_start) { // skip header
           memcpy(ReadData, Text, BuffLen);
@@ -118,7 +145,10 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
           memcpy(ReadData, Text, BuffLen);
 
           if (ClientData.ReadBodyCallback != NULL)
-            ClientData.ReadBodyCallback(ReadData, BuffLen, ClientData.IP);
+            if (ClientData.ReadBodyCallback(ReadData, BuffLen, ClientData.IP)) {
+              HTTPClient::Failed(ClientData);
+              break;
+            }
         }
         else if (BuffLen == 0) {
           flag = false;
@@ -129,12 +159,8 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
           ESP_LOGE(tag, "Unexpected recv result");
       }
 
-      if (ClientData.ReadFinishedCallback != NULL) {
-        if (!ClientData.ReadFinishedCallback(ClientData.IP)) {
-          HTTPClient::Failed(ClientData);
-          continue;
-        }
-      }
+      if (ClientData.ReadFinishedCallback != NULL)
+        ClientData.ReadFinishedCallback(ClientData.IP);
     }
 
     ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
@@ -142,6 +168,12 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
     FreeRTOS::DeleteTask();
 }
 
+/**
+ * @brief Attempt to connect to HTTP server.
+ *
+ * @param [in] ClientData HTTPClientData_t struct with query info.
+ * @result Is connect to HTTP server succes or not
+ */
 bool HTTPClient::Connect(HTTPClientData_t &ClientData) {
 
   if (strlen(ClientData.IP) == 0) {
@@ -178,6 +210,12 @@ bool HTTPClient::Connect(HTTPClientData_t &ClientData) {
   return false;
 }
 
+/**
+ * @brief Resolving an IP by hostname
+ *
+ * @param [in] Hostname Hostname to IP resolving
+ * @return Resolved IP in string representation, e. g. 192.168.1.10
+ */
 char* HTTPClient::ResolveIP (const char *Hostname) {
   ESP_LOGI(tag, "IP not specified. Trying to resolve IP address");
 
@@ -209,9 +247,15 @@ char* HTTPClient::ResolveIP (const char *Hostname) {
   return IP;
 }
 
-// read buffer by byte still delim ,return read bytes counts
+/**
+ * @brief Read buffer by byte still delimeter
+ *
+ * @param [in] buffer Buffer
+ * @param [in] delim Delimeter
+ * @param [in] len Buffer lenght
+ * @return Read bytes counts
+ */
 int HTTPClient::ReadUntil(char *buffer, char delim, int len) {
-  /* TODO: delim check,buffer check,further: do an buffer length limited */
   int i = 0;
   while (buffer[i] != delim && i < len) {
       ++i;
@@ -219,10 +263,14 @@ int HTTPClient::ReadUntil(char *buffer, char delim, int len) {
   return i + 1;
 }
 
-/* resolve a packet from http socket
- * return true if packet including \r\n\r\n that means http packet header finished,start to receive packet body
- * otherwise return false
- * */
+ /**
+  * @brief Resolve a packet from http socket
+  *
+  * @param [in] ClientData HTTPClientData_t struct with query info.
+  * @param [in] text Buffer
+  * @param [in] total_len Buffer length
+  * @return Return true if packet including \\r\\n\\r\\n that means http packet header finished, otherwise return false
+  */
 bool HTTPClient::ReadPastHttpHeader(HTTPClientData_t &ClientData, char text[], int total_len) {
   /* i means current position */
   int i = 0, i_read_len = 0;
@@ -239,10 +287,8 @@ bool HTTPClient::ReadPastHttpHeader(HTTPClientData_t &ClientData, char text[], i
       memcpy(ReadData, &(text[i + 2]), i_write_len);
 
       if (ClientData.ReadBodyCallback != NULL) {
-        if (!ClientData.ReadBodyCallback(ReadData,i_write_len, ClientData.IP)) {
-          HTTPClient::Failed(ClientData);
+        if (!ClientData.ReadBodyCallback(ReadData,i_write_len, ClientData.IP))
           return false;
-        }
       }
 
       return true;
@@ -253,12 +299,15 @@ bool HTTPClient::ReadPastHttpHeader(HTTPClientData_t &ClientData, char text[], i
   return false;
 }
 
-
+/**
+ * @brief Critical HTTP-query error handling
+ *
+ * @param [in] &ClientData HTTPClientData_t struct with query info.
+ */
 void HTTPClient::Failed(HTTPClientData_t &ClientData) {
   ESP_LOGE(tag, "Exiting HTTPClient task due to fatal error...");
   close(ClientData.SocketID);
 
-  if (ClientData.AbortedCallback != NULL) {
+  if (ClientData.AbortedCallback != NULL)
     ClientData.AbortedCallback(ClientData.IP);
-  }
 }

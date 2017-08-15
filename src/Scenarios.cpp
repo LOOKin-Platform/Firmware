@@ -46,6 +46,10 @@ void Scenario_t::SetData(uint64_t Operand) {
 }
 
 void Scenario_t::SetData(string HexString) {
+
+  if (HexString.length() > 16) HexString.substr(0, 16);
+  if (HexString.length() < 16) while (HexString.length() < 16) HexString += "0";
+
   bitset<SCENARIOS_OPERAND_BIT_LEN> DataBitset(Converter::UintFromHexString<uint64_t>(HexString));
   Data->SetData(DataBitset);
 }
@@ -226,7 +230,7 @@ template void Scenario_t::AddRangeTo<8> (bitset<SCENARIOS_OPERAND_BIT_LEN> &Dest
 template void Scenario_t::AddRangeTo<16>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<16>, size_t Position);
 template void Scenario_t::AddRangeTo<32>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<32>, size_t Position);
 
-bitset<8> Bitset4To8(bitset<4> Src) {
+bitset<8> Scenario_t::Bitset4To8(bitset<4> Src) {
   bitset<8> Return("0000" + Src.to_string());
   return Return;
 }
@@ -235,9 +239,8 @@ bitset<8> Bitset4To8(bitset<4> Src) {
 /*      Scenarios HTTP client       */
 /************************************/
 
-bool Scenario_t::ReadFinished(char IP[]) {
+void Scenario_t::ReadFinished(char IP[]) {
   ESP_LOGI(tag,"HTTP Command to device with IP %s sent", IP);
-  return true;
 }
 
 void Scenario_t::Aborted(char IP[]) {
@@ -256,7 +259,7 @@ bool EventData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandIt
 void EventData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
   DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ullong();
   SensorIdentifier  = (uint8_t) Scenario_t::Range<8>(Operand, 32, 8).to_ulong();
-  EventCode         = (uint8_t) Bitset4To8(Scenario_t::Range<4>(Operand, 40, 4)).to_ulong();
+  EventCode         = (uint8_t) Scenario_t::Bitset4To8(Scenario_t::Range<4>(Operand, 40, 4)).to_ulong();
 }
 
 string EventData_t::ToString() {
@@ -293,7 +296,7 @@ bool TimerData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandIt
 void TimerData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
   DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ulong();
   SensorIdentifier  = (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
-  EventCode         = (uint8_t) Bitset4To8(Scenario_t::Range<4> (Operand, 40, 4)).to_ulong();
+  EventCode         = (uint8_t) Scenario_t::Bitset4To8(Scenario_t::Range<4> (Operand, 40, 4)).to_ulong();
   TimerDelay        = (uint16_t)Scenario_t::Range<16>(Operand, 44, 16).to_ulong();
 }
 

@@ -25,7 +25,7 @@ class OTA_t {
     // HTTP Callbacks
     static void ReadStarted(char []);
     static bool ReadBody(char Data[], int DataLen, char[]);
-    static bool ReadFinished(char []);
+    static void ReadFinished(char []);
     static void Aborted(char []);
 
   private:

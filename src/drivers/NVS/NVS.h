@@ -31,21 +31,21 @@ public:
 	void * 		GetBlob(string key);
 	void 			SetBlob(string key, void *data, size_t datalen = 0);
 
-	/* Операции с blob-массивами в NVS */
+	/* Methods to work with blob arrays in NVS */
 
 	void 			BlobArrayAdd			(string ArrayName, void *Item, size_t datalen = 0);
 	void * 		BlobArrayGet			(string ArrayName, uint8_t Index);
 	void 			BlobArrayRemove		(string ArrayName, uint8_t Index);
 	void 			BlobArrayReplace	(string ArrayName, uint8_t Index, void *Item, size_t datalen = 0);
 
-	/* Операции с массивами строк в NVS */
+	/* Methods to work with string arrays in NVS */
 
 	uint8_t		StringArrayAdd		(string ArrayName, string Item);
 	string 		StringArrayGet		(string ArrayName, uint8_t Index);
 	void 			StringArrayRemove	(string ArrayName, uint8_t Index);
 	void 			StringArrayReplace(string ArrayName, uint8_t Index, string Item);
 
-	/* Общие операции с массивами */
+	/* General arrays methods */
 
 	void 			ArrayEraseAll	(string ArrayName);
 	uint8_t 	ArrayCount		(string ArrayName);

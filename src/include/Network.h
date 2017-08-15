@@ -21,7 +21,7 @@ using namespace std;
 
 struct NetworkDevice_t {
   uint8_t   TypeHex   = 0x00;
-  bool      IsActive  = 0;
+  bool      IsActive  = false;
   uint32_t  ID        = 0;
   string    IP        = "";
 };

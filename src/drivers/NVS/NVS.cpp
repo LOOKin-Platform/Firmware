@@ -263,16 +263,33 @@ void NVS::StringArrayReplace(string ArrayName, uint8_t Index, string Item) {
 	 return SetString(ArrayName + "_" + Converter::ToString(Index), Item);
 }
 
+/**
+ * @brief Set Count item for specified array.
+ *
+ * @param [in] ArrayName Name of Array in that you need to set count.
+ * @param [in] Count Aray items count value
+ */
 void NVS::ArrayCountSet(string ArrayName, uint8_t Count) {
-	uint8_t ArrayCount = (Count >= +128) ? 0 : Count; 	// проверка на переполнение
+	uint8_t ArrayCount = (Count >= +128) ? +0 : Count; 	// проверка на переполнение
 	SetInt8Bit(ArrayName + ArrayCountName, ArrayCount);
 }
 
+/**
+ * @brief Get array items count for specified array.
+ *
+ * @param [in] ArrayName Name of Array in that you need to set count.
+ * @param [out] Array items count
+ */
 uint8_t NVS::ArrayCount(string ArrayName) {
 	uint8_t ArrayCount = GetInt8Bit(ArrayName + ArrayCountName);
-	return (ArrayCount >= +128) ? 0 : ArrayCount; // проверка на переполнение
+	return (ArrayCount >= +128) ? +0 : ArrayCount; // проверка на переполнение
 }
 
+/**
+ * @brief Clean all data, associated with given array.
+ *
+ * @param [in] ArrayName Name of Array that you need to clean.
+ */
 void NVS::ArrayEraseAll(string ArrayName) {
 
 	for (uint8_t i = 0; i < 128; i++)

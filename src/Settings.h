@@ -1,4 +1,4 @@
-#define FIRMWARE_VERSION            "0.82"
+#define FIRMWARE_VERSION            "0.83"
 
 #define OTA_SERVER_HOST             "download.look-in.club"
 #define OTA_SERVER_PORT             80

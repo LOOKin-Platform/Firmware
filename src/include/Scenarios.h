@@ -70,7 +70,7 @@ class Scenario_t {
     static bitset<8> Bitset4To8(bitset<4>);
 
     // HTTP Callbacks
-    static bool ReadFinished(char[]);
+    static void ReadFinished(char[]);
     static void Aborted(char[]);
 
   private:

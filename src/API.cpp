@@ -19,8 +19,15 @@ void API::Handle(WebServerResponse_t* &Response, Query_t Query) {
 }
 
 void API::Handle(WebServerResponse_t* &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
-  if (URLParts.size() > 0) {
 
+  if (URLParts.size() == 0) {
+    Response->ResponseCode  = WebServerResponse_t::CODE::OK;
+    Response->ContentType   = WebServerResponse_t::TYPE::PLAIN;
+    Response->Body          = "OK";
+    return;
+  }
+
+  if (URLParts.size() > 0) {
     string APISection = URLParts[0];
     URLParts.erase(URLParts.begin(), URLParts.begin() + 1);
 

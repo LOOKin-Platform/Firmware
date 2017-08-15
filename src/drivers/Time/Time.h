@@ -10,6 +10,7 @@
 #include <nvs.h>
 #include <string>
 
+#include "drivers/FreeRTOS/Timer.h"
 #include "HTTPClient/HTTPClient.h"
 
 using namespace std;
@@ -50,7 +51,7 @@ class Time {
     // HTTP Callbacks
     static void ReadStarted (char IP[]);
     static bool ReadBody    (char Data[], int DataLen, char IP[]);
-    static bool ReadFinished(char IP[]);
+    static void ReadFinished(char IP[]);
     static void Aborted     (char IP[]);
 
   private:

@@ -1,7 +1,8 @@
 /*
- * GPIO.cpp
- *
- */
+*    GPIO.cpp
+*    Class to rule pin outputs and inputs
+*
+*/
 
 #include "GPIO.h"
 #include <driver/gpio.h>

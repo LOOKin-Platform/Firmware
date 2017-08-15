@@ -27,27 +27,22 @@ Network_t::Network_t() {
 void Network_t::Init() {
   ESP_LOGD(tag, "Init");
 
-  NVS *Memory = new NVS(NVSNetworkArea);
+  NVS Memory(NVSNetworkArea);
 
-  WiFiSSID     = Memory->GetString(NVSNetworkWiFiSSID);
-  WiFiPassword = Memory->GetString(NVSNetworkWiFiPassword);
+  WiFiSSID     = Memory.GetString(NVSNetworkWiFiSSID);
+  WiFiPassword = Memory.GetString(NVSNetworkWiFiPassword);
 
   // Load saved network devices from NVS
-  uint8_t ArrayCount = Memory->ArrayCount(NVSNetworkDevicesArray);
+  uint8_t ArrayCount = Memory.ArrayCount(NVSNetworkDevicesArray);
 
   for (int i=0; i < ArrayCount; i++) {
-    NetworkDevice_t NetworkDevice = DeserializeNetworkDevice(Memory->StringArrayGet(NVSNetworkDevicesArray, i));
+    NetworkDevice_t NetworkDevice = DeserializeNetworkDevice(Memory.StringArrayGet(NVSNetworkDevicesArray, i));
+
     if (NetworkDevice.ID != 0) {
       NetworkDevice.IsActive = false;
       Devices.push_back(NetworkDevice);
     }
-    else {
-      Memory->StringArrayRemove(NVSNetworkDevicesArray, i);
-      Memory->Commit();
-    }
   }
-
-  delete Memory;
 
   // Read info from network scan
   for (WiFiAPRecord APRecord : WiFi->Scan())
@@ -73,7 +68,7 @@ void Network_t::SetNetworkDeviceFlagByIP(string IP, bool Flag) {
 void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
   ESP_LOGD(tag, "DeviceInfoReceived");
 
-  NVS *Memory = new NVS(NVSNetworkArea);
+  NVS Memory(NVSNetworkArea);
 
   bool isIDFound = false;
   uint8_t TypeHex = +0;
@@ -92,8 +87,8 @@ void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
           Devices.at(i).IsActive = false;
 
           string Data = SerializeNetworkDevice(Devices.at(i));
-          Memory->StringArrayReplace(NVSNetworkDevicesArray, i, Data);
-          Memory->Commit();
+          Memory.StringArrayReplace(NVSNetworkDevicesArray, i, Data);
+          Memory.Commit();
         }
 
         Devices.at(i).IsActive = true;
@@ -113,17 +108,16 @@ void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
 
     Devices.push_back(NetworkDevice);
 
-    Memory->StringArrayAdd(NVSNetworkDevicesArray, SerializeNetworkDevice(NetworkDevice));
-    Memory->Commit();
-  }
+    Memory.StringArrayAdd(NVSNetworkDevicesArray, SerializeNetworkDevice(NetworkDevice));
 
-  delete Memory;
+    Memory.Commit();
+  }
 }
 
 
 string Network_t::SerializeNetworkDevice(NetworkDevice_t Item) {
-
   JSON JSONObject;
+
   JSONObject.SetItems({
     {"TypeHex"  , Converter::ToHexString(Item.TypeHex,2)},
     {"ID"       , Converter::ToHexString(Item.ID,8) },
@@ -136,7 +130,7 @@ string Network_t::SerializeNetworkDevice(NetworkDevice_t Item) {
 NetworkDevice_t Network_t::DeserializeNetworkDevice(string Data) {
   NetworkDevice_t Result;
 
-  JSON JSONObject;
+  JSON JSONObject(Data);
 
   if (!(JSONObject.GetItem("ID").empty()))      Result.ID      = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("ID"));
   if (!(JSONObject.GetItem("IP").empty()))      Result.IP      = JSONObject.GetItem("IP");

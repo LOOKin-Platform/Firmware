@@ -94,24 +94,22 @@ bool OTA_t::ReadBody(char Data[], int DataLen, char IP[]) {
   return true;
 }
 
-bool OTA_t::ReadFinished(char IP[]) {
+void OTA_t::ReadFinished(char IP[]) {
   ESP_LOGI(tag, "Total Write binary data length : %d", BinaryFileLength);
 
   if (esp_ota_end(OutHandle) != ESP_OK) {
-      ESP_LOGE(tag, "esp_ota_end failed!");
-      return false;
+    ESP_LOGE(tag, "esp_ota_end failed!");
+    return;
   }
 
   esp_err_t err = esp_ota_set_boot_partition(&OperatePartition);
   if (err != ESP_OK) {
-      ESP_LOGE(tag, "esp_ota_set_boot_partition failed! err=0x%x", err);
-      return false;
+    ESP_LOGE(tag, "esp_ota_set_boot_partition failed! err=0x%x", err);
+    return;
   }
 
   ESP_LOGI(tag, "Prepare to restart system!");
   esp_restart();
-
-  return true;
 }
 
 void OTA_t::Aborted(char IP[]) {
