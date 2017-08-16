@@ -110,6 +110,8 @@ void WebServer_t::UDPListenerTask(void *data)
         memcpy (outData, Answer.c_str(), Answer.length());
 
         netconn_sendto(Connection, outBuffer, &inBuffer->addr, inBuffer->port);
+
+        ESP_LOGD(tag, "UDP \"%s\" sended to %s:%u", Answer.c_str(), inet_ntoa(inBuffer->addr), inBuffer->port);
       }
 
       string AliveText = UDP_PACKET_PREFIX + string("Alive!");
@@ -165,21 +167,28 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
   struct netbuf *inbuf;
   char *buf;
   u16_t buflen;
+
   err_t err;
 
-  err = netconn_recv(conn, &inbuf);
+  string HTTPString = "";
 
-  if (err == ERR_OK)
-  {
-	  netbuf_data(inbuf, (void * *)&buf, &buflen);
+  netconn_set_recvtimeout(conn, 50);    // timeout on 10 msecs
 
-	  Query_t Query(buf);
+  while((err = netconn_recv(conn,&inbuf)) == ERR_OK) {
+    do {
+      netbuf_data(inbuf, (void * *)&buf, &buflen);
+      HTTPString += string(buf);
+    } while(netbuf_next(inbuf) >= 0);
+
+    netbuf_delete(inbuf);
+  }
+
+  if (!HTTPString.empty()) {
+    Query_t Query(HTTPString);
 
     WebServerResponse_t *Response =  new WebServerResponse_t();
-    
     API::Handle(Response, Query);
     netconn_write(conn, Response->toString().c_str(), Response->toString().length(), NETCONN_NOCOPY);
-
     delete Response;
   }
 

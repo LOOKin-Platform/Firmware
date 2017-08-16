@@ -19,14 +19,14 @@ using namespace std;
 
 #include <esp_log.h>
 
-Query_t::Query_t(char *buf) {
+Query_t::Query_t(string buf) {
     Type              = NONE;
     RequestedUrl      = "";
     RequestHeader     = "";
     RequestBody       = "";
-    SrcRequest        = string(buf);
+    SrcRequest        = buf;
 
-    FillParams(string(buf));
+    FillParams(buf);
 }
 
 void Query_t::FillParams(string Query) {
@@ -75,10 +75,6 @@ void Query_t::FillParams(string Query) {
 
       JSON JSONItem(RequestBody);
       Params = JSONItem.GetItems();
-
-      for(auto const &Item : Params) {
-        ESP_LOGI("tag","MAP [%s] = %s", Item.first.c_str(), Item.second.c_str());
-      }
     }
   }
 

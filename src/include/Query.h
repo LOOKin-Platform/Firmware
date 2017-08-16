@@ -25,7 +25,7 @@ class Query_t {
     string              RequestBody;
     map<string,string>  Params;
 
-    Query_t(char *);
+    Query_t(string);
 
     static string       UrlDecode(string);
 
