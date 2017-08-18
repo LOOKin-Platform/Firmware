@@ -39,7 +39,7 @@ class Network_t : public API {
     void  Init();
     NetworkDevice_t GetNetworkDeviceByID(uint32_t);
     void            SetNetworkDeviceFlagByIP(string IP, bool Flag);
-    void            DeviceInfoReceived(string Type, string ID, string IP);
+    void            DeviceInfoReceived(string ID, string Type, string IP);
 
     static string SerializeNetworkDevice(NetworkDevice_t);
     static NetworkDevice_t DeserializeNetworkDevice(string);

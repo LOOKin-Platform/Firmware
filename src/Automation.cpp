@@ -212,24 +212,10 @@ void Automation_t::Debug(ScenarioCacheItem_t Item) {
 }
 
 void Automation_t::Debug(Scenario_t* &Scene) {
-  ESP_LOGI(tag, "Scene Type = %s"   , Converter::ToHexString(Scene->Type,2).c_str());
-  ESP_LOGI(tag, "Scene ID   = %s"   , Converter::ToHexString(Scene->ID,8).c_str());
-  ESP_LOGI(tag, "Scene Name = %s"   , Scene->Name);
-
-  /*
-  if (Scene->Type == SCENARIOS_TYPE_EVENT_HEX) {
-    ESP_LOGI(tag, "DeviceID          = %s", Converter::ToHexString(Scene->EventData->DeviceID,8).c_str());
-  	ESP_LOGI(tag, "SensorIdentifier  = %s", Converter::ToHexString(Scene->EventData->SensorIdentifier,2).c_str());
-  	ESP_LOGI(tag, "EventCode         = %s", Converter::ToHexString(Scene->EventData->EventCode,2).c_str());
-  }
-
-  if (Scene->Type == SCENARIOS_TYPE_TIMER_HEX) {
-    ESP_LOGI(tag, "DeviceID          = %s", Converter::ToHexString(Scene->TimerData->DeviceID,8).c_str());
-  	ESP_LOGI(tag, "SensorIdentifier  = %s", Converter::ToHexString(Scene->TimerData->SensorIdentifier,2).c_str());
-    ESP_LOGI(tag, "EventCode         = %s", Converter::ToHexString(Scene->TimerData->EventCode,2).c_str());
-    ESP_LOGI(tag, "Timer Delay (sec) = %u", Scene->TimerData->TimerDelay);
-  }
-  */
+  ESP_LOGI(tag, "Scene Type     = %s"   , Converter::ToHexString(Scene->Type,2).c_str());
+  ESP_LOGI(tag, "Scene ID       = %s"   , Converter::ToHexString(Scene->ID,8).c_str());
+  ESP_LOGI(tag, "Scene Name     = %s"   , Scene->Name);
+  ESP_LOGI(tag, "Scene Operand  = %s"   , Scene->GetDataHexString().c_str());
 
   for (int i=0; i < Scene->Commands.size(); i++) {
     ESP_LOGI(tag, "Command[%u] DeviceID   = %s", i, Converter::ToHexString(Scene->Commands[i].DeviceID,8).c_str());

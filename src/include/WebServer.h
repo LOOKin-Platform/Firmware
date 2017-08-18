@@ -24,7 +24,8 @@ class WebServer_t {
     void Stop();
 
 		void UDPSendBroadcastAlive();
-		void UDPSendBroadcastDiscover();
+    void UDPSendBroadcastDiscover();
+    void UDPSendBroadcastUpdated(uint8_t SensorID, string Value);
     void UDPSendBroadcast(string);
 
 	private:
@@ -32,7 +33,8 @@ class WebServer_t {
 		TaskHandle_t UDPListenerTaskHandle;
 
 		static string UDPAliveBody();
-		static string UDPDiscoverBody(string ID = "");
+    static string UDPDiscoverBody(string ID = "");
+    static string UDPUpdatedBody(uint8_t SensorID, string Value);
 
 		static void UDPListenerTask(void *);
 

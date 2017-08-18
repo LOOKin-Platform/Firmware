@@ -65,7 +65,7 @@ void Network_t::SetNetworkDeviceFlagByIP(string IP, bool Flag) {
     }
 }
 
-void Network_t::DeviceInfoReceived(string Type, string ID, string IP) {
+void Network_t::DeviceInfoReceived(string ID, string Type, string IP) {
   ESP_LOGD(tag, "DeviceInfoReceived");
 
   NVS Memory(NVSNetworkArea);

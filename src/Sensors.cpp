@@ -160,6 +160,7 @@ void SensorSwitch_t::Update() {
     Values["Primary"]["Value"]    = newValue;
     Values["Primary"]["Updated"]  = Time::UnixtimeString();
 
+    WebServer->UDPSendBroadcastUpdated(ID,newValue);
     Automation->SensorChanged(ID, (newValue == "1") ? 0x01 : 0x02 );
   }
 }

@@ -24,7 +24,7 @@ class Sensor_t {
     string            Name;
     vector<uint8_t>   EventCodes;
 
-    map<string, map<string, string> > Values;
+    map<string, map<string, string>> Values;
 
     virtual void                Update() {};
 

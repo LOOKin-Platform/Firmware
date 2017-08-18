@@ -48,13 +48,22 @@ void WebServer_t::UDPSendBroadcastDiscover() {
   UDPSendBroadcast(UDPDiscoverBody());
 }
 
+void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value) {
+  UDPSendBroadcast(UDPUpdatedBody(SensorID, Value));
+}
+
 string WebServer_t::UDPAliveBody() {
-  string Message = "Alive!" + Device->Type->ToHexString() + ":" +  Device->IDToString() + ":" + inet_ntoa(Network->IP);
+  string Message = "Alive!" + Device->IDToString() + ":" + Device->Type->ToHexString() + ":"  + inet_ntoa(Network->IP);
   return UDP_PACKET_PREFIX + Message;
 }
 
 string WebServer_t::UDPDiscoverBody(string ID) {
   string Message = (ID != "") ? ("Discover!" + ID) : "Discover!";
+  return UDP_PACKET_PREFIX + Message;
+}
+
+string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value) {
+  string Message = "Updated!" + Device->IDToString() + ":" + Converter::ToHexString(SensorID, 2) + ":" + Value;
   return UDP_PACKET_PREFIX + Message;
 }
 
