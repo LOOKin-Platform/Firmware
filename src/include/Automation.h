@@ -21,7 +21,8 @@ using namespace std;
 
 #include "Converter.h"
 
-#define  NVSScenariosArray "Scenarios"
+#define  NVSScenariosArray        "Scenarios"
+#define  NVSAutomationVersionMap  "VersionMap"
 
 struct ScenarioCacheItem_t {
   bool      IsLinked      = false;
@@ -47,6 +48,10 @@ class Automation_t : public API {
     void        AddScenarioCacheItem    (Scenario_t* &, int);
     void        RemoveScenario          (uint32_t);
     void        RemoveScenarioCacheItem (uint32_t);
+
+    void        LoadVersionMap();
+    bool        SetVersionMap(string SSID, uint32_t Version);
+    string      SerializeVersionMap();
 
     void        HandleHTTPRequest(WebServerResponse_t* &, QueryType Type, vector<string>, map<string,string>, string = "");
 

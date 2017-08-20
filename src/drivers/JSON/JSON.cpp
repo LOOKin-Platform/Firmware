@@ -83,7 +83,9 @@ vector<map<string,string>> JSON::GetObjectsArray(string Key) {
   vector<map<string,string>> Result = vector<map<string,string>>();
 
   if (Root != NULL) {
-    cJSON *Array = cJSON_GetObjectItem(Root, Key.c_str());
+    cJSON *Array = (!Key.empty()) ? cJSON_GetObjectItem(Root, Key.c_str())
+                                  : Root;
+      
     if (Array->type == cJSON_Array) {
       cJSON *Child = Array->child;
       while(Child) {
@@ -110,7 +112,10 @@ void JSON::SetObjectsArray(string Key, vector<map<string,string>> Values) {
       cJSON_AddItemToArray(Array, Item);
     }
 
-    cJSON_AddItemToObject(Root, Key.c_str(), Array);
+    if (!Key.empty())
+      cJSON_AddItemToObject(Root, Key.c_str(), Array);
+    else
+      Root = Array;
   }
 }
 

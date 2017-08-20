@@ -98,7 +98,6 @@ private:
 public:
 	WiFi_t();
 	void addDNSServer(string ip);
-	struct in_addr getHostByName(string hostName);
 	void dump();
 	static string getApMac();
 	static tcpip_adapter_ip_info_t getApIpInfo();

@@ -247,29 +247,6 @@ string WiFi_t::getApSSID() {
 	return string((char *)conf.sta.ssid);
 } // getApSSID
 
-
-/**
- * @brief Lookup an IP address by host name.
- *
- * @param [in] hostName The hostname to resolve.
- *
- * @return The IP address of the host or 0.0.0.0 if not found.
- */
-struct in_addr WiFi_t::getHostByName(string hostName) {
-	struct in_addr retAddr;
-	struct hostent *he = gethostbyname(hostName.c_str());
-	if (he == nullptr) {
-		retAddr.s_addr = 0;
-		ESP_LOGD(tag, "Unable to resolve %s - %d", hostName.c_str(), h_errno);
-	} else {
-		retAddr = *(struct in_addr *)(he->h_addr_list[0]);
-		//ESP_LOGD(tag, "resolved %s to %.8x", hostName, *(uint32_t *)&retAddr);
-
-	}
-	return retAddr;
-} // getHostByName
-
-
 /**
  * @brief Get the WiFi Mode.
  * @return The WiFi Mode.

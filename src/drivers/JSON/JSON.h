@@ -33,8 +33,7 @@ class JSON {
 
     void                        SetStringArray(string Key, vector<string> Array);
 
-
-    vector<map<string,string>>  GetObjectsArray(string Key);
+    vector<map<string,string>>  GetObjectsArray(string Key = "");
     void                        SetObjectsArray(string Key, vector<map<string,string>> Value);
 
     string                      ToString();
