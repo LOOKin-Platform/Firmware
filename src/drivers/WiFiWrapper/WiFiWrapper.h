@@ -5,13 +5,25 @@
  *      Author: kolban
  */
 
-#ifndef MAIN_WIFI_H_
-#define MAIN_WIFI_H_
-#include "sdkconfig.h"
-#if defined(CONFIG_WIFI_ENABLED)
+#ifndef DRIVERS_WIFI_H_
+#define DRIVERS_WIFI_H_
+
 #include <string>
 #include <vector>
+#include <sstream>
+#include <iomanip>
 #include <mdns.h>
+#include <string.h>
+
+#include <esp_event.h>
+#include <esp_event_loop.h>
+#include <esp_log.h>
+#include <esp_system.h>
+#include <esp_wifi.h>
+#include <lwip/dns.h>
+#include <lwip/netdb.h>
+#include <lwip/sockets.h>
+
 #include "WiFiEventHandler.h"
 
 using namespace std;
@@ -126,5 +138,4 @@ private:
 
 };
 
-#endif // CONFIG_WIFI_ENABLED
-#endif /* MAIN_WIFI_H_ */
+#endif /* DRIVERS_WIFI_H_ */

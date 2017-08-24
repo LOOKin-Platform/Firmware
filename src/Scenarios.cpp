@@ -3,17 +3,8 @@
 *    Subpart of API /Automation
 *
 */
-
-#include "Scenarios.h"
-
-#include <algorithm>
-#include <esp_log.h>
-
-#include "JSON/JSON.h"
-
-#include "Converter.h"
 #include "Globals.h"
-#include "Automation.h"
+#include "Scenarios.h"
 
 static char tag[] = "Scenarios";
 static string NVSAutomationArea = "Automation";

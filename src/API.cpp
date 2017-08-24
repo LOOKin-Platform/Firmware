@@ -1,18 +1,10 @@
-using namespace std;
-
-#include <sstream>
-#include <algorithm>
-#include <iterator>
-#include <iostream>
-
-#include <esp_log.h>
+/*
+*    API.cpp
+*    HTTP Api entry point
+*
+*/
 
 #include "API.h"
-#include "Device.h"
-#include "Network.h"
-#include "Automation.h"
-
-#include "Globals.h"
 
 void API::Handle(WebServerResponse_t* &Response, Query_t Query) {
   return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody);

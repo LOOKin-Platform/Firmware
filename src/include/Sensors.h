@@ -13,7 +13,12 @@
 
 #include <esp_log.h>
 
-#include "Device.h"
+#include "Converter.h"
+
+#include "GPIOWrapper.h"
+#include "SystemTime.h"
+#include "JSONWrapper.h"
+
 #include "WebServer.h"
 
 using namespace std;

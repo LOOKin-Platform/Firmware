@@ -7,16 +7,16 @@
 #ifndef DRIVERS_HTTPCLIENT_H_
 #define DRIVERS_HTTPCLIENT_H_
 
+#include "FreeRTOSWrapper.h"
+
+#include <string>
 #include <stdio.h>
 #include <string.h>
-#include <string>
 #include <vector>
 
 #include <sys/socket.h>
 #include <netdb.h>
 #include <esp_log.h>
-
-#include "drivers/FreeRTOS/FreeRTOS.h"
 
 #include "Settings.h"
 

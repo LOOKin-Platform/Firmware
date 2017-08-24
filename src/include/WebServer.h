@@ -15,7 +15,7 @@ using namespace std;
 #include "lwip/api.h"
 #include "lwip/err.h"
 
-#include "drivers/FreeRTOS/FreeRTOS.h"
+#include "FreeRTOS/FreeRTOS.h"
 
 class WebServer_t {
   public:

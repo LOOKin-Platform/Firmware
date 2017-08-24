@@ -17,9 +17,13 @@ using namespace std;
 #include <map>
 #include <bitset>
 
-#include "Time/Time.h"
-#include "FreeRTOS/Timer.h"
-#include "HTTPClient/HTTPClient.h"
+#include <algorithm>
+#include <esp_log.h>
+
+#include "SystemTime.h"
+#include "TimerWrapper.h"
+#include "JSONWrapper.h"
+#include "HTTPClient.h"
 
 #include "WebServer.h"
 #include "Converter.h"

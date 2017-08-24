@@ -3,22 +3,8 @@
 *    Class to handle API /Device
 *
 */
-
-#include <algorithm>
-#include <string>
-#include <iterator>
-#include <iostream>
-#include <sstream>
-#include <iomanip>
-
-#include "JSON/JSON.h"
-
 #include "Globals.h"
 #include "Device.h"
-#include "OTA.h"
-
-#include "NVS/NVS.h"
-#include "Time/Time.h"
 
 static char tag[] = "Device_t";
 static string NVSDeviceArea = "Device";

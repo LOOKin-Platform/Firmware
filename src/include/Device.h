@@ -7,11 +7,12 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
-using namespace std;
-
-#include "Settings.h"
-
 #include <string>
+#include <algorithm>
+#include <iterator>
+#include <iostream>
+#include <sstream>
+#include <iomanip>
 #include <vector>
 #include <map>
 #include <stdio.h>
@@ -19,11 +20,16 @@ using namespace std;
 #include <esp_wifi.h>
 #include <esp_log.h>
 
-#include "NVS/NVS.h"
+#include "JSONWrapper.h"
+#include "NVS.h"
+#include "SystemTime.h"
 
+#include "Settings.h"
+#include "OTA.h"
 #include "WebServer.h"
-#include "API.h"
 #include "Converter.h"
+
+using namespace std;
 
 #define  NVSDeviceType              "Type"
 #define  NVSDeviceID                "ID"
@@ -49,7 +55,7 @@ class DeviceType_t {
 enum    DeviceStatus    { RUNNING, UPDATING };
 enum    DevicePowerMode { BATTERY, CONST };
 
-class Device_t : public API {
+class Device_t {
   public:
     DeviceType_t    *Type;
     DeviceStatus    Status;

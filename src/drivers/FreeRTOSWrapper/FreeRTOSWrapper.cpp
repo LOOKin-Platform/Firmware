@@ -1,32 +1,18 @@
 /*
- * FreeRTOS_t.cpp
- *
- *  Created on: Feb 24, 2017
- *      Author: kolban
- */
-#include <FreeRTOS/FreeRTOS.h>
-#include <FreeRTOS/task.h>
-#include <FreeRTOS/timers.h>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include "FreeRTOS.h"
-#include <esp_log.h>
+*    FreeRTOSWrapper.cpp
+*    C++ wrapper for FreeRTOS functions
+*
+*/
 
-
-
-#include "HTTPClient/HTTPClient.h"
-
+#include "FreeRTOSWrapper.h"
 
 static char TAG[] = "FreeRTOS";
 
 FreeRTOS::FreeRTOS() {
 }
 
-
 FreeRTOS::~FreeRTOS() {
 }
-
 
 /**
  * Sleep for the specified number of milliseconds.

@@ -13,7 +13,7 @@ using namespace std;
 #include <vector>
 #include <string>
 
-#include "JSON/JSON.h"
+#include "JSONWrapper.h"
 #include "Query.h"
 #include "Converter.h"
 

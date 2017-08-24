@@ -4,7 +4,7 @@
 *
 */
 
-#include "JSON.h"
+#include "JSONWrapper.h"
 
 static char tag[] = "JSON";
 
@@ -85,7 +85,7 @@ vector<map<string,string>> JSON::GetObjectsArray(string Key) {
   if (Root != NULL) {
     cJSON *Array = (!Key.empty()) ? cJSON_GetObjectItem(Root, Key.c_str())
                                   : Root;
-      
+
     if (Array->type == cJSON_Array) {
       cJSON *Child = Array->child;
       while(Child) {

@@ -12,7 +12,7 @@ using namespace std;
 #include "Globals.h"
 #include "WebServer.h"
 
-#include "drivers/FreeRTOS/FreeRTOS.h"
+#include <FreeRTOS/FreeRTOS.h>
 
 #include "Query.h"
 #include "API.h"

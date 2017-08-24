@@ -5,8 +5,7 @@
 /*         Global Variables         */
 /************************************/
 
-
-#include "WebServer.h"
+#include <vector>
 
 #include "Device.h"
 #include "Network.h"
@@ -14,17 +13,16 @@
 #include "Sensors.h"
 #include "Commands.h"
 
-#include <vector>
-
-#include <WiFi/WiFi.h>
-
-extern WiFi_t                     *WiFi;
-extern WebServer_t                *WebServer;
+#include "WebServer.h"
+#include "WiFiWrapper.h"
 
 extern Device_t                   *Device;
 extern Network_t                  *Network;
 extern Automation_t               *Automation;
 extern vector<Sensor_t*>          Sensors;
 extern vector<Command_t*>         Commands;
+
+extern WiFi_t                     *WiFi;
+extern WebServer_t                *WebServer;
 
 #endif

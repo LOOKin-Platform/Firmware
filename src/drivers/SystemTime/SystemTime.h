@@ -7,11 +7,11 @@
 #ifndef DRIVERS_TIME_H_
 #define DRIVERS_TIME_H_
 
-#include <nvs.h>
 #include <string>
 
-#include "drivers/FreeRTOS/Timer.h"
-#include "HTTPClient/HTTPClient.h"
+#include "TimerWrapper.h"
+#include "NVSWrapper.h"
+#include "HTTPClient.h"
 
 using namespace std;
 

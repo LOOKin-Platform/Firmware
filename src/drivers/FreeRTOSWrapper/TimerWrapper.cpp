@@ -7,7 +7,7 @@
 #include <assert.h>
 #include <map>
 
-#include "Timer.h"
+#include "TimerWrapper.h"
 
 static std::map<void *, Timer_t *> timersMap;
 

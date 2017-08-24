@@ -1,16 +1,10 @@
 /*
-  Класс для работы с API /network
+*    Network.cpp
+*    Class to handle API /Device
+*
 */
-
-#include "JSON/JSON.h"
-
-#include <string.h>
-
 #include "Globals.h"
 #include "Network.h"
-
-#include "WiFi/WiFi.h"
-#include "NVS/NVS.h"
 
 static char tag[] = "Network_t";
 static string NVSNetworkArea = "Network";

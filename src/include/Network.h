@@ -1,17 +1,22 @@
+/*
+*    Network.h
+*    Class to handle API /Device
+*
+*/
+
 #ifndef NETWORK_H
 #define NETWORK_H
 
-/*
-  Раздел API /network
-*/
 #include <string>
 #include <vector>
 #include <map>
 #include <stdio.h>
+#include <string.h>
 
 #include "WebServer.h"
-#include "API.h"
-#include "Device.h"
+
+#include "WiFiWrapper.h"
+#include "NVS.h"
 
 using namespace std;
 
@@ -26,7 +31,7 @@ struct NetworkDevice_t {
   string    IP        = "";
 };
 
-class Network_t : public API {
+class Network_t {
   public:
     string                    WiFiSSID;
     string                    WiFiPassword;

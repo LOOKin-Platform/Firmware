@@ -1,8 +1,8 @@
 #ifndef DRIVERS_FREERTOSTIMER_H_
 #define DRIVERS_FREERTOSTIMER_H_
-#include <FreeRTOS/FreeRTOS.h>
-#include <FreeRTOS/task.h>
-#include <FreeRTOS/timers.h>
+#include "freertos/FreeRTOS.h"
+#include <freertos/task.h>
+#include <freertos/timers.h>
 
 #include <string>
 

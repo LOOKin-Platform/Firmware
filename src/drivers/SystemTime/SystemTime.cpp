@@ -4,15 +4,15 @@
 *
 */
 
-#include "Time.h"
+#include "SystemTime.h"
 
-#include "JSON/JSON.h"
 #include <string>
 #include <sys/time.h>
 #include <cmath>
 #include <limits>
 
-#include <NVS/NVS.h>
+#include "JSONWrapper.h"
+#include "NVSWrapper.h"
 #include <Converter.h>
 
 static char tag[] = "Time";

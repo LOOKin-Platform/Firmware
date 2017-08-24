@@ -1,20 +1,25 @@
 /*
- * FreeRTOS.h
- *
- *  Created on: Feb 24, 2017
- *      Author: kolban
- */
-
-using namespace std;
+*    FreeRTOSWrapper.h
+*    C++ wrapper for FreeRTOS functions
+*
+*/
 
 #ifndef DRIVERS_FREERTOS_H_
 #define DRIVERS_FREERTOS_H_
-#include <stdint.h>
-#include <string>
 
-#include <FreeRTOS/FreeRTOS.h>
-#include <FreeRTOS/task.h>
-#include <FreeRTOS/semphr.h>
+#include <ctime>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <stdint.h>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
+
+#include <esp_log.h>
+
+using namespace std;
 
 /**
  * @brief Interface to %FreeRTOS functions.

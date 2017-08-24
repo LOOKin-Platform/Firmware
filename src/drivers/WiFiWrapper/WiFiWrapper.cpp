@@ -4,26 +4,7 @@
  *  Created on: Feb 25, 2017
  *      Author: kolban
  */
-
-//#define _GLIBCXX_USE_C99
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include "sdkconfig.h"
-#if defined(CONFIG_WIFI_ENABLED)
-
-#include "WiFi.h"
-#include <esp_event.h>
-#include <esp_event_loop.h>
-#include <esp_log.h>
-#include <esp_system.h>
-#include <esp_wifi.h>
-#include <freertos/FreeRTOS.h>
-#include <lwip/dns.h>
-#include <lwip/netdb.h>
-#include <lwip/sockets.h>
-
-#include <string.h>
+#include "WiFiWrapper.h"
 
 static char tag[]= "WiFi";
 
@@ -92,6 +73,8 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	ESP_ERROR_CHECK(::esp_wifi_set_storage(WIFI_STORAGE_RAM));
 	ESP_ERROR_CHECK(::esp_wifi_set_mode(WIFI_MODE_STA));
 	ESP_ERROR_CHECK( esp_wifi_start() );
+	//esp_wifi_set_max_tx_power(+20);
+
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
 	conf.show_hidden = true;
@@ -156,6 +139,7 @@ void WiFi_t::ConnectAP(string ssid, string password) {
 	sta_config.sta.bssid_set = 0;
 	ESP_ERROR_CHECK(::esp_wifi_set_config(WIFI_IF_STA, &sta_config));
 	ESP_ERROR_CHECK(::esp_wifi_start());
+	//esp_wifi_set_max_tx_power(+20);
 
 	::esp_wifi_connect();
 } // connectAP
@@ -200,6 +184,8 @@ void WiFi_t::StartAP(string ssid, string password) {
 
 	ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &apConfig) );
 	ESP_ERROR_CHECK( esp_wifi_start() );
+	//esp_wifi_set_max_tx_power(+20);
+
 } // startAP
 
 /**
@@ -412,6 +398,3 @@ void MDNS::setHostname(string hostname) {
 void MDNS::setInstance(string instance) {
 	ESP_ERROR_CHECK(mdns_set_instance(m_mdns_server, instance.c_str()));
 } // setInstance
-
-
-#endif // CONFIG_WIFI_ENABLED

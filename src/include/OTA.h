@@ -2,15 +2,21 @@
 *    OTA class
 *
 */
+
 #ifndef DRIVERS_OTA_H_
 #define DRIVERS_OTA_H_
 
 #include <string.h>
 
-#include "esp_ota_ops.h"
+#include <esp_spi_flash.h>
+#include <esp_partition.h>
+#include <esp_ota_ops.h>
 
-#include "HTTPClient/HTTPClient.h"
-#include "Globals.h"
+#include <esp_err.h>
+#include <esp_system.h>
+#include <esp_log.h>
+
+#include "HTTPClient.h"
 
 using namespace std;
 

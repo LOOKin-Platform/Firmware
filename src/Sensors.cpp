@@ -3,17 +3,10 @@
 *    Class to handle API /Sensors
 *
 */
-
 #include "Globals.h"
 #include "Sensors.h"
-#include "Device.h"
-#include "Converter.h"
 
-#include "GPIO/GPIO.h"
-#include "Time/Time.h"
-#include "JSON/JSON.h"
-
-//static char tag[] = "Sensors";
+static char tag[] = "Sensors";
 
 vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
   vector<Sensor_t*> Sensors = {};

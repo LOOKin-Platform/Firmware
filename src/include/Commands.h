@@ -7,8 +7,6 @@
 #ifndef COMMANDS_H
 #define COMMANDS_H
 
-using namespace std;
-
 #include <string>
 #include <vector>
 #include <map>
@@ -16,8 +14,15 @@ using namespace std;
 #include <esp_log.h>
 
 #include "Query.h"
-#include "Device.h"
 #include "WebServer.h"
+
+#include "JSONWrapper.h"
+#include "GPIOWrapper.h"
+
+#include "Converter.h"
+
+
+using namespace std;
 
 class Command_t {
   public:

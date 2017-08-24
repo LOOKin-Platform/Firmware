@@ -1,5 +1,5 @@
 /*
-*    Automation Rules
+*    Automation.h
 *    API /Automation
 *
 */
@@ -7,19 +7,17 @@
 #ifndef AUTOMATION_H
 #define AUTOMATION_H
 
-using namespace std;
-
 #include <string>
 #include <vector>
 
-#include "API.h"
 #include "Scenarios.h"
-#include "JSON/JSON.h"
-
-#include "WiFi/WiFi.h"
-#include "NVS/NVS.h"
 
 #include "Converter.h"
+#include "JSONWrapper.h"
+#include "WiFiWrapper.h"
+#include "NVS.h"
+
+using namespace std;
 
 #define  NVSScenariosArray        "Scenarios"
 #define  NVSAutomationVersionMap  "VersionMap"
@@ -32,7 +30,7 @@ struct ScenarioCacheItem_t {
   uint8_t   ArrayID       = 0;
 };
 
-class Automation_t : public API {
+class Automation_t {
   public:
     Automation_t();
     void Init();
@@ -60,8 +58,6 @@ class Automation_t : public API {
 
     vector<ScenarioCacheItem_t> ScenariosCache;
     map<string, uint32_t>       VersionMap;
-
-
 
     void  Debug(ScenarioCacheItem_t);
     void  Debug(Scenario_t* &);

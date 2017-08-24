@@ -9,19 +9,17 @@ using namespace std;
 #include <nvs_flash.h>
 
 #include "Globals.h"
-#include "WebServer.h"
-#include "Device.h"
 
-#include "WiFi/WiFi.h"
-#include "WiFi/WiFiEventHandler.h"
-#include "drivers/FreeRTOS/Timer.h"
-#include "Time/Time.h"
-
-extern "C" {
-	int app_main(void);
-}
+#include "WiFiWrapper.h"
+#include "WiFiEventHandler.h"
+#include "TimerWrapper.h"
+#include "SystemTime.h"
 
 static char tag[] = "Main";
+
+extern "C" {
+	void app_main(void);
+}
 
 WiFi_t							*WiFi 			= new WiFi_t();
 WebServer_t 				*WebServer 	= new WebServer_t();
@@ -85,7 +83,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	}
 };
 
-int app_main(void) {
+void app_main(void) {
 
 	esp_log_level_set("*", ESP_LOG_DEBUG);
 	ESP_LOGD(tag, "App started");
@@ -107,6 +105,4 @@ int app_main(void) {
 		WiFi->StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 
 	WebServer->Start();
-
-  return 0;
 }

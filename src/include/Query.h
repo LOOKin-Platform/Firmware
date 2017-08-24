@@ -13,7 +13,7 @@ using namespace std;
 #include <vector>
 #include <map>
 
-#include "HTTPClient/HTTPClient.h"
+#include "HTTPClient.h"
 
 class Query_t {
   public:

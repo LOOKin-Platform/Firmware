@@ -1,8 +1,9 @@
 /*
-*    Automation Rules
+*    Automation.cpp
 *    API /Automation
 *
 */
+
 #include "Automation.h"
 #include "Globals.h"
 

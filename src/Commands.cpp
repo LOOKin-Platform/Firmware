@@ -3,14 +3,8 @@
 *    Class to handle API /Commands
 *
 */
-
 #include "Globals.h"
 #include "Commands.h"
-#include "Device.h"
-#include "Converter.h"
-
-#include "JSON/JSON.h"
-#include "GPIO/GPIO.h"
 
 static char tag[] = "Commands";
 
