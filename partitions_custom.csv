@@ -2,6 +2,7 @@
 # Name,   Type, SubType, Offset,    Size
 # 0x100000 - 1 MB
 # 0x140000 - 1280 KB
+phy_init, data, phy,     0x0f000  ,    0x1000
 otadata,  data, ota,     0x10000  ,    0x2000
 data,     data, nvs,     0x12000  ,    0x16E000
 ota_0,    app,  0x10,    0x180000 ,    0x140000
