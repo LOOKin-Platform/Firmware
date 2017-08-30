@@ -1,5 +1,5 @@
 /*
-*    Converter.h
+*    Convert.h
 *    Class to convert types between each other
 *
 */

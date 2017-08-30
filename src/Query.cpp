@@ -13,9 +13,9 @@ using namespace std;
 #include <vector>
 #include <string>
 
-#include "JSONWrapper.h"
+#include "JSON.h"
 #include "Query.h"
-#include "Converter.h"
+#include "Convert.h"
 
 #include <esp_log.h>
 

@@ -15,8 +15,8 @@
 
 #include "WebServer.h"
 
-#include "WiFiWrapper.h"
-#include "NVS.h"
+#include "WiFi.h"
+#include "Memory.h"
 
 using namespace std;
 

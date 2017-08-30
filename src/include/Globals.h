@@ -14,7 +14,7 @@
 #include "Commands.h"
 
 #include "WebServer.h"
-#include "WiFiWrapper.h"
+#include "WiFi.h"
 
 extern Device_t                   *Device;
 extern Network_t                  *Network;

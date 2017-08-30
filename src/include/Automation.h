@@ -12,10 +12,10 @@
 
 #include "Scenarios.h"
 
-#include "Converter.h"
-#include "JSONWrapper.h"
-#include "WiFiWrapper.h"
-#include "NVS.h"
+#include "Convert.h"
+#include "JSON.h"
+#include "WiFi.h"
+#include "Memory.h"
 
 using namespace std;
 

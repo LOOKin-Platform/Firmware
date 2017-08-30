@@ -10,10 +10,10 @@ using namespace std;
 
 #include "Globals.h"
 
-#include "WiFiWrapper.h"
+#include "WiFi.h"
 #include "WiFiEventHandler.h"
 #include "TimerWrapper.h"
-#include "SystemTime.h"
+#include "DateTime.h"
 
 static char tag[] = "Main";
 

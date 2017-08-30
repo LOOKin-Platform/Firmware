@@ -4,7 +4,7 @@
 *
 */
 
-#include "GPIOWrapper.h"
+#include "HardwareIO.h"
 #include <driver/gpio.h>
 
 /**

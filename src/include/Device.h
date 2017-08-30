@@ -20,14 +20,14 @@
 #include <esp_wifi.h>
 #include <esp_log.h>
 
-#include "JSONWrapper.h"
-#include "NVS.h"
-#include "SystemTime.h"
+#include "JSON.h"
+#include "Memory.h"
+#include "DateTime.h"
 
 #include "Settings.h"
 #include "OTA.h"
 #include "WebServer.h"
-#include "Converter.h"
+#include "Convert.h"
 
 using namespace std;
 

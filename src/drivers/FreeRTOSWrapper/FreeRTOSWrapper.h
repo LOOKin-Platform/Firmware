@@ -1,5 +1,5 @@
 /*
-*    FreeRTOSWrapper.h
+*    FreeRTOS.h
 *    C++ wrapper for FreeRTOS functions
 *
 */

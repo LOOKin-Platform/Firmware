@@ -10,7 +10,7 @@
 #include <cctype>
 #include <locale>
 
-#include "Converter.h"
+#include "Convert.h"
 
 string Converter::ToLower(string Str) {
   string Result = Str;

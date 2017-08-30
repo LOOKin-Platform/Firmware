@@ -4,7 +4,7 @@
 *
 */
 
-#include "JSONWrapper.h"
+#include "JSON.h"
 
 static char tag[] = "JSON";
 

@@ -4,7 +4,7 @@
  *  Created on: Feb 25, 2017
  *      Author: kolban
  */
-#include "WiFiWrapper.h"
+#include "WiFi.h"
 
 static char tag[]= "WiFi";
 

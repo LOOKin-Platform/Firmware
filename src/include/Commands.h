@@ -16,10 +16,10 @@
 #include "Query.h"
 #include "WebServer.h"
 
-#include "JSONWrapper.h"
-#include "GPIOWrapper.h"
+#include "JSON.h"
+#include "HardwareIO.h"
 
-#include "Converter.h"
+#include "Convert.h"
 
 
 using namespace std;

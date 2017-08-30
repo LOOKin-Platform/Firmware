@@ -6,7 +6,7 @@ using namespace std;
 #include <nvs.h>
 #include <string>
 
-#include "Converter.h"
+#include "Convert.h"
 
 #define MAX_NVSARRAY_INDEX	128
 

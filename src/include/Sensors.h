@@ -13,11 +13,11 @@
 
 #include <esp_log.h>
 
-#include "Converter.h"
+#include "Convert.h"
 
-#include "GPIOWrapper.h"
-#include "SystemTime.h"
-#include "JSONWrapper.h"
+#include "HardwareIO.h"
+#include "DateTime.h"
+#include "JSON.h"
 
 #include "WebServer.h"
 

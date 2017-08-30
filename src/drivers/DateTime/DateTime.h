@@ -9,8 +9,8 @@
 
 #include <string>
 
+#include "Memory.h"
 #include "TimerWrapper.h"
-#include "NVSWrapper.h"
 #include "HTTPClient.h"
 
 using namespace std;

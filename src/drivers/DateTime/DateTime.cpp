@@ -4,16 +4,16 @@
 *
 */
 
-#include "SystemTime.h"
+#include "DateTime.h"
 
 #include <string>
 #include <sys/time.h>
 #include <cmath>
 #include <limits>
 
-#include "JSONWrapper.h"
-#include "NVSWrapper.h"
-#include <Converter.h>
+#include "JSON.h"
+#include "Memory.h"
+#include <Convert.h>
 
 static char tag[] = "Time";
 static string NVSTimeArea = "Time";
