@@ -35,10 +35,11 @@ uint32_t Automation_t::CurrentVersion() {
   return 0;
 }
 
-void Automation_t::SensorChanged(uint8_t SensorID, uint8_t EventCode) {
-  ESP_LOGI(tag, "Sensor Changed. ID: %s, Event: %s",
+void Automation_t::SensorChanged(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand) {
+  ESP_LOGI(tag, "Sensor Changed. ID: %s, Event: %s, Operand: %s",
                       Converter::ToHexString(SensorID, 2).c_str(),
-                      Converter::ToHexString(EventCode, 2).c_str());
+                      Converter::ToHexString(EventCode, 2).c_str(),
+                      Converter::ToHexString(EventOperand, 8).c_str());
 
   for (auto& ScenarioCacheItem : ScenariosCache)
     if (ScenarioCacheItem.IsLinked == true) {
@@ -47,7 +48,7 @@ void Automation_t::SensorChanged(uint8_t SensorID, uint8_t EventCode) {
       if (Scenario != nullptr) {
       Scenario->SetData(ScenarioCacheItem.Operand);
 
-      if (Scenario->Data->SensorUpdatedIsTriggered(SensorID, EventCode))
+      if (Scenario->Data->SensorUpdatedIsTriggered(SensorID, EventCode, EventOperand))
         Scenario->Data->ExecuteCommands(ScenarioCacheItem.ScenarioID);
       }
       delete Scenario;

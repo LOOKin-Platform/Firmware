@@ -112,7 +112,6 @@ void WebServer_t::UDPListenerTask(void *data)
 
       // answer to the Discover query
       if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device->IDToString())) {
-
         string Answer = WebServer_t::UDPAliveBody();
 
         outData = (char *)netbuf_alloc(outBuffer, Answer.length());

@@ -37,7 +37,7 @@ class Automation_t {
 
     uint32_t    CurrentVersion();
 
-    void        SensorChanged(uint8_t SensorID, uint8_t EventCode);
+    void        SensorChanged(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand = 0);
     static void TimeChangedTask(void *);
 
     uint8_t     CacheGetArrayID(string ScenarioID);

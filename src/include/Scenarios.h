@@ -71,7 +71,8 @@ class Scenario_t {
 
     template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<SCENARIOS_OPERAND_BIT_LEN>, size_t Start, size_t Length);
     template <size_t SrcSize>     static void AddRangeTo(bitset<SCENARIOS_OPERAND_BIT_LEN> &, bitset<SrcSize>, size_t Position);
-    static bitset<8> Bitset4To8(bitset<4>);
+    static bitset<8>  Bitset4To8   (bitset<4>);
+    static bitset<16> Bitset12To16 (bitset<12>);
 
     // HTTP Callbacks
     static void ReadFinished(char[]);
@@ -90,7 +91,7 @@ class Data_t {
 
     virtual bool      IsCommandNeedToExecute(ScenesCommandItem_t &) {return true;};
     virtual void      ExecuteCommands(uint32_t ScenarioID)  {};
-    virtual bool      SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode) { return false; };
+    virtual bool      SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand) { return false; };
     virtual bool      TimeUpdatedIsTriggered() { return false; };
 };
 
@@ -98,14 +99,15 @@ class EventData_t : public Data_t {
   public:
 		uint32_t    DeviceID          = 0;
 		uint8_t     SensorIdentifier  = 0;
-		uint8_t     EventCode         = 0;
+    uint8_t     EventCode         = 0;
+    uint8_t     EventOperand      = 0;
 
     bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
     void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
     string      ToString() override;
 
     void        ExecuteCommands(uint32_t ScenarioID)  override;
-    bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode) override;
+    bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand) override;
 };
 
 class TimerData_t : public Data_t {
@@ -119,13 +121,14 @@ class TimerData_t : public Data_t {
   	uint8_t     SensorIdentifier  = 0;
   	uint8_t     EventCode         = 0;
     uint16_t    TimerDelay        = 0; // максимально - 12 бит или 4096 секунд
+    uint8_t     EventOperand      = 0;
 
     bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
     void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
     string      ToString() override;
 
     void        ExecuteCommands(uint32_t ScenarioID) override;
-    bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode) override;
+    bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand) override;
 
     static void TimerCallback(Timer_t *pTimer);
 };

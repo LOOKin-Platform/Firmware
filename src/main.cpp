@@ -28,8 +28,8 @@ Device_t						*Device			= new Device_t();
 Network_t						*Network		= new Network_t();
 Automation_t				*Automation	= new Automation_t();
 
-vector<Sensor_t*>		Sensors 		= Sensor_t::GetSensorsForDevice();
-vector<Command_t*>	Commands 		= Command_t::GetCommandsForDevice();
+vector<Sensor_t*>		Sensors;
+vector<Command_t*>	Commands;
 
 Timer_t *IPDidntGetTimer;
 static void IPDidntGetCallback(Timer_t *pTimer) { WiFi->StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD); }
@@ -95,6 +95,9 @@ void app_main(void) {
 	Device->Init();
 	Network->Init();
 	Automation->Init();
+
+	Sensors 		= Sensor_t::GetSensorsForDevice();
+	Commands 		= Command_t::GetCommandsForDevice();
 
 	WiFi->setWifiEventHandler(new MyWiFiEventHandler());
 	IPDidntGetTimer =	new Timer_t("IPDidntGetTimer",WIFI_IP_COUNTDOWN/portTICK_PERIOD_MS, pdFALSE, NULL, IPDidntGetCallback);

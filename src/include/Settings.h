@@ -1,4 +1,4 @@
-#define FIRMWARE_VERSION            "0.88"
+#define FIRMWARE_VERSION            "0.89"
 
 #define OTA_SERVER_HOST             "download.look-in.club"
 #define OTA_SERVER_PORT             80
@@ -19,7 +19,19 @@
 #define DEVICE_TYPE_PLUG_STRING     "Plug"
 
 // Commands and Sensors Pin Map
-#define SWITCH_PLUG_PIN_NUM         GPIO_NUM_23 // GPIO_NUM_2
+
+// Plug
+#define SWITCH_PLUG_PIN_NUM         GPIO_NUM_23 // GPIO_NUM_2 - led
+
+#define COLOR_PLUG_TIMER_INDEX      LEDC_TIMER_0
+#define COLOR_PLUG_RED_PIN_NUM      GPIO_NUM_0
+#define COLOR_PLUG_RED_PWMCHANNEL   LEDC_CHANNEL_0
+#define COLOR_PLUG_GREEN_PIN_NUM    GPIO_NUM_0
+#define COLOR_PLUG_GREEN_PWMCHANNEL LEDC_CHANNEL_1
+#define COLOR_PLUG_BLUE_PIN_NUM     GPIO_NUM_2
+#define COLOR_PLUG_BLUE_PWMCHANNEL  LEDC_CHANNEL_2
+#define COLOR_PLUG_WHITE_PIN_NUM    GPIO_NUM_0
+#define COLOR_PLUG_WHITE_PWMCHANNEL LEDC_CHANNEL_3
 
 // HTTPClient class Settings
 #define HTTPCLIENT_QUEUE_SIZE       16

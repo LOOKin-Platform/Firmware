@@ -13,7 +13,7 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 
   switch (Device->Type->Hex) {
     case DEVICE_TYPE_PLUG_HEX:
-      Sensors = { new SensorSwitch_t() };
+      Sensors = { new SensorSwitch_t(), new SensorColor_t() };
       break;
   }
 
@@ -21,13 +21,21 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 }
 
 Sensor_t* Sensor_t::GetSensorByName(string SensorName) {
-
-  for (Sensor_t* Sensor : Sensors)
+  for (auto& Sensor : Sensors)
     if (Converter::ToLower(Sensor->Name) == Converter::ToLower(SensorName)) {
       return Sensor;
     }
 
-  return new Sensor_t();
+  return nullptr;
+}
+
+
+Sensor_t* Sensor_t::GetSensorByID(uint8_t SensorID) {
+  for (auto& Sensor : Sensors)
+    if (Sensor->ID == SensorID)
+      return Sensor;
+
+  return nullptr;
 }
 
 void Sensor_t::UpdateSensors() {
@@ -142,7 +150,7 @@ SensorSwitch_t::SensorSwitch_t() {
     EventCodes  = { 0x00, 0x01, 0x02 };
 }
 
-void SensorSwitch_t::Update() {
+void SensorSwitch_t::Update(uint32_t Operand) {
   string newValue = (GPIO::Read(SWITCH_PLUG_PIN_NUM) == true) ? "1" : "0";
   string oldValue = "";
 
@@ -156,4 +164,105 @@ void SensorSwitch_t::Update() {
     WebServer->UDPSendBroadcastUpdated(ID,newValue);
     Automation->SensorChanged(ID, (newValue == "1") ? 0x01 : 0x02 );
   }
+}
+
+bool SensorSwitch_t::CheckOperand(uint8_t SceneEventCode, uint8_t EventCode, uint8_t SceneEventOperand, uint8_t EventOperand) {
+  return (SceneEventCode == EventCode);
+}
+
+
+/************************************/
+/*           Color Sensor           */
+/************************************/
+
+SensorColor_t::SensorColor_t() {
+    ID          = 0x84;
+    Name        = "RGBW";
+    EventCodes  = { 0x00, 0x02, 0x03, 0x04 };
+}
+
+void SensorColor_t::Update(uint32_t Operand) {
+
+  Red = 0, Green = 0, Blue = 0, White = 0;
+
+  if (Operand > 0) {
+    Blue    = Operand&0x000000FF;
+    Green   = (Operand&0x0000FF00)>>8;
+    Red     = (Operand&0x00FF0000)>>16;
+  }
+  else
+    switch (Device->Type->Hex) {
+      case DEVICE_TYPE_PLUG_HEX:
+        Red   = GPIO::PWMValue(COLOR_PLUG_RED_PWMCHANNEL);
+        Green = GPIO::PWMValue(COLOR_PLUG_GREEN_PWMCHANNEL);
+        Blue  = GPIO::PWMValue(COLOR_PLUG_BLUE_PWMCHANNEL);
+        White = GPIO::PWMValue(COLOR_PLUG_WHITE_PWMCHANNEL);
+        break;
+    }
+
+  string newValue = Converter::ToHexString(Red, 2) + Converter::ToHexString(Green, 2) + Converter::ToHexString(Blue, 2);
+  string oldValue = "";
+
+  if (Values.count("Primary"))
+    oldValue = Values["Primary"]["Value"];
+
+  if (oldValue != newValue || Values.count("Primary") == 0) {
+    Values["Primary"]["Value"]    = newValue;
+    Values["Primary"]["Updated"]  = Time::UnixtimeString();
+
+    WebServer->UDPSendBroadcastUpdated(ID, newValue); // отправляем широковещательно новый цвет
+    Automation->SensorChanged(ID, 0x02, ToBrightness(Red, Green, Blue)); // в условия автоматизации отправляем яркость
+  }
+
+  string RedValue = Converter::ToHexString(Red, 2);
+  if (Values.count("Red") == 0 || Values["Red"]["Value"] != RedValue) {
+    Values["Red"]["Value"] = RedValue;
+    Values["Red"]["Updated"]  = Time::UnixtimeString();
+  }
+
+  string GreenValue = Converter::ToHexString(Green,2);
+  if (Values.count("Green") == 0 || Values["Green"]["Value"] != GreenValue) {
+    Values["Green"]["Value"] = RedValue;
+    Values["Green"]["Updated"]  = Time::UnixtimeString();
+  }
+
+  string BlueValue = Converter::ToHexString(Blue,2);
+  if (Values.count("Blue") == 0 || Values["Blue"]["Value"] != BlueValue) {
+    Values["Blue"]["Value"]     = BlueValue;
+    Values["Blue"]["Updated"]   = Time::UnixtimeString();
+  }
+
+  string WhiteValue = Converter::ToHexString(White,2);
+  if (Values.count("Red") == 0 || Values["White"]["Value"] != WhiteValue) {
+    Values["White"]["Value"] = RedValue;
+    Values["White"]["Updated"]  = Time::UnixtimeString();
+  }
+}
+
+bool SensorColor_t::CheckOperand(uint8_t SceneEventCode, uint8_t EventCode, uint8_t SceneEventOperand, uint8_t EventOperand) {
+  // Установленная яркость равна значению в сценарии
+  if (SceneEventCode == 0x02 && SceneEventOperand == ToBrightness(Red, Green, Blue))
+    return true;
+
+  // Установленная яркость меньше значения в сценарии
+  if (SceneEventCode == 0x03 && SceneEventOperand > ToBrightness(Red, Green, Blue))
+    return true;
+
+  // Установленная яркость меньше значения в сценарии
+  if (SceneEventCode == 0x04 && SceneEventOperand < ToBrightness(Red, Green, Blue))
+    return true;
+
+  return false;
+}
+
+uint8_t SensorColor_t::ToBrightness(uint32_t Color) {
+  uint8_t oBlue    = Color&0x000000FF;
+  uint8_t oGreen   = (Color&0x0000FF00)>>8;
+  uint8_t oRed     = (Color&0x00FF0000)>>16;
+
+  return ToBrightness(oRed, oGreen, oBlue);
+}
+
+uint8_t SensorColor_t::ToBrightness(uint8_t Red, uint8_t Green, uint8_t Blue) {
+  return max(max(Red,Green), Blue);
 }

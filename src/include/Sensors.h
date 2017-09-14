@@ -31,11 +31,13 @@ class Sensor_t {
 
     map<string, map<string, string>> Values;
 
-    virtual void                Update() {};
+    virtual void                Update(uint32_t Operand = 0) {};
+    virtual bool                CheckOperand(uint8_t, uint8_t, uint8_t, uint8_t) { return false; };
 
     static void                 UpdateSensors();
     static vector<Sensor_t*>    GetSensorsForDevice();
     static Sensor_t*            GetSensorByName(string);
+    static Sensor_t*            GetSensorByID(uint8_t);
 
     static void HandleHTTPRequest(WebServerResponse_t* &, QueryType, vector<string>, map<string,string>);
 };
@@ -43,7 +45,22 @@ class Sensor_t {
 class SensorSwitch_t : public Sensor_t {
   public:
     SensorSwitch_t();
-    void Update() override;
+    void Update(uint32_t Operand = 0) override;
+    bool CheckOperand(uint8_t, uint8_t, uint8_t, uint8_t) override;
+};
+
+
+class SensorColor_t : public Sensor_t {
+  public:
+    SensorColor_t();
+    void Update(uint32_t Operand = 0) override;
+    bool CheckOperand(uint8_t, uint8_t, uint8_t, uint8_t) override;
+
+    static uint8_t ToBrightness(uint8_t Red, uint8_t Green, uint8_t Blue);
+    static uint8_t ToBrightness(uint32_t Color);
+
+  private:
+    uint8_t Red, Green, Blue, White;
 };
 
 #endif

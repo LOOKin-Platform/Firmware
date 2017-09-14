@@ -160,9 +160,10 @@ string Scenario_t::SerializeScene(Scenario_t *Scene) {
   vector<map<string,string>> Commands = vector<map<string,string>>();
   for (int i=0; i < Scene->Commands.size(); i++)
     Commands.push_back({
-      { "DeviceID"  , Converter::ToHexString(Scene->Commands[i].DeviceID, 8) },
+      { "DeviceID"  , Converter::ToHexString(Scene->Commands[i].DeviceID ,8) },
       { "Command"   , Converter::ToHexString(Scene->Commands[i].CommandID,2) },
-      { "Event"     , Converter::ToHexString(Scene->Commands[i].EventCode,2) }
+      { "Event"     , Converter::ToHexString(Scene->Commands[i].EventCode,2) },
+      { "Operand"   , Converter::ToHexString(Scene->Commands[i].Operand  ,8) }
     });
 
   JSONObject.SetObjectsArray("Commands", Commands);
@@ -186,6 +187,7 @@ Scenario_t* Scenario_t::DeserializeScene(string JSONString) {
       Command.DeviceID   = Converter::UintFromHexString<uint32_t>(CommandItem["deviceid"]);
       Command.CommandID  = Converter::UintFromHexString<uint8_t> (CommandItem["command"]);
       Command.EventCode  = Converter::UintFromHexString<uint8_t> (CommandItem["event"]);
+      Command.Operand    = Converter::UintFromHexString<uint32_t>(CommandItem["operand"]);
 
       Scene->Commands.push_back(Command);
     }
@@ -218,11 +220,17 @@ void Scenario_t::AddRangeTo(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bits
 }
 template void Scenario_t::AddRangeTo<4> (bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<4>, size_t Position);
 template void Scenario_t::AddRangeTo<8> (bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<8>, size_t Position);
+template void Scenario_t::AddRangeTo<12>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<12>, size_t Position);
 template void Scenario_t::AddRangeTo<16>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<16>, size_t Position);
 template void Scenario_t::AddRangeTo<32>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<32>, size_t Position);
 
 bitset<8> Scenario_t::Bitset4To8(bitset<4> Src) {
   bitset<8> Return("0000" + Src.to_string());
+  return Return;
+}
+
+bitset<16> Scenario_t::Bitset12To16(bitset<12> Src) {
+  bitset<16> Return("0000" + Src.to_string());
   return Return;
 }
 
@@ -251,6 +259,7 @@ void EventData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
   DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ullong();
   SensorIdentifier  = (uint8_t) Scenario_t::Range<8>(Operand, 32, 8).to_ulong();
   EventCode         = (uint8_t) Scenario_t::Bitset4To8(Scenario_t::Range<4>(Operand, 40, 4)).to_ulong();
+  EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand, 44, 8).to_ulong();
 }
 
 string EventData_t::ToString() {
@@ -265,11 +274,17 @@ string EventData_t::ToString() {
   bitset<4> bEventCode(EventCode);
   Scenario_t::AddRangeTo(Result,bEventCode,40);
 
+  bitset<8> bOperand(EventOperand);
+  Scenario_t::AddRangeTo(Result,bOperand,44);
+
   return Converter::ToHexString(Result.to_ullong(), SCENARIOS_OPERAND_BIT_LEN/4);
 }
 
-bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t SensorEventCode) {
-  return (SensorIdentifier == SensorID && EventCode == SensorEventCode);
+bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t SensorEventCode, uint8_t SensorEventOperand) {
+  if (SensorIdentifier == SensorID)
+    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, SensorEventCode, EventOperand, SensorEventOperand);
+
+  return false;
 };
 
 void EventData_t::ExecuteCommands(uint32_t ScenarioID) {
@@ -288,11 +303,16 @@ void TimerData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
   DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ulong();
   SensorIdentifier  = (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
   EventCode         = (uint8_t) Scenario_t::Bitset4To8(Scenario_t::Range<4> (Operand, 40, 4)).to_ulong();
-  TimerDelay        = (uint16_t)Scenario_t::Range<16>(Operand, 44, 16).to_ulong();
+  TimerDelay        = (uint16_t)Scenario_t::Bitset12To16(Scenario_t::Range<12>(Operand, 44, 12)).to_ulong();
+  EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand << 56, 0, 8).to_ulong();
 }
 
 string TimerData_t::ToString() {
   bitset<SCENARIOS_OPERAND_BIT_LEN> Result;
+
+  bitset<8> bOperand(EventOperand);
+  Scenario_t::AddRangeTo(Result,bOperand,0);
+  Result >>= 56;
 
   bitset<32> bDeviceID(DeviceID);
   Scenario_t::AddRangeTo(Result,bDeviceID,0);
@@ -303,14 +323,18 @@ string TimerData_t::ToString() {
   bitset<4> bEventCode(EventCode);
   Scenario_t::AddRangeTo(Result,bEventCode,40);
 
-  bitset<16> bTimerDelay(TimerDelay);
+  bitset<12> bTimerDelay(TimerDelay);
   Scenario_t::AddRangeTo(Result,bTimerDelay,44);
 
   return Converter::ToHexString(Result.to_ullong(), SCENARIOS_OPERAND_BIT_LEN/4);
 }
 
-bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t SensorEventCode) {
-  return (SensorIdentifier == SensorID && EventCode == SensorEventCode);
+bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t SensorEventCode, uint8_t SensorEventOperand) {
+  if (SensorIdentifier == SensorID) {
+    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, SensorEventCode, EventOperand, SensorEventOperand);
+  }
+
+  return false;
 };
 
 void TimerData_t::ExecuteCommands(uint32_t ScenarioID) {

@@ -5,7 +5,6 @@
 */
 
 #include "HardwareIO.h"
-#include <driver/gpio.h>
 
 /**
  * @brief Class instance constructor.
@@ -47,6 +46,31 @@ void GPIO::Write(gpio_num_t pin, bool value) {
 }
 
 /**
+ * @brief Set PWM channel data
+ *
+ * @param [in] PWMChannel 	LEDC Channel [0..7]
+ * @param [out] value 			Current PWM Duty [0..255]
+ */
+
+uint8_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
+	int Duty = ledc_get_duty(LEDC_HIGH_SPEED_MODE, PWMChannel);
+	return floor(Duty/4);
+}
+
+
+/**
+ * @brief Set PWM channel data
+ *
+ * @param [in] PWMChannel 	LEDC Channel [0..7]
+ * @param [in] Duty 				Channel Power [0..255]
+ */
+
+void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty) {
+	ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty*4, 1000);
+	ledc_fade_start(PWMChannel, LEDC_FADE_NO_WAIT);
+}
+
+/**
  * @brief Setting up pin for Output.
  *
  * @param [in] pin to setup.
@@ -56,3 +80,35 @@ void GPIO::Setup(gpio_num_t PIN_NUM) {
 	::gpio_pad_select_gpio(PIN_NUM);
 	::gpio_set_direction(PIN_NUM, GPIO_MODE_INPUT_OUTPUT);
 }
+
+/**
+ * @brief Setting up pin for PWM.
+ *
+ * @param [in] GPIO				pin to setup.
+ * @param [in] TimerIndex	LEDC Timer Index [0..3]
+ * @param [in] PWMChannel	LEDC Channel number [0..7]
+ */
+
+ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel) {
+	if (GPIO != GPIO_NUM_0) {
+	 	ledc_timer_config_t ledc_timer;
+
+	 	ledc_timer.bit_num = LEDC_TIMER_10_BIT;
+	 	ledc_timer.freq_hz = 300;
+	 	ledc_timer.speed_mode = LEDC_HIGH_SPEED_MODE;
+	 	ledc_timer.timer_num = TimerIndex;
+
+	 	ledc_timer_config(&ledc_timer);
+
+	 	ledc_channel_config_t ledc_channel;
+	 	ledc_channel.duty = 0;
+	 	ledc_channel.intr_type = LEDC_INTR_FADE_END;
+	 	ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;
+	 	ledc_channel.timer_sel = TimerIndex;
+		ledc_channel.channel = PWMChannel;
+	 	ledc_channel.gpio_num = GPIO;
+	 	ledc_channel_config(&ledc_channel);
+
+	 	ledc_fade_func_install(0);
+	}
+ }
