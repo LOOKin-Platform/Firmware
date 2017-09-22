@@ -280,9 +280,9 @@ string EventData_t::ToString() {
   return Converter::ToHexString(Result.to_ullong(), SCENARIOS_OPERAND_BIT_LEN/4);
 }
 
-bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t SensorEventCode, uint8_t SensorEventOperand) {
+bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
   if (SensorIdentifier == SensorID)
-    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, SensorEventCode, EventOperand, SensorEventOperand);
+    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
 
   return false;
 };
@@ -329,9 +329,9 @@ string TimerData_t::ToString() {
   return Converter::ToHexString(Result.to_ullong(), SCENARIOS_OPERAND_BIT_LEN/4);
 }
 
-bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t SensorEventCode, uint8_t SensorEventOperand) {
+bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
   if (SensorIdentifier == SensorID) {
-    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, SensorEventCode, EventOperand, SensorEventOperand);
+    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
   }
 
   return false;

@@ -64,6 +64,12 @@ string Converter::ToString(uint32_t Number) {
   return Convert.str();
 }
 
+string Converter::ToString(double Number) {
+  ostringstream Convert;
+  Convert << +Number;
+  return Convert.str();
+}
+
 string Converter::ToHexString(uint64_t Number, size_t Length) {
   stringstream sstream;
   sstream << std::uppercase << std::setfill('0') << std::setw(Length) << std::hex << (uint64_t)Number;

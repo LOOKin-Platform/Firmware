@@ -1,4 +1,4 @@
-#define FIRMWARE_VERSION            "0.89"
+#define FIRMWARE_VERSION            "0.90"
 
 #define OTA_SERVER_HOST             "download.look-in.club"
 #define OTA_SERVER_PORT             80
@@ -21,7 +21,7 @@
 // Commands and Sensors Pin Map
 
 // Plug
-#define SWITCH_PLUG_PIN_NUM         GPIO_NUM_23 // GPIO_NUM_2 - led
+#define SWITCH_PLUG_PIN_NUM         GPIO_NUM_23 // GPIO_NUM_2
 
 #define COLOR_PLUG_TIMER_INDEX      LEDC_TIMER_0
 #define COLOR_PLUG_RED_PIN_NUM      GPIO_NUM_0

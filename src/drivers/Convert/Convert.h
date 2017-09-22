@@ -26,6 +26,8 @@ class Converter {
     static string   ToString(int8_t);
     static string   ToString(uint8_t);
     static string   ToString(uint32_t);
+    static string   ToString(double);
+
 
     static string   ToHexString(uint64_t, size_t);
 

@@ -240,7 +240,7 @@ bool CommandColor_t::Execute(uint8_t EventCode, uint32_t Operand) {
 
   if (Executed) {
     ESP_LOGI(tag, "Executed. Event code: %s, Operand: %s", Converter::ToHexString(EventCode, 2).c_str(), Converter::ToHexString(Operand, 8).c_str());
-    Sensor_t::GetSensorByID(ID + 0x80)->Update(Operand);
+    Sensor_t::GetSensorByID(ID + 0x80)->Update();
     return true;
   }
 

@@ -53,11 +53,6 @@ class Scenario_t {
     void    SetData(string);
     bool    Empty();
 
-    /************************************/
-    /*    Static methods to             */
-    /*    Execute Scenario commands     */
-    /************************************/
-
     static void         ExecuteScenario(uint32_t ScenarioID);
     static void         ExecuteCommandsTask(void *);
 
@@ -91,7 +86,7 @@ class Data_t {
 
     virtual bool      IsCommandNeedToExecute(ScenesCommandItem_t &) {return true;};
     virtual void      ExecuteCommands(uint32_t ScenarioID)  {};
-    virtual bool      SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand) { return false; };
+    virtual bool      SensorUpdatedIsTriggered(uint8_t SensorID) { return false; };
     virtual bool      TimeUpdatedIsTriggered() { return false; };
 };
 
@@ -107,7 +102,7 @@ class EventData_t : public Data_t {
     string      ToString() override;
 
     void        ExecuteCommands(uint32_t ScenarioID)  override;
-    bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand) override;
+    bool        SensorUpdatedIsTriggered(uint8_t SensorID) override;
 };
 
 class TimerData_t : public Data_t {
@@ -128,7 +123,7 @@ class TimerData_t : public Data_t {
     string      ToString() override;
 
     void        ExecuteCommands(uint32_t ScenarioID) override;
-    bool        SensorUpdatedIsTriggered(uint8_t SensorID, uint8_t EventCode, uint8_t EventOperand) override;
+    bool        SensorUpdatedIsTriggered(uint8_t SensorID) override;
 
     static void TimerCallback(Timer_t *pTimer);
 };

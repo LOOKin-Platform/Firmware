@@ -67,19 +67,20 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
         JSON JSONObject;
 
         JSONObject.SetItems({
-          {"Value"               , Sensor->Values["Primary"]["Value"]},
-          {"Updated"             , Sensor->Values["Primary"]["Updated"]}
+          { "Value"               , Sensor->FormatValue()  },
+          { "Updated"             , Converter::ToString(Sensor->Values["Primary"].Updated)}
         });
 
         // Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
         if (Sensor->Values.size() > 1) {
           for (const auto &Value : Sensor->Values)
             if (Value.first != "Primary") {
-              map<string,string> SensorValue = Value.second;
+              SensorValueItem SensorValue = Value.second;
 
-              JSONObject.SetObject(Value.first, {
-                { "Value"   , SensorValue["Value"]},
-                { "Updated" , SensorValue["Updated"]}
+              JSONObject.SetObject(Value.first,
+              {
+                { "Value"   , Sensor->FormatValue(Value.first)},
+                { "Updated" , Converter::ToString(SensorValue.Updated)}
               });
             }
         }
@@ -94,12 +95,12 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
       for (Sensor_t* Sensor : Sensors)
         if (Converter::ToLower(Sensor->Name) == URLParts[0]) {
           if (URLParts[1] == "value") {
-            Result->Body = Sensor->Values["Primary"]["Value"];
+            Result->Body = Sensor->FormatValue();
             break;
           }
 
           if (URLParts[1] == "updated") {
-            Result->Body = Sensor->Values["Primary"]["Updated"];
+            Result->Body = Converter::ToString(Sensor->Values["Primary"].Updated);
             break;
           }
 
@@ -108,10 +109,9 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
               if (Converter::ToLower(Value.first) == URLParts[1]) {
                 JSON JSONObject;
 
-                map<string,string> SensorValue = Value.second;
                 JSONObject.SetObject(Value.first, {
-                  { "Value"   , SensorValue["Value"]  },
-                  { "Updated" , SensorValue["Updated"]}
+                  { "Value"   , Sensor->FormatValue(Value.first) },
+                  { "Updated" , Converter::ToString(Value.second.Updated)}
                 });
 
                 Result->Body = JSONObject.ToString();
@@ -130,14 +130,35 @@ void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
 
             if (ValueItemName == URLParts[1])
             {
-              map<string, string> ValueItem = Value.second;
-
-              if (URLParts[2] == "value")   Result->Body = ValueItem["Value"];
-              if (URLParts[2] == "updated") Result->Body = ValueItem["Updated"];
+              if (URLParts[2] == "value")   Result->Body = Sensor->FormatValue(Value.first);
+              if (URLParts[2] == "updated") Result->Body = Converter::ToString(Value.second.Updated);
 
               break;
             }
           }
+}
+
+// возвращаемое значение - было ли изменено значение в памяти
+bool Sensor_t::SetValue(double Value, string Key) {
+  if (Values.count(Key) > 0) {
+    if (Values[Key].Value != Value) {
+      Values[Key] = SensorValueItem(Value, Time::Unixtime());
+      return true;
+    }
+  }
+  else {
+    Values[Key] = SensorValueItem(Value, Time::Unixtime());
+    return true;
+  }
+
+  return false;
+}
+
+SensorValueItem Sensor_t::GetValue(string Key) {
+  if (!(Values.count(Key) > 0))
+    SetValue(ReceiveValue(Key));
+
+  return Values[Key];
 }
 
 /************************************/
@@ -150,24 +171,29 @@ SensorSwitch_t::SensorSwitch_t() {
     EventCodes  = { 0x00, 0x01, 0x02 };
 }
 
-void SensorSwitch_t::Update(uint32_t Operand) {
-  string newValue = (GPIO::Read(SWITCH_PLUG_PIN_NUM) == true) ? "1" : "0";
-  string oldValue = "";
-
-  if (Values.count("Primary"))
-    oldValue = Values["Primary"]["Value"];
-
-  if (oldValue != newValue || Values.count("Primary") == 0) {
-    Values["Primary"]["Value"]    = newValue;
-    Values["Primary"]["Updated"]  = Time::UnixtimeString();
-
-    WebServer->UDPSendBroadcastUpdated(ID,newValue);
-    Automation->SensorChanged(ID, (newValue == "1") ? 0x01 : 0x02 );
+void SensorSwitch_t::Update() {
+  if (SetValue(ReceiveValue())) {
+    WebServer->UDPSendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
+    Automation->SensorChanged(ID);
   }
 }
 
-bool SensorSwitch_t::CheckOperand(uint8_t SceneEventCode, uint8_t EventCode, uint8_t SceneEventOperand, uint8_t EventOperand) {
-  return (SceneEventCode == EventCode);
+double SensorSwitch_t::ReceiveValue(string Key) {
+  switch (Device->Type->Hex) {
+    case DEVICE_TYPE_PLUG_HEX:
+      return (GPIO::Read(SWITCH_PLUG_PIN_NUM) == true) ? 1 : 0;
+      break;
+    default: return 0;
+  }
+}
+
+bool SensorSwitch_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
+  SensorValueItem ValueItem = GetValue();
+
+  if (SceneEventCode == 0x01 && ValueItem.Value == 1) return true;
+  if (SceneEventCode == 0x02 && ValueItem.Value == 0) return true;
+
+  return false;
 }
 
 
@@ -181,65 +207,47 @@ SensorColor_t::SensorColor_t() {
     EventCodes  = { 0x00, 0x02, 0x03, 0x04 };
 }
 
-void SensorColor_t::Update(uint32_t Operand) {
+void SensorColor_t::Update() {
 
-  Red = 0, Green = 0, Blue = 0, White = 0;
+  SetValue(ReceiveValue("Red")  , "Red");
+  SetValue(ReceiveValue("Green"), "Green");
+  SetValue(ReceiveValue("Blue") , "Blue");
+  SetValue(ReceiveValue("White"), "White");
 
-  if (Operand > 0) {
-    Blue    = Operand&0x000000FF;
-    Green   = (Operand&0x0000FF00)>>8;
-    Red     = (Operand&0x00FF0000)>>16;
-  }
-  else
-    switch (Device->Type->Hex) {
-      case DEVICE_TYPE_PLUG_HEX:
-        Red   = GPIO::PWMValue(COLOR_PLUG_RED_PWMCHANNEL);
-        Green = GPIO::PWMValue(COLOR_PLUG_GREEN_PWMCHANNEL);
-        Blue  = GPIO::PWMValue(COLOR_PLUG_BLUE_PWMCHANNEL);
-        White = GPIO::PWMValue(COLOR_PLUG_WHITE_PWMCHANNEL);
-        break;
-    }
+  double Color = (double)floor(GetValue("Red").Value * 255 * 255 + GetValue("Green").Value * 255 + GetValue("Blue").Value);
 
-  string newValue = Converter::ToHexString(Red, 2) + Converter::ToHexString(Green, 2) + Converter::ToHexString(Blue, 2);
-  string oldValue = "";
-
-  if (Values.count("Primary"))
-    oldValue = Values["Primary"]["Value"];
-
-  if (oldValue != newValue || Values.count("Primary") == 0) {
-    Values["Primary"]["Value"]    = newValue;
-    Values["Primary"]["Updated"]  = Time::UnixtimeString();
-
-    WebServer->UDPSendBroadcastUpdated(ID, newValue); // отправляем широковещательно новый цвет
-    Automation->SensorChanged(ID, 0x02, ToBrightness(Red, Green, Blue)); // в условия автоматизации отправляем яркость
-  }
-
-  string RedValue = Converter::ToHexString(Red, 2);
-  if (Values.count("Red") == 0 || Values["Red"]["Value"] != RedValue) {
-    Values["Red"]["Value"] = RedValue;
-    Values["Red"]["Updated"]  = Time::UnixtimeString();
-  }
-
-  string GreenValue = Converter::ToHexString(Green,2);
-  if (Values.count("Green") == 0 || Values["Green"]["Value"] != GreenValue) {
-    Values["Green"]["Value"] = RedValue;
-    Values["Green"]["Updated"]  = Time::UnixtimeString();
-  }
-
-  string BlueValue = Converter::ToHexString(Blue,2);
-  if (Values.count("Blue") == 0 || Values["Blue"]["Value"] != BlueValue) {
-    Values["Blue"]["Value"]     = BlueValue;
-    Values["Blue"]["Updated"]   = Time::UnixtimeString();
-  }
-
-  string WhiteValue = Converter::ToHexString(White,2);
-  if (Values.count("Red") == 0 || Values["White"]["Value"] != WhiteValue) {
-    Values["White"]["Value"] = RedValue;
-    Values["White"]["Updated"]  = Time::UnixtimeString();
+  if (SetValue(Color)) {
+    WebServer->UDPSendBroadcastUpdated(ID, Converter::ToHexString(Color,6));
+    Automation->SensorChanged(ID);
   }
 }
 
-bool SensorColor_t::CheckOperand(uint8_t SceneEventCode, uint8_t EventCode, uint8_t SceneEventOperand, uint8_t EventOperand) {
+double SensorColor_t::ReceiveValue(string Key) {
+  switch (Device->Type->Hex) {
+    case DEVICE_TYPE_PLUG_HEX:
+      if (Key == "Red")     return GPIO::PWMValue(COLOR_PLUG_RED_PWMCHANNEL);
+      if (Key == "Green")   return GPIO::PWMValue(COLOR_PLUG_GREEN_PWMCHANNEL);
+      if (Key == "Blue")    return GPIO::PWMValue(COLOR_PLUG_BLUE_PWMCHANNEL);
+      if (Key == "White")   return GPIO::PWMValue(COLOR_PLUG_WHITE_PWMCHANNEL);
+      if (Key == "Primary") return (double)floor(GetValue("Red").Value * 255 * 255 + GetValue("Green").Value * 255 + GetValue("Blue").Value);
+      break;
+  }
+
+  return 0;
+}
+
+string SensorColor_t::FormatValue(string Key) {
+  if (Key == "Primary")
+    return Converter::ToHexString(Values[Key].Value, 6);
+  else
+    return Converter::ToHexString(Values[Key].Value, 2);
+}
+
+bool SensorColor_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
+  double Red    = GetValue("Red").Value;
+  double Green  = GetValue("Green").Value;
+  double Blue   = GetValue("Blue").Value;
+
   // Установленная яркость равна значению в сценарии
   if (SceneEventCode == 0x02 && SceneEventOperand == ToBrightness(Red, Green, Blue))
     return true;
