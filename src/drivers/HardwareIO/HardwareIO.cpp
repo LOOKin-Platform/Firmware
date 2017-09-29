@@ -120,6 +120,6 @@ uint8_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
 
 void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty) {
 	if (ESP_OK == ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty*4, PWM_FADING_LENGTH))
-		if (ESP_OK == ledc_fade_start(PWMChannel, LEDC_FADE_NO_WAIT))
+		if (ESP_OK == ledc_fade_start(LEDC_HIGH_SPEED_MODE, PWMChannel, LEDC_FADE_NO_WAIT))
 			PWMValuesCache[PWMChannel] = PWMCacheItem(Duty, Time::Uptime());
 }
