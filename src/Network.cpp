@@ -135,7 +135,7 @@ NetworkDevice_t Network_t::DeserializeNetworkDevice(string Data) {
   return Result;
 }
 
-void Network_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Network_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
   // обработка GET запроса - получение данных
   if (Type == QueryType::GET) {
     // Запрос JSON со всеми параметрами
@@ -172,26 +172,26 @@ void Network_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, 
 
       if (URLParts[0] == "mode") {
         Result->Body = ModeToString();
-        Result->ContentType = WebServerResponse_t::TYPE::PLAIN;
+        Result->ContentType = WebServer_t::Response::TYPE::PLAIN;
       }
 
       if (URLParts[0] == "ip") {
         Result->Body = IPToString();
-        Result->ContentType = WebServerResponse_t::TYPE::PLAIN;
+        Result->ContentType = WebServer_t::Response::TYPE::PLAIN;
       }
 
       if (URLParts[0] == "wifissid") {
         Result->Body = WiFiSSIDToString();
 
         if (Result->Body == "")
-          Result->ResponseCode = WebServerResponse_t::CODE::INVALID;
+          Result->ResponseCode = WebServer_t::Response::CODE::INVALID;
 
-        Result->ContentType = WebServerResponse_t::TYPE::PLAIN;
+        Result->ContentType = WebServer_t::Response::TYPE::PLAIN;
       }
 
       if (URLParts[0] == "wifilist") {
         Result->Body = JSON::CreateStringFromVector(WiFiList);
-        Result->ContentType = WebServerResponse_t::TYPE::JSON;
+        Result->ContentType = WebServer_t::Response::TYPE::JSON;
       }
     }
   }

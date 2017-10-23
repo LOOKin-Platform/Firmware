@@ -19,6 +19,28 @@ using namespace std;
 
 class WebServer_t {
   public:
+
+    class Response {
+    	public:
+    		enum CODE		{ OK, INVALID, ERROR };
+    		enum TYPE 	{ PLAIN, JSON };
+
+        string 		Body;
+    		CODE 			ResponseCode;
+    		TYPE			ContentType;
+
+    		Response();
+    		string 	toString();
+
+    		void 		SetSuccess();
+    		void 		SetFail();
+
+    	private:
+    		string ResponseCodeToString();
+    		string ContentTypeToString();
+    };
+
+
     WebServer_t();
     void Start();
     void Stop();
@@ -40,27 +62,6 @@ class WebServer_t {
 
 		static void HTTPListenerTask(void *);
 		static void HandleHTTP(struct netconn *);
-};
-
-class WebServerResponse_t
-{
-	public:
-		enum CODE		{ OK, INVALID, ERROR };
-		enum TYPE 	{ PLAIN, JSON };
-
-    string 		Body;
-		CODE 			ResponseCode;
-		TYPE			ContentType;
-
-		WebServerResponse_t();
-		string 	toString();
-
-		void 		SetSuccess();
-		void 		SetFail();
-
-	private:
-		string ResponseCodeToString();
-		string ContentTypeToString();
 };
 
 #endif

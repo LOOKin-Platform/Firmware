@@ -9,10 +9,7 @@
 /**
  * @brief Class instance constructor.
  */
-GPIO::GPIO() {
-	// TODO Auto-generated constructor stub
-
-}
+GPIO::GPIO() {}
 
 /**
  * @brief Determine if the pin is a valid pin for an ESP32 (i.e. is it in range).
@@ -56,7 +53,7 @@ void GPIO::Setup(gpio_num_t PIN_NUM) {
 	::gpio_set_direction(PIN_NUM, GPIO_MODE_INPUT_OUTPUT);
 }
 
-map<ledc_channel_t, PWMCacheItem> GPIO::PWMValuesCache = {{}};
+map<ledc_channel_t, GPIO::PWMCacheItem> GPIO::PWMValuesCache = {{}};
 
 /**
  * @brief Setting up pin for PWM.

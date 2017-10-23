@@ -89,7 +89,7 @@ void Device_t::Init() {
   delete Memory;
 }
 
-void Device_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Device_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
   ESP_LOGD(tag, "HandleHTTPRequest");
 
   // обработка GET запроса - получение данных
@@ -123,7 +123,7 @@ void Device_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, v
       if (URLParts[0] == "powermode")       Result->Body = PowerModeToString();
       if (URLParts[0] == "firmwareversion") Result->Body = FirmwareVersionToString();
 
-      Result->ContentType = WebServerResponse_t::TYPE::PLAIN;
+      Result->ContentType = WebServer_t::Response::TYPE::PLAIN;
     }
   }
 
@@ -197,24 +197,24 @@ bool Device_t::POSTTimezone(map<string,string> Params) {
   return false;
 }
 
-bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServerResponse_t& Response) {
+bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response) {
   if (Params.count("firmwareversion") == 0)
     return false;
 
   if (Converter::ToFloat(FIRMWARE_VERSION) > Converter::ToFloat(Params["firmwareversion"])) {
-    Response.ResponseCode = WebServerResponse_t::CODE::OK;
+    Response.ResponseCode = WebServer_t::Response::CODE::OK;
     Response.Body = "{\"success\" : \"false\" , \"Message\": \"Attempt to update to the old version\"}";
     return false;
   }
 
   if (Status == DeviceStatus::UPDATING) {
-    Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
+    Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
     Response.Body = "{\"success\" : \"false\" , \"Error\": \"The update process has already been started\"}";
     return false;
   }
 
   if (WiFi_t::getMode() != WIFI_MODE_STA_STR) {
-    Response.ResponseCode = WebServerResponse_t::CODE::ERROR;
+    Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
     Response.Body = "{\"success\" : \"false\" , \"Error\": \"Device is not connected to the Internet\"}";
     return false;
   }
@@ -229,7 +229,7 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServerResponse_
 
   Device->Status = DeviceStatus::UPDATING;
 
-  Response.ResponseCode = WebServerResponse_t::CODE::OK;
+  Response.ResponseCode = WebServer_t::Response::CODE::OK;
   Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update started\"}";
 
   return true;

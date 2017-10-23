@@ -1,4 +1,4 @@
-#define FIRMWARE_VERSION            "0.90"
+#define FIRMWARE_VERSION            "0.91"
 
 #define OTA_SERVER_HOST             "download.look-in.club"
 #define OTA_SERVER_PORT             80
@@ -13,6 +13,11 @@
 
 #define UDP_SERVER_PORT             61201
 #define UDP_PACKET_PREFIX           "LOOK.in:"
+
+#define DEVICE_SYSTEM_LOG_SIZE      16
+#define DEVICE_EVENTS_LOG_SIZE      32
+
+#define OVERHEET_POOLING            4000
 
 // Devices definitions
 #define DEVICE_TYPE_PLUG_HEX        0x03

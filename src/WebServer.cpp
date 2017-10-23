@@ -194,8 +194,9 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
   if (!HTTPString.empty()) {
     Query_t Query(HTTPString);
 
-    WebServerResponse_t *Response =  new WebServerResponse_t();
+    WebServer_t::Response *Response =  new WebServer_t::Response();
     API::Handle(Response, Query);
+
     netconn_write(conn, Response->toString().c_str(), Response->toString().length(), NETCONN_NOCOPY);
     delete Response;
   }
@@ -205,15 +206,15 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 }
 
 /*
-  WebServerResponse_t - class for building user-friendly browser answer
+  WebServer_t::Response - class for building user-friendly browser answer
 */
 
-WebServerResponse_t::WebServerResponse_t() {
+WebServer_t::Response::Response() {
   ResponseCode = CODE::OK;
   ContentType  = TYPE::JSON;
 }
 
-string WebServerResponse_t::toString() {
+string WebServer_t::Response::toString() {
 
   string Result = "";
 
@@ -224,20 +225,19 @@ string WebServerResponse_t::toString() {
   return Result;
 }
 
-void WebServerResponse_t::SetSuccess() {
+void WebServer_t::Response::SetSuccess() {
   ResponseCode  = CODE::OK;
   ContentType   = TYPE::JSON;
   Body          = "{\"success\" : \"true\"}";
 }
 
-void WebServerResponse_t::SetFail() {
+void WebServer_t::Response::SetFail() {
   ResponseCode  = CODE::ERROR;
   ContentType   = TYPE::JSON;
   Body          = "{\"success\" : \"false\"}";
 }
 
-
-string WebServerResponse_t::ResponseCodeToString() {
+string WebServer_t::Response::ResponseCodeToString() {
   switch (ResponseCode) {
     case CODE::INVALID  : return "400"; break;
     case CODE::ERROR    : return "500"; break;
@@ -245,7 +245,7 @@ string WebServerResponse_t::ResponseCodeToString() {
   }
 }
 
-string WebServerResponse_t::ContentTypeToString() {
+string WebServer_t::Response::ContentTypeToString() {
   switch (ContentType) {
     case TYPE::PLAIN  : return "text/plain"; break;
     case TYPE::JSON   : return "application/json"; break;

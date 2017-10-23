@@ -69,7 +69,7 @@ class Device_t {
 
     Device_t();
     void    Init();
-    void    HandleHTTPRequest(WebServerResponse_t* &, QueryType Type, vector<string> URLParts, map<string,string> Params);
+    void    HandleHTTPRequest(WebServer_t::Response* &, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
     string TypeToString();
     string IDToString();
@@ -79,7 +79,7 @@ class Device_t {
     bool POSTName(map<string,string>);
     bool POSTTime(map<string,string>);
     bool POSTTimezone(map<string,string>);
-    bool POSTFirmwareVersion(map<string,string>, WebServerResponse_t &);
+    bool POSTFirmwareVersion(map<string,string>, WebServer_t::Response &);
 
     string StatusToString();
     string NameToString();

@@ -8,11 +8,8 @@
 
 static char TAG[] = "FreeRTOS";
 
-FreeRTOS::FreeRTOS() {
-}
-
-FreeRTOS::~FreeRTOS() {
-}
+FreeRTOS::FreeRTOS() {}
+FreeRTOS::~FreeRTOS() {}
 
 /**
  * Sleep for the specified number of milliseconds.
@@ -37,6 +34,11 @@ TaskHandle_t FreeRTOS::StartTask(void task(void*), std::string taskName, void *p
 	return TaskHandle;
 } // startTask
 
+TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), std::string taskName, void *param, int stackSize) {
+	TaskHandle_t TaskHandle = NULL;
+	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, 5, &TaskHandle, 0);
+	return TaskHandle;
+} // startTask
 
 /**
  * Delete the task.
@@ -126,6 +128,136 @@ std::string FreeRTOS::Semaphore::toString() {
 void FreeRTOS::Semaphore::setName(std::string name) {
 	m_name = name;
 }
+
+map<void *, FreeRTOS::Timer *> FreeRTOS::Timer::TimersMap;
+
+void FreeRTOS::Timer::internalCallback(TimerHandle_t xTimer) {
+	FreeRTOS::Timer *timer = TimersMap.at(xTimer);
+	timer->callback(timer);
+}
+
+/**
+ * @brief Construct a timer.
+ *
+ * We construct a timer that will fire after the given period has elapsed.  The period is measured
+ * in ticks.  When the timer fires, the callback function is invoked within the scope/context of
+ * the timer demon thread.  As such it must **not** block.  Once the timer has fired, if the reload
+ * flag is true, then the timer will be automatically restarted.
+ *
+ * Note that the timer does *not* start immediately.  It starts ticking after the start() method
+ * has been called.
+ *
+ * The signature of the callback function is:
+ *
+ * @code{.cpp}
+ * void callback(FreeRTOSTimer *pTimer) {
+ *    // Callback code here ...
+ * }
+ * @endcode
+ *
+ * @param [in] name The name of the timer.
+ * @param [in] period The period of the timer in ticks.
+ * @param [in] reload True if the timer is to restart once fired.
+ * @param [in] data Data to be passed to the callback.
+ * @param [in] callback Callback function to be fired when the timer expires.
+ */
+FreeRTOS::Timer::Timer(
+	string				Name,
+	TickType_t		period,
+	UBaseType_t		reload,
+	void 					*data,
+	void         	(*callback)(FreeRTOS::Timer *pTimer)) {
+	/*
+	 * The callback function to actually be called is saved as member data in the object and
+	 * a static callback function is called.  This will be passed the FreeRTOS timer handle
+	 * which is used as a key in a map to lookup the saved user supplied callback which is then
+	 * actually called.
+	 */
+
+	assert(callback != nullptr);
+	this->period = period;
+	this->callback = callback;
+	timerHandle = ::xTimerCreate(Name.c_str(), period, reload, data, internalCallback);
+
+	// Add the association between the timer handle and this class instance into the map.
+	TimersMap.insert(std::make_pair(timerHandle, this));
+} // FreeRTOSTimer
+
+/**
+ * @brief Destroy a class instance.
+ *
+ * The timer is deleted.
+ */
+FreeRTOS::Timer::~Timer() {
+	::xTimerDelete(timerHandle, portMAX_DELAY);
+	TimersMap.erase(timerHandle);
+}
+
+/**
+ * @brief Start the timer ticking.
+ */
+void FreeRTOS::Timer::Start(TickType_t blockTime) {
+	::xTimerStart(timerHandle, blockTime);
+} // start
+
+/**
+ * @brief Stop the timer from ticking.
+ */
+void FreeRTOS::Timer::Stop(TickType_t blockTime) {
+	::xTimerStop(timerHandle, blockTime);
+} // stop
+
+/**
+ * @brief Reset the timer to the period and start it ticking.
+ */
+void FreeRTOS::Timer::Reset(TickType_t blockTime) {
+	::xTimerReset(timerHandle, blockTime);
+} // reset
+
+
+/**
+ * @brief Return the period of the timer.
+ *
+ * @return The period of the timer.
+ */
+TickType_t FreeRTOS::Timer::GetPeriod() {
+	return period;
+} // getPeriod
+
+
+/**
+ * @brief Change the period of the timer.
+ *
+ * @param [in] newPeriod The new period of the timer in ticks.
+ */
+void FreeRTOS::Timer::ChangePeriod(TickType_t newPeriod, TickType_t blockTime) {
+	if (::xTimerChangePeriod(timerHandle, newPeriod, blockTime) == pdPASS) {
+		period = newPeriod;
+	}
+} // changePeriod
+
+
+/**
+ * @brief Get the name of the timer.
+ *
+ * @return The name of the timer.
+ */
+const char *FreeRTOS::Timer::GetName() {
+	return ::pcTimerGetTimerName(timerHandle);
+} // getName
+
+
+/**
+ * @brief Get the user supplied data associated with the timer.
+ *
+ * @return The user supplied data associated with the timer.
+ */
+void *FreeRTOS::Timer::GetData() {
+	return ::pvTimerGetTimerID(timerHandle);
+} // getData
+
+
+
 
 QueueHandle_t FreeRTOS::Queue::Create(uint16_t Items, uint16_t ItemSize ) {
 	return ::xQueueCreate(Items, ItemSize);

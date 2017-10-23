@@ -15,12 +15,14 @@
 #include "Memory.h"
 #include <Convert.h>
 
+#include "Log.h"
+
 static char tag[] = "Time";
 static string NVSTimeArea = "Time";
 
-uint32_t  Time::Offset = 0;
-int8_t    Time::TimezoneOffset = 0;
-string    Time::ReadBuffer = "";
+uint32_t    Time::Offset = 0;
+int8_t      Time::TimezoneOffset = 0;
+string      Time::ReadBuffer = "";
 
 uint32_t Time::Uptime() {
   struct timeval Now;
@@ -91,6 +93,10 @@ string Time::TimezoneStr() {
   return (Time::Timezone() > 0) ? "+" + Result : Result;
 }
 
+bool Time::IsUptime(uint32_t Time) {
+  return (Time < 31536000) ? true : false;
+}
+
 void Time::ServerSync(string Host, string Path) {
   if (Offset != 0) return;
 
@@ -123,6 +129,8 @@ void Time::ReadFinished(char IP[]) {
 
   Time::SetTime(GMTTime);
   ESP_LOGI(tag, "Time received: %s", Time::UnixtimeString().c_str());
+
+  Log::CorrectTime();
 }
 
 void Time::Aborted(char IP[]) {

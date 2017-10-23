@@ -21,7 +21,7 @@ using namespace std;
 #include <esp_log.h>
 
 #include "DateTime.h"
-#include "TimerWrapper.h"
+#include "FreeRTOSWrapper.h"
 #include "JSON.h"
 #include "HTTPClient.h"
 
@@ -125,7 +125,7 @@ class TimerData_t : public Data_t {
     void        ExecuteCommands(uint32_t ScenarioID) override;
     bool        SensorUpdatedIsTriggered(uint8_t SensorID) override;
 
-    static void TimerCallback(Timer_t *pTimer);
+    static void TimerCallback(FreeRTOS::Timer *pTimer);
 };
 
 class CalendarData_t : public Data_t {

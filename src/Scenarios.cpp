@@ -338,11 +338,11 @@ bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
 };
 
 void TimerData_t::ExecuteCommands(uint32_t ScenarioID) {
-  Timer_t *ScenarioTimer = new Timer_t("ScenarioTimer", (TimerDelay * 1000)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
+  FreeRTOS::Timer *ScenarioTimer = new FreeRTOS::Timer("ScenarioTimer", (TimerDelay * 1000)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
   ScenarioTimer->Start();
 };
 
-void TimerData_t::TimerCallback(Timer_t *pTimer) {
+void TimerData_t::TimerCallback(FreeRTOS::Timer *pTimer) {
   uint32_t ScenarioID = (uint32_t) pTimer->GetData();
   Scenario_t::ExecuteScenario(ScenarioID);
   ESP_LOGI(tag, "Scenario %s timer executed", Converter::ToHexString(ScenarioID, 8).c_str());

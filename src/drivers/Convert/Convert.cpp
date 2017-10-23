@@ -4,12 +4,6 @@
 *
 */
 
-#include <algorithm>
-#include <sstream>
-#include <iomanip>
-#include <cctype>
-#include <locale>
-
 #include "Convert.h"
 
 string Converter::ToLower(string Str) {
@@ -109,4 +103,26 @@ vector<string> Converter::StringToVector(string SourceStr, string Delimeter) {
   Result.push_back(SourceStr);
 
   return Result;
+}
+
+string Converter::VectorToString(const vector<string>& Strings, const char* Delimeter) {
+  switch (Strings.size()) {
+      case 0: return "";
+      case 1: return Strings[0];
+      default:
+          ostringstream os;
+          copy(Strings.begin(), Strings.end()-1, ostream_iterator<string>(os, Delimeter));
+          os << *Strings.rbegin();
+          return os.str();
+  }
+}
+
+uint32_t Converter::IPToUint32(tcpip_adapter_ip_info_t IP) {
+  uint32_t BigEndian    = inet_addr(inet_ntoa(IP));
+  uint32_t LittleEndian = ((BigEndian>>24)&0xff) | // move byte 3 to byte 0
+                          ((BigEndian<<8)&0xff0000) | // move byte 1 to byte 2
+                          ((BigEndian>>8)&0xff00) | // move byte 2 to byte 1
+                          ((BigEndian<<24)&0xff000000); // byte 0 to byte 3
+
+  return LittleEndian;
 }

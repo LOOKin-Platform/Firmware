@@ -77,8 +77,8 @@ bool OTA_t::ReadBody(char Data[], int DataLen, char IP[]) {
   esp_err_t err = esp_ota_write(OutHandle, (const void *)Data, DataLen);
 
   if (err != ESP_OK) {
-      ESP_LOGE(tag, "Error: esp_ota_write failed! err=0x%x", err);
-      return false;
+    ESP_LOGE(tag, "Error: esp_ota_write failed! err=0x%x", err);
+    return false;
   }
 
   BinaryFileLength += DataLen;
@@ -107,4 +107,35 @@ void OTA_t::ReadFinished(char IP[]) {
 
 void OTA_t::Aborted(char IP[]) {
   Device->Status = DeviceStatus::RUNNING;
+}
+
+void OTA_t::Rollback() {
+  esp_partition_t RollbackPartition;
+
+  const esp_partition_t *esp_current_partition = esp_ota_get_boot_partition();
+  if (esp_current_partition->type != ESP_PARTITION_TYPE_APP) {
+    ESP_LOGE(tag, "Can't find partition to rollback");
+    return;
+  }
+
+  esp_partition_t find_partition;
+  memset(&RollbackPartition, 0, sizeof(esp_partition_t));
+
+  // На какую партицию должен быть осуществлен сброс
+  switch (esp_current_partition->subtype) {
+    case ESP_PARTITION_SUBTYPE_APP_OTA_0: find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_1; break;
+    case ESP_PARTITION_SUBTYPE_APP_OTA_1: find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_0; break;
+    default: break;
+  }
+
+  find_partition.type = ESP_PARTITION_TYPE_APP;
+
+  const esp_partition_t *partition = esp_partition_find_first(find_partition.type, find_partition.subtype, NULL);
+  assert(partition != NULL);
+  memset(&RollbackPartition, 0, sizeof(esp_partition_t));
+
+  esp_err_t err = esp_ota_set_boot_partition(&RollbackPartition);
+
+  if (err == ESP_OK)
+    esp_restart();
 }

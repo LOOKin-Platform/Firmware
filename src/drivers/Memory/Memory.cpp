@@ -9,6 +9,11 @@ NVS::NVS(string name, nvs_open_mode openMode) {
 	nvs_open(name.c_str(), openMode, &m_handle);
 } // NVS
 
+NVS::NVS(const char name[], nvs_open_mode openMode) {
+	m_name = name;
+	nvs_open(name, openMode, &m_handle);
+} // NVS
+
 NVS::~NVS() {
 	nvs_close(m_handle);
 } // ~NVS

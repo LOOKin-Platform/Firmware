@@ -12,6 +12,7 @@
 #include "Automation.h"
 #include "Sensors.h"
 #include "Commands.h"
+#include "Log.h"
 
 #include "WebServer.h"
 #include "WiFi.h"

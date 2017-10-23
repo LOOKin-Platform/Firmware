@@ -145,7 +145,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
           memcpy(ReadData, Text, BuffLen);
 
           if (ClientData.ReadBodyCallback != NULL)
-            if (ClientData.ReadBodyCallback(ReadData, BuffLen, ClientData.IP)) {
+            if (!ClientData.ReadBodyCallback(ReadData, BuffLen, ClientData.IP)) {
               HTTPClient::Failed(ClientData);
               break;
             }

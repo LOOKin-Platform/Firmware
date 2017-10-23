@@ -34,6 +34,8 @@ class OTA_t {
     static void ReadFinished(char []);
     static void Aborted(char []);
 
+    static void Rollback();
+
   private:
     static int               BinaryFileLength;
     static esp_ota_handle_t  OutHandle;

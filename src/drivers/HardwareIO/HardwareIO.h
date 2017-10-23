@@ -20,17 +20,17 @@ using namespace std;
 
 #define PWM_FADING_LENGTH 2000
 
-struct PWMCacheItem {
-	uint8_t  Value = 0;
-	uint32_t Updated = 0;
-	PWMCacheItem(uint8_t dValue = 0, uint32_t dUpdated = 0) : Value(dValue), Updated(dUpdated) {}
-};
-
 /**
  * @brief Interface to GPIO functions.
  */
 class GPIO {
 	public:
+		struct PWMCacheItem {
+			uint8_t  Value = 0;
+			uint32_t Updated = 0;
+			PWMCacheItem(uint8_t dValue = 0, uint32_t dUpdated = 0) : Value(dValue), Updated(dUpdated) {}
+		};
+
 		GPIO();
 
 		// Regular work with PIN outputs and inputs

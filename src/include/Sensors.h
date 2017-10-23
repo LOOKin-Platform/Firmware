@@ -50,7 +50,7 @@ class Sensor_t {
     bool                        SetValue(double Value, string Key = "Primary");
     SensorValueItem             GetValue(string Key = "Primary");
 
-    static void HandleHTTPRequest(WebServerResponse_t* &, QueryType, vector<string>, map<string,string>);
+    static void HandleHTTPRequest(WebServer_t::Response* &, QueryType, vector<string>, map<string,string>);
 };
 
 class SensorSwitch_t : public Sensor_t {

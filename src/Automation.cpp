@@ -87,7 +87,7 @@ uint8_t Automation_t::CacheGetArrayID(uint32_t ScenarioID) {
   return MAX_NVSARRAY_INDEX+1;
 }
 
-void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts,
+void Automation_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts,
                                                   map<string,string> Params, string RequestBody) {
   // обработка GET запроса - получение данных
   if (Type == QueryType::GET) {
@@ -145,7 +145,7 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
           if (SetVersionMap(SSID, Converter::UintFromHexString<uint32_t>(Params["version"])))
             Result->Body = "{\"success\" : \"true\"}";
           else {
-            Result->ResponseCode = WebServerResponse_t::CODE::INVALID;
+            Result->ResponseCode = WebServer_t::Response::CODE::INVALID;
             Result->Body = "{\"success\" : \"false\", \"message\" : \"Error while version processing\"}";
           }
       }
@@ -169,12 +169,12 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
               Result->Body = "{\"success\" : \"true\"}";
             }
             else {
-              Result->ResponseCode = WebServerResponse_t::CODE::ERROR;
+              Result->ResponseCode = WebServer_t::Response::CODE::ERROR;
               Result->Body = "{\"success\" : \"false\", \"message\" : \"Error while scenario insertion\"}";
             }
           }
           else {
-            Result->ResponseCode = WebServerResponse_t::CODE::INVALID;
+            Result->ResponseCode = WebServer_t::Response::CODE::INVALID;
             Result->Body = "{\"success\" : \"false\", \"message\" : \"Scenario already set\"}";
           }
         }
@@ -197,11 +197,11 @@ void Automation_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Typ
         }
 
         if (ScenariosToDelete.size() > 0) {
-          Result->ResponseCode = WebServerResponse_t::CODE::OK;
+          Result->ResponseCode = WebServer_t::Response::CODE::OK;
           Result->Body = "{\"success\" : \"true\"}";
         }
         else {
-          Result->ResponseCode = WebServerResponse_t::CODE::INVALID;
+          Result->ResponseCode = WebServer_t::Response::CODE::INVALID;
           Result->Body = "{\"success\" : \"false\", \"message\":\"empty scenario ID\"}";
         }
       }

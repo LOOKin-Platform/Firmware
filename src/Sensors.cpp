@@ -43,7 +43,7 @@ void Sensor_t::UpdateSensors() {
     Sensor->Update();
 }
 
-void Sensor_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Sensor_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
 
     Sensor_t::UpdateSensors();
 

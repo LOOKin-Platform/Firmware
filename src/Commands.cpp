@@ -47,7 +47,7 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
   return Commands;
 }
 
-void Command_t::HandleHTTPRequest(WebServerResponse_t* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Command_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
     // Вывести список всех комманд
     if (URLParts.size() == 0 && Type == QueryType::GET) {
 
@@ -152,6 +152,10 @@ CommandSwitch_t::CommandSwitch_t() {
     }
 }
 
+void CommandSwitch_t::Overheated() {
+  Execute(0x02, 0);
+}
+
 bool CommandSwitch_t::Execute(uint8_t EventCode, uint32_t Operand) {
   bool Executed = false;
 
@@ -208,6 +212,10 @@ CommandColor_t::CommandColor_t() {
     GPIO::SetupPWM(GPIOGreen, TimerIndex, PWMChannelGreen);
     GPIO::SetupPWM(GPIOBlue , TimerIndex, PWMChannelBlue);
     GPIO::SetupPWM(GPIOWhite, TimerIndex, PWMChannelWhite);
+}
+
+void CommandColor_t::Overheated() {
+  Execute(0x01, 0x00000000);
 }
 
 bool CommandColor_t::Execute(uint8_t EventCode, uint32_t Operand) {

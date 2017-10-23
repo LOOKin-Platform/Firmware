@@ -6,15 +6,15 @@
 
 #include "API.h"
 
-void API::Handle(WebServerResponse_t* &Response, Query_t Query) {
+void API::Handle(WebServer_t::Response* &Response, Query_t Query) {
   return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody);
 }
 
-void API::Handle(WebServerResponse_t* &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
+void API::Handle(WebServer_t::Response* &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
 
   if (URLParts.size() == 0) {
-    Response->ResponseCode  = WebServerResponse_t::CODE::OK;
-    Response->ContentType   = WebServerResponse_t::TYPE::PLAIN;
+    Response->ResponseCode  = WebServer_t::Response::CODE::OK;
+    Response->ContentType   = WebServer_t::Response::TYPE::PLAIN;
     Response->Body          = "OK";
     return;
   }
@@ -28,6 +28,7 @@ void API::Handle(WebServerResponse_t* &Response, QueryType Type, vector<string> 
     if (APISection == "automation") Automation->HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
     if (APISection == "sensors")    Sensor_t::HandleHTTPRequest(Response, Type, URLParts, Params);
     if (APISection == "commands")   Command_t::HandleHTTPRequest(Response, Type, URLParts, Params);
+    if (APISection == "log")        Log::HandleHTTPRequest(Response, Type, URLParts, Params);
 
     // обработка алиасов комманд
     if (URLParts.size() == 0 && Params.size() == 0) {
@@ -55,9 +56,9 @@ void API::Handle(WebServerResponse_t* &Response, QueryType Type, vector<string> 
     }
   }
 
-  if (Response->Body == "" && Response->ResponseCode == WebServerResponse_t::CODE::OK) {
-    Response->ResponseCode  = WebServerResponse_t::CODE::INVALID;
-    Response->ContentType   = WebServerResponse_t::TYPE::PLAIN;
+  if (Response->Body == "" && Response->ResponseCode == WebServer_t::Response::CODE::OK) {
+    Response->ResponseCode  = WebServer_t::Response::CODE::INVALID;
+    Response->ContentType   = WebServer_t::Response::TYPE::PLAIN;
     Response->Body          = "The request was incorrectly formatted";
   }
 }

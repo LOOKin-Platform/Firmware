@@ -7,13 +7,15 @@
 #ifndef DRIVERS_TIME_H_
 #define DRIVERS_TIME_H_
 
+using namespace std;
+
 #include <string>
 
 #include "Memory.h"
-#include "TimerWrapper.h"
+#include "FreeRTOSWrapper.h"
 #include "HTTPClient.h"
 
-using namespace std;
+typedef void (*TimeSynced)();
 
 #define  NVSTimeTimezone  "Timezone"
 
@@ -30,7 +32,6 @@ struct DateTime_t {
 };
 
 class Time {
-
   public:
     static uint32_t   Offset;
     static int8_t     TimezoneOffset;
@@ -45,6 +46,7 @@ class Time {
     static void       SetTimezone(string TimezoneOffset);
     static int8_t     Timezone();
     static string     TimezoneStr();
+    static bool       IsUptime(uint32_t Time);
 
     static void       ServerSync(string Host, string Path);
 
@@ -55,7 +57,7 @@ class Time {
     static void Aborted     (char IP[]);
 
   private:
-    static string ReadBuffer;
+    static string     ReadBuffer;
 };
 
 #endif

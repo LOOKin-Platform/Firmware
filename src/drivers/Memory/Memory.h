@@ -13,6 +13,8 @@ using namespace std;
 class NVS {
 public:
 	NVS(string name, nvs_open_mode openMode = NVS_READWRITE);
+	NVS(const char[], nvs_open_mode openMode = NVS_READWRITE);
+
 	virtual 	~NVS();
 	void 			Commit();
 

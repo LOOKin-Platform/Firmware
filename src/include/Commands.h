@@ -33,6 +33,7 @@ class Command_t {
     virtual ~Command_t() = default;
 
     virtual bool                Execute(uint8_t EventCode, uint32_t Operand = 0) { return true; };
+    virtual void                Overheated() {};
 
     uint8_t                     GetEventCode(string Action);
 
@@ -40,18 +41,20 @@ class Command_t {
     static Command_t*           GetCommandByID(uint8_t);
 
     static vector<Command_t*>   GetCommandsForDevice();
-    static void                 HandleHTTPRequest(WebServerResponse_t* &, QueryType, vector<string>, map<string,string>);
+    static void                 HandleHTTPRequest(WebServer_t::Response* &, QueryType, vector<string>, map<string,string>);
 };
 
 class CommandSwitch_t : public Command_t {
   public:
     CommandSwitch_t();
+    void Overheated() override;
     bool Execute(uint8_t EventCode, uint32_t Operand) override;
 };
 
 class CommandColor_t : public Command_t {
   public:
     CommandColor_t();
+    void Overheated() override;
     bool Execute(uint8_t EventCode, uint32_t Operand) override;
 
   private:
