@@ -70,6 +70,19 @@ string Converter::ToHexString(uint64_t Number, size_t Length) {
   return (sstream.str());
 }
 
+string Converter::ToASCII(string HexString) {
+  if (HexString.length() % 2 != 0)
+    HexString = "0" + HexString;
+
+  string Result = "";
+  while (HexString.length() > 0) {
+    Result.push_back((char)UintFromHexString<uint8_t>(HexString.substr(0, 2)));
+    HexString = HexString.substr(2, string::npos);
+  }
+  
+  return Result;
+}
+
 float Converter::ToFloat(string Str) {
   return atof(Str.c_str());
 }

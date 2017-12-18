@@ -41,7 +41,7 @@ class Command_t {
     static Command_t*           GetCommandByID(uint8_t);
 
     static vector<Command_t*>   GetCommandsForDevice();
-    static void                 HandleHTTPRequest(WebServer_t::Response* &, QueryType, vector<string>, map<string,string>);
+    static void                 HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 };
 
 class CommandSwitch_t : public Command_t {

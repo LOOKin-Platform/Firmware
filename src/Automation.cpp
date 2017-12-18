@@ -87,7 +87,7 @@ uint8_t Automation_t::CacheGetArrayID(uint32_t ScenarioID) {
   return MAX_NVSARRAY_INDEX+1;
 }
 
-void Automation_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts,
+void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts,
                                                   map<string,string> Params, string RequestBody) {
   // обработка GET запроса - получение данных
   if (Type == QueryType::GET) {
@@ -114,26 +114,26 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType T
 
       JSONObject.SetStringArray("Scenarios", SceneIDs);
 
-      Result->Body = JSONObject.ToString();
+      Result.Body = JSONObject.ToString();
     }
 
     // Запрос конкретного параметра или команды секции API
     if (URLParts.size() == 1) {
-      if (URLParts[0] == "version")   Result->Body = Converter::ToHexString(CurrentVersion(), 8);
-      if (URLParts[0] == "versionmap")Result->Body = SerializeVersionMap();
+      if (URLParts[0] == "version")   Result.Body = Converter::ToHexString(CurrentVersion(), 8);
+      if (URLParts[0] == "versionmap")Result.Body = SerializeVersionMap();
       if (URLParts[0] == "scenarios") {
 
         vector<string> Scenarios = vector<string>();
         for (auto& Scenario : ScenariosCache)
           Scenarios.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
 
-        Result->Body = JSON::CreateStringFromVector(Scenarios);
+        Result.Body = JSON::CreateStringFromVector(Scenarios);
       }
     }
 
     if (URLParts.size() == 2) {
       if (URLParts[0] == "scenarios")
-        Result->Body = Scenario_t::LoadScenario(CacheGetArrayID(URLParts[1]));
+        Result.Body = Scenario_t::LoadScenario(CacheGetArrayID(URLParts[1]));
     }
   }
 
@@ -143,10 +143,10 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType T
       if (Params.count("version") > 0) {
         string SSID = (Params.count("SSID") > 0) ? Params["SSID"] : WiFi_t::getStaSSID();
           if (SetVersionMap(SSID, Converter::UintFromHexString<uint32_t>(Params["version"])))
-            Result->Body = "{\"success\" : \"true\"}";
+            Result.Body = "{\"success\" : \"true\"}";
           else {
-            Result->ResponseCode = WebServer_t::Response::CODE::INVALID;
-            Result->Body = "{\"success\" : \"false\", \"message\" : \"Error while version processing\"}";
+            Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
+            Result.Body = "{\"success\" : \"false\", \"message\" : \"Error while version processing\"}";
           }
       }
     }
@@ -166,16 +166,16 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType T
 
           if (!IsFound) {
             if (Scenario_t::SaveScenario(Scenario)) {
-              Result->Body = "{\"success\" : \"true\"}";
+              Result.Body = "{\"success\" : \"true\"}";
             }
             else {
-              Result->ResponseCode = WebServer_t::Response::CODE::ERROR;
-              Result->Body = "{\"success\" : \"false\", \"message\" : \"Error while scenario insertion\"}";
+              Result.ResponseCode = WebServer_t::Response::CODE::ERROR;
+              Result.Body = "{\"success\" : \"false\", \"message\" : \"Error while scenario insertion\"}";
             }
           }
           else {
-            Result->ResponseCode = WebServer_t::Response::CODE::INVALID;
-            Result->Body = "{\"success\" : \"false\", \"message\" : \"Scenario already set\"}";
+            Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
+            Result.Body = "{\"success\" : \"false\", \"message\" : \"Scenario already set\"}";
           }
         }
 
@@ -197,12 +197,12 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType T
         }
 
         if (ScenariosToDelete.size() > 0) {
-          Result->ResponseCode = WebServer_t::Response::CODE::OK;
-          Result->Body = "{\"success\" : \"true\"}";
+          Result.ResponseCode = WebServer_t::Response::CODE::OK;
+          Result.Body = "{\"success\" : \"true\"}";
         }
         else {
-          Result->ResponseCode = WebServer_t::Response::CODE::INVALID;
-          Result->Body = "{\"success\" : \"false\", \"message\":\"empty scenario ID\"}";
+          Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
+          Result.Body = "{\"success\" : \"false\", \"message\":\"empty scenario ID\"}";
         }
       }
     }

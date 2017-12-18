@@ -29,7 +29,7 @@ string JSON::GetItem(string Key) {
       return Value->valuestring;
   }
 
-    return "";
+  return "";
 }
 
 void JSON::SetItem(string Key, string Value) {

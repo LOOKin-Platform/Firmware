@@ -57,7 +57,7 @@ class Log {
     static void         CorrectTime();
     static bool         VerifyLastBoot();
 
-    static void         HandleHTTPRequest(WebServer_t::Response* &, QueryType, vector<string>, map<string,string>);
+    static void         HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 
   private:
     static vector<Log::Item> Items;

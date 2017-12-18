@@ -49,7 +49,7 @@ class Network_t {
     static string SerializeNetworkDevice(NetworkDevice_t);
     static NetworkDevice_t DeserializeNetworkDevice(string);
 
-    void HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
+    void HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
   private:
     bool   POSTWiFiSSID     (map<string,string>);

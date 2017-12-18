@@ -47,7 +47,7 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
   return Commands;
 }
 
-void Command_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
     // Вывести список всех комманд
     if (URLParts.size() == 0 && Type == QueryType::GET) {
 
@@ -55,7 +55,7 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type
       for (auto& Command : Commands)
         Vector.push_back(Command->Name);
 
-      Result->Body = JSON::CreateStringFromVector(Vector);
+      Result.Body = JSON::CreateStringFromVector(Vector);
     }
 
     // Запрос списка действий конкретной команды
@@ -69,7 +69,7 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type
           for (auto& Event: Command->Events)
             Vector.push_back(Event.first);
 
-          Result->Body = JSON::CreateStringFromVector(Vector);
+          Result.Body = JSON::CreateStringFromVector(Vector);
         }
     }
 
@@ -108,9 +108,9 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type
 
       if (Command != nullptr) {
           if (Command->Execute(Command->GetEventCode(Action), Converter::UintFromHexString<uint32_t>(Operand)))
-            Result->SetSuccess();
+            Result.SetSuccess();
           else
-            Result->SetFail();
+            Result.SetFail();
         }
     }
 
@@ -129,9 +129,9 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type
 
       if (Command != nullptr) {
           if (Command->Execute(Command->GetEventCode(Action), Converter::UintFromHexString<uint32_t>(Operand)))
-            Result->SetSuccess();
+            Result.SetSuccess();
           else
-            Result->SetFail();
+            Result.SetFail();
         }
     }
 }

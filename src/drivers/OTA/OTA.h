@@ -23,15 +23,15 @@ using namespace std;
 #define BUFFSIZE      1024
 #define TEXT_BUFFSIZE 1024
 
-class OTA_t {
+class OTA {
   public:
-    OTA_t();
-    void Update(string URL);
+    OTA();
+    static void Update(string URL);
 
     // HTTP Callbacks
-    static void ReadStarted(char []);
-    static bool ReadBody(char Data[], int DataLen, char[]);
-    static void ReadFinished(char []);
+    static void ReadStarted(char [] = '\0');
+    static bool ReadBody(char Data[], int DataLen, char[] = '\0');
+    static void ReadFinished(char [] = '\0');
     static void Aborted(char []);
 
     static void Rollback();

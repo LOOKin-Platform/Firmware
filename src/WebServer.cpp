@@ -177,7 +177,6 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
   u16_t buflen;
 
   err_t err;
-
   string HTTPString = "";
 
   netconn_set_recvtimeout(conn, 50);    // timeout on 10 msecs
@@ -193,12 +192,10 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 
   if (!HTTPString.empty()) {
     Query_t Query(HTTPString);
+    WebServer_t::Response Result;
 
-    WebServer_t::Response *Response =  new WebServer_t::Response();
-    API::Handle(Response, Query);
-
-    netconn_write(conn, Response->toString().c_str(), Response->toString().length(), NETCONN_NOCOPY);
-    delete Response;
+    API::Handle(Result, Query);
+    netconn_write(conn, Result.toString().c_str(), Result.toString().length(), NETCONN_NOCOPY);
   }
 
   netconn_close(conn);
@@ -206,7 +203,9 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 }
 
 /*
-  WebServer_t::Response - class for building user-friendly browser answer
+*    WebServer_t::Response
+*    class for building user-friendly browser answer
+*
 */
 
 WebServer_t::Response::Response() {
@@ -215,7 +214,6 @@ WebServer_t::Response::Response() {
 }
 
 string WebServer_t::Response::toString() {
-
   string Result = "";
 
   Result = "HTTP/1.1 " + ResponseCodeToString() + "\r\n";

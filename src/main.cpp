@@ -62,10 +62,13 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		Log::Add(LOG_WIFI_STA_DISCONNECTED);
 		//WebServer->Stop();
 
+		// Повторно подключится к Wi-Fi, если подключение оборвалось
+		if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE)
+			WiFi->ConnectAP(Network->WiFiSSID, Network->WiFiPassword);
+
 		// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 		// (отсутсвие точки доступа, неправильный пароль и т.д) подключение не удалось
-		if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE		||
-				DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT	||
+		if (DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT	||
 				DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
 			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 			||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL 		||
@@ -96,6 +99,7 @@ void OverheatControl(void *pvParameters) {
 	while (1) {
 		uint8_t ChipTemperature = temprature_sens_read();
 		ChipTemperature = (uint8_t)floor((ChipTemperature - 32) * (5.0/9.0) + 0.5); // From Fahrenheit to Celsius
+		Device->Temperature = ChipTemperature;
 
 		if (ChipTemperature > 90) {
 			IsOverheated = true;
@@ -121,7 +125,7 @@ void app_main(void) {
 
 	if (!Log::VerifyLastBoot()) {
 		Log::Add(LOG_DEVICE_ROLLBACK);
-		OTA_t::Rollback();
+		OTA::Rollback();
 	}
 
 	Log::Add(LOG_DEVICE_ON);

@@ -276,19 +276,19 @@ bool Log::VerifyLastBoot() {
  * @param [in] URLParts HTTP path devided by /
  * @param [in] Params   Query params
  */
-void Log::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Log::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
   // обработка GET запроса - получение данных
   if (Type == QueryType::GET) {
 
     if (URLParts.size() == 0)
-      Result->Body = "{\"System\" : " + GetSystemLogJSON() + ", \"Events\" : " + GetEventsLogJSON() + "}";
+      Result.Body = "{\"System\" : " + GetSystemLogJSON() + ", \"Events\" : " + GetEventsLogJSON() + "}";
 
     if (URLParts.size() == 1) {
       if (URLParts[0] == "system")
-        Result->Body = GetSystemLogJSON();
+        Result.Body = GetSystemLogJSON();
 
-      if (URLParts[0] == "Events")
-        Result->Body = GetEventsLogJSON();
+      if (URLParts[0] == "events")
+        Result.Body = GetEventsLogJSON();
     }
   }
 }

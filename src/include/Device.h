@@ -66,10 +66,11 @@ class Device_t {
     uint8_t         PowerModeVoltage;
 
     string          FirmwareVersion;
+    uint8_t         Temperature;
 
     Device_t();
     void    Init();
-    void    HandleHTTPRequest(WebServer_t::Response* &, QueryType Type, vector<string> URLParts, map<string,string> Params);
+    void    HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
     string TypeToString();
     string IDToString();
@@ -85,6 +86,7 @@ class Device_t {
     string NameToString();
     string PowerModeToString();
     string FirmwareVersionToString();
+    string TemperatureToString();
 };
 
 #endif

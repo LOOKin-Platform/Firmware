@@ -43,7 +43,7 @@ void Sensor_t::UpdateSensors() {
     Sensor->Update();
 }
 
-void Sensor_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
 
     Sensor_t::UpdateSensors();
 
@@ -54,7 +54,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type,
       for (auto& Sensor : Sensors)
         Vector.push_back(Sensor->Name);
 
-      Result->Body = JSON::CreateStringFromVector(Vector);
+      Result.Body = JSON::CreateStringFromVector(Vector);
     }
 
     // Запрос значений конкретного сенсора
@@ -85,7 +85,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type,
             }
         }
 
-        Result->Body = JSONObject.ToString();
+        Result.Body = JSONObject.ToString();
       }
     }
 
@@ -95,12 +95,12 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type,
       for (Sensor_t* Sensor : Sensors)
         if (Converter::ToLower(Sensor->Name) == URLParts[0]) {
           if (URLParts[1] == "value") {
-            Result->Body = Sensor->FormatValue();
+            Result.Body = Sensor->FormatValue();
             break;
           }
 
           if (URLParts[1] == "updated") {
-            Result->Body = Converter::ToString(Sensor->Values["Primary"].Updated);
+            Result.Body = Converter::ToString(Sensor->Values["Primary"].Updated);
             break;
           }
 
@@ -114,7 +114,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type,
                   { "Updated" , Converter::ToString(Value.second.Updated)}
                 });
 
-                Result->Body = JSONObject.ToString();
+                Result.Body = JSONObject.ToString();
                 break;
               }
           break;
@@ -130,8 +130,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type,
 
             if (ValueItemName == URLParts[1])
             {
-              if (URLParts[2] == "value")   Result->Body = Sensor->FormatValue(Value.first);
-              if (URLParts[2] == "updated") Result->Body = Converter::ToString(Value.second.Updated);
+              if (URLParts[2] == "value")   Result.Body = Sensor->FormatValue(Value.first);
+              if (URLParts[2] == "updated") Result.Body = Converter::ToString(Value.second.Updated);
 
               break;
             }

@@ -19,6 +19,7 @@ using namespace std;
 #include <cctype>
 #include <locale>
 
+#include <esp_log.h>
 #include <tcpip_adapter.h>
 #include <lwip/inet.h>
 
@@ -38,6 +39,7 @@ class Converter {
     static string   ToString(double);
 
     static string   ToHexString(uint64_t, size_t);
+    static string   ToASCII(string HexString);
 
     static float    ToFloat(string);
 

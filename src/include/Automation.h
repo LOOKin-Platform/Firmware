@@ -51,7 +51,7 @@ class Automation_t {
     bool        SetVersionMap(string SSID, uint32_t Version);
     string      SerializeVersionMap();
 
-    void        HandleHTTPRequest(WebServer_t::Response* &, QueryType Type, vector<string>, map<string,string>, string = "");
+    void        HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string>, map<string,string>, string = "");
 
   private:
     TaskHandle_t TimeChangedHandle;

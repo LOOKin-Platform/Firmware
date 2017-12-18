@@ -8,24 +8,27 @@
 
 static char tag[] = "OTA";
 
-int              OTA_t::BinaryFileLength  = 0;
-esp_ota_handle_t OTA_t::OutHandle         = 0;
-esp_partition_t  OTA_t::OperatePartition;
+int              OTA::BinaryFileLength  = 0;
+esp_ota_handle_t OTA::OutHandle         = 0;
+esp_partition_t  OTA::OperatePartition;
 
-OTA_t::OTA_t() {};
+OTA::OTA() {
+  BinaryFileLength  = 0;
+  OutHandle         = 0;
+};
 
-void OTA_t::Update(string URL) {
+void OTA::Update(string URL) {
   ESP_LOGI(tag, "Starting OTA...");
 
   HTTPClient::Query(OTA_SERVER_HOST, OTA_SERVER_PORT, URL, QueryType::GET, "",
                         true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
-
 }
 
-void OTA_t::ReadStarted(char IP[]) {
+void OTA::ReadStarted(char IP[]) {
   ESP_LOGD(tag, "ReadStarted");
 
   bool isInitSucceed = false;
+  BinaryFileLength = 0;
 
   esp_err_t err;
   const esp_partition_t *esp_current_partition = esp_ota_get_boot_partition();
@@ -73,7 +76,7 @@ void OTA_t::ReadStarted(char IP[]) {
   }
 }
 
-bool OTA_t::ReadBody(char Data[], int DataLen, char IP[]) {
+bool OTA::ReadBody(char Data[], int DataLen, char IP[]) {
   esp_err_t err = esp_ota_write(OutHandle, (const void *)Data, DataLen);
 
   if (err != ESP_OK) {
@@ -87,7 +90,7 @@ bool OTA_t::ReadBody(char Data[], int DataLen, char IP[]) {
   return true;
 }
 
-void OTA_t::ReadFinished(char IP[]) {
+void OTA::ReadFinished(char IP[]) {
   ESP_LOGI(tag, "Total Write binary data length : %d", BinaryFileLength);
 
   if (esp_ota_end(OutHandle) != ESP_OK) {
@@ -105,11 +108,11 @@ void OTA_t::ReadFinished(char IP[]) {
   esp_restart();
 }
 
-void OTA_t::Aborted(char IP[]) {
+void OTA::Aborted(char IP[]) {
   Device->Status = DeviceStatus::RUNNING;
 }
 
-void OTA_t::Rollback() {
+void OTA::Rollback() {
   esp_partition_t RollbackPartition;
 
   const esp_partition_t *esp_current_partition = esp_ota_get_boot_partition();

@@ -57,6 +57,7 @@ Device_t::Device_t() {
     PowerMode         = DevicePowerMode::CONST;
     PowerModeVoltage  = 220;
     FirmwareVersion   = FIRMWARE_VERSION;
+    Temperature       = 0;
 }
 
 void Device_t::Init() {
@@ -89,9 +90,7 @@ void Device_t::Init() {
   delete Memory;
 }
 
-void Device_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
-  ESP_LOGD(tag, "HandleHTTPRequest");
-
+void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
   // обработка GET запроса - получение данных
   if (Type == QueryType::GET) {
     // Запрос JSON со всеми параметрами
@@ -106,39 +105,72 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response* &Result, QueryType Type,
         {"Time"             , Time::UnixtimeString()},
         {"Timezone"         , Time::TimezoneStr()},
         {"PowerMode"        , PowerModeToString()},
-        {"FirmwareVersion"  , FirmwareVersionToString()}
+        {"Firmware"         , FirmwareVersionToString()},
+        {"Temperature"      , TemperatureToString()}
       });
 
-      Result->Body = JSONObject.ToString();
+      Result.Body = JSONObject.ToString();
     }
 
     // Запрос конкретного параметра
     if (URLParts.size() == 1) {
-      if (URLParts[0] == "type")            Result->Body = TypeToString();
-      if (URLParts[0] == "status")          Result->Body = StatusToString();
-      if (URLParts[0] == "id")              Result->Body = IDToString();
-      if (URLParts[0] == "name")            Result->Body = NameToString();
-      if (URLParts[0] == "time")            Result->Body = Time::UnixtimeString();
-      if (URLParts[0] == "timezone")        Result->Body = Time::TimezoneStr();
-      if (URLParts[0] == "powermode")       Result->Body = PowerModeToString();
-      if (URLParts[0] == "firmwareversion") Result->Body = FirmwareVersionToString();
+      if (URLParts[0] == "type")            Result.Body = TypeToString();
+      if (URLParts[0] == "status")          Result.Body = StatusToString();
+      if (URLParts[0] == "id")              Result.Body = IDToString();
+      if (URLParts[0] == "name")            Result.Body = NameToString();
+      if (URLParts[0] == "time")            Result.Body = Time::UnixtimeString();
+      if (URLParts[0] == "timezone")        Result.Body = Time::TimezoneStr();
+      if (URLParts[0] == "powermode")       Result.Body = PowerModeToString();
+      if (URLParts[0] == "firmware")        Result.Body = FirmwareVersionToString();
+      if (URLParts[0] == "temperature")     Result.Body = TemperatureToString();
 
-      Result->ContentType = WebServer_t::Response::TYPE::PLAIN;
+      Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
     }
   }
 
   // обработка POST запроса - сохранение и изменение данных
-  if (Type == QueryType::POST)
-  {
-    if (URLParts.size() == 0)
-    {
+  if (Type == QueryType::POST) {
+    if (URLParts.size() == 0) {
       bool isNameSet            = POSTName(Params);
       bool isTimeSet            = POSTTime(Params);
       bool isTimezoneSet        = POSTTimezone(Params);
-      bool isFirmwareVersionSet = POSTFirmwareVersion(Params, *Result);
+      bool isFirmwareVersionSet = POSTFirmwareVersion(Params, Result);
 
-      if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet) && Result->Body == "")
-        Result->Body = "{\"success\" : \"true\"}";
+      if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet) && Result.Body == "")
+        Result.Body = "{\"success\" : \"true\"}";
+    }
+
+    if (URLParts.size() == 2) {
+      if (URLParts[0] == "firmware") {
+        Result.Body = "{\"success\" : \"true\"}";
+
+        if (URLParts[1] == "start")
+          OTA::ReadStarted();
+
+        if (URLParts[1] == "write") {
+          if (Params.count("data") == 0) {
+            Result.ResponseCode = WebServer_t::Response::INVALID;
+            Result.Body = "{\"success\" : \"false\" , \"Error\": \"Writing data failed\"}";
+            return;
+          }
+
+          string HexData = Params["data"];
+          uint8_t *BinaryData = new uint8_t[HexData.length() / 2];
+
+          for (int i=0; i < HexData.length(); i=i+2)
+            BinaryData[i/2] = Converter::UintFromHexString<uint8_t>(HexData.substr(i, 2));
+
+          if (!OTA::ReadBody(reinterpret_cast<char*>(BinaryData), HexData.length() / 2)) {
+            Result.ResponseCode = WebServer_t::Response::INVALID;
+            Result.Body = "{\"success\" : \"false\" , \"Error\": \"Writing data failed\"}";
+          }
+
+          delete BinaryData;
+        }
+
+        if (URLParts[1] == "finish")
+          OTA::ReadFinished();
+      }
     }
   }
 }
@@ -198,10 +230,10 @@ bool Device_t::POSTTimezone(map<string,string> Params) {
 }
 
 bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response) {
-  if (Params.count("firmwareversion") == 0)
+  if (Params.count("firmware") == 0)
     return false;
 
-  if (Converter::ToFloat(FIRMWARE_VERSION) > Converter::ToFloat(Params["firmwareversion"])) {
+  if (Converter::ToFloat(FIRMWARE_VERSION) > Converter::ToFloat(Params["firmware"])) {
     Response.ResponseCode = WebServer_t::Response::CODE::OK;
     Response.Body = "{\"success\" : \"false\" , \"Message\": \"Attempt to update to the old version\"}";
     return false;
@@ -224,8 +256,7 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
   if (Params.count("filename") > 0)
     UpdateFilename = Params["filename"];
 
-  OTA_t *OTA = new OTA_t();
-  OTA->Update(OTA_URL_PREFIX + Params["firmwareversion"] + "/" + UpdateFilename);
+  OTA::Update(OTA_URL_PREFIX + Params["firmware"] + "/" + UpdateFilename);
 
   Device->Status = DeviceStatus::UPDATING;
 
@@ -265,4 +296,8 @@ string Device_t::PowerModeToString() {
 
 string Device_t::FirmwareVersionToString() {
   return FirmwareVersion;
+}
+
+string Device_t::TemperatureToString() {
+  return Converter::ToString(Temperature);
 }

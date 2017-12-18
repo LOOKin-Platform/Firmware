@@ -6,16 +6,16 @@
 
 #include "API.h"
 
-void API::Handle(WebServer_t::Response* &Response, Query_t Query) {
+void API::Handle(WebServer_t::Response &Response, Query_t Query) {
   return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody);
 }
 
-void API::Handle(WebServer_t::Response* &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
+void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
 
   if (URLParts.size() == 0) {
-    Response->ResponseCode  = WebServer_t::Response::CODE::OK;
-    Response->ContentType   = WebServer_t::Response::TYPE::PLAIN;
-    Response->Body          = "OK";
+    Response.ResponseCode  = WebServer_t::Response::CODE::OK;
+    Response.ContentType   = WebServer_t::Response::TYPE::PLAIN;
+    Response.Body          = "OK";
     return;
   }
 
@@ -56,9 +56,9 @@ void API::Handle(WebServer_t::Response* &Response, QueryType Type, vector<string
     }
   }
 
-  if (Response->Body == "" && Response->ResponseCode == WebServer_t::Response::CODE::OK) {
-    Response->ResponseCode  = WebServer_t::Response::CODE::INVALID;
-    Response->ContentType   = WebServer_t::Response::TYPE::PLAIN;
-    Response->Body          = "The request was incorrectly formatted";
+  if (Response.Body == "" && Response.ResponseCode == WebServer_t::Response::CODE::OK) {
+    Response.ResponseCode  = WebServer_t::Response::CODE::INVALID;
+    Response.ContentType   = WebServer_t::Response::TYPE::PLAIN;
+    Response.Body          = "The request was incorrectly formatted";
   }
 }

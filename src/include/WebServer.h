@@ -40,7 +40,6 @@ class WebServer_t {
     		string ContentTypeToString();
     };
 
-
     WebServer_t();
     void Start();
     void Stop();
