@@ -6,8 +6,6 @@
 #include "Globals.h"
 #include "Sensors.h"
 
-static char tag[] = "Sensors";
-
 vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
   vector<Sensor_t*> Sensors = {};
 

@@ -1,5 +1,5 @@
 /*
-*    Webserver.cpp
+*    WebServer.cpp
 *    Class for handling TCP and UDP connections
 *
 */
@@ -22,15 +22,15 @@ class WebServer_t {
 
     class Response {
     	public:
-    		enum CODE		{ OK, INVALID, ERROR };
+    		enum CODE	{ OK, INVALID, ERROR };
     		enum TYPE 	{ PLAIN, JSON };
 
         string 		Body;
-    		CODE 			ResponseCode;
+    		CODE 		ResponseCode;
     		TYPE			ContentType;
 
     		Response();
-    		string 	toString();
+    		string 		toString();
 
     		void 		SetSuccess();
     		void 		SetFail();
@@ -44,7 +44,7 @@ class WebServer_t {
     void Start();
     void Stop();
 
-		void UDPSendBroadcastAlive();
+	void UDPSendBroadcastAlive();
     void UDPSendBroadcastDiscover();
     void UDPSendBroadcastUpdated(uint8_t SensorID, string Value);
     void UDPSendBroadcast(string);
@@ -54,8 +54,8 @@ class WebServer_t {
 		TaskHandle_t UDPListenerTaskHandle;
 
 		static string UDPAliveBody();
-    static string UDPDiscoverBody(string ID = "");
-    static string UDPUpdatedBody(uint8_t SensorID, string Value);
+		static string UDPDiscoverBody(string ID = "");
+		static string UDPUpdatedBody(uint8_t SensorID, string Value);
 
 		static void UDPListenerTask(void *);
 

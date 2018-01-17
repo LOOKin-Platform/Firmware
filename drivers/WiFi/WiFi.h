@@ -23,6 +23,9 @@
 #include <lwip/dns.h>
 #include <lwip/netdb.h>
 #include <lwip/sockets.h>
+#include <nvs.h>
+#include <nvs_flash.h>
+
 
 #include "WiFiEventHandler.h"
 
@@ -102,22 +105,23 @@ private:
 
 class WiFi_t {
 private:
-	string      	ip;
-	string      	gw;
-	string      	netmask;
+	string      			ip;
+	string      			gw;
+	string      			netmask;
 	WiFiEventHandler 	*wifiEventHandler;
 
 public:
 	WiFi_t();
-	void addDNSServer(string ip);
-	void dump();
-	static string getApMac();
+	void 				addDNSServer(string ip);
+	void 				dump();
+	static string 		getApMac();
+	static string 		getApSSID();
+	static string 		getMode();
+	static string 		getStaMac();
+	static string 		getStaSSID();
+
 	static tcpip_adapter_ip_info_t getApIpInfo();
-	static string getApSSID();
-	static string getMode();
 	static tcpip_adapter_ip_info_t getStaIpInfo();
-	static string getStaMac();
-	static string getStaSSID();
 
 	vector<WiFiAPRecord> Scan();
 	void ConnectAP(string ssid, string passwd);

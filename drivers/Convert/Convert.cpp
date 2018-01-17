@@ -1,5 +1,5 @@
 /*
-*    Converter.cpp
+*    Convert.cpp
 *    Class to convert types between each other
 *
 */

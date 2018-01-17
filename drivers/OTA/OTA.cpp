@@ -49,12 +49,13 @@ void OTA::ReadStarted(char IP[]) {
         find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_0;
         break;
     default:
-      break;
+    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_FACTORY;
+    		break;
   }
 
   find_partition.type = ESP_PARTITION_TYPE_APP;
+  const esp_partition_t *partition = esp_partition_find_first(find_partition.type, find_partition.subtype, "NULL");
 
-  const esp_partition_t *partition = esp_partition_find_first(find_partition.type, find_partition.subtype, NULL);
   assert(partition != NULL);
   memset(&OperatePartition, 0, sizeof(esp_partition_t));
 
@@ -69,10 +70,10 @@ void OTA::ReadStarted(char IP[]) {
   }
 
   if (isInitSucceed) {
-    ESP_LOGI(tag, "OTA Init succeeded");
+	  ESP_LOGI(tag, "OTA Init succeeded");
   }
   else {
-    ESP_LOGE(tag, "OTA Init failed");
+	  ESP_LOGE(tag, "OTA Init failed");
   }
 }
 
@@ -126,9 +127,15 @@ void OTA::Rollback() {
 
   // На какую партицию должен быть осуществлен сброс
   switch (esp_current_partition->subtype) {
-    case ESP_PARTITION_SUBTYPE_APP_OTA_0: find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_1; break;
-    case ESP_PARTITION_SUBTYPE_APP_OTA_1: find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_0; break;
-    default: break;
+    case ESP_PARTITION_SUBTYPE_APP_OTA_0:
+    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_1;
+    		break;
+    case ESP_PARTITION_SUBTYPE_APP_OTA_1:
+    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_0;
+    		break;
+    default:
+    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_FACTORY;
+    		break;
   }
 
   find_partition.type = ESP_PARTITION_TYPE_APP;

@@ -23,6 +23,8 @@ using namespace std;
 
 #include <esp_log.h>
 
+using namespace std;
+
 /**
  * @brief Interface to %FreeRTOS functions.
  */
@@ -32,8 +34,8 @@ class FreeRTOS {
 		virtual ~FreeRTOS();
 
 		static void 				Sleep(uint32_t ms);
-		static TaskHandle_t StartTask(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048);
-		static TaskHandle_t StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048);
+		static TaskHandle_t 		StartTask(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048);
+		static TaskHandle_t 		StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048);
 		static void 				DeleteTask(TaskHandle_t pTask = nullptr);
 
 		static uint32_t 		GetTimeSinceStart();
@@ -42,15 +44,20 @@ class FreeRTOS {
 			public:
 				Semaphore(string owner = "<Unknown>");
 				~Semaphore();
-				void give();
-				void setName(string name);
-				void take(string owner="<Unknown>");
-				void take(uint32_t timeoutMs, string owner="<Unknown>");
-				std::string toString();
+				void 				Give();
+				void        			Give(uint32_t value);
+				void 				SetName(string name);
+				bool 				Take(string owner="<Unknown>");
+				bool 				Take(uint32_t timeoutMs, string owner="<Unknown>");
+				string 				toString();
+				uint32_t				Wait(std::string owner="<Unknown>");
 			private:
-				SemaphoreHandle_t m_semaphore;
-				string m_name;
-				string m_owner;
+				SemaphoreHandle_t 	m_semaphore;
+				pthread_mutex_t   	m_pthread_mutex;
+				string				m_name;
+				string				m_owner;
+				uint32_t				m_value;
+				bool					m_usePthreads;
 		};
 
 		/**
@@ -73,7 +80,7 @@ class FreeRTOS {
 				TickType_t period;
 				void (*callback)(Timer *pTimer);
 				static void internalCallback(TimerHandle_t xTimer);
-				
+
 				static map<void *, FreeRTOS::Timer *> TimersMap;
 		};
 
@@ -82,8 +89,8 @@ class FreeRTOS {
 				static QueueHandle_t 	Create			(uint16_t Items, uint16_t ItemSize);
 				static BaseType_t			SendToBack	(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
 				static BaseType_t			SendToFront	(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
-				static BaseType_t			Receive			(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
-				static uint8_t				Count				(QueueHandle_t QueueHandle);
+				static BaseType_t			Receive		(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
+				static uint8_t				Count		(QueueHandle_t QueueHandle);
 		};
 };
 

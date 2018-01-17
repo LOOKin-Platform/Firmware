@@ -1,5 +1,5 @@
 /*
-*    Webserver.cpp
+*    WebServer.cpp
 *    Class for handling TCP and UDP connections
 *
 */

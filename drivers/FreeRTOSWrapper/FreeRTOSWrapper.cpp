@@ -28,13 +28,13 @@ void FreeRTOS::Sleep(uint32_t ms) {
  * @param[in] stackSize An optional paremeter supplying the size of the stack in which to run the task.
  * @param[out] Handle to the created Task;
  */
-TaskHandle_t FreeRTOS::StartTask(void task(void*), std::string taskName, void *param, int stackSize) {
+TaskHandle_t FreeRTOS::StartTask(void task(void*), string taskName, void *param, int stackSize) {
 	TaskHandle_t TaskHandle = NULL;
 	::xTaskCreate(task, taskName.data(), stackSize, param, 5, &TaskHandle);
 	return TaskHandle;
 } // startTask
 
-TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), std::string taskName, void *param, int stackSize) {
+TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), string taskName, void *param, int stackSize) {
 	TaskHandle_t TaskHandle = NULL;
 	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, 5, &TaskHandle, 0);
 	return TaskHandle;
@@ -59,28 +59,43 @@ uint32_t FreeRTOS::GetTimeSinceStart() {
 
 /*
  * 	public:
-		Semaphore(std::string = "<Unknown>");
+		Semaphore(string = "<Unknown>");
 		~Semaphore();
-		void give();
-		void take(std::string owner="<Unknown>");
-		void take(uint32_t timeoutMs, std::string owner="<Unknown>");
+		void Give();
+		void Take(string owner="<Unknown>");
+		void Take(uint32_t timeoutMs, string owner="<Unknown>");
+		void SetName(string name);
+		uint32_t Wait(string owner);
 	private:
 		SemaphoreHandle_t m_semaphore;
-		std::string m_name;
-		std::string m_owner;
+		string m_name;
+		string m_owner;
 	};
  *
  */
 
 
-FreeRTOS::Semaphore::Semaphore(std::string name) {
-	m_semaphore = xSemaphoreCreateMutex();
+FreeRTOS::Semaphore::Semaphore(string name) {
+	m_usePthreads = false;   	// Are we using pThreads or FreeRTOS?
+
+	if (m_usePthreads) {
+		pthread_mutex_init(&m_pthread_mutex, nullptr);
+	}
+	else {
+		m_semaphore = xSemaphoreCreateMutex();
+	}
+
 	m_name      = name;
-	m_owner     = "<N/A>";
-}
+	m_owner     = string("<N/A>");
+	m_value     = 0;
+} // FreeRTOS::Semaphore::Semaphore
 
 FreeRTOS::Semaphore::~Semaphore() {
-	vSemaphoreDelete(m_semaphore);
+	if (m_usePthreads) {
+		pthread_mutex_destroy(&m_pthread_mutex);
+	} else {
+		vSemaphoreDelete(m_semaphore);
+	}
 }
 
 
@@ -88,25 +103,53 @@ FreeRTOS::Semaphore::~Semaphore() {
  * @brief Give a semaphore.
  * The Semaphore is given.
  */
-void FreeRTOS::Semaphore::give() {
-	xSemaphoreGive(m_semaphore);
-	ESP_LOGD(TAG, "Semaphore giving: %s", toString().c_str());
-	m_owner = "<N/A>";
-} // Semaphore::give
+void FreeRTOS::Semaphore::Give() {
+	ESP_LOGV(TAG, "Semaphore giving: %s", toString().c_str());
+
+	if (m_usePthreads) {
+		pthread_mutex_unlock(&m_pthread_mutex);
+	} else {
+		xSemaphoreGive(m_semaphore);
+	}
+
+	m_owner = string("<N/A>");
+} // FreeRTOS::Semaphore::Give
+
+/**
+ * @brief Give a semaphore.
+ * The Semaphore is given with an associated value.
+ * @param [in] value The value to associate with the semaphore.
+ */
+void FreeRTOS::Semaphore::Give(uint32_t value) {
+	m_value = value;
+	Give();
+} // FreeRTOS::Semaphore::Give
 
 
 /**
  * @brief Take a semaphore.
  * Take a semaphore and wait indefinitely.
  */
-void FreeRTOS::Semaphore::take(std::string owner)
+bool FreeRTOS::Semaphore::Take(string owner)
 {
-
 	ESP_LOGD(TAG, "Semaphore taking: %s for %s", toString().c_str(), owner.c_str());
-	xSemaphoreTake(m_semaphore, portMAX_DELAY);
+	bool rc = false;
+
+	if (m_usePthreads) {
+		pthread_mutex_lock(&m_pthread_mutex);
+	} else {
+		rc = ::xSemaphoreTake(m_semaphore, portMAX_DELAY);
+	}
+
 	m_owner = owner;
-	ESP_LOGD(TAG, "Semaphore taken:  %s", toString().c_str());
-} // Semaphore::take
+
+	if (rc) {
+		ESP_LOGD(TAG, "Semaphore taken:  %s", toString().c_str());
+	} else {
+		ESP_LOGE(TAG, "Semaphore NOT taken:  %s", toString().c_str());
+	}
+	return rc;
+} // FreeRTOS::Semaphore::Take
 
 
 /**
@@ -114,20 +157,63 @@ void FreeRTOS::Semaphore::take(std::string owner)
  * Take a semaphore but return if we haven't obtained it in the given period of milliseconds.
  * @param [in] timeoutMs Timeout in milliseconds.
  */
-void FreeRTOS::Semaphore::take(uint32_t timeoutMs, std::string owner) {
-	m_owner = owner;
-	xSemaphoreTake(m_semaphore, timeoutMs/portTICK_PERIOD_MS);
-} // Semaphore::take
+bool FreeRTOS::Semaphore::Take(uint32_t timeoutMs, string owner) {
+	ESP_LOGV(TAG, "Semaphore taking: %s for %s", toString().c_str(), owner.c_str());
+	bool rc = false;
 
-std::string FreeRTOS::Semaphore::toString() {
-	std::stringstream stringStream;
+	if (m_usePthreads) {
+		assert(false);  // We apparently don't have a timed wait for pthreads.
+	} else {
+		rc = ::xSemaphoreTake(m_semaphore, timeoutMs/portTICK_PERIOD_MS);
+	}
+
+	m_owner = owner;
+	if (rc) {
+		ESP_LOGV(TAG, "Semaphore taken:  %s", toString().c_str());
+	} else {
+		ESP_LOGE(TAG, "Semaphore NOT taken:  %s", toString().c_str());
+	}
+	return rc;
+
+} // FreeRTOS::Semaphore::Take
+
+string FreeRTOS::Semaphore::toString() {
+	stringstream stringStream;
 	stringStream << "name: "<< m_name << " (0x" << std::hex << std::setfill('0') << (uint32_t)m_semaphore << "), owner: " << m_owner;
 	return stringStream.str();
 }
 
-void FreeRTOS::Semaphore::setName(std::string name) {
+void FreeRTOS::Semaphore::SetName(string name) {
 	m_name = name;
 }
+
+/**
+ * @brief Wait for a semaphore to be released by trying to take it and
+ * then releasing it again.
+ * @param [in] owner A debug tag.
+ * @return The value associated with the semaphore.
+ */
+uint32_t FreeRTOS::Semaphore::Wait(string owner) {
+	ESP_LOGV(TAG, ">> Wait: Semaphore waiting: %s for %s", toString().c_str(), owner.c_str());
+
+	if (m_usePthreads) {
+		pthread_mutex_lock(&m_pthread_mutex);
+	} else {
+		xSemaphoreTake(m_semaphore, portMAX_DELAY);
+	}
+
+	m_owner = owner;
+
+	if (m_usePthreads) {
+		pthread_mutex_unlock(&m_pthread_mutex);
+	} else {
+		xSemaphoreGive(m_semaphore);
+	}
+
+	ESP_LOGV(TAG, "<< Wait: Semaphore released: %s", toString().c_str());
+	m_owner = string("<N/A>");
+	return m_value;
+} // Wait
 
 map<void *, FreeRTOS::Timer *> FreeRTOS::Timer::TimersMap;
 
@@ -180,7 +266,7 @@ FreeRTOS::Timer::Timer(
 	timerHandle = ::xTimerCreate(Name.c_str(), period, reload, data, internalCallback);
 
 	// Add the association between the timer handle and this class instance into the map.
-	TimersMap.insert(std::make_pair(timerHandle, this));
+	TimersMap.insert(make_pair(timerHandle, this));
 } // FreeRTOSTimer
 
 /**

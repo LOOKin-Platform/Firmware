@@ -18,7 +18,7 @@
 #include <netdb.h>
 #include <esp_log.h>
 
-#include "../../include/Settings.h"
+#include "../../src/include/Settings.h"
 
 using namespace std;
 

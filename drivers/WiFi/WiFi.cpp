@@ -97,7 +97,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
     	apRecords.push_back(wifiAPRecord);
     }
     free(list);
-		esp_wifi_stop();
+	esp_wifi_stop();
 
     return apRecords;
 } // scan
@@ -110,7 +110,6 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
  * @return N/A.
  */
 void WiFi_t::ConnectAP(string ssid, string password) {
-
 	::esp_wifi_stop();
 	::esp_wifi_disconnect();
 
@@ -152,7 +151,6 @@ void WiFi_t::ConnectAP(string ssid, string password) {
  * @return N/A.
  */
 void WiFi_t::StartAP(string ssid, string password) {
-
 	::tcpip_adapter_init();
 
 	if (WiFi_t::getMode() == WIFI_MODE_STA_STR)
