@@ -10,15 +10,14 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <bitset>
 
 #include <esp_log.h>
 
-#include "Convert.h"
-
+#include "JSON.h"
+#include "IR.h"
 #include "HardwareIO.h"
 #include "DateTime.h"
-#include "JSON.h"
-
 #include "WebServer.h"
 
 using namespace std;
@@ -72,6 +71,24 @@ class SensorColor_t : public Sensor_t {
 
     static uint8_t ToBrightness(uint8_t Red, uint8_t Green, uint8_t Blue);
     static uint8_t ToBrightness(uint32_t Color);
+};
+
+class SensorIR_t : public Sensor_t {
+  public:
+	SensorIR_t();
+    void    Update()                            override;
+    double  ReceiveValue(string = "Primary")    override;
+    string  FormatValue(string Key = "Primary") override;
+    bool    CheckOperand(uint8_t, uint8_t)      override;
+
+    static void MessageStart();
+    static void MessageBody(int16_t Bit);
+    static void MessageEnd();
+  private:
+    static vector<int16_t> CurrentMessage;
+
+    static bool CheckNEC();
+    static void ParseNEC(uint16_t &Adress, uint8_t &Command);
 };
 
 #endif

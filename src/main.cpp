@@ -13,7 +13,7 @@ using namespace std;
 #include "Globals.h"
 
 #include "Log.h"
-#include "Convert.h"
+#include "../drivers/UART/UART.h"
 #include "WiFi.h"
 #include "WiFiEventHandler.h"
 #include "FreeRTOSWrapper.h"
@@ -22,6 +22,8 @@ using namespace std;
 
 #include "handlers/OverheatHandler.cpp"
 #include "handlers/WiFiHandler.cpp"
+
+void ADCTest();
 
 extern "C" {
 	void app_main(void);
@@ -39,7 +41,6 @@ vector<Sensor_t*>	Sensors;
 vector<Command_t*>	Commands;
 
 void app_main(void) {
-
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -78,7 +79,14 @@ void app_main(void) {
 
 	OverheatHandler::Start();
 
-	//Sleep::GetWakeUpReason();
-	//Sleep::SetTimerInterval(10);
-	//Sleep::LightSleep();
+	/*
+	if (Sleep::GetWakeUpReason() != ESP_SLEEP_WAKEUP_EXT0) {
+		Sleep::SetGPIOWakeupSource(IR_REMOTE_RECEIVER_GPIO,0);
+		//Sleep::SetTimerInterval(10);
+		Sleep::LightSleep();
+	}
+	*/
+
+    //ADC test
+	//ADCTest();
 }

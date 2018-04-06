@@ -13,13 +13,12 @@
 
 #include <esp_log.h>
 
+#include "JSON.h"
 #include "Query.h"
 #include "WebServer.h"
 
-#include "JSON.h"
 #include "HardwareIO.h"
-
-#include "Convert.h"
+#include "Converter.h"
 
 using namespace std;
 
@@ -61,6 +60,12 @@ class CommandColor_t : public Command_t {
     gpio_num_t      GPIORed, GPIOGreen, GPIOBlue, GPIOWhite;
     ledc_timer_t    TimerIndex;
     ledc_channel_t  PWMChannelRED, PWMChannelGreen, PWMChannelBlue, PWMChannelWhite;
+};
+
+class CommandIR_t : public Command_t {
+  public:
+	CommandIR_t();
+    bool Execute(uint8_t EventCode, uint32_t Operand) override;
 };
 
 

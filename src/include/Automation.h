@@ -10,10 +10,10 @@
 #include <string>
 #include <vector>
 
+#include "../../libs/libJSON/JSON.h"
 #include "Scenarios.h"
 
-#include "Convert.h"
-#include "JSON.h"
+#include "Converter.h"
 #include "WiFi.h"
 #include "Memory.h"
 
@@ -27,7 +27,6 @@ struct ScenarioCacheItem_t {
   uint32_t  ScenarioID    = 0;
   uint8_t   ScenarioType  = 0;
   uint64_t  Operand       = 0;
-  uint8_t   ArrayID       = 0;
 };
 
 class Automation_t {
@@ -35,23 +34,20 @@ class Automation_t {
     Automation_t();
     void Init();
 
-    uint32_t    CurrentVersion();
+    uint32_t		CurrentVersion();
 
-    void        SensorChanged(uint8_t SensorID);
-    static void TimeChangedTask(void *);
+    void			SensorChanged(uint8_t SensorID);
+    static void	TimeChangedTask(void *);
 
-    uint8_t     CacheGetArrayID(string ScenarioID);
-    uint8_t     CacheGetArrayID(uint32_t ScenarioID);
+    uint8_t		ScenarioCacheItemCount();
+    void			AddScenarioCacheItem    	(Scenario_t);
+    void			RemoveScenarioCacheItem 	(uint32_t);
 
-    void        AddScenarioCacheItem    (Scenario_t* &, int);
-    void        RemoveScenario          (uint32_t);
-    void        RemoveScenarioCacheItem (uint32_t);
+    void			LoadVersionMap();
+    bool			SetVersionMap(string SSID, uint32_t Version);
+    string		SerializeVersionMap();
 
-    void        LoadVersionMap();
-    bool        SetVersionMap(string SSID, uint32_t Version);
-    string      SerializeVersionMap();
-
-    void        HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string>, map<string,string>, string = "");
+    void			HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string>, map<string,string>, string = "");
 
   private:
     TaskHandle_t TimeChangedHandle;
@@ -59,8 +55,8 @@ class Automation_t {
     vector<ScenarioCacheItem_t> ScenariosCache;
     map<string, uint32_t>       VersionMap;
 
-    void  Debug(ScenarioCacheItem_t);
-    void  Debug(Scenario_t* &);
+    void  		Debug(ScenarioCacheItem_t);
+    void  		Debug(Scenario_t);
 };
 
 #endif //AUTOMATION_H

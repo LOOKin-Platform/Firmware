@@ -26,33 +26,15 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 
-
 #include "WiFiEventHandler.h"
 
 using namespace std;
 
 #define WIFI_MODE_NULL_STR 		"WIFI_MODE_NULL"
 #define WIFI_MODE_STA_STR  		"WIFI_MODE_STA"
-#define WIFI_MODE_AP_STR 			"WIFI_MODE_AP"
+#define WIFI_MODE_AP_STR 		"WIFI_MODE_AP"
 #define WIFI_MODE_APSTA_STR  	"WIFI_MODE_APSTA"
-#define WIFI_MODE_UNKNOWN_STR "WIFI_MODE_UNKNOWN"
-
-/**
- * @brief Manage mDNS server.
- */
-class MDNS {
-public:
-	MDNS();
-	~MDNS();
-	void serviceAdd(string service, string proto, uint16_t port);
-	void serviceInstanceSet(string service, string proto, string instance);
-	void servicePortSet(string service, string proto, uint16_t port);
-	void serviceRemove(string service, string proto);
-	void setHostname(string hostname);
-	void setInstance(string instance);
-private:
-	mdns_server_t *m_mdns_server = nullptr;
-};
+#define WIFI_MODE_UNKNOWN_STR	"WIFI_MODE_UNKNOWN"
 
 class WiFiAPRecord {
 public:

@@ -1,60 +1,93 @@
-#define FIRMWARE_VERSION            "0.93"
+#define FIRMWARE_VERSION            	"0.94"
 
-#define OTA_SERVER_HOST             "download.look-in.club"
-#define OTA_SERVER_PORT             80
-#define OTA_URL_PREFIX              "/firmwares/"
+#define OTA_SERVER_HOST             	"download.look-in.club"
+#define OTA_SERVER_PORT             	80
+#define OTA_URL_PREFIX              	"/firmwares/"
 
-#define TIME_SERVER_HOST            "api.look-in.club"
-#define TIME_API_URL                "/v1/time"
+#define TIME_SERVER_HOST            	"api.look-in.club"
+#define TIME_API_URL                	"/v1/time"
 
-#define WIFI_AP_NAME                "LOOK.in_" + Device->TypeToString() + "_" + Device->IDToString()
-#define WIFI_AP_PASSWORD            Device->IDToString()
-#define WIFI_IP_COUNTDOWN           10000
+#define WIFI_AP_NAME                	"LOOK.in_" + Device->TypeToString() + "_" + Device->IDToString()
+#define WIFI_AP_PASSWORD            	Device->IDToString()
+#define WIFI_IP_COUNTDOWN           	10000
 
-#define UDP_SERVER_PORT             61201
-#define UDP_PACKET_PREFIX           "LOOK.in:"
+#define UDP_SERVER_PORT             	61201
+#define UDP_PACKET_PREFIX           	"LOOK.in:"
 
-#define DEVICE_SYSTEM_LOG_SIZE      16
-#define DEVICE_EVENTS_LOG_SIZE      32
+#define DEVICE_SYSTEM_LOG_SIZE      	16
+#define DEVICE_EVENTS_LOG_SIZE      	32
 
-#define OVERHEET_POOLING            4000
+#define OVERHEET_POOLING            	4000
 
 // Devices definitions
-#define DEVICE_TYPE_PLUG_HEX        0x03
-#define DEVICE_TYPE_PLUG_STRING     "Plug"
+#define DEVICE_TYPE_DEFAULT_HEX		0x02
+
+#define DEVICE_TYPE_REMOTE_HEX      	0x02
+#define DEVICE_TYPE_REMOTE_STRING	"Remote"
+
+#define DEVICE_TYPE_PLUG_HEX        	0x03
+#define DEVICE_TYPE_PLUG_STRING     	"Plug"
 
 // Commands and Sensors Pin Map
 
 // Plug
-#define SWITCH_PLUG_PIN_NUM         GPIO_NUM_23 // GPIO_NUM_2
+#define SWITCH_PLUG_PIN_NUM         	GPIO_NUM_23 // GPIO_NUM_2
 
-#define COLOR_PLUG_TIMER_INDEX      LEDC_TIMER_0
-#define COLOR_PLUG_RED_PIN_NUM      GPIO_NUM_0
-#define COLOR_PLUG_RED_PWMCHANNEL   LEDC_CHANNEL_0
-#define COLOR_PLUG_GREEN_PIN_NUM    GPIO_NUM_0
-#define COLOR_PLUG_GREEN_PWMCHANNEL LEDC_CHANNEL_1
-#define COLOR_PLUG_BLUE_PIN_NUM     GPIO_NUM_2
-#define COLOR_PLUG_BLUE_PWMCHANNEL  LEDC_CHANNEL_2
-#define COLOR_PLUG_WHITE_PIN_NUM    GPIO_NUM_0
-#define COLOR_PLUG_WHITE_PWMCHANNEL LEDC_CHANNEL_3
+#define COLOR_PLUG_TIMER_INDEX      	LEDC_TIMER_0
+#define COLOR_PLUG_RED_PIN_NUM      	GPIO_NUM_0
+#define COLOR_PLUG_RED_PWMCHANNEL   	LEDC_CHANNEL_0
+#define COLOR_PLUG_GREEN_PIN_NUM    	GPIO_NUM_0
+#define COLOR_PLUG_GREEN_PWMCHANNEL 	LEDC_CHANNEL_1
+#define COLOR_PLUG_BLUE_PIN_NUM     	GPIO_NUM_2
+#define COLOR_PLUG_BLUE_PWMCHANNEL  	LEDC_CHANNEL_2
+#define COLOR_PLUG_WHITE_PIN_NUM    	GPIO_NUM_0
+#define COLOR_PLUG_WHITE_PWMCHANNEL 	LEDC_CHANNEL_3
+
+// Remote
+#define IR_REMOTE_RECEIVER_GPIO		GPIO_NUM_4
+
 
 // HTTPClient class Settings
-#define HTTPCLIENT_QUEUE_SIZE       16
-#define HTTPCLIENT_THREADS_MAX      4
-#define HTTPCLIENT_BLOCK_TICKS      50
-#define HTTPCLIENT_NETBUF_LEN       512
-#define HTTPCLIENT_NEW_THREAD_STEP  2
-#define HTTPCLIENT_TASK_STACKSIZE   4096
+#define HTTPCLIENT_QUEUE_SIZE       	16
+#define HTTPCLIENT_THREADS_MAX      	4
+#define HTTPCLIENT_BLOCK_TICKS      	50
+#define HTTPCLIENT_NETBUF_LEN       	512
+#define HTTPCLIENT_NEW_THREAD_STEP  	2
+#define HTTPCLIENT_TASK_STACKSIZE   	4096
 
-// Scenarios globals
-#define SCENARIOS_QUEUE_SIZE        64
-#define SCENARIOS_BLOCK_TICKS       50
-#define SCENARIOS_TASK_STACKSIZE    8192
-#define SCENARIOS_OPERAND_BIT_LEN   64
-#define SCENARIOS_CACHE_BIT_LEN     32
+// SCENARIOS GLOBALS
+#define SCENARIOS_QUEUE_SIZE        	64
+#define SCENARIOS_BLOCK_TICKS       	50
+#define SCENARIOS_TASK_STACKSIZE    	8192
+#define SCENARIOS_OPERAND_BIT_LEN   	64
+#define SCENARIOS_NAME_LENGTH		57
+#define SCENARIOS_CACHE_BIT_LEN     	32
 
-#define SCENARIOS_TIME_INTERVAL     5
+#define SCENARIOS_TIME_INTERVAL     	5
 
-#define SCENARIOS_TYPE_EVENT_HEX    0x00
-#define SCENARIOS_TYPE_TIMER_HEX    0x01
-#define SCENARIOS_TYPE_CALENDAR_HEX 0x02
+#define SCENARIOS_TYPE_EVENT_HEX    	0x00
+#define SCENARIOS_TYPE_TIMER_HEX    	0x01
+#define SCENARIOS_TYPE_CALENDAR_HEX 	0x02
+
+#define SCENARIOS_TYPE_EMPTY_HEX		0xFF
+
+#define MEMORY_BLOCK_SIZE			0x1000
+
+#define MEMORY_SCENARIOS_START		0x32000
+#define MEMORY_SCENARIOS_SIZE		0x60000
+#define MEMORY_SCENARIOS_OFFSET		0x600 	// 1536 байт
+#define MEMORY_SCENARIOS_MAX_COUNT	256
+#define MEMORY_32BIT_EMPTY			0xFFFFFFFF
+
+#define MEMORY_SCENARIO_ID			0x0
+#define MEMORY_SCENARIO_TYPE			0x4
+#define MEMORY_SCENARIO_OPERAND		0x6
+#define MEMORY_SCENARIO_NAME			0xE
+#define MEMORY_SCENARIO_COMMANDS		0x81
+
+#define MEMORY_COMMAND_SIZE			0xA
+#define MEMORY_COMMAND_DEVICEID		0x0
+#define MEMORY_COMMAND_COMMANDID		0x4
+#define MEMORY_COMMAND_EVENTID		0x5
+#define MEMORY_COMMAND_OPERAND		0x6
+

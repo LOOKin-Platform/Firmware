@@ -16,8 +16,8 @@ using namespace std;
 #include <vector>
 #include <map>
 #include <bitset>
-
 #include <algorithm>
+
 #include <esp_log.h>
 
 #include "DateTime.h"
@@ -25,84 +25,97 @@ using namespace std;
 #include "JSON.h"
 #include "HTTPClient.h"
 
+#include "Memory.h"
 #include "WebServer.h"
-#include "Convert.h"
+#include "Converter.h"
 
 struct ScenesCommandItem_t {
-  uint32_t  DeviceID    = 0;
-  uint8_t   CommandID   = 0;
-  uint8_t   EventCode   = 0;
-  uint32_t  Operand     = 0;
+	uint32_t  DeviceID    = 0;
+	uint8_t   CommandID   = 0;
+	uint8_t   EventCode   = 0;
+	uint32_t  Operand     = 0;
 };
 
 class Data_t;
 
 class Scenario_t {
-  public:
+	public:
 		uint8_t     Type;
 		uint32_t    ID;
-		char        Name[64];
-    Data_t      *Data;
+		uint16_t		Name[SCENARIOS_NAME_LENGTH] = { 0 };
+		Data_t      *Data;
 
-    vector<ScenesCommandItem_t> Commands;
+		vector<ScenesCommandItem_t> Commands;
 
-    Scenario_t(uint8_t TypeHex);
+		Scenario_t(uint8_t TypeHex = SCENARIOS_TYPE_EMPTY_HEX);
+		~Scenario_t();
 
-    string  GetDataHexString();
-    void    SetData(uint64_t);
-    void    SetData(string);
-    bool    Empty();
+		void					SetType(uint8_t TypeHex);
+		uint64_t  			GetDataUint64();
+		string  				GetDataHexString();
+		void    				SetData(uint64_t);
+		void    				SetData(string);
 
-    static void         ExecuteScenario(uint32_t ScenarioID);
-    static void         ExecuteCommandsTask(void *);
+		bool    				IsEmpty();
 
-    static void         LoadScenarios();
-    static string       LoadScenario(uint8_t Index);
-    static bool         SaveScenario(Scenario_t *);
-    static void         RemoveScenario(uint8_t Index);
+		static void			ExecuteScenario(uint32_t ScenarioID);
+		static void			ExecuteCommandsTask(void *);
 
-    static string       SerializeScene(Scenario_t *);
-    static Scenario_t*  DeserializeScene(string);
+		static void			LoadScenarios();
+		static void			LoadScenario(Scenario_t &, uint32_t ScenarioID);
+		static void			LoadScenarioByAddress(Scenario_t &, uint32_t Address);
 
-    template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<SCENARIOS_OPERAND_BIT_LEN>, size_t Start, size_t Length);
-    template <size_t SrcSize>     static void AddRangeTo(bitset<SCENARIOS_OPERAND_BIT_LEN> &, bitset<SrcSize>, size_t Position);
-    static bitset<8>  Bitset4To8   (bitset<4>);
-    static bitset<16> Bitset12To16 (bitset<12>);
+		static bool			SaveScenario(Scenario_t);
+		static void			RemoveScenario(uint32_t ScenarioID);
 
-    // HTTP Callbacks
-    static void ReadFinished(char[]);
-    static void Aborted(char[]);
+		static string		SerializeScene(uint32_t ScanarioID);
+		static string		SerializeScene(Scenario_t);
+		static Scenario_t	DeserializeScene(string);
 
-  private:
-    static QueueHandle_t  Queue;
-    static uint8_t        ThreadsCounter;
+		template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<SCENARIOS_OPERAND_BIT_LEN>, size_t Start, size_t Length);
+		template <size_t SrcSize>     static void AddRangeTo(bitset<SCENARIOS_OPERAND_BIT_LEN> &, bitset<SrcSize>, size_t Position);
+
+		// HTTP Callbacks
+		static void ReadFinished(char[]);
+		static void Aborted(char[]);
+
+	private:
+		static QueueHandle_t  Queue;
+		static uint8_t        ThreadsCounter;
 };
 
 class Data_t {
   public:
     virtual bool      IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  { return false; };
     virtual void      SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) {};
+    virtual uint64_t  ToUint64() { return 0; };
     virtual string    ToString() { return ""; };
 
     virtual bool      IsCommandNeedToExecute(ScenesCommandItem_t &) {return true;};
     virtual void      ExecuteCommands(uint32_t ScenarioID)  {};
     virtual bool      SensorUpdatedIsTriggered(uint8_t SensorID) { return false; };
     virtual bool      TimeUpdatedIsTriggered() { return false; };
+
+    virtual ~Data_t() { 	ESP_LOGI("DESTRUCTOR", "DATA_t");};
 };
 
 class EventData_t : public Data_t {
   public:
-		uint32_t    DeviceID          = 0;
-		uint8_t     SensorIdentifier  = 0;
-    uint8_t     EventCode         = 0;
-    uint8_t     EventOperand      = 0;
+	uint32_t		DeviceID          = 0;
+	uint8_t		SensorIdentifier  = 0;
+    uint8_t		EventCode         = 0;
+    uint8_t		EventOperand      = 0;
 
-    bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
-    string      ToString() override;
+    bool			IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
+    void			SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
 
-    void        ExecuteCommands(uint32_t ScenarioID)  override;
-    bool        SensorUpdatedIsTriggered(uint8_t SensorID) override;
+    uint64_t		ToUint64() override;
+    string		ToString() override;
+
+    void			ExecuteCommands(uint32_t ScenarioID)  override;
+    bool			SensorUpdatedIsTriggered(uint8_t SensorID) override;
+
+    ~EventData_t() { ESP_LOGI("DESTRUCTOR", "EventDATA_t") };
 };
 
 class TimerData_t : public Data_t {
@@ -112,35 +125,43 @@ class TimerData_t : public Data_t {
       uint16_t TimerDelay = 0;
     };
 
-  	uint32_t    DeviceID          = 0;
-  	uint8_t     SensorIdentifier  = 0;
-  	uint8_t     EventCode         = 0;
-    uint16_t    TimerDelay        = 0; // максимально - 12 бит или 4096 секунд
-    uint8_t     EventOperand      = 0;
+  	uint32_t		DeviceID          = 0;
+  	uint8_t		SensorIdentifier  = 0;
+  	uint8_t		EventCode         = 0;
+    uint16_t		TimerDelay        = 0; // максимально - 8 бит или 1280 секунд с шагом в 5 секунд
+    uint8_t		EventOperand      = 0;
 
-    bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
-    string      ToString() override;
+    bool			IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
+    void			SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
 
-    void        ExecuteCommands(uint32_t ScenarioID) override;
-    bool        SensorUpdatedIsTriggered(uint8_t SensorID) override;
+    uint64_t		ToUint64() override;
+    string		ToString() override;
 
-    static void TimerCallback(FreeRTOS::Timer *pTimer);
+    void			ExecuteCommands(uint32_t ScenarioID) override;
+    bool			SensorUpdatedIsTriggered(uint8_t SensorID) override;
+
+    static void	TimerCallback(FreeRTOS::Timer *pTimer);
+
+    ~TimerData_t() { ESP_LOGI("DESTRUCTOR", "TimerDATA_t") };
 };
 
 class CalendarData_t : public Data_t {
   public:
-    bool        IsScheduled      = false;
-    DateTime_t  DateTime;
-    bitset<8>   ScheduledDays;
+    bool			IsScheduled = false;
+    DateTime_t	DateTime;
+    bitset<8>	ScheduledDays;
 
-    bool        IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void        SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
-    string      ToString() override;
+    bool			IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
+    void			SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
 
-    bool        IsCommandNeedToExecute(ScenesCommandItem_t &) override;
-    void        ExecuteCommands(uint32_t ScenarioID) override;
-    bool        TimeUpdatedIsTriggered() override;
+    uint64_t		ToUint64() override;
+    string		ToString() override;
+
+    bool			IsCommandNeedToExecute(ScenesCommandItem_t &) override;
+    void			ExecuteCommands(uint32_t ScenarioID) override;
+    bool			TimeUpdatedIsTriggered() override;
+
+    ~CalendarData_t() {};
 };
 
 

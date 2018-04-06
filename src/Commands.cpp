@@ -36,15 +36,18 @@ Command_t* Command_t::GetCommandByID(uint8_t CommandID) {
 }
 
 vector<Command_t*> Command_t::GetCommandsForDevice() {
-  vector<Command_t*> Commands = {};
+	vector<Command_t*> Commands = {};
 
-  switch (Device->Type->Hex) {
-    case DEVICE_TYPE_PLUG_HEX:
-      Commands = { new CommandSwitch_t(), new CommandColor_t() };
-      break;
-  }
+	switch (Device->Type->Hex) {
+		case DEVICE_TYPE_REMOTE_HEX:
+			Commands = { new CommandIR_t() };
+			break;
+		case DEVICE_TYPE_PLUG_HEX:
+			Commands = { new CommandSwitch_t(), new CommandColor_t() };
+			break;
+	}
 
-  return Commands;
+	return Commands;
 }
 
 void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
@@ -253,4 +256,26 @@ bool CommandColor_t::Execute(uint8_t EventCode, uint32_t Operand) {
   }
 
   return false;
+}
+
+/************************************/
+/*         	 IR Command             */
+/************************************/
+
+
+CommandIR_t::CommandIR_t() {
+    ID          = 0x07;
+    Name        = "IR";
+
+    Events["nec"]  = 0x01;
+
+    /*
+    switch (Device->Type->Hex) {
+      case DEVICE_TYPE_PLUG_HEX: GPIO::Setup(SWITCH_PLUG_PIN_NUM); break;
+    }
+    */
+}
+
+bool CommandIR_t::Execute(uint8_t EventCode, uint32_t Operand) {
+	return true;
 }

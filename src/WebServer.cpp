@@ -12,8 +12,6 @@ using namespace std;
 #include "Globals.h"
 #include "WebServer.h"
 
-#include <FreeRTOS/FreeRTOS.h>
-
 #include "Query.h"
 #include "API.h"
 
@@ -29,7 +27,7 @@ WebServer_t::WebServer_t() {
 void WebServer_t::Start() {
   ESP_LOGD(tag, "Start");
 
-  HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 8192);
+  HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 10240);
   UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask, "UDPListenerTask"  , NULL, 4096);
 }
 
@@ -72,6 +70,9 @@ void WebServer_t::UDPSendBroadcast(string Message) {
   struct netbuf *Buffer;
   char *Data;
 
+  if (Message.length() > 128)
+	  Message = Message.substr(0, 128);
+
   Connection = netconn_new( NETCONN_UDP );
   netconn_connect(Connection, IP_ADDR_BROADCAST, UDP_SERVER_PORT );
 
@@ -80,8 +81,8 @@ void WebServer_t::UDPSendBroadcast(string Message) {
   memcpy (Data, Message.c_str(), Message.length());
   netconn_send(Connection, Buffer);
 
+  netconn_delete(Connection);
   netbuf_delete(Buffer); // De-allocate packet buffer
-  netconn_close(Connection);
 
   ESP_LOGI(tag, "UDP broadcast \"%s\" sended", Message.c_str());
 }

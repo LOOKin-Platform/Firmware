@@ -27,7 +27,7 @@
 #include "Settings.h"
 #include "OTA.h"
 #include "WebServer.h"
-#include "Convert.h"
+#include "Converter.h"
 
 using namespace std;
 

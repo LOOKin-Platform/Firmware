@@ -13,6 +13,9 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
     case DEVICE_TYPE_PLUG_HEX:
       Sensors = { new SensorSwitch_t(), new SensorColor_t() };
       break;
+    case DEVICE_TYPE_REMOTE_HEX:
+      Sensors = { new SensorIR_t() };
+      break;
   }
 
   return Sensors;
@@ -271,4 +274,124 @@ uint8_t SensorColor_t::ToBrightness(uint32_t Color) {
 
 uint8_t SensorColor_t::ToBrightness(uint8_t Red, uint8_t Green, uint8_t Blue) {
   return max(max(Red,Green), Blue);
+}
+
+/************************************/
+/*           IR Sensor              */
+/************************************/
+
+vector<int16_t> SensorIR_t::CurrentMessage = {};
+
+SensorIR_t::SensorIR_t() {
+    ID          = 0x87;
+    Name        = "IR";
+    EventCodes  = { 0x00, 0x01 };
+
+    switch (Device->Type->Hex) {
+      case DEVICE_TYPE_REMOTE_HEX:
+    		IR::SetRXChannel(IR_REMOTE_RECEIVER_GPIO, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
+    		IR::RXStart(RMT_CHANNEL_0);
+
+    	  	//UART::Setup(IR_REMOTE_UART_BAUDRATE, IR_REMOTE_UART_PORT, SensorIR_t::Process);
+    	  	//UART::Start(IR_REMOTE_UART_PORT);
+    	    break;
+    }
+}
+
+void SensorIR_t::Update() {
+}
+
+double SensorIR_t::ReceiveValue(string Key) {
+	return 0;
+}
+
+string SensorIR_t::FormatValue(string Key) {
+	return "!";
+}
+
+bool SensorIR_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
+  return false;
+}
+
+void SensorIR_t::MessageStart() {
+	CurrentMessage.clear();
+}
+
+void SensorIR_t::MessageBody(int16_t Bit) {
+	CurrentMessage.push_back(Bit);
+	//ESP_LOGI("IRSensor_t", "%d %d", Bit, Duration);
+}
+
+void SensorIR_t::MessageEnd() {
+	if (CheckNEC()) {
+		uint16_t Address  = 0;
+		uint8_t  Command = 0;
+
+		ParseNEC(Address, Command);
+		ESP_LOGI("IRSensor_t", "NEC. Address %s. Command %s", Converter::ToHexString(Address,4).c_str(), Converter::ToHexString(Command,2).c_str());
+	}
+	else {
+		ESP_LOGI("IRSensor_t", "DON'T NEC");
+	}
+}
+
+bool SensorIR_t::CheckNEC() {
+	if (CurrentMessage.size() >= 66) {
+		if (CurrentMessage.at(0) > 8900 && CurrentMessage.at(0) < 9100 &&
+			CurrentMessage.at(1) < -4350 && CurrentMessage.at(1) > -4650)
+			return true;
+	}
+
+	if (CurrentMessage.size() == 16) {
+		if (CurrentMessage.at(0) > 8900 && CurrentMessage.at(0) < 9100 &&
+			CurrentMessage.at(1) < -2000 && CurrentMessage.at(1) > -2400 &&
+			CurrentMessage.at(2) > 500 && CurrentMessage.at(2) < 700)
+			return true;
+	}
+
+	return false;
+}
+
+void SensorIR_t::ParseNEC(uint16_t &Address, uint8_t &Command) {
+    vector<int16_t> Data = CurrentMessage;
+
+    Data.erase(Data.begin()); Data.erase(Data.begin());
+
+    if (Data.size() == 16) { // repeat signal
+    		Address = 0xFFFF;
+    		Command = 0xFF;
+    		return;
+    }
+
+    for (uint8_t BlockId = 0; BlockId < 4; BlockId++)
+    {
+		bitset<8> Block;
+
+		for (int i=0; i<8; i++) {
+			if (Data[0] > 500 && Data[0] < 720) {
+				if (Data[1] > -700)
+					Block[i] = 0;
+				if (Data[1] < -1200)
+					Block[i] = 1;
+			}
+
+		    Data.erase(Data.begin()); Data.erase(Data.begin());
+		}
+
+		uint8_t BlockInt = (uint8_t)Block.to_ulong();
+
+		switch (BlockId) {
+			case 0: Address = BlockInt; break;
+			case 1:
+				if (Address != ~BlockInt) {
+					Address = Address << 8;
+					Address += BlockInt;
+				}
+				break;
+			case 2: Command = BlockInt; break;
+			case 3:
+				if (Command != ~BlockInt) Command = 0;
+				break;
+		}
+    }
 }

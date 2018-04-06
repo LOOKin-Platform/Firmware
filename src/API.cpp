@@ -6,6 +6,8 @@
 
 #include "API.h"
 
+void ADCHandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
+
 void API::Handle(WebServer_t::Response &Response, Query_t Query) {
   return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody);
 }
@@ -29,6 +31,8 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
     if (APISection == "sensors")    Sensor_t::HandleHTTPRequest(Response, Type, URLParts, Params);
     if (APISection == "commands")   Command_t::HandleHTTPRequest(Response, Type, URLParts, Params);
     if (APISection == "log")        Log::HandleHTTPRequest(Response, Type, URLParts, Params);
+
+    if (APISection == "adctest")    ADCHandleHTTPRequest(Response, Type, URLParts, Params);
 
     // обработка алиасов комманд
     if (URLParts.size() == 0 && Params.size() == 0) {

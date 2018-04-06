@@ -7,7 +7,6 @@
 #include "Scenarios.h"
 
 static char tag[] = "Scenarios";
-static string NVSAutomationArea = "Automation";
 
 /************************************/
 /*         Scenario class           */
@@ -17,45 +16,66 @@ QueueHandle_t Scenario_t::Queue = FreeRTOS::Queue::Create(SCENARIOS_QUEUE_SIZE, 
 uint8_t       Scenario_t::ThreadsCounter = 0;
 
 Scenario_t::Scenario_t(uint8_t TypeHex) {
-  this->Type                  = TypeHex;
-  this->Commands              = vector<ScenesCommandItem_t>();
+	this->ID			= 0;
+	this->Type		= TypeHex;
+	this->Commands	= vector<ScenesCommandItem_t>();
 
-  switch (Type) {
-    case SCENARIOS_TYPE_EVENT_HEX     : this->Data = new EventData_t();        break;
-    case SCENARIOS_TYPE_TIMER_HEX     : this->Data = new TimerData_t();        break;
-    case SCENARIOS_TYPE_CALENDAR_HEX  : this->Data = new CalendarData_t();     break;
-  }
+	SetType(TypeHex);
 }
 
+void Scenario_t::SetType(uint8_t TypeHex) {
+	this->Type = TypeHex;
+
+	if (!this->Data)
+		delete this->Data;
+
+	switch (Type) {
+		case SCENARIOS_TYPE_EVENT_HEX     : this->Data = new EventData_t();        break;
+		case SCENARIOS_TYPE_TIMER_HEX     : this->Data = new TimerData_t();        break;
+		case SCENARIOS_TYPE_CALENDAR_HEX  : this->Data = new CalendarData_t();     break;
+		default:
+			this->Data = new Data_t();
+	}
+}
+
+Scenario_t::~Scenario_t() {
+	if (!Data) delete Data;
+}
+
+
+uint64_t Scenario_t::GetDataUint64() {
+	return Data->ToUint64();
+}
+
+
 string Scenario_t::GetDataHexString() {
-  return Data->ToString();
+	return Data->ToString();
 }
 
 void Scenario_t::SetData(uint64_t Operand) {
-  bitset<SCENARIOS_OPERAND_BIT_LEN> DataBitset(Operand);
-  Data->SetData(DataBitset);
+	bitset<SCENARIOS_OPERAND_BIT_LEN> DataBitset(Operand);
+	Data->SetData(DataBitset);
 }
 
 void Scenario_t::SetData(string HexString) {
+	if (HexString.length() > 16) HexString.substr(0, 16);
+	if (HexString.length() < 16) while (HexString.length() < 16) HexString += "0";
 
-  if (HexString.length() > 16) HexString.substr(0, 16);
-  if (HexString.length() < 16) while (HexString.length() < 16) HexString += "0";
-
-  bitset<SCENARIOS_OPERAND_BIT_LEN> DataBitset(Converter::UintFromHexString<uint64_t>(HexString));
-  Data->SetData(DataBitset);
+	bitset<SCENARIOS_OPERAND_BIT_LEN> DataBitset(Converter::UintFromHexString<uint64_t>(HexString));
+	Data->SetData(DataBitset);
 }
 
-bool Scenario_t::Empty() {
-  return (ID == 0 && Type == 0x00 && string(Name).empty()) ? true : false;
+bool Scenario_t::IsEmpty() {
+	return (ID == ~MEMORY_32BIT_EMPTY || ID == MEMORY_32BIT_EMPTY || Type == 0xFF) ? true : false;
 }
 
 void Scenario_t::ExecuteScenario(uint32_t ScenarioID) {
-  FreeRTOS::Queue::SendToBack(Scenario_t::Queue, &ScenarioID, (TickType_t) SCENARIOS_BLOCK_TICKS );
+	FreeRTOS::Queue::SendToBack(Scenario_t::Queue, &ScenarioID, (TickType_t) SCENARIOS_BLOCK_TICKS );
 
-  if (ThreadsCounter <= 0 && FreeRTOS::Queue::Count(Scenario_t::Queue)) {
-    ThreadsCounter = 1;
-    FreeRTOS::StartTask(ExecuteCommandsTask, "ExecuteCommandsTask", ( void * )(uint32_t)ThreadsCounter, SCENARIOS_TASK_STACKSIZE);
-  }
+	if (ThreadsCounter <= 0 && FreeRTOS::Queue::Count(Scenario_t::Queue)) {
+		ThreadsCounter = 1;
+		FreeRTOS::StartTask(ExecuteCommandsTask, "ExecuteCommandsTask", ( void * )(uint32_t)ThreadsCounter, SCENARIOS_TASK_STACKSIZE);
+	}
 }
 
 void Scenario_t::ExecuteCommandsTask(void *TaskData) {
@@ -63,15 +83,14 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 
   uint32_t ScenarioID = 0;
 
-  NVS *Memory = new NVS(NVSAutomationArea);
-
   if (Queue != 0)
     while (FreeRTOS::Queue::Receive(Scenario_t::Queue, &ScenarioID, (TickType_t) SCENARIOS_TASK_STACKSIZE)) {
+      Scenario_t Scenario;
 
-      Scenario_t *Scenario = DeserializeScene(Memory->StringArrayGet(NVSScenariosArray, Automation->CacheGetArrayID(ScenarioID)));
+      LoadScenario(Scenario,ScenarioID);
 
-      for (ScenesCommandItem_t Command : Scenario->Commands)
-        if (Scenario->Data->IsCommandNeedToExecute(Command)) {
+      for (ScenesCommandItem_t Command : Scenario.Commands)
+        if (Scenario.Data->IsCommandNeedToExecute(Command)) {
           if (Command.DeviceID == Device->ID) {
             // выполнить локальную команду
             Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
@@ -91,11 +110,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
             }
           }
         }
-
-      delete Scenario;
     }
-
-  delete Memory;
 
   ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
   Scenario_t::ThreadsCounter--;
@@ -103,99 +118,185 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 }
 
 void Scenario_t::LoadScenarios() {
-  NVS *Memory = new NVS(NVSAutomationArea);
+	uint32_t Address 			= MEMORY_SCENARIOS_START;
+	uint32_t ScenarioFindedID 	= 0x0;
 
-  uint8_t ArrayCount = Memory->ArrayCount(NVSScenariosArray);
+	while (Address < MEMORY_SCENARIOS_START + MEMORY_SCENARIOS_SIZE) {
+		ScenarioFindedID = SPIFlash::ReadUint32(Address);
 
-  for (int i=0; i < ArrayCount; i++) {
-    Scenario_t *Scenario = Scenario_t::DeserializeScene(Memory->StringArrayGet(NVSScenariosArray, i));
-    Automation->AddScenarioCacheItem(Scenario, i);
-    delete Scenario;
-  }
+		if (ScenarioFindedID != MEMORY_32BIT_EMPTY) {
+			Scenario_t Scenario;
 
-  ESP_LOGI(tag, "Loaded %i scenarios", ArrayCount);
-  delete Memory;
+			LoadScenarioByAddress(Scenario, Address);
+
+			if (!Scenario.IsEmpty())
+				Automation->AddScenarioCacheItem(Scenario);
+		}
+		Address += MEMORY_SCENARIOS_OFFSET;
+	}
+
+	ESP_LOGI(tag, "Loaded %d scenarios", Automation->ScenarioCacheItemCount());
 }
 
-string Scenario_t::LoadScenario(uint8_t Index) {
-  NVS *Memory = new NVS(NVSAutomationArea);
-  return Memory->StringArrayGet(NVSScenariosArray, Index);
-  delete Memory;
+void Scenario_t::LoadScenario(Scenario_t &Scenario, uint32_t ScenarioID) {
+	uint32_t Address 			= MEMORY_SCENARIOS_START;
+
+	while (Address < MEMORY_SCENARIOS_START + MEMORY_SCENARIOS_SIZE) {
+		uint32_t FindedID = SPIFlash::ReadUint32(Address);
+
+		if (FindedID == ScenarioID)
+			LoadScenarioByAddress(Scenario, Address);
+
+		Address += MEMORY_SCENARIOS_OFFSET;
+	}
 }
 
-bool Scenario_t::SaveScenario(Scenario_t * Scenario) {
-  bool Result = false;
+void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
 
-  NVS *Memory = new NVS(NVSAutomationArea);
-  uint8_t Index = Memory->StringArrayAdd(NVSScenariosArray, Scenario_t::SerializeScene(Scenario));
-  Memory->Commit();
+	Scenario.ID = SPIFlash::ReadUint32(Address + MEMORY_SCENARIO_ID);
 
-  if (Index != MAX_NVSARRAY_INDEX+1) {
-    Automation->AddScenarioCacheItem(Scenario, Index);
-    Result = true;
-  }
+	Scenario.SetType(SPIFlash::ReadUint8(Address + MEMORY_SCENARIO_TYPE));
 
-  delete Memory;
+	if (Scenario.ID == MEMORY_32BIT_EMPTY)
+		return;
 
-  return Result;
+	Scenario.SetData(SPIFlash::ReadUint64(Address + MEMORY_SCENARIO_OPERAND));
+
+	for (int i = 0; i< SCENARIOS_NAME_LENGTH; i++)
+		Scenario.Name[i] = SPIFlash::ReadUint16(Address + MEMORY_SCENARIO_NAME + i*0x2);
+
+	uint32_t CommandAddress 	= Address + MEMORY_SCENARIO_COMMANDS;
+
+	while (CommandAddress < Address + MEMORY_SCENARIOS_OFFSET) {
+		uint32_t FindedCommandDeviceID = SPIFlash::ReadUint32(CommandAddress + MEMORY_COMMAND_DEVICEID);
+
+		if (FindedCommandDeviceID == MEMORY_32BIT_EMPTY)
+			break;
+
+		ScenesCommandItem_t Command;
+		Command.DeviceID 	= FindedCommandDeviceID;
+		Command.CommandID 	= SPIFlash::ReadUint8(CommandAddress + MEMORY_COMMAND_COMMANDID);
+		Command.EventCode	= SPIFlash::ReadUint8(CommandAddress + MEMORY_COMMAND_EVENTID);
+		Command.Operand		= SPIFlash::ReadUint32(CommandAddress + MEMORY_COMMAND_OPERAND);
+
+		Scenario.Commands.push_back(Command);
+
+		CommandAddress += MEMORY_COMMAND_SIZE;
+	}
 }
 
-void Scenario_t::RemoveScenario(uint8_t Index) {
-  NVS *Memory = new NVS(NVSAutomationArea);
-  Memory->StringArrayRemove(NVSScenariosArray, Index);
-  Memory->Commit();
-  delete Memory;
+bool Scenario_t::SaveScenario(Scenario_t Scenario) {
+	uint32_t Address = MEMORY_SCENARIOS_START;
+
+	while (Address < MEMORY_SCENARIOS_START + MEMORY_SCENARIOS_SIZE) {
+		uint32_t CurrentID = SPIFlash::ReadUint32(Address);
+
+		if (CurrentID == MEMORY_32BIT_EMPTY)
+			break;
+
+		Address += MEMORY_SCENARIOS_OFFSET;
+	}
+
+	if (Address > MEMORY_SCENARIOS_START + MEMORY_SCENARIOS_SIZE - 1)
+		return false;
+
+	if (Scenario.IsEmpty())
+		return false;
+
+	SPIFlash::WriteUint32(Scenario.ID	, Address + MEMORY_SCENARIO_ID);
+	SPIFlash::WriteUint8 (Scenario.Type	, Address + MEMORY_SCENARIO_TYPE);
+
+	for (int i=0; i< SCENARIOS_NAME_LENGTH; i++)
+		SPIFlash::WriteUint16(Scenario.Name[i], Address + MEMORY_SCENARIO_NAME + i*0x2);
+
+	SPIFlash::WriteUint64(Scenario.Data->ToUint64(), Address + MEMORY_SCENARIO_OPERAND);
+
+	//NAME SAVE
+	uint32_t CommandAddress 	= Address + MEMORY_SCENARIO_COMMANDS;
+
+	for (int i=0 ; i < Scenario.Commands.size(); i++) {
+		CommandAddress += i*MEMORY_COMMAND_SIZE;
+
+		SPIFlash::WriteUint32(Scenario.Commands[i].DeviceID	, CommandAddress + MEMORY_COMMAND_DEVICEID);
+		SPIFlash::WriteUint8 (Scenario.Commands[i].CommandID	, CommandAddress + MEMORY_COMMAND_COMMANDID);
+		SPIFlash::WriteUint8 (Scenario.Commands[i].EventCode	, CommandAddress + MEMORY_COMMAND_EVENTID);
+		SPIFlash::WriteUint32(Scenario.Commands[i].Operand	, CommandAddress + MEMORY_COMMAND_OPERAND);
+	}
+
+	Automation->AddScenarioCacheItem(Scenario);
+
+	return true;
 }
 
-string Scenario_t::SerializeScene(Scenario_t *Scene) {
-  JSON JSONObject;
+void Scenario_t::RemoveScenario(uint32_t ScenarioID) {
+	uint32_t Address 			= MEMORY_SCENARIOS_START;
 
-  JSONObject.SetItems({
-                  { "Type"    , Converter::ToHexString(Scene->Type,2) },
-                  { "ID"      , Converter::ToHexString(Scene->ID  ,8) },
-                  { "Name"    , Scene->Name                           },
-                  { "Operand" , Scene->GetDataHexString()             }
+	while (Address < MEMORY_SCENARIOS_START + MEMORY_SCENARIOS_SIZE) {
+		uint32_t FindedID = SPIFlash::ReadUint32(Address);
+
+		if (FindedID == ScenarioID)
+			SPIFlash::EraseRange(Address, MEMORY_SCENARIOS_OFFSET);
+
+		Address += MEMORY_SCENARIOS_OFFSET;
+	}
+}
+
+string Scenario_t::SerializeScene(uint32_t ScenarioID) {
+	Scenario_t Scenario;
+	LoadScenario(Scenario, ScenarioID);
+
+	return (!Scenario.IsEmpty()) ? SerializeScene(Scenario) : "";
+}
+
+string Scenario_t::SerializeScene(Scenario_t Scenario) {
+	JSON JSONObject;
+
+	JSONObject.SetItems({
+                  { "Type"    , Converter::ToHexString(Scenario.Type,2)						},
+                  { "ID"      , Converter::ToHexString(Scenario.ID  ,8)						},
+                  { "Name"    , Converter::ToUTF16String(Scenario.Name, SCENARIOS_NAME_LENGTH)	},
+                  { "Operand" , Scenario.GetDataHexString()									}
                 });
 
-  vector<map<string,string>> Commands = vector<map<string,string>>();
-  for (int i=0; i < Scene->Commands.size(); i++)
-    Commands.push_back({
-      { "DeviceID"  , Converter::ToHexString(Scene->Commands[i].DeviceID ,8) },
-      { "Command"   , Converter::ToHexString(Scene->Commands[i].CommandID,2) },
-      { "Event"     , Converter::ToHexString(Scene->Commands[i].EventCode,2) },
-      { "Operand"   , Converter::ToHexString(Scene->Commands[i].Operand  ,8) }
-    });
+	vector<string> Commands = vector<string>();
+	for (int i=0; i < Scenario.Commands.size(); i++)
+		Commands.push_back(	Converter::ToHexString(Scenario.Commands[i].DeviceID ,8) +
+							Converter::ToHexString(Scenario.Commands[i].CommandID,2) +
+							Converter::ToHexString(Scenario.Commands[i].EventCode,2) +
+							Converter::ToHexString(Scenario.Commands[i].Operand  ,8));
 
-  JSONObject.SetObjectsArray("Commands", Commands);
+	JSONObject.SetStringArray("Commands", Commands);
 
-  return JSONObject.ToString();
+	return JSONObject.ToString();
 }
 
-Scenario_t* Scenario_t::DeserializeScene(string JSONString) {
-  JSON JSONObject(JSONString);
+Scenario_t Scenario_t::DeserializeScene(string JSONString) {
+	JSON JSONObject(JSONString);
 
-  if (!JSONObject.GetItem("type").empty()) {
-    Scenario_t *Scene = new Scenario_t(Converter::UintFromHexString<uint8_t>(JSONObject.GetItem("type")));
-    Scene->ID = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("id"));
-    Scene->SetData(JSONObject.GetItem("operand"));
+	if (!JSONObject.GetItem("type").empty()) {
+		Scenario_t Scene = Scenario_t(Converter::UintFromHexString<uint8_t>(JSONObject.GetItem("type")));
+		Scene.ID = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("id"));
+		Scene.SetData(JSONObject.GetItem("operand"));
 
-    string Name = JSONObject.GetItem("name");
-    memcpy(Scene->Name,Name.c_str(),Name.size()+1);
+		vector<uint16_t> UTF16Name = Converter::ToUTF16Vector(JSONObject.GetItem("name"));
 
-    for (auto &CommandItem : JSONObject.GetObjectsArray("commands")) {
-      ScenesCommandItem_t Command;
-      Command.DeviceID   = Converter::UintFromHexString<uint32_t>(CommandItem["deviceid"]);
-      Command.CommandID  = Converter::UintFromHexString<uint8_t> (CommandItem["command"]);
-      Command.EventCode  = Converter::UintFromHexString<uint8_t> (CommandItem["event"]);
-      Command.Operand    = Converter::UintFromHexString<uint32_t>(CommandItem["operand"]);
+		for (int i=0; i < UTF16Name.size() && i < SCENARIOS_NAME_LENGTH; i++)
+			Scene.Name[i] = UTF16Name[i];
 
-      Scene->Commands.push_back(Command);
-    }
+		for (auto &CommandString : JSONObject.GetStringArray("commands")) {
+			ScenesCommandItem_t Command;
+			Command.DeviceID   = Converter::UintFromHexString<uint32_t>(CommandString.substr(0 ,8));
+			Command.CommandID  = Converter::UintFromHexString<uint8_t> (CommandString.substr(8 ,2));
+			Command.EventCode  = Converter::UintFromHexString<uint8_t> (CommandString.substr(10,2));
+			Command.Operand    = Converter::UintFromHexString<uint8_t> (CommandString.substr(12,8));
 
-    return Scene;
-  }
+			Scene.Commands.push_back(Command);
+		}
 
-  return nullptr;
+		return Scene;
+	}
+
+	return Scenario_t(0);
 }
 
 
@@ -224,16 +325,6 @@ template void Scenario_t::AddRangeTo<12>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Dest
 template void Scenario_t::AddRangeTo<16>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<16>, size_t Position);
 template void Scenario_t::AddRangeTo<32>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Destination, bitset<32>, size_t Position);
 
-bitset<8> Scenario_t::Bitset4To8(bitset<4> Src) {
-  bitset<8> Return("0000" + Src.to_string());
-  return Return;
-}
-
-bitset<16> Scenario_t::Bitset12To16(bitset<12> Src) {
-  bitset<16> Return("0000" + Src.to_string());
-  return Return;
-}
-
 /************************************/
 /*      Scenarios HTTP client       */
 /************************************/
@@ -257,28 +348,33 @@ bool EventData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandIt
 
 void EventData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
   DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ullong();
-  SensorIdentifier  = (uint8_t) Scenario_t::Range<8>(Operand, 32, 8).to_ulong();
-  EventCode         = (uint8_t) Scenario_t::Bitset4To8(Scenario_t::Range<4>(Operand, 40, 4)).to_ulong();
-  EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand, 44, 8).to_ulong();
+  SensorIdentifier  = (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
+  EventCode         = (uint8_t) Scenario_t::Range<8> (Operand, 40, 8).to_ulong();
+  EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand, 48, 8).to_ulong();
+}
+
+uint64_t EventData_t::ToUint64() {
+	bitset<SCENARIOS_OPERAND_BIT_LEN> Result;
+
+	bitset<32> bDeviceID(DeviceID);
+	Scenario_t::AddRangeTo(Result,bDeviceID,0);
+
+	bitset<8> bSensorIdentifier(SensorIdentifier);
+	Scenario_t::AddRangeTo(Result,bSensorIdentifier,32);
+
+	bitset<4> bEventCode(EventCode);
+	Scenario_t::AddRangeTo(Result,bEventCode,40);
+
+	bitset<8> bOperand(EventOperand);
+	Scenario_t::AddRangeTo(Result,bOperand,44);
+
+	return Result.to_ullong();
 }
 
 string EventData_t::ToString() {
-  bitset<SCENARIOS_OPERAND_BIT_LEN> Result;
-
-  bitset<32> bDeviceID(DeviceID);
-  Scenario_t::AddRangeTo(Result,bDeviceID,0);
-
-  bitset<8> bSensorIdentifier(SensorIdentifier);
-  Scenario_t::AddRangeTo(Result,bSensorIdentifier,32);
-
-  bitset<4> bEventCode(EventCode);
-  Scenario_t::AddRangeTo(Result,bEventCode,40);
-
-  bitset<8> bOperand(EventOperand);
-  Scenario_t::AddRangeTo(Result,bOperand,44);
-
-  return Converter::ToHexString(Result.to_ullong(), SCENARIOS_OPERAND_BIT_LEN/4);
+	return Converter::ToHexString(this->ToUint64(), SCENARIOS_OPERAND_BIT_LEN/4);
 }
+
 
 bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
   if (SensorIdentifier == SensorID)
@@ -302,31 +398,35 @@ bool TimerData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandIt
 void TimerData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
   DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ulong();
   SensorIdentifier  = (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
-  EventCode         = (uint8_t) Scenario_t::Bitset4To8(Scenario_t::Range<4> (Operand, 40, 4)).to_ulong();
-  TimerDelay        = (uint16_t)Scenario_t::Bitset12To16(Scenario_t::Range<12>(Operand, 44, 12)).to_ulong();
+  EventCode         = (uint8_t) Scenario_t::Range<8> (Operand, 40, 8).to_ulong();
+  TimerDelay        = (uint16_t)Scenario_t::Range<8> (Operand, 48, 8).to_ulong();
   EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand << 56, 0, 8).to_ulong();
 }
 
+uint64_t TimerData_t::ToUint64() {
+	bitset<SCENARIOS_OPERAND_BIT_LEN> Result;
+
+	bitset<8> bOperand(EventOperand);
+	Scenario_t::AddRangeTo(Result,bOperand,0);
+	Result >>= 56;
+
+	bitset<32> bDeviceID(DeviceID);
+	Scenario_t::AddRangeTo(Result,bDeviceID,0);
+
+	bitset<8> bSensorIdentifier(SensorIdentifier);
+	Scenario_t::AddRangeTo(Result,bSensorIdentifier,32);
+
+	bitset<8> bEventCode(EventCode);
+	Scenario_t::AddRangeTo(Result,bEventCode,40);
+
+	bitset<8> bTimerDelay(TimerDelay);
+	Scenario_t::AddRangeTo(Result,bTimerDelay,44);
+
+	return Result.to_ullong();
+}
+
 string TimerData_t::ToString() {
-  bitset<SCENARIOS_OPERAND_BIT_LEN> Result;
-
-  bitset<8> bOperand(EventOperand);
-  Scenario_t::AddRangeTo(Result,bOperand,0);
-  Result >>= 56;
-
-  bitset<32> bDeviceID(DeviceID);
-  Scenario_t::AddRangeTo(Result,bDeviceID,0);
-
-  bitset<8> bSensorIdentifier(SensorIdentifier);
-  Scenario_t::AddRangeTo(Result,bSensorIdentifier,32);
-
-  bitset<4> bEventCode(EventCode);
-  Scenario_t::AddRangeTo(Result,bEventCode,40);
-
-  bitset<12> bTimerDelay(TimerDelay);
-  Scenario_t::AddRangeTo(Result,bTimerDelay,44);
-
-  return Converter::ToHexString(Result.to_ullong(), SCENARIOS_OPERAND_BIT_LEN/4);
+	return Converter::ToHexString(this->ToUint64(), SCENARIOS_OPERAND_BIT_LEN/4);
 }
 
 bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
@@ -338,7 +438,7 @@ bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
 };
 
 void TimerData_t::ExecuteCommands(uint32_t ScenarioID) {
-  FreeRTOS::Timer *ScenarioTimer = new FreeRTOS::Timer("ScenarioTimer", (TimerDelay * 1000)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
+  FreeRTOS::Timer *ScenarioTimer = new FreeRTOS::Timer("ScenarioTimer", (TimerDelay * 1000 * 5)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
   ScenarioTimer->Start();
 };
 
@@ -379,36 +479,40 @@ void CalendarData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
   }
 }
 
+uint64_t CalendarData_t::ToUint64() {
+	bitset<SCENARIOS_OPERAND_BIT_LEN> Result;
+
+	bitset<8> bHours(DateTime.Hours);
+	Scenario_t::AddRangeTo(Result, bHours, 0);
+
+	bitset<8> bMinutes(DateTime.Minutes);
+	Scenario_t::AddRangeTo(Result, bMinutes, 8);
+
+	bitset<8> bSeconds(DateTime.Seconds);
+	Scenario_t::AddRangeTo(Result, bSeconds, 16);
+
+	Result[24] = IsScheduled;
+
+	if (!IsScheduled) {
+		bitset<8> bDay(DateTime.Day);
+		Scenario_t::AddRangeTo(Result, bDay, 25);
+
+		bitset<8> bMonth(DateTime.Month);
+		Scenario_t::AddRangeTo(Result, bMonth, 33);
+
+		bitset<8> bYear(DateTime.Year);
+		Scenario_t::AddRangeTo(Result, bYear, 41);
+	}
+	else {
+		Scenario_t::AddRangeTo(Result, ScheduledDays, 24);
+		Result[24] = true;
+	}
+
+	return Result.to_ullong();
+}
+
 string CalendarData_t::ToString() {
-  bitset<SCENARIOS_OPERAND_BIT_LEN> Result;
-
-  bitset<8> bHours(DateTime.Hours);
-  Scenario_t::AddRangeTo(Result, bHours, 0);
-
-  bitset<8> bMinutes(DateTime.Minutes);
-  Scenario_t::AddRangeTo(Result, bMinutes, 8);
-
-  bitset<8> bSeconds(DateTime.Seconds);
-  Scenario_t::AddRangeTo(Result, bSeconds, 16);
-
-  Result[24] = IsScheduled;
-
-  if (!IsScheduled) {
-    bitset<8> bDay(DateTime.Day);
-    Scenario_t::AddRangeTo(Result, bDay, 25);
-
-    bitset<8> bMonth(DateTime.Month);
-    Scenario_t::AddRangeTo(Result, bMonth, 33);
-
-    bitset<8> bYear(DateTime.Year);
-    Scenario_t::AddRangeTo(Result, bYear, 41);
-  }
-  else {
-    Scenario_t::AddRangeTo(Result, ScheduledDays, 24);
-    Result[24] = true;
-  }
-
-  return Converter::ToHexString(Result.to_ullong(), SCENARIOS_OPERAND_BIT_LEN/4);
+	return Converter::ToHexString(this->ToUint64(), SCENARIOS_OPERAND_BIT_LEN/4);
 }
 
 bool CalendarData_t::IsCommandNeedToExecute(ScenesCommandItem_t &Command) {

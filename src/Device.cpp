@@ -10,7 +10,8 @@ static char tag[] = "Device_t";
 static string NVSDeviceArea = "Device";
 
 map<uint8_t, string> DeviceType_t::TypeMap = {
-  { DEVICE_TYPE_PLUG_HEX, DEVICE_TYPE_PLUG_STRING }
+	{ DEVICE_TYPE_PLUG_HEX	, DEVICE_TYPE_PLUG_STRING },
+	{ DEVICE_TYPE_REMOTE_HEX	, DEVICE_TYPE_REMOTE_STRING },
 };
 
 DeviceType_t::DeviceType_t(string TypeStr) {
@@ -50,7 +51,7 @@ string DeviceType_t::ToString(uint8_t Hex) {
 Device_t::Device_t() {
     ESP_LOGD(tag, "Constructor");
 
-    Type              = new DeviceType_t(DEVICE_TYPE_PLUG_HEX);
+    Type              = new DeviceType_t(DEVICE_TYPE_DEFAULT_HEX);
     Status            = DeviceStatus::RUNNING;
     ID                = 0;
     Name              = "";
@@ -64,6 +65,12 @@ void Device_t::Init() {
   ESP_LOGD(tag, "Init");
 
   NVS *Memory = new NVS(NVSDeviceArea);
+
+  uint8_t DeviceType = Memory->GetInt8Bit(NVSDeviceType);
+  if (DeviceType > 0)
+	  Type = new DeviceType_t(DeviceType);
+  else
+	  Memory->SetInt8Bit(NVSDeviceType, Type->Hex);
 
   ID = Memory->GetUInt32Bit(NVSDeviceID);
   if (ID == 0) {
