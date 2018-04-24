@@ -30,7 +30,7 @@ typedef void (*IRChannelCallbackEnd)();
 /**
  * @brief Drive the %RMT peripheral.
  */
-class IR {
+class RMT {
 	public:
 		struct IRChannelInfo {
 			TaskHandle_t				Handle 			= 0;
@@ -39,17 +39,23 @@ class IR {
 			IRChannelCallbackEnd 	CallbackEnd 		= nullptr;
 		};
 
-		static void SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel);
 		static void SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart = nullptr, IRChannelCallbackBody = nullptr, IRChannelCallbackEnd = nullptr);
+		static void ReceiveStart(rmt_channel_t Channel);
+		static void ReceiveStop (rmt_channel_t Channel);
 
-		static void RXStart(rmt_channel_t Channel);
-		static void RXStop (rmt_channel_t Channel);
+		static void SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequent);
+		static void AddItem(int32_t);
+		static void SetItems(vector<int32_t>);
+		static void Clear();
+		static void Send(rmt_channel_t Channel);
+
+		static int32_t PrepareBit(bool, uint32_t);
 
 		static map<rmt_channel_t, IRChannelInfo> ChannelsMap;
+
+		static vector<rmt_item32_t> OutputItems;
 	private:
 		static void RXTask(void *);
-		static int16_t PrepareBit(bool, uint16_t);
-
 };
 
 #endif /* DRIVERS_IR_H_ */

@@ -25,126 +25,130 @@ WebServer_t::WebServer_t() {
 }
 
 void WebServer_t::Start() {
-  ESP_LOGD(tag, "Start");
+	ESP_LOGD(tag, "Start");
 
-  HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 10240);
-  UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask, "UDPListenerTask"  , NULL, 4096);
+	HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 10240);
+	UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask, "UDPListenerTask"  , NULL, 4096);
 }
 
 void WebServer_t::Stop() {
-  ESP_LOGD(tag, "Stop");
+	ESP_LOGD(tag, "Stop");
 
-  FreeRTOS::DeleteTask(HTTPListenerTaskHandle);
-  FreeRTOS::DeleteTask(UDPListenerTaskHandle);
+	FreeRTOS::DeleteTask(HTTPListenerTaskHandle);
+	FreeRTOS::DeleteTask(UDPListenerTaskHandle);
 }
 
 void WebServer_t::UDPSendBroadcastAlive() {
-  UDPSendBroadcast(UDPAliveBody());
+	UDPSendBroadcast(UDPAliveBody());
 }
 
 void WebServer_t::UDPSendBroadcastDiscover() {
-  UDPSendBroadcast(UDPDiscoverBody());
+	UDPSendBroadcast(UDPDiscoverBody());
 }
 
-void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value) {
-  UDPSendBroadcast(UDPUpdatedBody(SensorID, Value));
+void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat) {
+	for (int i=0; i<Repeat; i++)
+		UDPSendBroadcast(UDPUpdatedBody(SensorID, Value));
 }
 
 string WebServer_t::UDPAliveBody() {
-  string Message = "Alive!" + Device->IDToString() + ":" + Device->Type->ToHexString() + ":"  + inet_ntoa(Network->IP);
-  return UDP_PACKET_PREFIX + Message;
+	string Message = "Alive!" + Device->IDToString() + ":" + Device->Type->ToHexString() + ":"  + Network->IPToString();
+	return UDP_PACKET_PREFIX + Message;
 }
 
 string WebServer_t::UDPDiscoverBody(string ID) {
-  string Message = (ID != "") ? ("Discover!" + ID) : "Discover!";
-  return UDP_PACKET_PREFIX + Message;
+	string Message = (ID != "") ? ("Discover!" + ID) : "Discover!";
+	return UDP_PACKET_PREFIX + Message;
 }
 
 string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value) {
-  string Message = "Updated!" + Device->IDToString() + ":" + Converter::ToHexString(SensorID, 2) + ":" + Value;
-  return UDP_PACKET_PREFIX + Message;
+	string Message = "Updated!" + Device->IDToString() + ":" + Converter::ToHexString(SensorID, 2) + ":" + Value;
+	return UDP_PACKET_PREFIX + Message;
 }
 
 void WebServer_t::UDPSendBroadcast(string Message) {
-  struct netconn *Connection;
-  struct netbuf *Buffer;
-  char *Data;
+	struct netconn *Connection;
+	struct netbuf *Buffer;
+	char *Data;
 
-  if (Message.length() > 128)
-	  Message = Message.substr(0, 128);
+	if (Message.length() > 128)
+		Message = Message.substr(0, 128);
 
-  Connection = netconn_new( NETCONN_UDP );
-  netconn_connect(Connection, IP_ADDR_BROADCAST, UDP_SERVER_PORT );
+	Connection = netconn_new( NETCONN_UDP );
+	netconn_connect(Connection, IP_ADDR_BROADCAST, UDP_SERVER_PORT );
 
-  Buffer  = netbuf_new();
-  Data    = (char *)netbuf_alloc(Buffer, Message.length());
-  memcpy (Data, Message.c_str(), Message.length());
-  netconn_send(Connection, Buffer);
+	Buffer  = netbuf_new();
+	Data    = (char *)netbuf_alloc(Buffer, Message.length());
+	memcpy (Data, Message.c_str(), Message.length());
+	netconn_send(Connection, Buffer);
 
-  netconn_delete(Connection);
-  netbuf_delete(Buffer); // De-allocate packet buffer
+	netconn_delete(Connection);
+	netbuf_delete(Buffer); // De-allocate packet buffer
 
-  ESP_LOGI(tag, "UDP broadcast \"%s\" sended", Message.c_str());
+	ESP_LOGI(tag, "UDP broadcast \"%s\" sended", Message.c_str());
 }
 
 void WebServer_t::UDPListenerTask(void *data)
 {
-  ESP_LOGD(tag, "UDPListenerTask Run");
+	ESP_LOGD(tag, "UDPListenerTask Run");
 
-  struct netconn *Connection;
-  struct netbuf *inBuffer, *outBuffer;
-  char *inData, *outData;
-  u16_t inDataLen;
-  err_t err;
+	struct netconn *Connection;
+	struct netbuf *inBuffer, *outBuffer;
+	char *inData, *outData;
+	u16_t inDataLen;
+	err_t err;
 
-  Connection = netconn_new(NETCONN_UDP);
-  netconn_bind(Connection, IP_ADDR_ANY, UDP_SERVER_PORT);
+	Connection = netconn_new(NETCONN_UDP);
+	netconn_bind(Connection, IP_ADDR_ANY, UDP_SERVER_PORT);
 
-  do {
-    err = netconn_recv(Connection, &inBuffer);
+	do {
+		err = netconn_recv(Connection, &inBuffer);
 
-    if (err == ERR_OK) {
-      netbuf_data(inBuffer, (void * *)&inData, &inDataLen);
-      string Datagram = inData;
+		if (err == ERR_OK) {
+			netbuf_data(inBuffer, (void * *)&inData, &inDataLen);
+			string Datagram = inData;
 
-      ESP_LOGI(tag, "UDP RECEIVED \"%s\"", Datagram.c_str());
+			ESP_LOGI(tag, "UDP RECEIVED \"%s\"", Datagram.c_str());
 
-      outBuffer = netbuf_new();
+			outBuffer = netbuf_new();
 
-      // answer to the Discover query
-      if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device->IDToString())) {
-        string Answer = WebServer_t::UDPAliveBody();
+			// Redirect UDP message if in access point mode
+			//if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+			//	WebServer->UDPSendBroadcast(Datagram);
 
-        outData = (char *)netbuf_alloc(outBuffer, Answer.length());
-        memcpy (outData, Answer.c_str(), Answer.length());
+			// answer to the Discover query
+			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device->IDToString())) {
+				string Answer = WebServer_t::UDPAliveBody();
 
-        netconn_sendto(Connection, outBuffer, &inBuffer->addr, inBuffer->port);
+				outData = (char *)netbuf_alloc(outBuffer, Answer.length());
+				memcpy (outData, Answer.c_str(), Answer.length());
 
-        ESP_LOGD(tag, "UDP \"%s\" sended to %s:%u", Answer.c_str(), inet_ntoa(inBuffer->addr), inBuffer->port);
-      }
+				netconn_sendto(Connection, outBuffer, &inBuffer->addr, inBuffer->port);
 
-      string AliveText = UDP_PACKET_PREFIX + string("Alive!");
-      size_t AliveFound = Datagram.find(AliveText);
+				ESP_LOGD(tag, "UDP \"%s\" sended to %s:%u", Answer.c_str(), inet_ntoa(inBuffer->addr), inBuffer->port);
+			}
 
-      if (AliveFound != string::npos) {
-        string Alive = Datagram;
-        Alive.replace(Alive.find(AliveText),AliveText.length(),"");
-        vector<string> Data = Converter::StringToVector(Alive, ":");
+			string AliveText = UDP_PACKET_PREFIX + string("Alive!");
+			size_t AliveFound = Datagram.find(AliveText);
 
-        if (Data.size() > 2)
-          Network->DeviceInfoReceived(Data[0], Data[1], Data[2]);
-      }
+			if (AliveFound != string::npos) {
+				string Alive = Datagram;
+				Alive.replace(Alive.find(AliveText),AliveText.length(),"");
+				vector<string> Data = Converter::StringToVector(Alive, ":");
 
+				if (Data.size() > 2)
+					Network->DeviceInfoReceived(Data[0], Data[1], Data[2]);
+			}
 
-      netbuf_delete(outBuffer);
-      netbuf_delete(inBuffer);
-    }
+			netbuf_delete(outBuffer);
+			netbuf_delete(inBuffer);
+		}
 
-  } while(err == ERR_OK);
+	} while(err == ERR_OK);
 
-  netbuf_delete(inBuffer);
-  netconn_close(Connection);
-  netconn_delete(Connection);
+	netbuf_delete(inBuffer);
+	netconn_close(Connection);
+	netconn_delete(Connection);
 }
 
 void WebServer_t::HTTPListenerTask(void *data) {
@@ -171,36 +175,36 @@ void WebServer_t::HTTPListenerTask(void *data) {
 }
 
 void WebServer_t::HandleHTTP(struct netconn *conn) {
-  ESP_LOGD(tag, "Handle HTTP Query");
+	ESP_LOGD(tag, "Handle HTTP Query");
 
-  struct netbuf *inbuf;
-  char *buf;
-  u16_t buflen;
+	struct netbuf *inbuf;
+	char *buf;
+	u16_t buflen;
 
-  err_t err;
-  string HTTPString = "";
+	err_t err;
+	string HTTPString = "";
 
-  netconn_set_recvtimeout(conn, 50);    // timeout on 10 msecs
+	netconn_set_recvtimeout(conn, 50);    // timeout on 50 msecs
 
-  while((err = netconn_recv(conn,&inbuf)) == ERR_OK) {
-    do {
-      netbuf_data(inbuf, (void * *)&buf, &buflen);
-      HTTPString += string(buf);
-    } while(netbuf_next(inbuf) >= 0);
+	while((err = netconn_recv(conn,&inbuf)) == ERR_OK) {
+		do {
+			netbuf_data(inbuf, (void * *)&buf, &buflen);
+			HTTPString += string(buf);
+		} while(netbuf_next(inbuf) >= 0);
 
-    netbuf_delete(inbuf);
-  }
+		netbuf_delete(inbuf);
+	}
 
-  if (!HTTPString.empty()) {
-    Query_t Query(HTTPString);
-    WebServer_t::Response Result;
+	if (!HTTPString.empty()) {
+		Query_t Query(HTTPString);
+		WebServer_t::Response Result;
 
-    API::Handle(Result, Query);
-    netconn_write(conn, Result.toString().c_str(), Result.toString().length(), NETCONN_NOCOPY);
-  }
+		API::Handle(Result, Query);
+		netconn_write(conn, Result.toString().c_str(), Result.toString().length(), NETCONN_NOCOPY);
+	}
 
-  netconn_close(conn);
-  netbuf_delete(inbuf);
+	netconn_close(conn);
+	netbuf_delete(inbuf);
 }
 
 /*
@@ -232,6 +236,12 @@ void WebServer_t::Response::SetSuccess() {
 
 void WebServer_t::Response::SetFail() {
   ResponseCode  = CODE::ERROR;
+  ContentType   = TYPE::JSON;
+  Body          = "{\"success\" : \"false\"}";
+}
+
+void WebServer_t::Response::SetInvalid() {
+  ResponseCode  = CODE::INVALID;
   ContentType   = TYPE::JSON;
   Body          = "{\"success\" : \"false\"}";
 }

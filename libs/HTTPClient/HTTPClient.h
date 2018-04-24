@@ -4,8 +4,10 @@
 *
 */
 
-#ifndef DRIVERS_HTTPCLIENT_H_
-#define DRIVERS_HTTPCLIENT_H_
+#ifndef LIBS_HTTPCLIENT_H_
+#define LIBS_HTTPCLIENT_H_
+
+using namespace std;
 
 #include "FreeRTOSWrapper.h"
 
@@ -18,9 +20,8 @@
 #include <netdb.h>
 #include <esp_log.h>
 
-#include "../../src/include/Settings.h"
-
-using namespace std;
+#include "Converter.h"
+#include "Settings.h"
 
 enum QueryType { NONE, POST, GET, DELETE };
 
@@ -40,7 +41,7 @@ class HTTPClient {
      */
     struct HTTPClientData_t {
       char      IP[15]        = "\0";               /*!< Server IP string, e. g. 192.168.1.1 */
-      uint8_t   Port          = 80;                 /*!< Server port, e. g. 80 */
+      uint16_t  Port          = 80;                 /*!< Server port, e. g. 80 */
       char      Hostname[32]  = "\0";               /*!< Hostname string, e. g. look-in.club */
       char      ContentURI[32]= "\0";               /*!< Path to the content in the server, e. g. /api/v1/time */
       QueryType Method        = GET;                /*!< Query method, e. g. QueryType::POST */
@@ -54,13 +55,13 @@ class HTTPClient {
     };
 
     static void Query(HTTPClientData_t, bool = false);
-    static void Query(string Hostname, uint8_t Port, string ContentURI, QueryType Type = GET, string IP="", bool ToFront = false,
+    static void Query(string Hostname, uint16_t Port, string ContentURI, QueryType Type = GET, string IP="", bool ToFront = false,
             ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL);
 
     static void HTTPClientTask(void *);
 
     static bool     Connect             (HTTPClientData_t &);
-    static char*    ResolveIP           (const char *Hostname);
+    static char*    ResolveIP           (const char *Hostname, uint16_t Port);
     static int      ReadUntil           (char *buffer, char delim, int len);
     static bool     ReadPastHttpHeader  (HTTPClientData_t &, char text[], int total_len);
     static void     Failed              (HTTPClientData_t &);

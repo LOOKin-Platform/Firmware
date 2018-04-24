@@ -14,15 +14,13 @@
 #include <string.h>
 
 #include "WebServer.h"
-
 #include "WiFi.h"
 #include "Memory.h"
 
 using namespace std;
 
-#define  NVSNetworkWiFiSSID     "WiFiSSID"
-#define  NVSNetworkWiFiPassword "WiFiPassword"
-#define  NVSNetworkDevicesArray "Devices"
+#define  NVSNetworkWiFiSettings	"WiFiSettings"
+#define  NVSNetworkDevicesArray 	"Devices"
 
 struct NetworkDevice_t {
   uint8_t   TypeHex   = 0x00;
@@ -33,18 +31,20 @@ struct NetworkDevice_t {
 
 class Network_t {
   public:
-    string                    WiFiSSID;
-    string                    WiFiPassword;
-    vector<string>            WiFiList;
-    vector<NetworkDevice_t>   Devices;
-    tcpip_adapter_ip_info_t   IP;
+	map<string,string>		WiFiSettings 	= {};
+    vector<string>			WiFiList 		= vector<string>();;
+    vector<NetworkDevice_t>	Devices			= vector<NetworkDevice_t>();
+    tcpip_adapter_ip_info_t	IP;
 
     Network_t();
 
     void  Init();
-    NetworkDevice_t GetNetworkDeviceByID(uint32_t);
-    void            SetNetworkDeviceFlagByIP(string IP, bool Flag);
-    void            DeviceInfoReceived(string ID, string Type, string IP);
+    NetworkDevice_t	GetNetworkDeviceByID(uint32_t);
+    void				SetNetworkDeviceFlagByIP(string IP, bool Flag);
+    void				DeviceInfoReceived(string ID, string Type, string IP);
+
+    bool				WiFiConnect(string SSID = "");
+    string			IPToString();
 
     static string SerializeNetworkDevice(NetworkDevice_t);
     static NetworkDevice_t DeserializeNetworkDevice(string);
@@ -52,12 +52,8 @@ class Network_t {
     void HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
   private:
-    bool   POSTWiFiSSID     (map<string,string>);
-    bool   POSTWiFiPassword (map<string,string>);
-
-    string IPToString();
-    string ModeToString();
-    string WiFiSSIDToString();
+    string	ModeToString();
+    string	WiFiCurrentSSIDToString();
 };
 
 #endif

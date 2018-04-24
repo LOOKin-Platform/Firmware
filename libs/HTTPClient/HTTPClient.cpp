@@ -25,7 +25,7 @@ uint8_t HTTPClient::ThreadsCounter = 0;
  * @param [in] ReadFinishedCallback Callback function invoked when reading process is over
  * @param [in] AbortedCallback Callback function invoked when reading failed
  */
-void HTTPClient::Query(string Hostname, uint8_t Port, string ContentURI, QueryType Type, string IP, bool ToFront,
+void HTTPClient::Query(string Hostname, uint16_t Port, string ContentURI, QueryType Type, string IP, bool ToFront,
         ReadStarted ReadStartedCallback, ReadBody ReadBodyCallback, ReadFinished ReadFinishedCallback, Aborted AbortedCallback) {
 
   HTTPClientData_t QueryData;
@@ -175,39 +175,42 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
  * @result Is connect to HTTP server succes or not
  */
 bool HTTPClient::Connect(HTTPClientData_t &ClientData) {
+	if (strlen(ClientData.IP) == 0) {
+		char *IP = ResolveIP(ClientData.Hostname, ClientData.Port);
+		strcpy(ClientData.IP, IP);
 
-  if (strlen(ClientData.IP) == 0) {
-    char *IP = ResolveIP(ClientData.Hostname);
-    strcpy(ClientData.IP, IP);
+		if (strlen(ClientData.IP) == 0)
+			return false;
+	}
 
-    if (strlen(ClientData.IP) == 0)
-      return false;
-  }
+	ClientData.SocketID = socket(PF_INET, SOCK_STREAM, 0);
 
-  ClientData.SocketID = socket(PF_INET, SOCK_STREAM, 0);
+	if (ClientData.SocketID == -1) {
+		ESP_LOGE(tag, "Create socket failed!");
+		return false;
+	}
 
-  if (ClientData.SocketID == -1) {
-      ESP_LOGE(tag, "Create socket failed!");
-      return false;
-  }
+	struct sockaddr_in sock_info;
+	// set connect info
+	memset(&sock_info, 0, sizeof(struct sockaddr_in));
+	sock_info.sin_family = AF_INET;
+	sock_info.sin_addr.s_addr = inet_addr(ClientData.IP);
+	sock_info.sin_port = htons(ClientData.Port);
 
-  struct sockaddr_in sock_info;
-  // set connect info
-  memset(&sock_info, 0, sizeof(struct sockaddr_in));
-  sock_info.sin_family = AF_INET;
-  sock_info.sin_addr.s_addr = inet_addr(ClientData.IP);
-  sock_info.sin_port = htons(ClientData.Port);
+	ESP_LOGI("IP"	,"%s",ClientData.IP);
+	ESP_LOGI("Port"	,"%i",ClientData.Port);
 
-  // connect to http server
-  if (connect(ClientData.SocketID, (struct sockaddr *)&sock_info, sizeof(sock_info)) == -1) {
-    ESP_LOGE(tag, "Connect to server failed! errno=%d", errno);
-    close(ClientData.SocketID);
-    return false;
-  }
-  else
-    return true;
+	// connect to http server
+	if (connect(ClientData.SocketID, (struct sockaddr *)&sock_info, sizeof(sock_info)) == -1) {
+		ESP_LOGE(tag, "Connect to server failed! errno=%d", errno);
+		close(ClientData.SocketID);
 
-  return false;
+		return false;
+	}
+	else
+		return true;
+
+	return false;
 }
 
 /**
@@ -216,35 +219,24 @@ bool HTTPClient::Connect(HTTPClientData_t &ClientData) {
  * @param [in] Hostname Hostname to IP resolving
  * @return Resolved IP in string representation, e. g. 192.168.1.10
  */
-char* HTTPClient::ResolveIP (const char *Hostname) {
-  ESP_LOGI(tag, "IP not specified. Trying to resolve IP address");
+char* HTTPClient::ResolveIP(const char *Hostname, uint16_t Port) {
+	ESP_LOGI(tag, "IP not specified. Trying to resolve IP address");
 
-  int rc, err, len=128;
-  char *buf = (char*) malloc(len);
-  struct hostent hbuf;
-  struct hostent *hp;
+	struct addrinfo hints, *infoptr;
 
-  char *IP = (char*) malloc(15);
+    memset( &hints, 0, sizeof( hints ) );
+	hints.ai_family = AF_INET; // AF_INET means IPv4 only addresses //AF_UNSPEC for all
+	hints.ai_protocol = IPPROTO_TCP;
 
-  while ((rc = gethostbyname_r(Hostname, &hbuf, buf, len, &hp, &err)) == ERANGE) {
-    len *= 2;
-    void *tmp = realloc(buf, len);
-    if (NULL == tmp)
-      free(buf);
-    else
-      buf = (char*)tmp;
-  }
+	int result = ::getaddrinfo(Hostname, Converter::ToString(Port).c_str(), &hints, &infoptr);
 
-  free(buf);
+	if (result) {
+		ESP_LOGE(tag, "Can't resolve IP adress. Error code %i", result);
+	    return "";
+	}
 
-  if (rc != 0 || hp == NULL) {
-    ESP_LOGE(tag, "Can't resolve IP adress");
-    return IP;
-  }
-
-  IP = inet_ntoa(*( struct in_addr*)( hp -> h_addr_list[0]));
-  ESP_LOGI(tag, "IP adress resolved %s", IP);
-  return IP;
+	struct sockaddr_in * p2 = (struct sockaddr_in *)(infoptr->ai_addr);
+	return inet_ntoa(p2->sin_addr);
 }
 
 /**

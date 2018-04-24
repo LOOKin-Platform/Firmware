@@ -18,36 +18,35 @@ using namespace std;
 #include "FreeRTOSWrapper.h"
 
 class WebServer_t {
-  public:
+	public:
+		class Response {
+			public:
+				enum CODE	{ OK, INVALID, ERROR };
+				enum TYPE 	{ PLAIN, JSON };
 
-    class Response {
-    	public:
-    		enum CODE	{ OK, INVALID, ERROR };
-    		enum TYPE 	{ PLAIN, JSON };
+				string 		Body;
+				CODE 		ResponseCode;
+				TYPE			ContentType;
 
-        string 		Body;
-    		CODE 		ResponseCode;
-    		TYPE			ContentType;
+				Response();
+				string 		toString();
 
-    		Response();
-    		string 		toString();
+				void 		SetSuccess();
+				void 		SetFail();
+				void			SetInvalid();
+			private:
+				string ResponseCodeToString();
+				string ContentTypeToString();
+		};
 
-    		void 		SetSuccess();
-    		void 		SetFail();
+		WebServer_t();
+		void Start();
+		void Stop();
 
-    	private:
-    		string ResponseCodeToString();
-    		string ContentTypeToString();
-    };
-
-    WebServer_t();
-    void Start();
-    void Stop();
-
-	void UDPSendBroadcastAlive();
-    void UDPSendBroadcastDiscover();
-    void UDPSendBroadcastUpdated(uint8_t SensorID, string Value);
-    void UDPSendBroadcast(string);
+		void UDPSendBroadcastAlive();
+		void UDPSendBroadcastDiscover();
+		void UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 3);
+		void UDPSendBroadcast(string);
 
 	private:
 		TaskHandle_t HTTPListenerTaskHandle;

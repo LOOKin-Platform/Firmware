@@ -13,7 +13,7 @@ using namespace std;
 
 #include <esp_log.h>
 
-#include "../../libs/libJSON/JSON.h"
+#include "JSON.h"
 #include "Memory.h"
 #include "DateTime.h"
 

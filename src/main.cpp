@@ -13,7 +13,7 @@ using namespace std;
 #include "Globals.h"
 
 #include "Log.h"
-#include "../drivers/UART/UART.h"
+#include "UART.h"
 #include "WiFi.h"
 #include "WiFiEventHandler.h"
 #include "FreeRTOSWrapper.h"
@@ -65,11 +65,11 @@ void app_main(void) {
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();
 
+	WiFi->addDNSServer("8.8.8.8");
+	WiFi->addDNSServer("8.8.4.4");
 	WiFi->setWifiEventHandler(new MyWiFiEventHandler());
 
-	if (Network->WiFiSSID != "")
-		WiFi->ConnectAP(Network->WiFiSSID, Network->WiFiPassword);
-	else
+	if (!Network->WiFiConnect())
 		WiFi->StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 
 	WebServer->Start();
@@ -78,6 +78,26 @@ void app_main(void) {
 	Log::Add(LOG_DEVICE_STARTED);
 
 	OverheatHandler::Start();
+
+	//IRLib IRSignal("0000 006C 0022 0002 015B 00AD 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0016 0041 0016 0016 0016 0041 0016 0041 0016 0041 0016 0041 0016 0016 0016 0041 0016 0016 0016 0016 0016 0016 0016 0041 0016 0041 0016 0016 0016 0041 0016 0016 0016 0016 0016 0016 0016 0041 0016 0016 0016 0016 0016 0041 0016 0016 0016 0041 0016 0041 0016 0041 0016 064D 015B 0057 0016 0E6C");
+
+	//ESP_LOGD("IRLib", "Frequency: %s", Converter::ToString(IRSignal.Frequency).c_str());
+	//ESP_LOGD("IRLib", "Pronto:	 %s", IRSignal.GetProntoHex().c_str());
+
+	//for (int i=0; i<IRSignal.RawData.size(); i++)
+	//	ESP_LOGI("SIGNAL","%d",IRSignal.RawData[i]);
+	//ESP_LOGI("Uint32Data", "%X", IRSignal.Uint32Data);
+
+	//GPIO::Setup(GPIO_NUM_26);
+	//GPIO::Write(GPIO_NUM_26, true);
+
+	/*
+	while (1) {
+		Command_t::GetCommandByID(0x07)->Execute(0x1,"AE00");
+		//Command_t::GetCommandByID(0x07)->Execute(0x1,0x082000);
+		vTaskDelay(2000);
+	}
+	*/
 
 	/*
 	if (Sleep::GetWakeUpReason() != ESP_SLEEP_WAKEUP_EXT0) {

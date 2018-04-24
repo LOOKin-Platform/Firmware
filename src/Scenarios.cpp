@@ -95,7 +95,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
             // выполнить локальную команду
             Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
             if (CommandToExecute!=nullptr)
-              CommandToExecute->Execute(Command.EventCode, Command.Operand);
+              CommandToExecute->Execute(Command.EventCode, Converter::ToString((uint32_t)Command.Operand));
           }
           else {
             // отправить команду по HTTP
@@ -152,7 +152,6 @@ void Scenario_t::LoadScenario(Scenario_t &Scenario, uint32_t ScenarioID) {
 }
 
 void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
-
 	Scenario.ID = SPIFlash::ReadUint32(Address + MEMORY_SCENARIO_ID);
 
 	Scenario.SetType(SPIFlash::ReadUint8(Address + MEMORY_SCENARIO_TYPE));
@@ -175,8 +174,8 @@ void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
 
 		ScenesCommandItem_t Command;
 		Command.DeviceID 	= FindedCommandDeviceID;
-		Command.CommandID 	= SPIFlash::ReadUint8(CommandAddress + MEMORY_COMMAND_COMMANDID);
-		Command.EventCode	= SPIFlash::ReadUint8(CommandAddress + MEMORY_COMMAND_EVENTID);
+		Command.CommandID 	= SPIFlash::ReadUint8 (CommandAddress + MEMORY_COMMAND_COMMANDID);
+		Command.EventCode	= SPIFlash::ReadUint8 (CommandAddress + MEMORY_COMMAND_EVENTID);
 		Command.Operand		= SPIFlash::ReadUint32(CommandAddress + MEMORY_COMMAND_OPERAND);
 
 		Scenario.Commands.push_back(Command);
@@ -343,14 +342,14 @@ void Scenario_t::Aborted(char IP[]) {
 /************************************/
 
 bool EventData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandItem_t> &Commands) {
-  return (DeviceID == LinkedDeviceID) ? true : false;
+	return (DeviceID == LinkedDeviceID) ? true : false;
 }
 
 void EventData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
-  DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ullong();
-  SensorIdentifier  = (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
-  EventCode         = (uint8_t) Scenario_t::Range<8> (Operand, 40, 8).to_ulong();
-  EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand, 48, 8).to_ulong();
+	DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ullong();
+	SensorIdentifier  = (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
+	EventCode         = (uint8_t) Scenario_t::Range<8> (Operand, 40, 8).to_ulong();
+	EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand, 48, 8).to_ulong();
 }
 
 uint64_t EventData_t::ToUint64() {
@@ -362,11 +361,11 @@ uint64_t EventData_t::ToUint64() {
 	bitset<8> bSensorIdentifier(SensorIdentifier);
 	Scenario_t::AddRangeTo(Result,bSensorIdentifier,32);
 
-	bitset<4> bEventCode(EventCode);
+	bitset<8> bEventCode(EventCode);
 	Scenario_t::AddRangeTo(Result,bEventCode,40);
 
 	bitset<8> bOperand(EventOperand);
-	Scenario_t::AddRangeTo(Result,bOperand,44);
+	Scenario_t::AddRangeTo(Result,bOperand,48);
 
 	return Result.to_ullong();
 }
@@ -377,14 +376,14 @@ string EventData_t::ToString() {
 
 
 bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
-  if (SensorIdentifier == SensorID)
-    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
+	if (SensorIdentifier == SensorID)
+		return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
 
-  return false;
+	return false;
 };
 
 void EventData_t::ExecuteCommands(uint32_t ScenarioID) {
-  Scenario_t::ExecuteScenario(ScenarioID);
+	Scenario_t::ExecuteScenario(ScenarioID);
 };
 
 /************************************/
@@ -392,15 +391,18 @@ void EventData_t::ExecuteCommands(uint32_t ScenarioID) {
 /************************************/
 
 bool TimerData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandItem_t> &Commands) {
-  return (DeviceID == LinkedDeviceID) ? true : false;
+	return (DeviceID == LinkedDeviceID) ? true : false;
 }
 
 void TimerData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
-  DeviceID          = (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ulong();
-  SensorIdentifier  = (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
-  EventCode         = (uint8_t) Scenario_t::Range<8> (Operand, 40, 8).to_ulong();
-  TimerDelay        = (uint16_t)Scenario_t::Range<8> (Operand, 48, 8).to_ulong();
-  EventOperand      = (uint8_t) Scenario_t::Range<8> (Operand << 56, 0, 8).to_ulong();
+	DeviceID				= (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ulong();
+	SensorIdentifier		= (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
+	EventCode			= (uint8_t) Scenario_t::Range<8> (Operand, 40, 8).to_ulong();
+	TimerDelay			= (uint16_t)Scenario_t::Range<8> (Operand, 48, 8).to_ulong();
+	EventOperand			= (uint8_t) Scenario_t::Range<8> (Operand << 56, 0, 8).to_ulong();
+
+	if (TimerDelay >= 10)
+		TimerDelay		= (TimerDelay - 8) * 5;
 }
 
 uint64_t TimerData_t::ToUint64() {
@@ -419,8 +421,8 @@ uint64_t TimerData_t::ToUint64() {
 	bitset<8> bEventCode(EventCode);
 	Scenario_t::AddRangeTo(Result,bEventCode,40);
 
-	bitset<8> bTimerDelay(TimerDelay);
-	Scenario_t::AddRangeTo(Result,bTimerDelay,44);
+	bitset<8> bTimerDelay((uint8_t)(TimerDelay < 10) ? TimerDelay : (TimerDelay / 5) + 8);
+	Scenario_t::AddRangeTo(Result,bTimerDelay,48);
 
 	return Result.to_ullong();
 }
@@ -438,15 +440,15 @@ bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
 };
 
 void TimerData_t::ExecuteCommands(uint32_t ScenarioID) {
-  FreeRTOS::Timer *ScenarioTimer = new FreeRTOS::Timer("ScenarioTimer", (TimerDelay * 1000 * 5)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
-  ScenarioTimer->Start();
+	FreeRTOS::Timer *ScenarioTimer = new FreeRTOS::Timer("ScenarioTimer", (TimerDelay * 1000)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
+	ScenarioTimer->Start();
 };
 
 void TimerData_t::TimerCallback(FreeRTOS::Timer *pTimer) {
-  uint32_t ScenarioID = (uint32_t) pTimer->GetData();
-  Scenario_t::ExecuteScenario(ScenarioID);
-  ESP_LOGI(tag, "Scenario %s timer executed", Converter::ToHexString(ScenarioID, 8).c_str());
-  delete pTimer;
+	uint32_t ScenarioID = (uint32_t) pTimer->GetData();
+	Scenario_t::ExecuteScenario(ScenarioID);
+	ESP_LOGI(tag, "Scenario %s timer executed", Converter::ToHexString(ScenarioID, 8).c_str());
+	delete pTimer;
 }
 
 /************************************/
@@ -454,29 +456,29 @@ void TimerData_t::TimerCallback(FreeRTOS::Timer *pTimer) {
 /************************************/
 
 bool CalendarData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandItem_t> &Commands) {
-  for (int i=0; i < Commands.size(); i++)
-    if (Commands[i].DeviceID == LinkedDeviceID)
-      return true;
+	for (int i=0; i < Commands.size(); i++)
+		if (Commands[i].DeviceID == LinkedDeviceID)
+			return true;
 
-  return false;
+	return false;
 }
 
 void CalendarData_t::SetData(bitset<SCENARIOS_OPERAND_BIT_LEN> Operand) {
-  DateTime.Hours    = (uint8_t)Scenario_t::Range<8>(Operand, 0, 8).to_ulong();
-  DateTime.Minutes  = (uint8_t)Scenario_t::Range<8>(Operand, 8, 8).to_ulong();
-  DateTime.Seconds  = (uint8_t)Scenario_t::Range<8>(Operand,16, 8).to_ulong();
+	DateTime.Hours    = (uint8_t)Scenario_t::Range<8>(Operand, 0, 8).to_ulong();
+	DateTime.Minutes  = (uint8_t)Scenario_t::Range<8>(Operand, 8, 8).to_ulong();
+	DateTime.Seconds  = (uint8_t)Scenario_t::Range<8>(Operand,16, 8).to_ulong();
 
-  IsScheduled = Operand[24];
+	IsScheduled = Operand[24];
 
-  if (!IsScheduled) {
-    DateTime.Day    = (uint8_t)Scenario_t::Range<8>(Operand, 25, 8).to_ulong();
-    DateTime.Month  = (uint8_t)Scenario_t::Range<8>(Operand, 33, 8).to_ulong();
-    DateTime.Year   = 1970 + (uint8_t)Scenario_t::Range<8>(Operand, 41, 8).to_ulong();
-  }
-  else {
-    ScheduledDays   = Scenario_t::Range<8>(Operand, 24, 8);
-    ScheduledDays[7]= false;
-  }
+	if (!IsScheduled) {
+		DateTime.Day    = (uint8_t)Scenario_t::Range<8>(Operand, 25, 8).to_ulong();
+		DateTime.Month  = (uint8_t)Scenario_t::Range<8>(Operand, 33, 8).to_ulong();
+		DateTime.Year   = 1970 + (uint8_t)Scenario_t::Range<8>(Operand, 41, 8).to_ulong();
+	}
+	else {
+		ScheduledDays   = Scenario_t::Range<8>(Operand, 24, 8);
+		ScheduledDays[7]= false;
+	}
 }
 
 uint64_t CalendarData_t::ToUint64() {

@@ -4,8 +4,8 @@
 *
 */
 
-#ifndef DRIVERS_JSON_H
-#define DRIVERS_JSON_H
+#ifndef LIBS_JSON_H
+#define LIBS_JSON_H
 
 #include <map>
 #include <vector>
@@ -27,7 +27,7 @@ class JSON {
 
     void							SetItem(string Key, string Value);
 
-    map<string,string>			GetItems(cJSON* = NULL);
+    map<string,string>			GetItems(cJSON* = NULL, bool CaseSensitive = false);
     void							SetItems(map<string,string>, cJSON *Item = NULL);
 
     void							SetObject(string Key, map<string,string> Value);

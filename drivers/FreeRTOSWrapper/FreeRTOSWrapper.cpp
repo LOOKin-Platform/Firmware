@@ -34,9 +34,9 @@ TaskHandle_t FreeRTOS::StartTask(void task(void*), string taskName, void *param,
 	return TaskHandle;
 } // startTask
 
-TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), string taskName, void *param, int stackSize) {
+TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), string taskName, void *param, int stackSize, uint8_t Core) {
 	TaskHandle_t TaskHandle = NULL;
-	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, 5, &TaskHandle, 0);
+	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, 5, &TaskHandle, Core);
 	return TaskHandle;
 } // startTask
 
@@ -56,6 +56,15 @@ void FreeRTOS::DeleteTask(TaskHandle_t pTask) {
 uint32_t FreeRTOS::GetTimeSinceStart() {
 	return (uint32_t)(xTaskGetTickCount()*portTICK_PERIOD_MS);
 } // getTimeSinceStart
+
+
+/**
+ * Get the current core number on which the task is running
+ * @return 0 or 1 - current core number
+ */
+uint8_t FreeRTOS::GetCurrentCoreID() {
+	return xPortGetCoreID();
+}
 
 /*
  * 	public:
@@ -177,6 +186,14 @@ bool FreeRTOS::Semaphore::Take(uint32_t timeoutMs, string owner) {
 
 } // FreeRTOS::Semaphore::Take
 
+
+bool FreeRTOS::Semaphore::TakeFromISR(SemaphoreHandle_t Semaphore, bool IsHighPriorityTask) {
+	BaseType_t HigherPriorityTaskWoken = (IsHighPriorityTask) ? pdTRUE : pdFALSE;
+	BaseType_t Result = xSemaphoreTakeFromISR(Semaphore, &HigherPriorityTaskWoken);
+
+	return (Result == pdTRUE) ? true : false;
+}
+
 string FreeRTOS::Semaphore::toString() {
 	stringstream stringStream;
 	stringStream << "name: "<< m_name << " (0x" << std::hex << std::setfill('0') << (uint32_t)m_semaphore << "), owner: " << m_owner;
@@ -248,10 +265,10 @@ void FreeRTOS::Timer::internalCallback(TimerHandle_t xTimer) {
  * @param [in] callback Callback function to be fired when the timer expires.
  */
 FreeRTOS::Timer::Timer(
-	string				Name,
+	string			Name,
 	TickType_t		period,
 	UBaseType_t		reload,
-	void 					*data,
+	void 			*data,
 	void         	(*callback)(FreeRTOS::Timer *pTimer)) {
 	/*
 	 * The callback function to actually be called is saved as member data in the object and
@@ -343,8 +360,6 @@ void *FreeRTOS::Timer::GetData() {
 } // getData
 
 
-
-
 QueueHandle_t FreeRTOS::Queue::Create(uint16_t Items, uint16_t ItemSize ) {
 	return ::xQueueCreate(Items, ItemSize);
 }
@@ -364,3 +379,62 @@ BaseType_t FreeRTOS::Queue::Receive(QueueHandle_t QueueHandle, void *Item, TickT
 uint8_t FreeRTOS::Queue::Count(QueueHandle_t QueueHandle) {
 	return ::uxQueueMessagesWaiting(QueueHandle);
 }
+
+uint8_t FreeRTOS::Queue::SpaceAvaliable(QueueHandle_t QueueHandle) {
+	return ::uxQueueSpacesAvailable(QueueHandle);
+}
+
+void	 FreeRTOS::Queue::Reset(QueueHandle_t QueueHandle) {
+	xQueueReset(QueueHandle);
+}
+
+BaseType_t FreeRTOS::Queue::SendToBackFromISR(QueueHandle_t QueueHandle, void *Item, bool IsHighPriorityTask) {
+	BaseType_t HigherPriorityTaskWoken = (IsHighPriorityTask) ? pdTRUE : pdFALSE;
+	return ::xQueueSendToBackFromISR(QueueHandle, Item, &HigherPriorityTaskWoken);
+}
+
+bool FreeRTOS::Queue::IsQueueFullFromISR(QueueHandle_t QueueHandle) {
+	return (::xQueueIsQueueFullFromISR(QueueHandle) == 0) ? false : true;
+}
+
+RingbufHandle_t	FreeRTOS::RingBuffer::Create(uint16_t Length, ringbuf_type_t Type) {
+	return ::xRingbufferCreate(Length, Type);
+}
+
+RingbufHandle_t FreeRTOS::RingBuffer::CreateNoSplit (uint16_t Length, size_t ItemSize) {
+	return ::xRingbufferCreateNoSplit(ItemSize, Length);
+}
+
+BaseType_t FreeRTOS::RingBuffer::Send(RingbufHandle_t Handle, void *Item, size_t ItemSize, TickType_t xTicksToWait) {
+	return ::xRingbufferSend(Handle, Item, ItemSize, xTicksToWait);
+}
+
+BaseType_t FreeRTOS::RingBuffer::SendFromISR(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask) {
+	BaseType_t HigherPriorityTaskWoken = (IsHighPriorityTask) ? pdTRUE : pdFALSE;
+	return ::xRingbufferSendFromISR(Handle, Item, ItemSize, &HigherPriorityTaskWoken);
+}
+
+bool FreeRTOS::RingBuffer::Receive(RingbufHandle_t Handle, void *Item, size_t *ItemSize, TickType_t xTicksToWait) {
+	Item = ::xRingbufferReceive(Handle, ItemSize, xTicksToWait);
+
+	if (Item == NULL)
+		return false;
+
+	return true;
+}
+
+bool FreeRTOS::RingBuffer::ReceiveFromISR	(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask) {
+	Item = xRingbufferReceiveFromISR(Handle, &ItemSize);
+	BaseType_t HigherPriorityTaskWoken = (IsHighPriorityTask) ? pdTRUE : pdFALSE;
+
+	::vRingbufferReturnItemFromISR(Handle, Item, &HigherPriorityTaskWoken);
+
+	return (Item == NULL) ? false : true;
+}
+
+void FreeRTOS::RingBuffer::ReturnItem(RingbufHandle_t Handle, void* Item) {
+	if (Item != nullptr)
+		::vRingbufferReturnItem(Handle, Item);
+}
+
+

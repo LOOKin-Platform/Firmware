@@ -12,40 +12,41 @@ static string NVSDeviceArea = "Device";
 map<uint8_t, string> DeviceType_t::TypeMap = {
 	{ DEVICE_TYPE_PLUG_HEX	, DEVICE_TYPE_PLUG_STRING },
 	{ DEVICE_TYPE_REMOTE_HEX	, DEVICE_TYPE_REMOTE_STRING },
+	{ DEVICE_TYPE_MOTION_HEX	, DEVICE_TYPE_MOTION_STRING },
 };
 
 DeviceType_t::DeviceType_t(string TypeStr) {
-  for(auto const &TypeItem : TypeMap) {
-    if (Converter::ToLower(TypeItem.second) == Converter::ToLower(TypeStr))
-      Hex = TypeItem.first;
-  }
+	for(auto const &TypeItem : TypeMap) {
+		if (Converter::ToLower(TypeItem.second) == Converter::ToLower(TypeStr))
+			Hex = TypeItem.first;
+	}
 }
 
 DeviceType_t::DeviceType_t(uint8_t Type) {
-  Hex = Type;
+	Hex = Type;
 }
 
 bool DeviceType_t::IsBattery() {
-  return (Hex > 0x7F) ? true : false; // First bit in device type describe is it battery or not
+	return (Hex > 0x7F) ? true : false; // First bit in device type describe is it battery or not
 }
 
 string DeviceType_t::ToString() {
-  return ToString(Hex);
+	return ToString(Hex);
 }
 
 string DeviceType_t::ToHexString() {
-  return Converter::ToHexString(Hex,2);
+	return Converter::ToHexString(Hex,2);
 }
 
 string DeviceType_t::ToString(uint8_t Hex) {
-  string Result = "";
+	string Result = "";
 
-  map<uint8_t, string>::iterator it = TypeMap.find(Hex);
-  if (it != TypeMap.end()) {
-    Result = TypeMap[Hex];
-  }
+	map<uint8_t, string>::iterator it = TypeMap.find(Hex);
+	if (it != TypeMap.end()) {
+		Result = TypeMap[Hex];
+	}
 
-  return Result;
+	return Result;
 }
 
 Device_t::Device_t() {
@@ -62,39 +63,41 @@ Device_t::Device_t() {
 }
 
 void Device_t::Init() {
-  ESP_LOGD(tag, "Init");
+	ESP_LOGD(tag, "Init");
 
-  NVS *Memory = new NVS(NVSDeviceArea);
+	NVS *Memory = new NVS(NVSDeviceArea);
 
-  uint8_t DeviceType = Memory->GetInt8Bit(NVSDeviceType);
-  if (DeviceType > 0)
-	  Type = new DeviceType_t(DeviceType);
-  else
-	  Memory->SetInt8Bit(NVSDeviceType, Type->Hex);
+	uint8_t DeviceType = Memory->GetInt8Bit(NVSDeviceType);
 
-  ID = Memory->GetUInt32Bit(NVSDeviceID);
-  if (ID == 0) {
-    ID = GenerateID();
-    Memory->SetUInt32Bit(NVSDeviceID, ID);
-  }
+	if (DeviceType > 0)
+		Type = new DeviceType_t(DeviceType);
+	else
+		Memory->SetInt8Bit(NVSDeviceType, Type->Hex);
 
-  Name = Memory->GetString(NVSDeviceName);
+	ID = Memory->GetUInt32Bit(NVSDeviceID);
+	if (ID == 0) {
+		ID = GenerateID();
+		Memory->SetUInt32Bit(NVSDeviceID, ID);
+	}
 
-  PowerMode = (Type->IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
+	Name = Memory->GetString(NVSDeviceName);
 
-  uint8_t PowerModeVoltageInt = Memory->GetInt8Bit(NVSDevicePowerModeVoltage);
-  if (PowerModeVoltageInt > +3) {
-      PowerModeVoltage = PowerModeVoltageInt;
-  }
-  else {
-    switch (Type->Hex) {
-      case DEVICE_TYPE_PLUG_HEX: PowerModeVoltage = +220;
-    }
-    Memory->SetInt8Bit(NVSDevicePowerModeVoltage, +PowerModeVoltage);
-  }
+	PowerMode = (Type->IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
-  Memory->Commit();
-  delete Memory;
+	uint8_t PowerModeVoltageInt = Memory->GetInt8Bit(NVSDevicePowerModeVoltage);
+	if (PowerModeVoltageInt > +3) {
+		PowerModeVoltage = PowerModeVoltageInt;
+	}
+	else {
+		switch (Type->Hex) {
+		case DEVICE_TYPE_PLUG_HEX: PowerModeVoltage = +220;
+		}
+
+		Memory->SetInt8Bit(NVSDevicePowerModeVoltage, +PowerModeVoltage);
+	}
+
+	Memory->Commit();
+	delete Memory;
 }
 
 void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
@@ -252,7 +255,7 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
     return false;
   }
 
-  if (WiFi_t::getMode() != WIFI_MODE_STA_STR) {
+  if (WiFi_t::GetMode() != WIFI_MODE_STA_STR) {
     Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
     Response.Body = "{\"success\" : \"false\" , \"Error\": \"Device is not connected to the Internet\"}";
     return false;

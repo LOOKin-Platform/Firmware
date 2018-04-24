@@ -18,7 +18,6 @@
 #include <esp_log.h>
 
 #include "Globals.h"
-
 #include "Query.h"
 #include "WebServer.h"
 

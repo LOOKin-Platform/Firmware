@@ -9,12 +9,13 @@
 # 0x140000	1280 	KB
 # 0x14E000	1336 	KB
 # 0x150000	1344		KB
-# Name,     Type, SubType, Offset, 	Size
-phy_init,   data, phy,     0x0f000,  0x1000
-otadata,    data, ota,     0x10000,  0x2000
-nvs,        data, nvs,     0x12000,  0x20000
-# scenarios     (384KB)    0x32000,  0x60000
-# shared memory (512KB)    0x92000,  0x8E000
-ota_0,      app,  0x10,    0x120000, 0x170000
-ota_1,      app,  0x11,    0x290000, 0x170000
+# Name,     Type, SubType,    Offset, 	Size
+phy_init,   data, phy,        0x0f000,  0x1000
+otadata,    data, ota,        0x10000,  0x2000
+nvs,        data, nvs,        0x12000,  0x20000
+# scenarios          (384KB)  0x32000,  0x60000
+# shared memory hash (56KB)   0x92000,  0xE000
+# shared memory area (512KB)  0xA0000,  0x80000
+ota_0,      app,  0x10,       0x120000, 0x170000
+ota_1,      app,  0x11,       0x290000, 0x170000
 

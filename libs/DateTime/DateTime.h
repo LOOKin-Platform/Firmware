@@ -4,8 +4,8 @@
 *
 */
 
-#ifndef DRIVERS_TIME_H_
-#define DRIVERS_TIME_H_
+#ifndef LIBS_TIME_H_
+#define LIBS_TIME_H_
 
 using namespace std;
 

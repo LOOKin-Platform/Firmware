@@ -4,8 +4,8 @@
 *
 */
 
-#ifndef CONVERTER_H
-#define CONVERTER_H
+#ifndef LIBS_CONVERTER_H
+#define LIBS_CONVERTER_H
 
 using namespace std;
 
@@ -30,6 +30,7 @@ class Converter {
 		static string			ToLower(string);
 
 		static void				FindAndReplace(string&, string const&, string const&);
+		static void				FindAndRemove (string &, string);
 
 		static void				lTrim(string &);  // left trim
 		static void				rTrim(string &);  // right trim
@@ -37,7 +38,9 @@ class Converter {
 
 		static string			ToString(int8_t);
 		static string			ToString(uint8_t);
+		static string			ToString(uint16_t);
 		static string			ToString(uint32_t);
+		static string			ToString(uint64_t);
 		static string			ToString(double);
 
 		static string			ToHexString(uint64_t, size_t);
@@ -53,6 +56,10 @@ class Converter {
 
 		static vector<string> 	StringToVector(string SourceStr, string Delimeter);
 		static string			VectorToString(const vector<string>& Strings, const char* Delimeter);
+
+		static string			StringURLDecode(string);
+		static string			StringURLEncode(string);
+
 
 		static uint32_t			IPToUint32(tcpip_adapter_ip_info_t);
 

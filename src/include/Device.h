@@ -20,13 +20,13 @@
 #include <esp_wifi.h>
 #include <esp_log.h>
 
+#include "Settings.h"
+#include "WebServer.h"
 #include "JSON.h"
 #include "Memory.h"
 #include "DateTime.h"
 
-#include "Settings.h"
 #include "OTA.h"
-#include "WebServer.h"
 #include "Converter.h"
 
 using namespace std;

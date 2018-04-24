@@ -11,10 +11,10 @@
 #include <cmath>
 #include <limits>
 
+#include "Log.h"
 #include "JSON.h"
 #include "Converter.h"
 #include "Memory.h"
-#include "Log.h"
 
 static char tag[] = "Time";
 static string NVSTimeArea = "Time";
@@ -105,7 +105,6 @@ bool Time::IsUptime(uint32_t Time) {
 
 void Time::ServerSync(string Host, string Path) {
   if (Offset != 0) return;
-
   ESP_LOGI(tag, "Time sync started");
   HTTPClient::Query(Host, 80, Path, QueryType::GET, "", true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
 }

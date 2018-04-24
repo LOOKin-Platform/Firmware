@@ -18,7 +18,7 @@ using namespace std;
 #include "esp_spi_flash.h"
 #include <esp_attr.h>
 
-#include <Settings.h>
+#include "../../../src/include/Settings.h"
 
 class SPIFlash {
 	public:

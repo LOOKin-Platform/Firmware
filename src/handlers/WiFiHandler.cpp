@@ -34,7 +34,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			// Повторно подключится к Wi-Fi, если подключение оборвалось
 			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE)
-				WiFi->ConnectAP(Network->WiFiSSID, Network->WiFiPassword);
+				Network->WiFiConnect();
 
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 			// (отсутсвие точки доступа, неправильный пароль и т.д) подключение не удалось
@@ -52,6 +52,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			IPDidntGetTimer->Stop();
 
 			Network->IP = event_sta_got_ip.ip_info;
+
 			WebServer->UDPSendBroadcastAlive();
 			WebServer->UDPSendBroadcastDiscover();
 

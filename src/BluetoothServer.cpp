@@ -1,6 +1,6 @@
 /*
-*    BLEServer.cpp
-*    Class for handling TCP and UDP connections
+*    BluetoothServer.cpp
+*    Class for handling Bluetooth connections
 *
 */
 

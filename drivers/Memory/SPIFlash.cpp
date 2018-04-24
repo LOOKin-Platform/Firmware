@@ -104,7 +104,7 @@ uint64_t SPIFlash::ReadUint64(uint32_t Address) {
     uint64_t Result = 0;
 
     Result += ReadUint32(Address + 0x4);
-    Result = Result << 32;
+    Result  = Result << 32;
     Result += ReadUint32(Address);
 
     return Result;

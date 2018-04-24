@@ -20,6 +20,7 @@ using namespace std;
 #include <freertos/timers.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include <freertos/ringbuf.h>
 
 #include <esp_log.h>
 
@@ -31,12 +32,14 @@ class FreeRTOS {
 		FreeRTOS();
 		virtual ~FreeRTOS();
 
+
 		static void 				Sleep(uint32_t ms);
 		static TaskHandle_t 		StartTask(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048);
-		static TaskHandle_t 		StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048);
+		static TaskHandle_t 		StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Core = 0);
 		static void 				DeleteTask(TaskHandle_t pTask = nullptr);
 
-		static uint32_t 		GetTimeSinceStart();
+		static uint32_t 			GetTimeSinceStart();
+		static uint8_t			GetCurrentCoreID();
 
 		class Semaphore {
 			public:
@@ -49,6 +52,8 @@ class FreeRTOS {
 				bool 				Take(uint32_t timeoutMs, string owner="<Unknown>");
 				string 				toString();
 				uint32_t				Wait(std::string owner="<Unknown>");
+
+				static bool			TakeFromISR(SemaphoreHandle_t Semaphore, bool IsHighPriorityTask = true);
 			private:
 				SemaphoreHandle_t 	m_semaphore;
 				pthread_mutex_t   	m_pthread_mutex;
@@ -84,12 +89,30 @@ class FreeRTOS {
 
 		class Queue {
 			public:
-				static QueueHandle_t 		Create		(uint16_t Items, uint16_t ItemSize);
-				static BaseType_t			SendToBack	(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
-				static BaseType_t			SendToFront	(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
-				static BaseType_t			Receive		(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
-				static uint8_t				Count		(QueueHandle_t QueueHandle);
+				static QueueHandle_t 		Create				(uint16_t Items, uint16_t ItemSize);
+				static BaseType_t			SendToBack			(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
+				static BaseType_t			SendToFront			(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
+				static BaseType_t			Receive				(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
+				static uint8_t				Count				(QueueHandle_t QueueHandle);
+				static uint8_t				SpaceAvaliable		(QueueHandle_t QueueHandle);
+				static void					Reset				(QueueHandle_t QueueHandle);
+
+				static BaseType_t			SendToBackFromISR	(QueueHandle_t QueueHandle, void *Item, bool IsHighPriorityTask = true);
+				static bool					IsQueueFullFromISR	(QueueHandle_t QueueHandle);
 		};
+
+		// experimental. need to test ringbuffer implamentation
+		class RingBuffer {
+			public:
+				static RingbufHandle_t		Create				(uint16_t Length, ringbuf_type_t type);
+				static RingbufHandle_t		CreateNoSplit		(uint16_t Length, size_t ItemSize);
+				static BaseType_t			Send					(RingbufHandle_t Handle, void *Item, size_t ItemSize, TickType_t xTicksToWait = 50);
+				static BaseType_t			SendFromISR			(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask = true);
+				static bool					Receive				(RingbufHandle_t Handle, void *Item, size_t *ItemSize, TickType_t xTicksToWait = 50);
+				static bool					ReceiveFromISR		(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask = true);
+				static void					ReturnItem			(RingbufHandle_t Handle, void *Item);
+		};
+
 };
 
 #endif /* DRIVERS_FREERTOS_H_ */

@@ -65,6 +65,8 @@ map<ledc_channel_t, GPIO::PWMCacheItem> GPIO::PWMValuesCache = {{}};
 
 void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel) {
 	if (GPIO != GPIO_NUM_0) {
+		//::rtc_gpio_isolate(GPIO);
+
 	 	ledc_timer_config_t ledc_timer;
 
 	 	ledc_timer.bit_num = LEDC_TIMER_10_BIT;
@@ -83,7 +85,6 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
 	 	ledc_channel.gpio_num = GPIO;
 
 	 	ledc_channel_config(&ledc_channel);
-
 	 	ledc_fade_func_install(0);
 	}
  }

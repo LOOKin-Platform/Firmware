@@ -4,8 +4,8 @@
 *
 */
 
-#ifndef DRIVERS_OTA_H_
-#define DRIVERS_OTA_H_
+#ifndef LIBS_OTA_H_
+#define LIBS_OTA_H_
 
 #include <string.h>
 

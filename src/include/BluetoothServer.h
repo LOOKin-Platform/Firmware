@@ -1,5 +1,5 @@
 /*
-*    BLEServer.cpp
+*    BluetoothServer.h
 *    Class for handling Bluetooth connections
 *
 */

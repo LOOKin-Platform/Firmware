@@ -7,16 +7,14 @@
 
 #include <vector>
 
-#include "Device.h"
-#include "Network.h"
 #include "Automation.h"
-#include "Sensors.h"
-#include "Commands.h"
-#include "Log.h"
-
-#include "WebServer.h"
 #include "BluetoothServer.h"
-
+#include "Commands.h"
+#include "Device.h"
+#include "Log.h"
+#include "Network.h"
+#include "Sensors.h"
+#include "WebServer.h"
 #include "WiFi.h"
 
 extern Device_t					*Device;

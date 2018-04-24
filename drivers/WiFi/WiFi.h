@@ -86,42 +86,43 @@ private:
  */
 
 class WiFi_t {
-private:
-	string      			ip;
-	string      			gw;
-	string      			netmask;
-	WiFiEventHandler 	*wifiEventHandler;
+	private:
+		string      			ip;
+		string      			gw;
+		string      			netmask;
+		WiFiEventHandler 	*wifiEventHandler;
 
-public:
-	WiFi_t();
-	void 				addDNSServer(string ip);
-	void 				dump();
-	static string 		getApMac();
-	static string 		getApSSID();
-	static string 		getMode();
-	static string 		getStaMac();
-	static string 		getStaSSID();
+	public:
+		WiFi_t();
+		void 				addDNSServer(string ip);
+		void 				dump();
+		static string 		getApMac();
+		static string 		getApSSID();
+		static string 		GetMode();
+		static string 		getStaMac();
+		static string 		getStaSSID();
+		static string 		getSSID();
 
-	static tcpip_adapter_ip_info_t getApIpInfo();
-	static tcpip_adapter_ip_info_t getStaIpInfo();
 
-	vector<WiFiAPRecord> Scan();
-	void ConnectAP(string ssid, string passwd);
-	void StartAP(string ssid, string passwd);
+		static tcpip_adapter_ip_info_t getApIpInfo();
+		static tcpip_adapter_ip_info_t getStaIpInfo();
 
-	void setIPInfo(string ip, string gw, string netmask);
+		vector<WiFiAPRecord> Scan();
+		void ConnectAP(string ssid, string passwd);
+		void StartAP(string ssid, string passwd);
 
-	/**
-	 * Set the event handler to use to process detected events.
-	 * @param[in] wifiEventHandler The class that will be used to process events.
-	 */
-	void setWifiEventHandler(WiFiEventHandler *wifiEventHandler) {
-		this->wifiEventHandler = wifiEventHandler;
-	}
-private:
-	int m_dnsCount=0;
-	//char *m_dnsServer = nullptr;
+		void setIPInfo(string ip, string gw, string netmask);
 
+		/**
+		 * Set the event handler to use to process detected events.
+		 * @param[in] wifiEventHandler The class that will be used to process events.
+		 */
+		void setWifiEventHandler(WiFiEventHandler *wifiEventHandler) {
+			this->wifiEventHandler = wifiEventHandler;
+		}
+	private:
+		int m_dnsCount=0;
+		//char *m_dnsServer = nullptr;
 };
 
 #endif /* DRIVERS_WIFI_H_ */

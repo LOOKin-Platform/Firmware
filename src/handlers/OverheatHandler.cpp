@@ -1,5 +1,5 @@
+#include "../Include/Log.h"
 #include "FreeRTOSWrapper.h"
-#include "Log.h"
 
 extern "C" {
 	uint8_t temprature_sens_read(void);

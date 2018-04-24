@@ -13,12 +13,14 @@
 
 #include <esp_log.h>
 
-#include "JSON.h"
+#include "Globals.h"
+#include "Device.h"
 #include "Query.h"
 #include "WebServer.h"
-
+#include "JSON.h"
 #include "HardwareIO.h"
 #include "Converter.h"
+#include "Sensors.h"
 
 using namespace std;
 
@@ -28,45 +30,23 @@ class Command_t {
     string                Name;
     map<string,uint8_t>   Events;
 
-    Command_t() {};
     virtual ~Command_t() = default;
 
-    virtual bool                Execute(uint8_t EventCode, uint32_t Operand = 0) { return true; };
-    virtual void                Overheated() {};
+    virtual bool					Execute(uint8_t EventCode, string StringOperand = "0") { return true; };
+    virtual void					Overheated() {};
 
-    uint8_t                     GetEventCode(string Action);
+    uint8_t						GetEventCode(string Action);
 
-    static Command_t*           GetCommandByName(string);
-    static Command_t*           GetCommandByID(uint8_t);
+    static Command_t*			GetCommandByName(string);
+    static Command_t*			GetCommandByID(uint8_t);
+    static uint8_t				GetDeviceTypeHex();
 
-    static vector<Command_t*>   GetCommandsForDevice();
-    static void                 HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+    static vector<Command_t*>	GetCommandsForDevice();
+    static void					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 };
 
-class CommandSwitch_t : public Command_t {
-  public:
-    CommandSwitch_t();
-    void Overheated() override;
-    bool Execute(uint8_t EventCode, uint32_t Operand) override;
-};
-
-class CommandColor_t : public Command_t {
-  public:
-    CommandColor_t();
-    void Overheated() override;
-    bool Execute(uint8_t EventCode, uint32_t Operand) override;
-
-  private:
-    gpio_num_t      GPIORed, GPIOGreen, GPIOBlue, GPIOWhite;
-    ledc_timer_t    TimerIndex;
-    ledc_channel_t  PWMChannelRED, PWMChannelGreen, PWMChannelBlue, PWMChannelWhite;
-};
-
-class CommandIR_t : public Command_t {
-  public:
-	CommandIR_t();
-    bool Execute(uint8_t EventCode, uint32_t Operand) override;
-};
-
+#include "../commands/CommandSwitch.cpp"
+#include "../commands/CommandColor.cpp"
+#include "../commands/CommandIR.cpp"
 
 #endif

@@ -78,24 +78,27 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
 	conf.show_hidden = true;
+
 	esp_err_t rc = ::esp_wifi_scan_start(&conf, true);
 	if (rc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_scan_start: %d", rc);
 	}
+
 	uint16_t apCount;
 	rc = ::esp_wifi_scan_get_ap_num(&apCount);
 	ESP_LOGD(tag, "Count of found access points: %d", apCount);
-    wifi_ap_record_t *list =
-      (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
+	wifi_ap_record_t *list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&apCount, list));
+
     vector<WiFiAPRecord> apRecords;
     for (auto i=0; i<apCount; i++) {
-    	WiFiAPRecord wifiAPRecord;
-    	memcpy(wifiAPRecord.m_bssid, list[i].bssid, 6);
-    	wifiAPRecord.m_ssid = string((char *)list[i].ssid);
-    	wifiAPRecord.m_authMode = list[i].authmode;
-    	apRecords.push_back(wifiAPRecord);
+    		WiFiAPRecord wifiAPRecord;
+    		memcpy(wifiAPRecord.m_bssid, list[i].bssid, 6);
+    		wifiAPRecord.m_ssid = string((char *)list[i].ssid);
+    		wifiAPRecord.m_authMode = list[i].authmode;
+    		apRecords.push_back(wifiAPRecord);
     }
+
     free(list);
 	esp_wifi_stop();
 
@@ -153,7 +156,7 @@ void WiFi_t::ConnectAP(string ssid, string password) {
 void WiFi_t::StartAP(string ssid, string password) {
 	::tcpip_adapter_init();
 
-	if (WiFi_t::getMode() == WIFI_MODE_STA_STR)
+	if (WiFi_t::GetMode() == WIFI_MODE_STA_STR)
 	{
 		::esp_wifi_stop();
 		::esp_wifi_disconnect();
@@ -235,15 +238,15 @@ string WiFi_t::getApSSID() {
  * @brief Get the WiFi Mode.
  * @return The WiFi Mode.
  */
-string WiFi_t::getMode() {
+string WiFi_t::GetMode() {
 	wifi_mode_t mode;
 	esp_wifi_get_mode(&mode);
 	switch(mode) {
 		case WIFI_MODE_NULL	: return WIFI_MODE_NULL_STR;
 		case WIFI_MODE_STA	: return WIFI_MODE_STA_STR;
-		case WIFI_MODE_AP		: return WIFI_MODE_AP_STR;
-		case WIFI_MODE_APSTA: return WIFI_MODE_APSTA_STR;
-		default							: return WIFI_MODE_UNKNOWN_STR;
+		case WIFI_MODE_AP	: return WIFI_MODE_AP_STR;
+		case WIFI_MODE_APSTA	: return WIFI_MODE_APSTA_STR;
+		default				: return WIFI_MODE_UNKNOWN_STR;
 	}
 } // getMode
 
@@ -281,6 +284,19 @@ string WiFi_t::getStaSSID() {
 	esp_wifi_get_config(WIFI_IF_STA, &conf);
 	return string((char *)conf.ap.ssid);
 } // getStaSSID
+
+/**
+ * @brief Get the connected WiFi SSID.
+ * @return The SSID.
+ */
+string WiFi_t::getSSID() {
+	string Mode = WiFi_t::GetMode();
+
+	if (Mode == WIFI_MODE_STA_STR) 	return getStaSSID();
+	if (Mode == WIFI_MODE_AP_STR)	return getApSSID();
+
+	return "";
+} // getSSID
 
 /**
  * @brief Set the IP info used when connecting as a station to an external access point.

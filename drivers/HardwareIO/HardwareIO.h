@@ -13,6 +13,7 @@ using namespace std;
 
 #include "driver/gpio.h"
 #include "driver/ledc.h"
+#include <driver/rtc_io.h>
 
 #include "DateTime.h"
 

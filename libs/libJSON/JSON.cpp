@@ -36,30 +36,30 @@ string JSON::GetItem(string Key) {
 }
 
 void JSON::SetItem(string Key, string Value) {
-  cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());
+	cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());
 }
 
-map<string,string> JSON::GetItems(cJSON *Parent) {
-  map<string,string> Result = map<string,string>();
+map<string,string> JSON::GetItems(cJSON *Parent, bool CaseSensitive) {
+	map<string,string> Result = map<string,string>();
 
-  if (Root != NULL || Parent != NULL) {
-    cJSON *Child = (Parent != NULL) ? Parent->child : Root->child;
+	if (Root != NULL || Parent != NULL) {
+		cJSON *Child = (Parent != NULL) ? Parent->child : Root->child;
 
-    while( Child ) {
-      if (Child->type != cJSON_Array)
-        Result[Converter::ToLower(Child->string)] = Child->valuestring;
+		while( Child ) {
+			if (Child->type != cJSON_Array)
+				Result[(CaseSensitive) ? Child->string : Converter::ToLower(Child->string)] = Child->valuestring;
 
-      Child = Child->next;
-    }
-  }
+			Child = Child->next;
+		}
+	}
 
-  return Result;
+	return Result;
 }
 
 void JSON::SetItems(map<string,string> Values, cJSON *Item) {
-  if (Root != NULL || Item != NULL)
-    for(auto& Value : Values)
-      cJSON_AddStringToObject((Item != NULL) ? Item : Root, Value.first.c_str(), Value.second.c_str());
+	if (Root != NULL || Item != NULL)
+		for(auto& Value : Values)
+			cJSON_AddStringToObject((Item != NULL) ? Item : Root, Value.first.c_str(), Value.second.c_str());
 }
 
 void JSON::SetObject(string Key, map<string,string> Values) {

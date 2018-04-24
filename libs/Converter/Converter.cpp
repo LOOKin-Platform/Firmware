@@ -20,6 +20,11 @@ void Converter::FindAndReplace(string& source, string const& find, string const&
     }
 }
 
+void Converter::FindAndRemove(string& Source, string Chars) {
+	for (unsigned int i = 0; i < Chars.size(); ++i)
+		Source.erase (remove(Source.begin(), Source.end(), Chars[i]), Source.end());
+}
+
 // trim from start (in place)
 void Converter::lTrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
@@ -41,21 +46,33 @@ void Converter::Trim(std::string &s) {
 }
 
 string Converter::ToString(int8_t Number) {
-  ostringstream Convert;
-  Convert << +Number;
-  return Convert.str();
+	ostringstream Convert;
+	Convert << +Number;
+	return Convert.str();
 }
 
 string Converter::ToString(uint8_t Number) {
-  ostringstream Convert;
-  Convert << +Number;
-  return Convert.str();
+	ostringstream Convert;
+	Convert << +Number;
+	return Convert.str();
+}
+
+string Converter::ToString(uint16_t Number) {
+	ostringstream Convert;
+	Convert << +Number;
+	return Convert.str();
 }
 
 string Converter::ToString(uint32_t Number) {
-  ostringstream Convert;
-  Convert << +Number;
-  return Convert.str();
+	ostringstream Convert;
+	Convert << +Number;
+	return Convert.str();
+}
+
+string Converter::ToString(uint64_t Number) {
+	ostringstream Convert;
+	Convert << +Number;
+	return Convert.str();
 }
 
 string Converter::ToString(double Number) {
@@ -159,6 +176,50 @@ string Converter::VectorToString(const vector<string>& Strings, const char* Deli
 			os << *Strings.rbegin();
 			return os.str();
 	}
+}
+
+string Converter::StringURLDecode(string SrcString) {
+	string ret;
+	char ch;
+	int i, ii, len = SrcString.length();
+
+	for (i=0; i < len; i++) {
+		if(SrcString[i] != '%') {
+			ret += (SrcString[i] == '+') ? ' ' : SrcString[i];
+		}
+		else {
+			sscanf(SrcString.substr(i + 1, 2).c_str(), "%x", &ii);
+			ch = static_cast<char>(ii);
+            ret += ch;
+            i = i + 2;
+        }
+    }
+
+    return ret;
+}
+
+
+string Converter::StringURLEncode(string SrcString) {
+	ostringstream escaped;
+	escaped.fill('0');
+	escaped << hex;
+
+	for (string::const_iterator i = SrcString.begin(), n = SrcString.end(); i != n; ++i) {
+		string::value_type c = (*i);
+
+		// Keep alphanumeric and other accepted characters intact
+		if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+			escaped << c;
+			continue;
+		}
+
+		// Any other characters are percent-encoded
+		escaped << uppercase;
+		escaped << '%' << setw(2) << int((unsigned char) c);
+		escaped << nouppercase;
+	}
+
+	return escaped.str();
 }
 
 uint32_t Converter::IPToUint32(tcpip_adapter_ip_info_t IP) {
