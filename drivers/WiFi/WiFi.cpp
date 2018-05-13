@@ -6,6 +6,9 @@
  */
 #include "WiFi.h"
 
+#include <esp_heap_trace.h>
+
+
 static char tag[]= "WiFi";
 
 /*
@@ -68,12 +71,16 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	if (ESP_OK != esp_event_loop_init(wifiEventHandler->getEventHandler(), wifiEventHandler))
 		esp_event_loop_set_cb(wifiEventHandler->getEventHandler(), wifiEventHandler);
 
+	//heap_trace_start(HEAP_TRACE_LEAKS);
+
 	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
 	ESP_ERROR_CHECK(::esp_wifi_set_storage(WIFI_STORAGE_RAM));
 	ESP_ERROR_CHECK(::esp_wifi_set_mode(WIFI_MODE_STA));
 	ESP_ERROR_CHECK( esp_wifi_start() );
 	//esp_wifi_set_max_tx_power(+20);
+	//heap_trace_stop();
+	//heap_trace_dump();
 
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
@@ -87,19 +94,22 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	uint16_t apCount;
 	rc = ::esp_wifi_scan_get_ap_num(&apCount);
 	ESP_LOGD(tag, "Count of found access points: %d", apCount);
+
 	wifi_ap_record_t *list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&apCount, list));
 
     vector<WiFiAPRecord> apRecords;
+
     for (auto i=0; i<apCount; i++) {
-    		WiFiAPRecord wifiAPRecord;
-    		memcpy(wifiAPRecord.m_bssid, list[i].bssid, 6);
-    		wifiAPRecord.m_ssid = string((char *)list[i].ssid);
-    		wifiAPRecord.m_authMode = list[i].authmode;
-    		apRecords.push_back(wifiAPRecord);
+    	WiFiAPRecord wifiAPRecord;
+    	memcpy(wifiAPRecord.m_bssid, list[i].bssid, 6);
+    	wifiAPRecord.m_ssid = string((char *)list[i].ssid);
+    	wifiAPRecord.m_authMode = list[i].authmode;
+    	apRecords.push_back(wifiAPRecord);
     }
 
     free(list);
+
 	esp_wifi_stop();
 
     return apRecords;

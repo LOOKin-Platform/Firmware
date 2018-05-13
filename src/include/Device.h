@@ -39,17 +39,16 @@ using namespace std;
 
 class DeviceType_t {
   public:
-    uint8_t Hex = 0x00;    // : 3   (3 bits)
+    uint8_t Hex = 0x00;
 
     DeviceType_t(string);
-    DeviceType_t(uint8_t);
+    DeviceType_t(uint8_t = 0x0);
 
     bool   IsBattery();
     string ToString();
     string ToHexString();
 
     static string ToString(uint8_t);
-    static map<uint8_t, string> TypeMap;
 };
 
 enum    DeviceStatus    { RUNNING, UPDATING };
@@ -57,7 +56,7 @@ enum    DevicePowerMode { BATTERY, CONST };
 
 class Device_t {
   public:
-    DeviceType_t    *Type;
+    DeviceType_t    Type;
     DeviceStatus    Status;
     uint32_t        ID;
     string          Name;
@@ -69,24 +68,24 @@ class Device_t {
     uint8_t         Temperature;
 
     Device_t();
-    void    Init();
-    void    HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params);
+    void    		Init();
+    void    		HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
-    string TypeToString();
-    string IDToString();
+    string			TypeToString();
+    string			IDToString();
   private:
-    uint32_t GenerateID();
+    uint32_t 		GenerateID();
 
-    bool POSTName(map<string,string>);
-    bool POSTTime(map<string,string>);
-    bool POSTTimezone(map<string,string>);
-    bool POSTFirmwareVersion(map<string,string>, WebServer_t::Response &);
+    bool 			POSTName(map<string,string>);
+    bool 			POSTTime(map<string,string>);
+    bool 			POSTTimezone(map<string,string>);
+    bool 			POSTFirmwareVersion(map<string,string>, WebServer_t::Response &);
 
-    string StatusToString();
-    string NameToString();
-    string PowerModeToString();
-    string FirmwareVersionToString();
-    string TemperatureToString();
+    string 			StatusToString();
+    string 			NameToString();
+    string 			PowerModeToString();
+    string 			FirmwareVersionToString();
+    string 			TemperatureToString();
 };
 
 #endif

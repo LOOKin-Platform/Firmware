@@ -11,7 +11,6 @@ using namespace std;
 
 #include "Globals.h"
 #include "WebServer.h"
-
 #include "Query.h"
 #include "API.h"
 
@@ -27,8 +26,8 @@ WebServer_t::WebServer_t() {
 void WebServer_t::Start() {
 	ESP_LOGD(tag, "Start");
 
-	HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 10240);
-	UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask, "UDPListenerTask"  , NULL, 4096);
+	HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 4096);
+	UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
 }
 
 void WebServer_t::Stop() {
@@ -52,18 +51,19 @@ void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_
 }
 
 string WebServer_t::UDPAliveBody() {
-	string Message = "Alive!" + Device->IDToString() + ":" + Device->Type->ToHexString() + ":"  + Network->IPToString();
-	return UDP_PACKET_PREFIX + Message;
+	string Message = "Alive!" + Device.IDToString() + ":" + Device.Type.ToHexString() + ":"  + Network.IPToString() +
+			":" + Converter::ToHexString(Automation.CurrentVersion(),8) + ":" + Converter::ToHexString(Storage.CurrentVersion(),4);
+	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 
 string WebServer_t::UDPDiscoverBody(string ID) {
 	string Message = (ID != "") ? ("Discover!" + ID) : "Discover!";
-	return UDP_PACKET_PREFIX + Message;
+	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 
 string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value) {
-	string Message = "Updated!" + Device->IDToString() + ":" + Converter::ToHexString(SensorID, 2) + ":" + Value;
-	return UDP_PACKET_PREFIX + Message;
+	string Message = "Updated!" + Device.IDToString() + ":" + Converter::ToHexString(SensorID, 2) + ":" + Value;
+	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 
 void WebServer_t::UDPSendBroadcast(string Message) {
@@ -75,7 +75,7 @@ void WebServer_t::UDPSendBroadcast(string Message) {
 		Message = Message.substr(0, 128);
 
 	Connection = netconn_new( NETCONN_UDP );
-	netconn_connect(Connection, IP_ADDR_BROADCAST, UDP_SERVER_PORT );
+	netconn_connect(Connection, IP_ADDR_BROADCAST, Settings.WiFi.UPDPort );
 
 	Buffer  = netbuf_new();
 	Data    = (char *)netbuf_alloc(Buffer, Message.length());
@@ -88,8 +88,7 @@ void WebServer_t::UDPSendBroadcast(string Message) {
 	ESP_LOGI(tag, "UDP broadcast \"%s\" sended", Message.c_str());
 }
 
-void WebServer_t::UDPListenerTask(void *data)
-{
+void WebServer_t::UDPListenerTask(void *data) {
 	ESP_LOGD(tag, "UDPListenerTask Run");
 
 	struct netconn *Connection;
@@ -99,7 +98,7 @@ void WebServer_t::UDPListenerTask(void *data)
 	err_t err;
 
 	Connection = netconn_new(NETCONN_UDP);
-	netconn_bind(Connection, IP_ADDR_ANY, UDP_SERVER_PORT);
+	netconn_bind(Connection, IP_ADDR_ANY, Settings.WiFi.UPDPort);
 
 	do {
 		err = netconn_recv(Connection, &inBuffer);
@@ -117,7 +116,7 @@ void WebServer_t::UDPListenerTask(void *data)
 			//	WebServer->UDPSendBroadcast(Datagram);
 
 			// answer to the Discover query
-			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device->IDToString())) {
+			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device.IDToString())) {
 				string Answer = WebServer_t::UDPAliveBody();
 
 				outData = (char *)netbuf_alloc(outBuffer, Answer.length());
@@ -128,7 +127,7 @@ void WebServer_t::UDPListenerTask(void *data)
 				ESP_LOGD(tag, "UDP \"%s\" sended to %s:%u", Answer.c_str(), inet_ntoa(inBuffer->addr), inBuffer->port);
 			}
 
-			string AliveText = UDP_PACKET_PREFIX + string("Alive!");
+			string AliveText = Settings.WiFi.UDPPacketPrefix + string("Alive!");
 			size_t AliveFound = Datagram.find(AliveText);
 
 			if (AliveFound != string::npos) {
@@ -136,8 +135,10 @@ void WebServer_t::UDPListenerTask(void *data)
 				Alive.replace(Alive.find(AliveText),AliveText.length(),"");
 				vector<string> Data = Converter::StringToVector(Alive, ":");
 
-				if (Data.size() > 2)
-					Network->DeviceInfoReceived(Data[0], Data[1], Data[2]);
+				while (Data.size() < 5)
+					Data.push_back("");
+
+				Network.DeviceInfoReceived(Data[0], Data[1], Data[2], Data[3], Data[4]);
 			}
 
 			netbuf_delete(outBuffer);
@@ -152,26 +153,27 @@ void WebServer_t::UDPListenerTask(void *data)
 }
 
 void WebServer_t::HTTPListenerTask(void *data) {
-  ESP_LOGD(tag, "HTTPListenerTask Run");
+	ESP_LOGD(tag, "HTTPListenerTask Run");
 
-  struct netconn *conn, *newconn;
-  err_t err;
+	struct netconn *conn, *newconn;
+	err_t err;
 
-  conn = netconn_new(NETCONN_TCP);
-  netconn_bind(conn, NULL, 80);
-  netconn_listen(conn);
+	conn = netconn_new(NETCONN_TCP);
+	netconn_bind(conn, NULL, 80);
+	netconn_listen(conn);
 
-  do {
-    err = netconn_accept(conn, &newconn);
+	do {
+		err = netconn_accept(conn, &newconn);
 
-    if (err == ERR_OK) {
-      WebServer_t::HandleHTTP(newconn);
-      netconn_delete(newconn);
-    }
-  } while(err == ERR_OK);
+		if (err == ERR_OK) {
+			WebServer_t::HandleHTTP(newconn);
+			netconn_close(newconn);
+			netconn_delete(newconn);
+		}
+	} while(err == ERR_OK);
 
-  netconn_close(conn);
-  netconn_delete(conn);
+	netconn_close(conn);
+	netconn_delete(conn);
 }
 
 void WebServer_t::HandleHTTP(struct netconn *conn) {
@@ -182,29 +184,62 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 	u16_t buflen;
 
 	err_t err;
-	string HTTPString = "";
+	string HTTPString;
 
-	netconn_set_recvtimeout(conn, 50);    // timeout on 50 msecs
+	conn->recv_timeout = 50; // timeout on 50 msecs
 
 	while((err = netconn_recv(conn,&inbuf)) == ERR_OK) {
 		do {
-			netbuf_data(inbuf, (void * *)&buf, &buflen);
-			HTTPString += string(buf);
-		} while(netbuf_next(inbuf) >= 0);
+			netbuf_data(inbuf, (void **)&buf, &buflen);
 
+			if (HTTPString.size() + buflen > Settings.WiFi.HTTPMaxQueryLen) {
+				HTTPString.clear();
+				WebServer_t::Response Result;
+				Result.SetInvalid();
+				Result.Body = "{ \"success\" : \"false\", \"message\" : \"Query length exceed max. It is "+
+						Converter::ToString(Settings.WiFi.HTTPMaxQueryLen) + "for UTF-8 queries and " +
+						Converter::ToString((uint16_t)(Settings.WiFi.HTTPMaxQueryLen/2)) + "for UTF-16 queries\"}";
+				Write(conn, Result.toString());
+				netbuf_free(inbuf);
+				netbuf_delete(inbuf);
+				return;
+			}
+
+			buf[buflen] = '\0';
+			HTTPString += string(buf);
+
+			ESP_LOGI(tag,"RAM left %d", system_get_free_heap_size());
+		} while(netbuf_next(inbuf) >= 0);
+		netbuf_free(inbuf);
 		netbuf_delete(inbuf);
 	}
+
+	ESP_LOGI(tag,"RAM left %d", system_get_free_heap_size());
 
 	if (!HTTPString.empty()) {
 		Query_t Query(HTTPString);
 		WebServer_t::Response Result;
+		HTTPString = "";
+
+		ESP_LOGI(tag,"RAM left %d", system_get_free_heap_size());
 
 		API::Handle(Result, Query);
-		netconn_write(conn, Result.toString().c_str(), Result.toString().length(), NETCONN_NOCOPY);
-	}
+		Write(conn, Result.toString());
 
-	netconn_close(conn);
-	netbuf_delete(inbuf);
+		Result.Clear();
+	}
+}
+
+void WebServer_t::Write(struct netconn *conn, string Data) {
+	uint8_t PartSize = 100;
+
+	for (int i=0; i < Data.size(); i += PartSize)
+		netconn_write(conn,
+				Data.substr(i, ((i + PartSize <= Data.size()) ? PartSize : Data.size() - i)).c_str(),
+				(i + PartSize <= Data.size()) ? PartSize : Data.size() - i,
+				NETCONN_NOCOPY);
+
+	//netconn_write(conn, Result.toString().c_str(), Result.toString().length(), NETCONN_NOCOPY);
 }
 
 /*
@@ -214,50 +249,56 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 */
 
 WebServer_t::Response::Response() {
-  ResponseCode = CODE::OK;
-  ContentType  = TYPE::JSON;
+	ResponseCode = CODE::OK;
+	ContentType  = TYPE::JSON;
 }
 
 string WebServer_t::Response::toString() {
-  string Result = "";
+	string Result = "";
 
-  Result = "HTTP/1.1 " + ResponseCodeToString() + "\r\n";
-  Result += "Content-type:" + ContentTypeToString() + "; charset=utf-8\r\n\r\n";
-  Result += Body;
+	Result = "HTTP/1.1 " + ResponseCodeToString() + "\r\n";
+	Result += "Content-type:" + ContentTypeToString() + "; charset=utf-8\r\n\r\n";
+	Result += Body;
 
-  return Result;
+	return Result;
 }
 
 void WebServer_t::Response::SetSuccess() {
-  ResponseCode  = CODE::OK;
-  ContentType   = TYPE::JSON;
-  Body          = "{\"success\" : \"true\"}";
+	ResponseCode  = CODE::OK;
+	ContentType   = TYPE::JSON;
+	Body          = "{\"success\" : \"true\"}";
 }
 
 void WebServer_t::Response::SetFail() {
-  ResponseCode  = CODE::ERROR;
-  ContentType   = TYPE::JSON;
-  Body          = "{\"success\" : \"false\"}";
+	ResponseCode  = CODE::ERROR;
+	ContentType   = TYPE::JSON;
+	Body          = "{\"success\" : \"false\"}";
 }
 
 void WebServer_t::Response::SetInvalid() {
-  ResponseCode  = CODE::INVALID;
-  ContentType   = TYPE::JSON;
-  Body          = "{\"success\" : \"false\"}";
+	ResponseCode  = CODE::INVALID;
+	ContentType   = TYPE::JSON;
+	Body          = "{\"success\" : \"false\"}";
+}
+
+void WebServer_t::Response::Clear() {
+	Body = "";
+	ResponseCode = OK;
+	ContentType = JSON;
 }
 
 string WebServer_t::Response::ResponseCodeToString() {
-  switch (ResponseCode) {
-    case CODE::INVALID  : return "400"; break;
-    case CODE::ERROR    : return "500"; break;
-    default             : return "200"; break;
-  }
+	switch (ResponseCode) {
+		case CODE::INVALID  : return "400"; break;
+		case CODE::ERROR    : return "500"; break;
+		default             : return "200"; break;
+	}
 }
 
 string WebServer_t::Response::ContentTypeToString() {
-  switch (ContentType) {
-    case TYPE::PLAIN  : return "text/plain"; break;
-    case TYPE::JSON   : return "application/json"; break;
-    default           : return "";
-  }
+	switch (ContentType) {
+		case TYPE::PLAIN  : return "text/plain"; break;
+		case TYPE::JSON   : return "application/json"; break;
+		default           : return "";
+	}
 }

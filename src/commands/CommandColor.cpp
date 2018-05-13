@@ -5,8 +5,8 @@
 */
 
 class CommandColor_t : public Command_t {
-  public:
-    CommandColor_t() {
+	public:
+		CommandColor_t() {
         ID          = 0x04;
         Name        = "RGBW";
 
@@ -14,33 +14,32 @@ class CommandColor_t : public Command_t {
         Events["brightness"]  = 0x02;
 
         switch (GetDeviceTypeHex()) {
-          case DEVICE_TYPE_PLUG_HEX:
-            TimerIndex  = COLOR_PLUG_TIMER_INDEX;
+        	case Settings.Devices.Plug:
+            	TimerIndex  = COLOR_PLUG_TIMER_INDEX;
+        		GPIORed     = COLOR_PLUG_RED_PIN_NUM;
+        		GPIOGreen   = COLOR_PLUG_GREEN_PIN_NUM;
+        		GPIOBlue    = COLOR_PLUG_BLUE_PIN_NUM;
+        		GPIOWhite   = COLOR_PLUG_WHITE_PIN_NUM;
 
-            GPIORed     = COLOR_PLUG_RED_PIN_NUM;
-            GPIOGreen   = COLOR_PLUG_GREEN_PIN_NUM;
-            GPIOBlue    = COLOR_PLUG_BLUE_PIN_NUM;
-            GPIOWhite   = COLOR_PLUG_WHITE_PIN_NUM;
+        		PWMChannelRED   = COLOR_PLUG_RED_PWMCHANNEL;
+        		PWMChannelGreen = COLOR_PLUG_GREEN_PWMCHANNEL;
+        		PWMChannelBlue  = COLOR_PLUG_BLUE_PWMCHANNEL;
+        		PWMChannelWhite = COLOR_PLUG_WHITE_PWMCHANNEL;
+        		break;
 
-            PWMChannelRED   = COLOR_PLUG_RED_PWMCHANNEL;
-            PWMChannelGreen = COLOR_PLUG_GREEN_PWMCHANNEL;
-            PWMChannelBlue  = COLOR_PLUG_BLUE_PWMCHANNEL;
-            PWMChannelWhite = COLOR_PLUG_WHITE_PWMCHANNEL;
-            break;
+        	case Settings.Devices.Remote:
+        		TimerIndex  = COLOR_REMOTE_TIMER_INDEX;
 
-          case DEVICE_TYPE_REMOTE_HEX:
-            TimerIndex  = COLOR_REMOTE_TIMER_INDEX;
+        		GPIORed     = COLOR_REMOTE_RED_PIN_NUM;
+        		GPIOGreen   = COLOR_REMOTE_GREEN_PIN_NUM;
+        		GPIOBlue    = COLOR_REMOTE_BLUE_PIN_NUM;
+        		GPIOWhite   = COLOR_REMOTE_WHITE_PIN_NUM;
 
-            GPIORed     = COLOR_REMOTE_RED_PIN_NUM;
-            GPIOGreen   = COLOR_REMOTE_GREEN_PIN_NUM;
-            GPIOBlue    = COLOR_REMOTE_BLUE_PIN_NUM;
-            GPIOWhite   = COLOR_REMOTE_WHITE_PIN_NUM;
-
-            PWMChannelRED   = COLOR_REMOTE_RED_PWMCHANNEL;
-            PWMChannelGreen = COLOR_REMOTE_GREEN_PWMCHANNEL;
-            PWMChannelBlue  = COLOR_REMOTE_BLUE_PWMCHANNEL;
-            PWMChannelWhite = COLOR_REMOTE_WHITE_PWMCHANNEL;
-            break;
+        		PWMChannelRED   = COLOR_REMOTE_RED_PWMCHANNEL;
+        		PWMChannelGreen = COLOR_REMOTE_GREEN_PWMCHANNEL;
+        		PWMChannelBlue  = COLOR_REMOTE_BLUE_PWMCHANNEL;
+        		PWMChannelWhite = COLOR_REMOTE_WHITE_PWMCHANNEL;
+        		break;
         }
 
         GPIO::SetupPWM(GPIORed  , TimerIndex, PWMChannelRED);

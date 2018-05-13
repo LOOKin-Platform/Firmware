@@ -46,7 +46,7 @@ string IRLib::GetProntoHex() {
 void IRLib::SetFrequency(uint16_t Freq) {
 	Frequency = round(Freq/1000) * 1000;
 
-	if (Frequency <= 37000)
+	if 		(Frequency > 35000 && Frequency <= 37000)
 		Frequency = 36000;
 	else if (Frequency > 37000 && Frequency <= 39000)
 		Frequency = 38000;

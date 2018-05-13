@@ -49,7 +49,7 @@ void Sleep::SetTimerInterval(uint16_t Interval) {
 
 void Sleep::SetGPIOWakeupSource(gpio_num_t gpio_num, int level) {
 	::esp_sleep_enable_ext0_wakeup(gpio_num, level);
-	::rtc_gpio_isolate(gpio_num);
+	//rtc_gpio_isolate(gpio_num);
 }
 
 void Sleep::LightSleep(uint16_t Interval) {

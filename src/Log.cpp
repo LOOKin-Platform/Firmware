@@ -25,19 +25,18 @@ void Log::Add(uint16_t Code, uint32_t Data) {
   Record.Time = Time::Unixtime();
 
   if (GetItemType(Code) == SYSTEM) { // важное системные события
-    NVS *Memory = new NVS(NVSLogArea);
-    uint8_t Index = Memory->StringArrayAdd(NVSLogArray, Serialize(Record));
+    NVS Memory(NVSLogArea);
+    uint8_t Index = Memory.StringArrayAdd(NVSLogArray, Serialize(Record));
 
-    if (Index > DEVICE_SYSTEM_LOG_SIZE)
-      Memory->StringArrayRemove(NVSLogArray, 0);
+    if (Index > Settings.Log.SystemLogSize)
+      Memory.StringArrayRemove(NVSLogArray, 0);
 
-    Memory->Commit();
-    delete Memory;
+    Memory.Commit();
   }
   else { // событие, не требующее хранение в NVS
     Items.push_back(Record);
 
-    if (Items.size() >= DEVICE_EVENTS_LOG_SIZE)
+    if (Items.size() >= Settings.Log.EventsLogSize)
       Items.erase(Items.begin());
 
     if (GetItemType(Code) == ERROR)
@@ -73,17 +72,16 @@ vector<Log::Item> Log::GetSystemLog() {
  * @return log items count
  */
 uint8_t Log::GetSystemLogCount(NVS *MemoryLink) {
-  uint8_t Count = 0;
+	uint8_t Count = 0;
 
-  if (MemoryLink == nullptr) {
-    NVS *Memory = new NVS(NVSLogArea);
-    Count = Memory->ArrayCount(NVSLogArray);
-    delete Memory;
-  }
-  else
-    Count = MemoryLink->ArrayCount(NVSLogArray);
+	if (MemoryLink == nullptr) {
+		NVS Memory(NVSLogArea);
+		Count = Memory.ArrayCount(NVSLogArray);
+	}
+	else
+	  Count = MemoryLink->ArrayCount(NVSLogArray);
 
-  return Count;
+	return Count;
 }
 
 /**
@@ -93,17 +91,15 @@ uint8_t Log::GetSystemLogCount(NVS *MemoryLink) {
  * @return log item with given index.
  */
 Log::Item Log::GetSystemLogItem(uint8_t Index,NVS *MemoryLink) {
-  Item Result;
+	Item Result;
 
-  if (MemoryLink == nullptr) {
-    NVS *Memory = new NVS(NVSLogArea);
-    Result = Deserialize(GetSystemLogJSONItem(Index, Memory));
-    delete Memory;
-  }
-  else
-    Result = Deserialize(GetSystemLogJSONItem(Index, MemoryLink));
+	if (MemoryLink == nullptr) {
+		Result = Deserialize(GetSystemLogJSONItem(Index));
+	}
+	else
+		Result = Deserialize(GetSystemLogJSONItem(Index, MemoryLink));
 
-  return Result;
+	return Result;
 }
 
 /**
@@ -113,17 +109,16 @@ Log::Item Log::GetSystemLogItem(uint8_t Index,NVS *MemoryLink) {
  * @return log item with given index.
  */
 string Log::GetSystemLogJSONItem(uint8_t Index, NVS *MemoryLink) {
-  string Result;
+	string Result;
 
-  if (MemoryLink == nullptr) {
-    NVS *Memory = new NVS(NVSLogArea);
-    Result = Memory->StringArrayGet(NVSLogArray, Index);
-    delete Memory;
-  }
-  else
-    Result = MemoryLink->StringArrayGet(NVSLogArray, Index);
+	if (MemoryLink == nullptr) {
+		NVS Memory(NVSLogArea);
+		Result = Memory.StringArrayGet(NVSLogArray, Index);
+	}
+	else
+		Result = MemoryLink->StringArrayGet(NVSLogArray, Index);
 
-  return Result;
+	return Result;
 }
 
 /**
@@ -131,15 +126,15 @@ string Log::GetSystemLogJSONItem(uint8_t Index, NVS *MemoryLink) {
  * @return JSON string contains log items.
  */
 string Log::GetSystemLogJSON() {
-  vector<string> Result = vector<string>();
-  NVS *Memory = new NVS(NVSLogArea);
+	vector<string> Result = vector<string>();
+	NVS *Memory = new NVS(NVSLogArea);
 
-  for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--)
-    Result.push_back(GetSystemLogJSONItem(i, Memory));
+	for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--)
+		Result.push_back(GetSystemLogJSONItem(i, Memory));
 
-  delete Memory;
+	delete Memory;
 
-  return "[" + Converter::VectorToString(Result, ",") + "]";
+	return "[" + Converter::VectorToString(Result, ",") + "]";
 }
 
 /**
@@ -158,7 +153,7 @@ vector<Log::Item> Log::GetEventsLog() {
  * @return log items count
  */
 uint8_t Log::GetEventsLogCount() {
-  return Items.size();
+	return Items.size();
 }
 
 /**
@@ -168,10 +163,10 @@ uint8_t Log::GetEventsLogCount() {
  * @return log item with given index.
  */
 Log::Item Log::GetEventsLogItem(uint8_t Index) {
-  if (Index < Items.size())
-    return Items.at(Index);
-  else
-    return Log::Item{};
+	if (Index < Items.size())
+		return Items.at(Index);
+	else
+		return Log::Item{};
 }
 
 
@@ -182,13 +177,13 @@ Log::Item Log::GetEventsLogItem(uint8_t Index) {
  * @return log item with given index.
  */
 string Log::GetEventsLogJSONItem(uint8_t Index) {
-  JSON JSONObject;
+	JSON JSONObject;
 
-  JSONObject.SetItem("Code", Converter::ToHexString(Items.at(Index).Code, 4));
-  JSONObject.SetItem("Data", Converter::ToHexString(Items.at(Index).Data, 8));
-  JSONObject.SetItem("Time", Converter::ToHexString(Items.at(Index).Time, 8));
+	JSONObject.SetItem("Code", Converter::ToHexString(Items.at(Index).Code, 4));
+	JSONObject.SetItem("Data", Converter::ToHexString(Items.at(Index).Data, 8));
+	JSONObject.SetItem("Time", Converter::ToHexString(Items.at(Index).Time, 8));
 
-  return JSONObject.ToString();
+	return JSONObject.ToString();
 }
 
 
@@ -197,12 +192,12 @@ string Log::GetEventsLogJSONItem(uint8_t Index) {
  * @return JSON string contains log items.
  */
 string Log::GetEventsLogJSON() {
-  vector<string> Result = vector<string>();
+	vector<string> Result = vector<string>();
 
-  for (int i = Items.size() - 1; i > 0; i--)
-    Result.push_back(GetEventsLogJSONItem(i));
+	for (int i = Items.size() - 1; i > 0; i--)
+		Result.push_back(GetEventsLogJSONItem(i));
 
-  return "[" + Converter::VectorToString(Result, ",") + "]";
+	return "[" + Converter::VectorToString(Result, ",") + "]";
 }
 
 /**
@@ -212,33 +207,33 @@ string Log::GetEventsLogJSON() {
  * @return log item type enum
  */
 Log::ItemType Log::GetItemType(uint16_t Code) {
-  if (Code <= 0x00FF)
-    return SYSTEM;
+	if (Code <= 0x00FF)
+		return SYSTEM;
 
-  if (Code <= 0x1000)
-    return ERROR;
+	if (Code <= 0x1000)
+		return ERROR;
 
-  return INFO;
+	return INFO;
 }
 
 /**
  * @brief Correct log items time after device time updated
  */
 void Log::CorrectTime() {
-  NVS *Memory = new NVS(NVSLogArea);
+	NVS *Memory = new NVS(NVSLogArea);
 
-  for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--) {
-    Item Record = GetSystemLogItem(i, Memory);
+	for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--) {
+		Item Record = GetSystemLogItem(i, Memory);
 
-    if (Time::IsUptime(Record.Time)) {
-      Record.Time = Time::Unixtime() - (Time::Uptime() - Record.Time);
-      Memory->StringArrayReplace(NVSLogArray, i, Serialize(Record));
-    }
+		if (Time::IsUptime(Record.Time)) {
+			Record.Time = Time::Unixtime() - (Time::Uptime() - Record.Time);
+			Memory->StringArrayReplace(NVSLogArray, i, Serialize(Record));
+		}
 
-    if (Record.Code == 0x0001) break;
-  }
+		if (Record.Code == 0x0001) break;
+	}
 
-  delete Memory;
+	delete Memory;
 }
 
 /**
@@ -248,24 +243,23 @@ void Log::CorrectTime() {
  */
 
 bool Log::VerifyLastBoot() {
-  NVS *Memory = new NVS(NVSLogArea);
+	NVS *Memory = new NVS(NVSLogArea);
 
-  if (GetSystemLogCount(Memory) == 0)
-    return true;
+	if (GetSystemLogCount(Memory) == 0)
+		return true;
 
-  for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--) {
-    Log::Item Record = Log::GetSystemLogItem(i, Memory);
+	for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--) {
+		Log::Item Record = Log::GetSystemLogItem(i, Memory);
 
-    if (Record.Code == LOG_DEVICE_ON)
-      break;
+		if (Record.Code == LOG_DEVICE_ON)
+			break;
 
-    if (Record.Code == LOG_DEVICE_STARTED || Record.Code == LOG_DEVICE_ROLLBACK)
-      return true;
-  }
+		if (Record.Code == LOG_DEVICE_STARTED || Record.Code == LOG_DEVICE_ROLLBACK)
+			return true;
+	}
 
-  delete Memory;
-
-  return false;
+	delete Memory;
+	return false;
 }
 
 /**
@@ -277,20 +271,20 @@ bool Log::VerifyLastBoot() {
  * @param [in] Params   Query params
  */
 void Log::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
-  // обработка GET запроса - получение данных
-  if (Type == QueryType::GET) {
+	// обработка GET запроса - получение данных
+	if (Type == QueryType::GET) {
 
-    if (URLParts.size() == 0)
-      Result.Body = "{\"System\" : " + GetSystemLogJSON() + ", \"Events\" : " + GetEventsLogJSON() + "}";
+		if (URLParts.size() == 0)
+			Result.Body = "{\"System\" : " + GetSystemLogJSON() + ", \"Events\" : " + GetEventsLogJSON() + "}";
 
-    if (URLParts.size() == 1) {
-      if (URLParts[0] == "system")
-        Result.Body = GetSystemLogJSON();
+		if (URLParts.size() == 1) {
+			if (URLParts[0] == "system")
+				Result.Body = GetSystemLogJSON();
 
-      if (URLParts[0] == "events")
-        Result.Body = GetEventsLogJSON();
-    }
-  }
+			if (URLParts[0] == "events")
+				Result.Body = GetEventsLogJSON();
+		}
+	}
 }
 
 /**
@@ -299,15 +293,15 @@ void Log::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vecto
  * @return Serialized JSON string items count
  */
 string Log::Serialize(Log::Item Item) {
-  JSON JSONObject;
+	JSON JSONObject;
 
-  JSONObject.SetItem("Code", Converter::ToHexString(Item.Code, ((GetItemType(Item.Code) == SYSTEM) ? 2 : 4)));
-  JSONObject.SetItem("Time", Converter::ToHexString(Item.Time, 8));
+	JSONObject.SetItem("Code", Converter::ToHexString(Item.Code, ((GetItemType(Item.Code) == SYSTEM) ? 2 : 4)));
+	JSONObject.SetItem("Time", Converter::ToHexString(Item.Time, 8));
 
-  if (GetItemType(Item.Code) != SYSTEM)
-    JSONObject.SetItem("Data", Converter::ToHexString(Item.Data, 8));
+	if (GetItemType(Item.Code) != SYSTEM)
+		JSONObject.SetItem("Data", Converter::ToHexString(Item.Data, 8));
 
-  return JSONObject.ToString();
+	return JSONObject.ToString();
 }
 
 /**
@@ -316,12 +310,12 @@ string Log::Serialize(Log::Item Item) {
  * @return log item from JSON string
  */
 Log::Item Log::Deserialize(string JSONString) {
-  JSON JSONObject(JSONString);
+	JSON JSONObject(JSONString);
 
-  Log::Item Record;
-  Record.Code = Converter::UintFromHexString<uint16_t>(JSONObject.GetItem("code"));
-  Record.Data = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("data"));
-  Record.Time = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("time"));
+	Log::Item Record;
+	Record.Code = Converter::UintFromHexString<uint16_t>(JSONObject.GetItem("code"));
+	Record.Data = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("data"));
+	Record.Time = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("time"));
 
-  return Record;
+	return Record;
 }

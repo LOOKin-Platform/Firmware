@@ -52,12 +52,11 @@ void Automation_t::SensorChanged(uint8_t SensorID) {
 }
 
 void Automation_t::TimeChangedTask(void *) {
-
 	while (1) {
 		while (Time::Unixtime()%SCENARIOS_TIME_INTERVAL!=0)
 			FreeRTOS::Sleep(1000);
 
-		for (auto& ScenarioCacheItem : Automation->ScenariosCache)
+		for (auto& ScenarioCacheItem : Automation.ScenariosCache)
 			if (ScenarioCacheItem.IsLinked == true && ScenarioCacheItem.ScenarioType == 0x2) {
 				Scenario_t *Scenario = new Scenario_t(ScenarioCacheItem.ScenarioType);
 				Scenario->SetData(ScenarioCacheItem.Operand);
@@ -75,131 +74,128 @@ void Automation_t::TimeChangedTask(void *) {
 
 void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts,
                                                   map<string,string> Params, string RequestBody) {
-  // обработка GET запроса - получение данных
-  if (Type == QueryType::GET) {
-    // Запрос корневого JSON /scenes
-    if (URLParts.size() == 0) {
+	// обработка GET запроса - получение данных
+	if (Type == QueryType::GET) {
+		if (URLParts.size() == 0) {
+			JSON JSONObject;
+			JSONObject.SetItem("Version", Converter::ToHexString(CurrentVersion(), 8));
 
-      JSON JSONObject;
-      JSONObject.SetItem("Version", Converter::ToHexString(CurrentVersion(), 8));
+			vector<map<string,string>> tmpVector = vector<map<string,string>>();
+			for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
+				tmpVector.push_back({
+					{ "SSID"  	, it->first},
+					{ "Version"	, Converter::ToHexString(it->second, 8)}
+				});
+			}
 
-      vector<map<string,string>> tmpVector = vector<map<string,string>>();
-      for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
-        tmpVector.push_back({
-          { "SSID"  , it->first},
-          { "Version", Converter::ToHexString(it->second, 8)}
-        });
-      }
+			JSONObject.SetObjectsArray("VersionMap", tmpVector);
 
-      JSONObject.SetObjectsArray("VersionMap", tmpVector);
+			vector<string> SceneIDs;
+			for (auto& Scenario : ScenariosCache)
+				SceneIDs.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
 
-      vector<string> SceneIDs;
-      for (auto& Scenario : ScenariosCache)
-        SceneIDs.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
+			JSONObject.SetStringArray("Scenarios", SceneIDs);
+			Result.Body = JSONObject.ToString();
+		}
 
-      JSONObject.SetStringArray("Scenarios", SceneIDs);
+		// Запрос конкретного параметра или команды секции API
+		if (URLParts.size() == 1) {
+			if (URLParts[0] == "version")   Result.Body = Converter::ToHexString(CurrentVersion(), 8);
+			if (URLParts[0] == "versionmap")Result.Body = SerializeVersionMap();
+			if (URLParts[0] == "scenarios") {
+				vector<string> Scenarios = vector<string>();
 
-      Result.Body = JSONObject.ToString();
-    }
+				for (auto& Scenario : ScenariosCache)
+					Scenarios.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
 
-    // Запрос конкретного параметра или команды секции API
-    if (URLParts.size() == 1) {
-      if (URLParts[0] == "version")   Result.Body = Converter::ToHexString(CurrentVersion(), 8);
-      if (URLParts[0] == "versionmap")Result.Body = SerializeVersionMap();
-      if (URLParts[0] == "scenarios") {
+				Result.Body = JSON::CreateStringFromVector(Scenarios);
+			}
+		}
 
-        vector<string> Scenarios = vector<string>();
-        for (auto& Scenario : ScenariosCache)
-          Scenarios.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
+		if (URLParts.size() == 2) {
+			if (URLParts[0] == "scenarios") {
+				Scenario_t Scenario;
 
-        Result.Body = JSON::CreateStringFromVector(Scenarios);
-      }
-    }
+				Scenario_t::LoadScenario(Scenario, Converter::UintFromHexString<uint32_t>(URLParts[1]));
 
-    if (URLParts.size() == 2) {
-      if (URLParts[0] == "scenarios") {
-    	  	  Scenario_t Scenario;
+				if (!Scenario.IsEmpty())
+					Result.Body = Scenario_t::SerializeScene(Scenario);
+				else {
+					Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
+					Result.Body = "{\"success\" : \"false\", \"message\" : \"Scenario doesn't exist\"}";
+				}
+			}
+		}
+	}
 
-    	  	  Scenario_t::LoadScenario(Scenario, Converter::UintFromHexString<uint32_t>(URLParts[1]));
+	// POST запрос - сохранение и изменение данных
+	if (Type == QueryType::POST) {
+		if (URLParts.size() == 0) {
+			if (Params.count("version") > 0) {
+				string SSID = (Params.count("SSID") > 0) ? Params["SSID"] : WiFi_t::getStaSSID();
 
-    	  	  if (!Scenario.IsEmpty())
-    	  		  Result.Body = Scenario_t::SerializeScene(Scenario);
-    	  	  else {
-    	  		  Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
-    	  		  Result.Body = "{\"success\" : \"false\", \"message\" : \"Scenario doesn't exist\"}";
-    	  	  }
-      }
-    }
-  }
+				if (SetVersionMap(SSID, Converter::UintFromHexString<uint32_t>(Params["version"])))
+					Result.Body = "{\"success\" : \"true\"}";
+				else {
+					Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
+					Result.Body = "{\"success\" : \"false\", \"message\" : \"Error while version processing\"}";
+				}
+			}
+		}
 
-  // POST запрос - сохранение и изменение данных
-  if (Type == QueryType::POST) {
-    if (URLParts.size() == 0) {
-      if (Params.count("version") > 0) {
-        string SSID = (Params.count("SSID") > 0) ? Params["SSID"] : WiFi_t::getStaSSID();
-          if (SetVersionMap(SSID, Converter::UintFromHexString<uint32_t>(Params["version"])))
-            Result.Body = "{\"success\" : \"true\"}";
-          else {
-            Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
-            Result.Body = "{\"success\" : \"false\", \"message\" : \"Error while version processing\"}";
-          }
-      }
-    }
+		if (URLParts.size() == 1) {
+			if (URLParts[0] == "scenarios") {
+				Scenario_t Scenario = Scenario_t::DeserializeScene(RequestBody);
+				bool IsFound = false;
 
-    if (URLParts.size() == 1) {
-    		if (URLParts[0] == "scenarios") {
+				if (!Scenario.IsEmpty()) {
+					for (int i=0; i < ScenariosCache.size(); i++)
+						if (ScenariosCache[i].ScenarioID == Scenario.ID) {
+							IsFound = true;
+							break;
+						}
 
-        Scenario_t Scenario = Scenario_t::DeserializeScene(RequestBody);
+					if (!IsFound) {
+						if (Scenario_t::SaveScenario(Scenario)) {
+							Result.Body = "{\"success\" : \"true\"}";
+						}
+						else {
+							Result.ResponseCode = WebServer_t::Response::CODE::ERROR;
+							Result.Body = "{\"success\" : \"false\", \"message\" : \"Error while scenario insertion\"}";
+						}
+					}
+					else {
+						Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
+						Result.Body = "{\"success\" : \"false\", \"message\" : \"Scenario already set\"}";
+					}
+				}
+			}
+		}
+	}
 
-        bool IsFound = false;
-        if (!Scenario.IsEmpty()) {
-          for (int i=0; i < ScenariosCache.size(); i++)
-            if (ScenariosCache[i].ScenarioID == Scenario.ID) {
-              IsFound = true;
-              break;
-            }
+	// DELETE запрос - удаление сценариев
+	if (Type == QueryType::DELETE) {
+		if (URLParts.size() == 2) {
+			if (URLParts[0] == "scenarios") {
+				vector<string> ScenariosToDelete = Converter::StringToVector(URLParts[1], ",");
 
-          if (!IsFound) {
-        	  	  if (Scenario_t::SaveScenario(Scenario)) {
-        	  		  Result.Body = "{\"success\" : \"true\"}";
-            }
-            else {
-              Result.ResponseCode = WebServer_t::Response::CODE::ERROR;
-              Result.Body = "{\"success\" : \"false\", \"message\" : \"Error while scenario insertion\"}";
-            }
-          }
-          else {
-            Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
-            Result.Body = "{\"success\" : \"false\", \"message\" : \"Scenario already set\"}";
-          }
-        }
-      }
-    }
-  }
+				for (auto& ScenarioToDelete : ScenariosToDelete) {
+					uint32_t ScenarioID = Converter::UintFromHexString<uint32_t>(ScenarioToDelete);
+					Scenario_t::RemoveScenario(ScenarioID);
+					RemoveScenarioCacheItem(ScenarioID);
+				}
 
-  // DELETE запрос - удаление сценариев
-  if (Type == QueryType::DELETE) {
-	  if (URLParts.size() == 2) {
-		  if (URLParts[0] == "scenarios") {
-			  vector<string> ScenariosToDelete = Converter::StringToVector(URLParts[1], ",");
-
-			  for (auto& ScenarioToDelete : ScenariosToDelete) {
-				  uint32_t ScenarioID = Converter::UintFromHexString<uint32_t>(ScenarioToDelete);
-				  Scenario_t::RemoveScenario(ScenarioID);
-				  RemoveScenarioCacheItem(ScenarioID);
-			  }
-
-			  if (ScenariosToDelete.size() > 0) {
-				  Result.ResponseCode = WebServer_t::Response::CODE::OK;
-				  Result.Body = "{\"success\" : \"true\"}";
-			  }
-			  else {
-				  Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
-				  Result.Body = "{\"success\" : \"false\", \"message\":\"empty scenario ID\"}";
-			  }
-		  }
-	  }
-  }
+				if (ScenariosToDelete.size() > 0) {
+					Result.ResponseCode = WebServer_t::Response::CODE::OK;
+					Result.Body = "{\"success\" : \"true\"}";
+				}
+				else {
+					Result.ResponseCode = WebServer_t::Response::CODE::INVALID;
+					Result.Body = "{\"success\" : \"false\", \"message\":\"empty scenario ID\"}";
+				}
+			}
+		}
+	}
 }
 
 uint8_t Automation_t::ScenarioCacheItemCount() {
@@ -210,7 +206,7 @@ uint8_t Automation_t::ScenarioCacheItemCount() {
 void Automation_t::AddScenarioCacheItem(Scenario_t Scenario) {
 	ScenarioCacheItem_t NewCacheItem;
 
-	NewCacheItem.IsLinked       = Scenario.Data->IsLinked(Device->ID, Scenario.Commands);
+	NewCacheItem.IsLinked       = Scenario.Data->IsLinked(Device.ID, Scenario.Commands);
 	NewCacheItem.ScenarioID     = Scenario.ID;
 	NewCacheItem.ScenarioType   = Scenario.Type;
 	NewCacheItem.Operand        = Converter::UintFromHexString<uint64_t>(Scenario.Data->ToString());
@@ -227,16 +223,16 @@ void Automation_t::RemoveScenarioCacheItem(uint32_t ScenarioID) {
 }
 
 void Automation_t::LoadVersionMap() {
-  NVS Memory(NVSAutomationArea);
+	NVS Memory(NVSAutomationArea);
 
-  JSON JSONObject(Memory.GetString(NVSAutomationVersionMap));
+	JSON JSONObject(Memory.GetString(NVSAutomationVersionMap));
 
-  vector<map<string,string>> Items = JSONObject.GetObjectsArray();
+	vector<map<string,string>> Items = JSONObject.GetObjectsArray();
 
-  for (int i=0; i < Items.size(); i++) {
-    if (!Items[i]["ssid"].empty())
-      VersionMap[Items[i]["ssid"]] = Converter::UintFromHexString<uint32_t>(Items[i]["version"]);
-    }
+	for (int i=0; i < Items.size(); i++) {
+		if (!Items[i]["ssid"].empty())
+			VersionMap[Items[i]["ssid"]] = Converter::UintFromHexString<uint32_t>(Items[i]["version"]);
+	}
 }
 
 bool Automation_t::SetVersionMap(string SSID, uint32_t Version) {
@@ -259,8 +255,8 @@ string Automation_t::SerializeVersionMap() {
   vector<map<string,string>> tmpVector = vector<map<string,string>>();
   for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
     tmpVector.push_back({
-      { "SSID"  , it->first},
-      { "Version", Converter::ToHexString(it->second, 8)}
+      { "SSID"  	, it->first},
+      { "Version"	, Converter::ToHexString(it->second, 8)}
     });
   }
 

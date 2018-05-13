@@ -9,14 +9,14 @@
 vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
   vector<Sensor_t*> Sensors = {};
 
-  switch (Device->Type->Hex) {
-    case DEVICE_TYPE_PLUG_HEX:
+  switch (Device.Type.Hex) {
+    case Settings.Devices.Plug:
       Sensors = { new SensorSwitch_t(), new SensorColor_t() };
       break;
-    case DEVICE_TYPE_REMOTE_HEX:
+    case Settings.Devices.Remote:
       Sensors = { new SensorIR_t(),  new SensorColor_t() };
       break;
-    case DEVICE_TYPE_MOTION_HEX:
+    case Settings.Devices.Motion:
       Sensors = { new SensorMotion_t() };
       break;
   }
@@ -43,7 +43,7 @@ Sensor_t* Sensor_t::GetSensorByID(uint8_t SensorID) {
 }
 
 uint8_t Sensor_t::GetDeviceTypeHex() {
-	return Device->Type->Hex;
+	return Device.Type.Hex;
 }
 
 
@@ -73,10 +73,10 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 
         JSON JSONObject;
 
-        JSONObject.SetItems({
-          { "Value"               , Sensor->FormatValue()  },
-          { "Updated"             , Converter::ToString(Sensor->Values["Primary"].Updated)}
-        });
+        JSONObject.SetItems(vector<pair<string,string>>({
+    		make_pair("Value"	, Sensor->FormatValue()),
+    	    make_pair("Updated"	, Converter::ToString(Sensor->Values["Primary"].Updated))
+        }));
 
         // Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
         if (Sensor->Values.size() > 1) {

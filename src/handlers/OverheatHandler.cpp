@@ -1,52 +1,59 @@
-#include "../Include/Log.h"
+#include "Log.h"
 #include "FreeRTOSWrapper.h"
 
 extern "C" {
 	uint8_t temprature_sens_read(void);
 }
 
+static bool 	IsActive 		= true;
+static uint16_t	OverheatTimer	= 0;
+
 class OverheatHandler
 {
 	public:
 		static void Start();
 		static void Stop();
-	private:
-		static void CheckOverheat(void *pvParameters);
-		static TaskHandle_t CheckOverheatTaskHandle;
+		static void Pool(uint16_t Expired);
 };
 
-TaskHandle_t OverheatHandler::CheckOverheatTaskHandle =  NULL;
-
 void OverheatHandler::Start()  {
-	CheckOverheatTaskHandle = FreeRTOS::StartTaskPinnedToCore(OverheatHandler::CheckOverheat, "CheckOverheat", NULL, 2048);
+	IsActive 		= true;
+	OverheatTimer 	= 0;
 }
 
 void OverheatHandler::Stop()  {
-	FreeRTOS::DeleteTask(CheckOverheatTaskHandle);
+	IsActive 		= false;
+	OverheatTimer 	= 0;
 }
 
-void OverheatHandler::CheckOverheat(void *pvParameters) {
+void OverheatHandler::Pool(uint16_t Expired) {
 	bool IsOverheated = false;
 
-	while (1) {
-		uint8_t ChipTemperature = temprature_sens_read();
-		ChipTemperature = (uint8_t)floor((ChipTemperature - 32) * (5.0/9.0) + 0.5); // From Fahrenheit to Celsius
-		Device->Temperature = ChipTemperature;
+	if (!IsActive) return;
 
-		if (ChipTemperature > 90) {
-			IsOverheated = true;
-			Log::Add(LOG_DEVICE_OVERHEAT);
-			for (auto& Command : Commands)
-				Command->Overheated();
-    		}
+	OverheatTimer += Expired;
 
-		if (ChipTemperature < 77) {
-			if (IsOverheated) {
-				IsOverheated = false;
-				Log::Add(LOG_DEVICE_COOLLED);
-			}
-		}
+	if (OverheatTimer < Settings.Pooling.OverHeat.Inverval)
+		return;
 
-		FreeRTOS::Sleep(OVERHEET_POOLING);
+	uint8_t ChipTemperature = temprature_sens_read();
+	ChipTemperature = (uint8_t)floor((ChipTemperature - 32) * (5.0/9.0) + 0.5); // From Fahrenheit to Celsius
+	Device.Temperature = ChipTemperature;
+
+	if (ChipTemperature > Settings.Pooling.OverHeat.OverheatTemp) {
+		IsOverheated = true;
+		Log::Add(LOG_DEVICE_OVERHEAT);
+
+		for (auto& Command : Commands)
+			Command->Overheated();
 	}
+
+	if (ChipTemperature < Settings.Pooling.OverHeat.ChilledTemp) {
+		if (IsOverheated) {
+			IsOverheated = false;
+			Log::Add(LOG_DEVICE_COOLLED);
+		}
+	}
+
+	OverheatTimer = 0;
 }

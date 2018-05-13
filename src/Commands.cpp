@@ -36,20 +36,20 @@ Command_t* Command_t::GetCommandByID(uint8_t CommandID) {
 }
 
 uint8_t Command_t::GetDeviceTypeHex() {
-	return Device->Type->Hex;
+	return Device.Type.Hex;
 }
 
 vector<Command_t*> Command_t::GetCommandsForDevice() {
 	vector<Command_t*> Commands = {};
 
-	switch (Device->Type->Hex) {
-		case DEVICE_TYPE_PLUG_HEX:
+	switch (Device.Type.Hex) {
+		case Settings.Devices.Plug:
 			Commands = { new CommandSwitch_t(), new CommandColor_t() };
 			break;
-		case DEVICE_TYPE_REMOTE_HEX:
+		case Settings.Devices.Remote:
 			Commands = { new CommandIR_t() , new CommandColor_t() };
 			break;
-		case DEVICE_TYPE_MOTION_HEX:
+		case Settings.Devices.Motion:
 			Commands = { };
 			break;
 	}

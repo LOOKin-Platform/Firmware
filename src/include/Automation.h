@@ -36,26 +36,26 @@ class Automation_t {
 		uint32_t		CurrentVersion();
 
 		void			SensorChanged(uint8_t SensorID);
-		static void	TimeChangedTask(void *);
+		static void		TimeChangedTask(void *);
 
-		uint8_t		ScenarioCacheItemCount();
+		uint8_t			ScenarioCacheItemCount();
 		void			AddScenarioCacheItem    	(Scenario_t);
 		void			RemoveScenarioCacheItem 	(uint32_t);
 
 		void			LoadVersionMap();
 		bool			SetVersionMap(string SSID, uint32_t Version);
-		string		SerializeVersionMap();
+		string			SerializeVersionMap();
 
 		void			HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string>, map<string,string>, string = "");
 
 	private:
-		TaskHandle_t TimeChangedHandle;
+		TaskHandle_t 	TimeChangedHandle;
 
 		vector<ScenarioCacheItem_t> ScenariosCache;
 		map<string, uint32_t>       VersionMap;
 
-		void  		Debug(Scenario_t);
-		void  		Debug(ScenarioCacheItem_t);
+		void  			Debug(Scenario_t);
+		void  			Debug(ScenarioCacheItem_t);
 };
 
 #endif //AUTOMATION_H

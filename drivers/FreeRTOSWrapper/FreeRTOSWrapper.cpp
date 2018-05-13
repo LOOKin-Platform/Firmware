@@ -28,9 +28,9 @@ void FreeRTOS::Sleep(uint32_t ms) {
  * @param[in] stackSize An optional paremeter supplying the size of the stack in which to run the task.
  * @param[out] Handle to the created Task;
  */
-TaskHandle_t FreeRTOS::StartTask(void task(void*), string taskName, void *param, int stackSize) {
+TaskHandle_t FreeRTOS::StartTask(void task(void*), string taskName, void *param, int stackSize, uint8_t Priority) {
 	TaskHandle_t TaskHandle = NULL;
-	::xTaskCreate(task, taskName.data(), stackSize, param, 5, &TaskHandle);
+	::xTaskCreate(task, taskName.data(), stackSize, param, Priority, &TaskHandle);
 	return TaskHandle;
 } // startTask
 

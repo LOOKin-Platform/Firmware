@@ -87,9 +87,9 @@ private:
 
 class WiFi_t {
 	private:
-		string      			ip;
-		string      			gw;
-		string      			netmask;
+		string      		ip;
+		string      		gw;
+		string      		netmask;
 		WiFiEventHandler 	*wifiEventHandler;
 
 	public:

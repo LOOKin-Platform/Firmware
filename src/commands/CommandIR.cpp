@@ -8,20 +8,20 @@
 class CommandIR_t : public Command_t {
   public:
 	CommandIR_t() {
-	    ID          = 0x07;
-	    Name        = "IR";
+		ID          = 0x07;
+		Name        = "IR";
 
-	    Events["nec"]  		= 0x01;
-	    Events["prontohex"]	= 0xEE;
+		Events["nec"]  		= 0x01;
+		Events["prontohex"]	= 0xEE;
 
-	    switch (GetDeviceTypeHex()) {
-	      case DEVICE_TYPE_REMOTE_HEX:
-	    	  	  if (IR_REMOTE_SENDER_GPIO != GPIO_NUM_0)
-	    	  		  //RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_4, 36000);
-    	  		  	  RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_4, 38000);
-    	  		  	  //RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_6, 40000);
-    	  		  	  //RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_7, 56000);
-    	  		  	  break;
+		switch (GetDeviceTypeHex()) {
+			case Settings.Devices.Remote:
+				if (IR_REMOTE_SENDER_GPIO != GPIO_NUM_0)
+					//RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_4, 36000);
+					RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_4, 38000);
+					//RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_6, 40000);
+					//RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, RMT_CHANNEL_7, 56000);
+			break;
 	    }
 	}
 

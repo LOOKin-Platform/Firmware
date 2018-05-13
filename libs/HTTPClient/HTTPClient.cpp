@@ -8,7 +8,7 @@
 
 static char tag[] = "HTTPClient";
 
-QueueHandle_t HTTPClient::Queue = FreeRTOS::Queue::Create(HTTPCLIENT_QUEUE_SIZE, sizeof( struct HTTPClientData_t ));
+QueueHandle_t HTTPClient::Queue = FreeRTOS::Queue::Create(Settings.HTTPClient.QueueSize, sizeof( struct HTTPClientData_t ));
 uint8_t HTTPClient::ThreadsCounter = 0;
 
 /**
@@ -54,24 +54,24 @@ void HTTPClient::Query(string Hostname, uint16_t Port, string ContentURI, QueryT
  */
 
 void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
-  if( Queue == 0 ) {
-    ESP_LOGE(tag, "Failed to create queue");
-    return;
-  }
+	if( Queue == 0 ) {
+		ESP_LOGE(tag, "Failed to create queue");
+		return;
+	}
 
-  if (ToFront)
-    FreeRTOS::Queue::SendToFront(Queue, &Query, (TickType_t) HTTPCLIENT_BLOCK_TICKS );
-  else
-    FreeRTOS::Queue::SendToBack(Queue, &Query, (TickType_t) HTTPCLIENT_BLOCK_TICKS );
+	if (ToFront)
+		FreeRTOS::Queue::SendToFront(Queue, &Query, (TickType_t) Settings.HTTPClient.BlockTicks );
+	else
+		FreeRTOS::Queue::SendToBack(Queue, &Query, (TickType_t) Settings.HTTPClient.BlockTicks );
 
-  if (ThreadsCounter <= 0) {
-    ThreadsCounter = 1;
-    FreeRTOS::StartTask(HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, HTTPCLIENT_TASK_STACKSIZE);
-  }
-  else if (FreeRTOS::Queue::Count(Queue) >= HTTPCLIENT_NEW_THREAD_STEP && ThreadsCounter < HTTPCLIENT_THREADS_MAX) {
-    ThreadsCounter++;
-    FreeRTOS::StartTask(HTTPClient::HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, HTTPCLIENT_TASK_STACKSIZE);
-  }
+	if (ThreadsCounter <= 0) {
+		ThreadsCounter = 1;
+		FreeRTOS::StartTask(HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.ThreadStackSize);
+	}
+	else if (FreeRTOS::Queue::Count(Queue) >= Settings.HTTPClient.NewThreadStep && ThreadsCounter < Settings.HTTPClient.ThreadsMax) {
+		ThreadsCounter++;
+		FreeRTOS::StartTask(HTTPClient::HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.ThreadStackSize);
+	}
 }
 
 /**
@@ -81,89 +81,89 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
  */
 
 void HTTPClient::HTTPClientTask(void *TaskData) {
-  ESP_LOGD(tag, "Task %u created", (uint32_t)TaskData);
+	ESP_LOGD(tag, "Task %u created", (uint32_t)TaskData);
 
-  HTTPClientData_t ClientData;
+	HTTPClientData_t ClientData;
 
-  if (Queue != 0)
-    while (FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) HTTPCLIENT_BLOCK_TICKS)) {
-      if (HTTPClient::Connect(ClientData)) {
-        ESP_LOGI(tag, "Connected to http server");
-      }
-      else {
-        ESP_LOGE(tag, "Connect to http server failed!");
-        HTTPClient::Failed(ClientData);
-        continue;
-      }
+	if (Queue != 0)
+		while (FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks)) {
+			if (HTTPClient::Connect(ClientData)) {
+				ESP_LOGI(tag, "Connected to http server");
+			}
+			else {
+				ESP_LOGE(tag, "Connect to http server failed!");
+				HTTPClient::Failed(ClientData);
+				continue;
+			}
 
-      int res = -1;
+			int res = -1;
 
-      // send request to http server
-      string Method = "";
-      switch (ClientData.Method) {
-        case POST   : Method = "GET"    ; break;
-        case DELETE : Method = "DELETE" ; break;
-        case GET    :
-        default     : Method = "GET"    ; break;
-      }
+			// send request to http server
+			string Method = "";
+			switch (ClientData.Method) {
+				case POST   : Method = "GET"    ; break;
+				case DELETE : Method = "DELETE" ; break;
+				case GET    :
+				default     : Method = "GET"    ; break;
+			}
 
-      char Request[128];
-      sprintf (Request, "%s %s HTTP/1.1\r\nHost:%s:%u \r\n\r\n", Method.c_str(), ClientData.ContentURI, ClientData.Hostname, ClientData.Port);
+			char Request[128];
+			sprintf (Request, "%s %s HTTP/1.1\r\nHost:%s:%u \r\n\r\n", Method.c_str(), ClientData.ContentURI, ClientData.Hostname, ClientData.Port);
 
-      res = send(ClientData.SocketID, Request, sizeof(Request), 0);
-      if (res == -1) {
-          ESP_LOGE(tag, "Send request to server failed");
-          HTTPClient::Failed(ClientData);
-          continue;
-      }
-      else
-          ESP_LOGI(tag, "Send request to server succeeded");
+			res = send(ClientData.SocketID, Request, sizeof(Request), 0);
+			if (res == -1) {
+				ESP_LOGE(tag, "Send request to server failed");
+				HTTPClient::Failed(ClientData);
+				continue;
+			}
+			else
+				ESP_LOGI(tag, "Send request to server succeeded");
 
-      bool resp_body_start = false, flag = true;
-      char ReadData[HTTPCLIENT_NETBUF_LEN + 1] = { 0 };
-      char Text[HTTPCLIENT_NETBUF_LEN + 1]     = { 0 };
+			bool resp_body_start = false, flag = true;
+			char ReadData[Settings.HTTPClient.NetbuffLen + 1] = { 0 };
+			char Text[Settings.HTTPClient.NetbuffLen + 1]     = { 0 };
 
-      if (ClientData.ReadStartedCallback != NULL)
-        ClientData.ReadStartedCallback(ClientData.IP);
+			if (ClientData.ReadStartedCallback != NULL)
+				ClientData.ReadStartedCallback(ClientData.IP);
 
-      while (flag) {
-        memset(Text, 0, HTTPCLIENT_NETBUF_LEN);
-        memset(ReadData, 0, HTTPCLIENT_NETBUF_LEN);
+			while (flag) {
+				memset(Text, 0, Settings.HTTPClient.NetbuffLen);
+				memset(ReadData, 0, Settings.HTTPClient.NetbuffLen);
 
-        int BuffLen = recv(ClientData.SocketID, Text, HTTPCLIENT_NETBUF_LEN, 0);
+				int BuffLen = recv(ClientData.SocketID, Text, Settings.HTTPClient.NetbuffLen, 0);
 
-        if (BuffLen < 0) {
-          ESP_LOGE(tag, "Error: receive data error! errno=%d", errno);
-          HTTPClient::Failed(ClientData);
-          break;
-        }
-        else if (BuffLen > 0 && !resp_body_start) { // skip header
-          memcpy(ReadData, Text, BuffLen);
-          resp_body_start = HTTPClient::ReadPastHttpHeader(ClientData, Text, BuffLen);
-        }
-        else if (BuffLen > 0 && resp_body_start) {
-          memcpy(ReadData, Text, BuffLen);
+				if (BuffLen < 0) {
+					ESP_LOGE(tag, "Error: receive data error! errno=%d", errno);
+					HTTPClient::Failed(ClientData);
+					break;
+				}
+				else if (BuffLen > 0 && !resp_body_start) { // skip header
+					memcpy(ReadData, Text, BuffLen);
+					resp_body_start = HTTPClient::ReadPastHttpHeader(ClientData, Text, BuffLen);
+				}
+				else if (BuffLen > 0 && resp_body_start) {
+					memcpy(ReadData, Text, BuffLen);
 
-          if (ClientData.ReadBodyCallback != NULL)
-            if (!ClientData.ReadBodyCallback(ReadData, BuffLen, ClientData.IP)) {
-              HTTPClient::Failed(ClientData);
-              break;
-            }
-        }
-        else if (BuffLen == 0) {
-          flag = false;
-          ESP_LOGI(tag, "Connection closed, all packets received");
-          close(ClientData.SocketID);
-        }
-        else
-          ESP_LOGE(tag, "Unexpected recv result");
-      }
+					if (ClientData.ReadBodyCallback != NULL)
+						if (!ClientData.ReadBodyCallback(ReadData, BuffLen, ClientData.IP)) {
+							HTTPClient::Failed(ClientData);
+							break;
+						}
+				}
+				else if (BuffLen == 0) {
+					flag = false;
+					ESP_LOGI(tag, "Connection closed, all packets received");
+					close(ClientData.SocketID);
+				}
+				else
+					ESP_LOGE(tag, "Unexpected recv result");
+			}
 
-      if (ClientData.ReadFinishedCallback != NULL)
-        ClientData.ReadFinishedCallback(ClientData.IP);
-    }
+			if (ClientData.ReadFinishedCallback != NULL)
+				ClientData.ReadFinishedCallback(ClientData.IP);
+		}
 
-    ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
+	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
     HTTPClient::ThreadsCounter--;
     FreeRTOS::DeleteTask();
 }
@@ -248,11 +248,12 @@ char* HTTPClient::ResolveIP(const char *Hostname, uint16_t Port) {
  * @return Read bytes counts
  */
 int HTTPClient::ReadUntil(char *buffer, char delim, int len) {
-  int i = 0;
-  while (buffer[i] != delim && i < len) {
+	int i = 0;
+	while (buffer[i] != delim && i < len) {
       ++i;
-  }
-  return i + 1;
+	}
+
+	return i + 1;
 }
 
  /**
@@ -264,31 +265,32 @@ int HTTPClient::ReadUntil(char *buffer, char delim, int len) {
   * @return Return true if packet including \\r\\n\\r\\n that means http packet header finished, otherwise return false
   */
 bool HTTPClient::ReadPastHttpHeader(HTTPClientData_t &ClientData, char text[], int total_len) {
-  /* i means current position */
-  int i = 0, i_read_len = 0;
-  char ReadData[HTTPCLIENT_NETBUF_LEN + 1] = { 0 };
+	/* i means current position */
+	int i = 0, i_read_len = 0;
+	char ReadData[Settings.HTTPClient.NetbuffLen + 1] = { 0 };
 
-  while (text[i] != 0 && i < total_len) {
-    i_read_len = ReadUntil(&text[i], '\n', total_len);
-    // if we resolve \r\n line,we think packet header is finished
+	while (text[i] != 0 && i < total_len) {
+		i_read_len = ReadUntil(&text[i], '\n', total_len);
+		// if we resolve \r\n line,we think packet header is finished
 
-    if (i_read_len == 2) {
-      int i_write_len = total_len - (i + 2);
+		if (i_read_len == 2) {
+			int i_write_len = total_len - (i + 2);
 
-      memset(ReadData, 0, HTTPCLIENT_NETBUF_LEN);
-      memcpy(ReadData, &(text[i + 2]), i_write_len);
+			memset(ReadData, 0, Settings.HTTPClient.NetbuffLen);
+			memcpy(ReadData, &(text[i + 2]), i_write_len);
 
-      if (ClientData.ReadBodyCallback != NULL) {
-        if (!ClientData.ReadBodyCallback(ReadData,i_write_len, ClientData.IP))
-          return false;
-      }
+			if (ClientData.ReadBodyCallback != NULL) {
+				if (!ClientData.ReadBodyCallback(ReadData,i_write_len, ClientData.IP))
+					return false;
+			}
 
-      return true;
-    }
-    i += i_read_len;
-  }
+			return true;
+		}
 
-  return false;
+		i += i_read_len;
+	}
+
+	return false;
 }
 
 /**
@@ -297,9 +299,9 @@ bool HTTPClient::ReadPastHttpHeader(HTTPClientData_t &ClientData, char text[], i
  * @param [in] &ClientData HTTPClientData_t struct with query info.
  */
 void HTTPClient::Failed(HTTPClientData_t &ClientData) {
-  ESP_LOGE(tag, "Exiting HTTPClient task due to fatal error...");
-  close(ClientData.SocketID);
+	ESP_LOGE(tag, "Exiting HTTPClient task due to fatal error...");
+	close(ClientData.SocketID);
 
-  if (ClientData.AbortedCallback != NULL)
-    ClientData.AbortedCallback(ClientData.IP);
+	if (ClientData.AbortedCallback != NULL)
+		ClientData.AbortedCallback(ClientData.IP);
 }

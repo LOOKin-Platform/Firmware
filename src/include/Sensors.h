@@ -40,25 +40,26 @@ class Sensor_t {
     map<string, SensorValueItem> Values;
     virtual ~Sensor_t() = default;
 
-    virtual void				Update() {};
+    virtual void			Update() {};
     virtual double			ReceiveValue(string = "") { return 0; };
-    virtual bool				CheckOperand(uint8_t, uint8_t) { return false; };
+    virtual bool			CheckOperand(uint8_t, uint8_t) { return false; };
     virtual string			FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
 
     static void				UpdateSensors();
-    static vector<Sensor_t*>	GetSensorsForDevice();
-    static Sensor_t*			GetSensorByName(string);
-    static Sensor_t*			GetSensorByID(uint8_t);
+    static vector<Sensor_t*>GetSensorsForDevice();
+    static Sensor_t*		GetSensorByName(string);
+    static Sensor_t*		GetSensorByID(uint8_t);
     static uint8_t			GetDeviceTypeHex();
 
-    bool						SetValue(uint32_t Value, string Key = "Primary");
+    bool					SetValue(uint32_t Value, string Key = "Primary");
     SensorValueItem			GetValue(string Key = "Primary");
 
     static void HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 };
 
-extern Automation_t *Automation;
-extern WebServer_t  *WebServer;
+extern Settings_t 	Settings;
+extern Automation_t Automation;
+extern WebServer_t  WebServer;
 
 #include "../sensors/SensorSwitch.cpp"
 #include "../sensors/SensorColor.cpp"

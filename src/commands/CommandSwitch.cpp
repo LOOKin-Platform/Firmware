@@ -14,7 +14,7 @@ class CommandSwitch_t : public Command_t {
 		Events["off"] = 0x02;
 
 		switch (GetDeviceTypeHex()) {
-			case DEVICE_TYPE_PLUG_HEX	: GPIO::Setup(SWITCH_PLUG_PIN_NUM); break;
+			case Settings.Devices.Plug	: GPIO::Setup(SWITCH_PLUG_PIN_NUM); break;
 		}
     }
     

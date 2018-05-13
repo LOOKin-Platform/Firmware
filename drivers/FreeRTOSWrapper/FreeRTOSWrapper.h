@@ -34,24 +34,24 @@ class FreeRTOS {
 
 
 		static void 				Sleep(uint32_t ms);
-		static TaskHandle_t 		StartTask(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048);
+		static TaskHandle_t 		StartTask(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Priority = 5);
 		static TaskHandle_t 		StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Core = 0);
-		static void 				DeleteTask(TaskHandle_t pTask = nullptr);
+		static void 				DeleteTask(TaskHandle_t pTask = NULL);
 
 		static uint32_t 			GetTimeSinceStart();
-		static uint8_t			GetCurrentCoreID();
+		static uint8_t				GetCurrentCoreID();
 
 		class Semaphore {
 			public:
 				Semaphore(string owner = "<Unknown>");
 				~Semaphore();
 				void 				Give();
-				void        			Give(uint32_t value);
+				void        		Give(uint32_t value);
 				void 				SetName(string name);
 				bool 				Take(string owner="<Unknown>");
 				bool 				Take(uint32_t timeoutMs, string owner="<Unknown>");
 				string 				toString();
-				uint32_t				Wait(std::string owner="<Unknown>");
+				uint32_t			Wait(std::string owner="<Unknown>");
 
 				static bool			TakeFromISR(SemaphoreHandle_t Semaphore, bool IsHighPriorityTask = true);
 			private:
@@ -59,8 +59,8 @@ class FreeRTOS {
 				pthread_mutex_t   	m_pthread_mutex;
 				string				m_name;
 				string				m_owner;
-				uint32_t				m_value;
-				bool					m_usePthreads;
+				uint32_t			m_value;
+				bool				m_usePthreads;
 		};
 
 		/**

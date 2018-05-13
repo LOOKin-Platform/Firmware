@@ -36,7 +36,7 @@ void BluetoothServer_t::Start() {
 
 void BluetoothServer_t::BluetoothServerTask(void *data)
 {
-	BLEDevice::init("LOOK.in " + Device->TypeToString() + " " + Device->IDToString());
+	BLEDevice::init("LOOK.in " + Device.TypeToString() + " " + Device.IDToString());
 
 	BLEServer*  pServer  = BLEDevice::createServer();
 

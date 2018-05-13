@@ -49,20 +49,25 @@ class Converter {
 		static string			ToUTF16String(uint16_t SrcString[], uint8_t Size);
 		static vector<uint16_t>	ToUTF16Vector(string SrcString);
 
-		static float				ToFloat(string);
+
+		static float			ToFloat (string);
+		static uint16_t			ToUint16(string);
 
 		template <typename T>
-		static T					UintFromHexString(string);
+		static T				UintFromHexString(string);
 
-		static vector<string> 	StringToVector(string SourceStr, string Delimeter);
+		static vector<string> 	StringToVector		(string SourceStr, string Delimeter);
 		static string			VectorToString(const vector<string>& Strings, const char* Delimeter);
 
 		static string			StringURLDecode(string);
 		static string			StringURLEncode(string);
 
+		static void				StringMove(string &Destination, string &Src);
 
 		static uint32_t			IPToUint32(tcpip_adapter_ip_info_t);
 
 		static uint8_t			ReverseBits(uint8_t);
+
+		static uint16_t			CRC16(vector<uint8_t>);
 };
 #endif

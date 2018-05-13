@@ -110,6 +110,7 @@ bool BLEClient::connect(BLEAddress address) {
 	errRc = ::esp_ble_gattc_open(
 		getGattcIf(),
 		*getPeerAddress().getNative(), // address
+		BLE_ADDR_TYPE_PUBLIC,
 		1                              // direct connection
 	);
 	if (errRc != ESP_OK) {

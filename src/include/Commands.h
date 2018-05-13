@@ -21,19 +21,20 @@
 #include "HardwareIO.h"
 #include "Converter.h"
 #include "Sensors.h"
+#include "Settings.h"
 
 using namespace std;
 
 class Command_t {
   public:
-    uint8_t               ID;
-    string                Name;
-    map<string,uint8_t>   Events;
+    uint8_t               		ID;
+    string                		Name;
+    map<string,uint8_t>   		Events;
 
     virtual ~Command_t() = default;
 
-    virtual bool					Execute(uint8_t EventCode, string StringOperand = "0") { return true; };
-    virtual void					Overheated() {};
+    virtual bool				Execute(uint8_t EventCode, string StringOperand = "0") { return true; };
+    virtual void				Overheated() {};
 
     uint8_t						GetEventCode(string Action);
 

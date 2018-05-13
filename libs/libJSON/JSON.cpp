@@ -22,32 +22,62 @@ JSON::JSON(string JSONString) {
 }
 
 JSON::~JSON() {
-  cJSON_Delete(Root);
+	cJSON_Delete(Root);
 }
 
 string JSON::GetItem(string Key) {
-  if (Root != NULL) {
-    cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
-    if (Value != NULL)
-      return Value->valuestring;
-  }
+	string Result;
 
-  return "";
+	if (Root != NULL) {
+		cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+
+		if (Value != NULL) {
+			Result = Value->valuestring;
+		}
+	}
+
+	return Result;
 }
 
 void JSON::SetItem(string Key, string Value) {
 	cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());
 }
 
-map<string,string> JSON::GetItems(cJSON *Parent, bool CaseSensitive) {
-	map<string,string> Result = map<string,string>();
+void JSON::SetItems(map<string,string> Values, cJSON *Item) {
+	SetItemsTemplated<map<string,string>>(Values, Item);
+}
+
+void JSON::SetItems(vector<pair<string,string>> Values, cJSON *Item) {
+	SetItemsTemplated<vector<pair<string,string>>>(Values, Item);
+}
+
+template <typename T>
+void JSON::SetItemsTemplated(T Values, cJSON *Item) {
+	if (Root != NULL || Item != NULL)
+		for(auto& Value : Values)
+			cJSON_AddStringToObject((Item != NULL) ? Item : Root, Value.first.c_str(), Value.second.c_str());
+}
+template void JSON::SetItemsTemplated<map<string,string>> (map<string,string> Values, cJSON *Item);
+template void JSON::SetItemsTemplated<vector<pair<string,string>>>(vector<pair<string,string>> Values, cJSON *Item);
+
+map<string,string> JSON::GetItems(cJSON* Parent, bool CaseSensitive) {
+	return GetItemsTemplated<map<string,string>>(Parent, CaseSensitive);
+}
+
+vector<pair<string,string>> JSON::GetItemsUnordered (cJSON* Parent, bool CaseSensitive) {
+	return GetItemsTemplated<vector<pair<string,string>>>(Parent, CaseSensitive);
+}
+
+template <typename T>
+T JSON::GetItemsTemplated(cJSON *Parent, bool CaseSensitive) {
+	T Result = T();
 
 	if (Root != NULL || Parent != NULL) {
 		cJSON *Child = (Parent != NULL) ? Parent->child : Root->child;
 
 		while( Child ) {
 			if (Child->type != cJSON_Array)
-				Result[(CaseSensitive) ? Child->string : Converter::ToLower(Child->string)] = Child->valuestring;
+				AddToMapOrTupple(Result,  Child->string, Child->valuestring, CaseSensitive);
 
 			Child = Child->next;
 		}
@@ -55,22 +85,18 @@ map<string,string> JSON::GetItems(cJSON *Parent, bool CaseSensitive) {
 
 	return Result;
 }
+template map<string,string> 			JSON::GetItemsTemplated(cJSON *Parent, bool CaseSensitive);
+template vector<pair<string,string>> 	JSON::GetItemsTemplated(cJSON *Parent, bool CaseSensitive);
 
-void JSON::SetItems(map<string,string> Values, cJSON *Item) {
-	if (Root != NULL || Item != NULL)
-		for(auto& Value : Values)
-			cJSON_AddStringToObject((Item != NULL) ? Item : Root, Value.first.c_str(), Value.second.c_str());
-}
+void JSON::SetObject(string Key, vector<pair<string,string>> Values) {
+	if (Root != NULL) {
+		cJSON *Item = cJSON_CreateObject();
 
-void JSON::SetObject(string Key, map<string,string> Values) {
-  if (Root != NULL) {
-    cJSON *Item = cJSON_CreateObject();
+		for(auto &Value : Values)
+			cJSON_AddStringToObject(Item, Value.first.c_str(), Value.second.c_str());
 
-    for(auto &Value : Values)
-      cJSON_AddStringToObject(Item, Value.first.c_str(), Value.second.c_str());
-
-    cJSON_AddItemToObject(Root, Key.c_str(), Item);
-  }
+		cJSON_AddItemToObject(Root, Key.c_str(), Item);
+	}
 }
 
 vector<string> JSON::GetStringArray(string Key) {
@@ -96,69 +122,142 @@ vector<string> JSON::GetStringArray(string Key) {
 }
 
 void JSON::SetStringArray(string Key, vector<string> Values) {
-  cJSON *Array = cJSON_CreateArray();
+	cJSON *Array = cJSON_CreateArray();
 
-  for(auto& Value : Values)
-    cJSON_AddItemToArray(Array, cJSON_CreateString(Value.c_str()));
+	for(auto& Value : Values)
+		cJSON_AddItemToArray(Array, cJSON_CreateString(Value.c_str()));
 
-  cJSON_AddItemToObject(Root, Key.c_str(), Array);
+	cJSON_AddItemToObject(Root, Key.c_str(), Array);
 }
 
-vector<map<string,string>> JSON::GetObjectsArray(string Key) {
-  vector<map<string,string>> Result = vector<map<string,string>>();
+template <typename T>
+void JSON::SetUintArray(string Key, vector<T> Values, uint8_t HexCount) {
+	cJSON *Array = cJSON_CreateArray();
 
-  if (Root != NULL) {
-    cJSON *Array = (!Key.empty()) ? cJSON_GetObjectItem(Root, Key.c_str())
-                                  : Root;
+	for(auto& Value : Values)
+		if (HexCount == 0)
+			cJSON_AddItemToArray(Array, cJSON_CreateString(Converter::ToString(Value).c_str()));
+		else
+			cJSON_AddItemToArray(Array, cJSON_CreateString(Converter::ToHexString((T)Value, HexCount).c_str()));
 
-    if (Array->type == cJSON_Array) {
-      cJSON *Child = Array->child;
-      while(Child) {
-        if (Child->type != cJSON_Array)
-          Result.push_back(GetItems(Child));
-
-        Child = Child->next;
-      }
-    }
-  }
-
-  return Result;
+	cJSON_AddItemToObject(Root, Key.c_str(), Array);
 }
+template void JSON::SetUintArray<uint8_t> (string Key, vector<uint8_t>, uint8_t);
+template void JSON::SetUintArray<uint16_t>(string Key, vector<uint16_t>, uint8_t);
 
 void JSON::SetObjectsArray(string Key, vector<map<string,string>> Values) {
-  if (Root != NULL) {
-
-    cJSON *Array = cJSON_CreateArray();
-
-    for (auto& Value : Values) {
-      cJSON *Item = cJSON_CreateObject();
-      SetItems(Value, Item);
-
-      cJSON_AddItemToArray(Array, Item);
-    }
-
-    if (!Key.empty())
-      cJSON_AddItemToObject(Root, Key.c_str(), Array);
-    else
-      Root = Array;
-  }
+	SetObjectsArrayTemplated<map<string,string>>(Key, Values);
 }
 
+void JSON::SetObjectsArray(string Key, vector<vector<pair<string,string>>> Values) {
+	SetObjectsArrayTemplated<vector<pair<string,string>>>(Key, Values);
+}
+
+template <typename T>
+void JSON::SetObjectsArrayTemplated(string Key, vector<T> Values) {
+	if (Root != NULL) {
+		cJSON *Array = cJSON_CreateArray();
+
+		for (auto& Value : Values) {
+			cJSON *Item = cJSON_CreateObject();
+			SetItemsTemplated<T>(Value, Item);
+
+			cJSON_AddItemToArray(Array, Item);
+		}
+
+		if (!Key.empty())
+			cJSON_AddItemToObject(Root, Key.c_str(), Array);
+		else
+			Root = Array;
+	}
+}
+template void JSON::SetObjectsArrayTemplated<map<string,string>>(string Key, vector<map<string,string>> Values);
+template void JSON::SetObjectsArrayTemplated<vector<pair<string,string>>>(string Key, vector<vector<pair<string,string>>> Values);
+
+vector<map<string,string>> JSON::GetObjectsArray (string Key) {
+	return GetObjectsArrayTemplated<map<string,string>>(Key);
+}
+
+vector<vector<pair<string,string>>> JSON::GetObjectsArrayUnordered (string Key) {
+	return GetObjectsArrayTemplated<vector<pair<string,string>>>(Key);
+}
+
+template <typename T>
+vector<T> JSON::GetObjectsArrayTemplated(string Key) {
+	vector<T> Result = vector<T>();
+
+	if (Root != NULL) {
+		cJSON *Array = (!Key.empty()) ? cJSON_GetObjectItem(Root, Key.c_str()) : Root;
+
+		if (Array->type == cJSON_Array) {
+			cJSON *Child = Array->child;
+
+			while(Child) {
+				if (Child->type != cJSON_Array)
+					Result.push_back(GetItemsTemplated<T>(Child));
+
+				Child = Child->next;
+			}
+		}
+	}
+
+	return Result;
+}
+template vector<map<string,string>> JSON::GetObjectsArrayTemplated<map<string,string>> (string Key);
+template vector<vector<pair<string,string>>> JSON::GetObjectsArrayTemplated<vector<pair<string,string>>> (string Key);
+
 string JSON::ToString() {
-	string Result =  cJSON_PrintUnformatted(Root);
+    char *out = cJSON_PrintUnformatted(Root);
+
+	string Result(out);
+	free(out);
+
 	Converter::FindAndReplace(Result, "\\\\u", "\\u"); 	// UTF16 Hack
 
 	return Result;
 }
 
 string JSON::CreateStringFromVector(vector<string> Vector) {
-  cJSON *Array = cJSON_CreateArray();
+	cJSON *Array = cJSON_CreateArray();
 
-  for(auto &Item : Vector)
-    cJSON_AddItemToArray(Array, cJSON_CreateString(Item.c_str()));
+	for(auto &Item : Vector)
+		cJSON_AddItemToArray(Array, cJSON_CreateString(Item.c_str()));
 
-  string Result = cJSON_PrintUnformatted(Array);
-  cJSON_Delete(Array);
+	char *data = cJSON_PrintUnformatted(Array);
+	string Result(data);
+	free(data);
 
-  return Result;
+	cJSON_Delete(Array);
+
+	return Result;
+}
+
+template <typename T>
+string JSON::CreateStringFromUintVector(vector<T> Vector, uint8_t HexCount) {
+	cJSON *Array = cJSON_CreateArray();
+
+	for(auto &Item : Vector) {
+		if (HexCount == 0)
+			cJSON_AddItemToArray(Array, cJSON_CreateString(Converter::ToString(Item).c_str()));
+		else
+			cJSON_AddItemToArray(Array, cJSON_CreateString(Converter::ToHexString((T)Item, HexCount).c_str()));
+	}
+
+	char *data = cJSON_PrintUnformatted(Array);
+	string Result(data);
+	free(data);
+
+	cJSON_Delete(Array);
+
+	return Result;
+}
+template string JSON::CreateStringFromUintVector<uint8_t> (vector<uint8_t>, uint8_t);
+template string JSON::CreateStringFromUintVector<uint16_t>(vector<uint16_t>, uint8_t);
+
+void JSON::AddToMapOrTupple(map<string,string> &Value, string first, string second, bool CaseSensitive) {
+	Value[(CaseSensitive) ? first : Converter::ToLower(first)] = second;
+}
+
+void JSON::AddToMapOrTupple(vector<pair<string,string>> &Value, string first, string second, bool CaseSensitive) {
+	Value.push_back(make_pair((CaseSensitive) ? first : Converter::ToLower(first), second));
 }

@@ -10,6 +10,7 @@
 #include <map>
 #include <vector>
 #include <string>
+#include <utility>
 
 #include <esp_log.h>
 
@@ -23,25 +24,42 @@ class JSON {
     JSON(string = "");
 
     ~JSON();
-    string						GetItem(string Key);
+    string								GetItem					(string Key);
 
-    void							SetItem(string Key, string Value);
+    void								SetItem					(string Key, string Value);
 
-    map<string,string>			GetItems(cJSON* = NULL, bool CaseSensitive = false);
-    void							SetItems(map<string,string>, cJSON *Item = NULL);
+    void								SetItems				(map<string,string>, cJSON *Item = NULL);
+    void								SetItems				(vector<pair<string,string>>, cJSON *Item = NULL);
+    map<string,string>					GetItems				(cJSON* = NULL, bool CaseSensitive = false);
+    vector<pair<string,string>>			GetItemsUnordered		(cJSON* = NULL, bool CaseSensitive = false);
 
-    void							SetObject(string Key, map<string,string> Value);
+    void								SetObject				(string Key, vector<pair<string,string>> Value);
 
-    vector<string>				GetStringArray(string Key = "");
-    void							SetStringArray(string Key, vector<string> Array);
+    void								SetStringArray			(string Key, vector<string> Array);
+    vector<string>						GetStringArray			(string Key = "");
 
-    vector<map<string,string>>	GetObjectsArray(string Key = "");
-    void							SetObjectsArray(string Key, vector<map<string,string>> Value);
+	template <typename T> void			SetUintArray			(string Key, vector<T>, uint8_t HexCount = 0);
 
-    string						ToString();
+    void								SetObjectsArray			(string Key, vector<map<string,string>> Value);
+    void								SetObjectsArray			(string Key, vector<vector<pair<string,string>>> Value);
+    vector<map<string,string>>			GetObjectsArray			(string Key = "");
+    vector<vector<pair<string,string>>> GetObjectsArrayUnordered(string Key = "");
 
-    static string				CreateStringFromVector(vector<string>);
+    string								ToString();
+
+    static string						CreateStringFromVector(vector<string>);
+
+	template <typename T> static string	CreateStringFromUintVector(vector<T>, uint8_t HexCount = 0);
+
   private:
+	void								AddToMapOrTupple(map<string,string> &, string first, string second, bool CaseSensitive);
+	void								AddToMapOrTupple(vector<pair<string,string>> &, string first, string second, bool CaseSensitive);
+
+    template <typename T> void 			SetItemsTemplated		(T Values, cJSON *Item = NULL);
+    template <typename T> T				GetItemsTemplated		(cJSON* = NULL, bool CaseSensitive = false);
+    template <typename T> void			SetObjectsArrayTemplated(string Key, vector<T> Value);
+    template <typename T> vector<T>		GetObjectsArrayTemplated(string Key = "");
+
     cJSON *Root;
 };
 

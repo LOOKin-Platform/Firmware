@@ -16,6 +16,7 @@ using namespace std;
 #include "JSON.h"
 #include "Memory.h"
 #include "DateTime.h"
+#include "Globals.h"
 
 #include "Query.h"
 #include "WebServer.h"

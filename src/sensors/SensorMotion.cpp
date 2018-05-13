@@ -15,8 +15,8 @@ static void MotionDetectTask(void *) {
 
 		if (Value > 2000) {
 			Sensor_t::GetSensorByID(SensorMotionID)->SetValue(1);
-			WebServer->UDPSendBroadcastUpdated(SensorMotionID, Converter::ToString(Sensor_t::GetSensorByID(SensorMotionID)->GetValue().Value));
-			Automation->SensorChanged(SensorMotionID);
+			WebServer.UDPSendBroadcastUpdated(SensorMotionID, Converter::ToString(Sensor_t::GetSensorByID(SensorMotionID)->GetValue().Value));
+			Automation.SensorChanged(SensorMotionID);
 
 			while (Value > 2000) {
 				Value = (uint16_t)adc1_get_raw(SensorMotionChannel);
@@ -39,7 +39,7 @@ class SensorMotion_t : public Sensor_t {
         EventCodes  = { 0x00, 0x01 };
 
 	    switch (GetDeviceTypeHex()) {
-	    		case DEVICE_TYPE_MOTION_HEX:
+	    		case Settings.Devices.Motion:
 	    			SensorMotionChannel = MOTION_MOTION_CHANNEL; break;
 	    		default:
 	    			SensorMotionChannel = ADC1_CHANNEL_0;
@@ -53,21 +53,21 @@ class SensorMotion_t : public Sensor_t {
     }
 
     void Update() override {
-    		if (SetValue(ReceiveValue())) {
-    			WebServer->UDPSendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
-    			Automation->SensorChanged(ID);
-    		}
+    	if (SetValue(ReceiveValue())) {
+    		WebServer.UDPSendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
+    		Automation.SensorChanged(ID);
+   		}
     };
 
     double ReceiveValue(string Key = "Primary") override {
-    		return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
+    	return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
     };
 
     bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-    		SensorValueItem ValueItem = GetValue();
+   		SensorValueItem ValueItem = GetValue();
 
-    		if (SceneEventCode == 0x01 && ValueItem.Value == 1) return true;
+   		if (SceneEventCode == 0x01 && ValueItem.Value == 1) return true;
 
-    		return false;
+   		return false;
     }
 };

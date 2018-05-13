@@ -66,7 +66,7 @@ void Scenario_t::SetData(string HexString) {
 }
 
 bool Scenario_t::IsEmpty() {
-	return (ID == ~MEMORY_32BIT_EMPTY || ID == MEMORY_32BIT_EMPTY || Type == 0xFF) ? true : false;
+	return (ID == ~Settings.Memory.Empty32Bit || ID == Settings.Memory.Empty32Bit || Type == 0xFF) ? true : false;
 }
 
 void Scenario_t::ExecuteScenario(uint32_t ScenarioID) {
@@ -91,7 +91,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 
       for (ScenesCommandItem_t Command : Scenario.Commands)
         if (Scenario.Data->IsCommandNeedToExecute(Command)) {
-          if (Command.DeviceID == Device->ID) {
+          if (Command.DeviceID == Device.ID) {
             // выполнить локальную команду
             Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
             if (CommandToExecute!=nullptr)
@@ -99,7 +99,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
           }
           else {
             // отправить команду по HTTP
-            NetworkDevice_t NetworkDevice = Network->GetNetworkDeviceByID(Command.DeviceID);
+            NetworkDevice_t NetworkDevice = Network.GetNetworkDeviceByID(Command.DeviceID);
 
             if (!NetworkDevice.IP.empty() && NetworkDevice.IsActive) {
               string URL = "/commands?command=" + Converter::ToHexString(Command.CommandID,2) +
@@ -124,18 +124,18 @@ void Scenario_t::LoadScenarios() {
 	while (Address < MEMORY_SCENARIOS_START + MEMORY_SCENARIOS_SIZE) {
 		ScenarioFindedID = SPIFlash::ReadUint32(Address);
 
-		if (ScenarioFindedID != MEMORY_32BIT_EMPTY) {
+		if (ScenarioFindedID != Settings.Memory.Empty32Bit) {
 			Scenario_t Scenario;
 
 			LoadScenarioByAddress(Scenario, Address);
 
 			if (!Scenario.IsEmpty())
-				Automation->AddScenarioCacheItem(Scenario);
+				Automation.AddScenarioCacheItem(Scenario);
 		}
 		Address += MEMORY_SCENARIOS_OFFSET;
 	}
 
-	ESP_LOGI(tag, "Loaded %d scenarios", Automation->ScenarioCacheItemCount());
+	ESP_LOGI(tag, "Loaded %d scenarios", Automation.ScenarioCacheItemCount());
 }
 
 void Scenario_t::LoadScenario(Scenario_t &Scenario, uint32_t ScenarioID) {
@@ -156,7 +156,7 @@ void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
 
 	Scenario.SetType(SPIFlash::ReadUint8(Address + MEMORY_SCENARIO_TYPE));
 
-	if (Scenario.ID == MEMORY_32BIT_EMPTY)
+	if (Scenario.ID == Settings.Memory.Empty32Bit)
 		return;
 
 	Scenario.SetData(SPIFlash::ReadUint64(Address + MEMORY_SCENARIO_OPERAND));
@@ -169,7 +169,7 @@ void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
 	while (CommandAddress < Address + MEMORY_SCENARIOS_OFFSET) {
 		uint32_t FindedCommandDeviceID = SPIFlash::ReadUint32(CommandAddress + MEMORY_COMMAND_DEVICEID);
 
-		if (FindedCommandDeviceID == MEMORY_32BIT_EMPTY)
+		if (FindedCommandDeviceID == Settings.Memory.Empty32Bit)
 			break;
 
 		ScenesCommandItem_t Command;
@@ -190,7 +190,7 @@ bool Scenario_t::SaveScenario(Scenario_t Scenario) {
 	while (Address < MEMORY_SCENARIOS_START + MEMORY_SCENARIOS_SIZE) {
 		uint32_t CurrentID = SPIFlash::ReadUint32(Address);
 
-		if (CurrentID == MEMORY_32BIT_EMPTY)
+		if (CurrentID == Settings.Memory.Empty32Bit)
 			break;
 
 		Address += MEMORY_SCENARIOS_OFFSET;
@@ -222,7 +222,7 @@ bool Scenario_t::SaveScenario(Scenario_t Scenario) {
 		SPIFlash::WriteUint32(Scenario.Commands[i].Operand	, CommandAddress + MEMORY_COMMAND_OPERAND);
 	}
 
-	Automation->AddScenarioCacheItem(Scenario);
+	Automation.AddScenarioCacheItem(Scenario);
 
 	return true;
 }
@@ -250,12 +250,12 @@ string Scenario_t::SerializeScene(uint32_t ScenarioID) {
 string Scenario_t::SerializeScene(Scenario_t Scenario) {
 	JSON JSONObject;
 
-	JSONObject.SetItems({
-                  { "Type"    , Converter::ToHexString(Scenario.Type,2)						},
-                  { "ID"      , Converter::ToHexString(Scenario.ID  ,8)						},
-                  { "Name"    , Converter::ToUTF16String(Scenario.Name, SCENARIOS_NAME_LENGTH)	},
-                  { "Operand" , Scenario.GetDataHexString()									}
-                });
+	JSONObject.SetItems(vector<pair<string,string>>({
+		make_pair("Type"	, Converter::ToHexString(Scenario.Type,2)),
+		make_pair("ID"		, Converter::ToHexString(Scenario.ID  ,8)),
+		make_pair("Name"	, Converter::ToUTF16String(Scenario.Name, SCENARIOS_NAME_LENGTH)),
+		make_pair("Operand"	, Scenario.GetDataHexString()),
+	}));
 
 	vector<string> Commands = vector<string>();
 	for (int i=0; i < Scenario.Commands.size(); i++)
@@ -329,12 +329,12 @@ template void Scenario_t::AddRangeTo<32>(bitset<SCENARIOS_OPERAND_BIT_LEN> &Dest
 /************************************/
 
 void Scenario_t::ReadFinished(char IP[]) {
-  ESP_LOGI(tag,"HTTP Command to device with IP %s sent", IP);
+	ESP_LOGI(tag,"HTTP Command to device with IP %s sent", IP);
 }
 
 void Scenario_t::Aborted(char IP[]) {
-  ESP_LOGE(tag,"HTTP Command sending to device with IP %s failed", IP);
-  Network->SetNetworkDeviceFlagByIP(IP, false);
+	ESP_LOGE(tag,"HTTP Command sending to device with IP %s failed", IP);
+	Network.SetNetworkDeviceFlagByIP(IP, false);
 }
 
 /************************************/
@@ -518,7 +518,7 @@ string CalendarData_t::ToString() {
 }
 
 bool CalendarData_t::IsCommandNeedToExecute(ScenesCommandItem_t &Command) {
-  return (Command.DeviceID == Device->ID);
+  return (Command.DeviceID == Device.ID);
 }
 
 void CalendarData_t::ExecuteCommands(uint32_t ScenarioID) {

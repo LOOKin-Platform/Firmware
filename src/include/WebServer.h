@@ -26,14 +26,16 @@ class WebServer_t {
 
 				string 		Body;
 				CODE 		ResponseCode;
-				TYPE			ContentType;
+				TYPE		ContentType;
 
 				Response();
 				string 		toString();
 
 				void 		SetSuccess();
 				void 		SetFail();
-				void			SetInvalid();
+				void		SetInvalid();
+
+				void 		Clear();
 			private:
 				string ResponseCodeToString();
 				string ContentTypeToString();
@@ -45,7 +47,7 @@ class WebServer_t {
 
 		void UDPSendBroadcastAlive();
 		void UDPSendBroadcastDiscover();
-		void UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 3);
+		void UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1);
 		void UDPSendBroadcast(string);
 
 	private:
@@ -60,6 +62,7 @@ class WebServer_t {
 
 		static void HTTPListenerTask(void *);
 		static void HandleHTTP(struct netconn *);
+		static void Write(struct netconn *conn, string Data);
 };
 
 #endif

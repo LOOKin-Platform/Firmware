@@ -42,7 +42,7 @@ class Scenario_t {
 	public:
 		uint8_t     Type;
 		uint32_t    ID;
-		uint16_t		Name[SCENARIOS_NAME_LENGTH] = { 0 };
+		uint16_t	Name[SCENARIOS_NAME_LENGTH] = { 0 };
 		Data_t      *Data;
 
 		vector<ScenesCommandItem_t> Commands;
@@ -50,13 +50,13 @@ class Scenario_t {
 		Scenario_t(uint8_t TypeHex = SCENARIOS_TYPE_EMPTY_HEX);
 		~Scenario_t();
 
-		void					SetType(uint8_t TypeHex);
+		void				SetType(uint8_t TypeHex);
 		uint64_t  			GetDataUint64();
-		string  				GetDataHexString();
-		void    				SetData(uint64_t);
-		void    				SetData(string);
+		string  			GetDataHexString();
+		void    			SetData(uint64_t);
+		void    			SetData(string);
 
-		bool    				IsEmpty();
+		bool    			IsEmpty();
 
 		static void			ExecuteScenario(uint32_t ScenarioID);
 		static void			ExecuteCommandsTask(void *);
@@ -86,80 +86,80 @@ class Scenario_t {
 
 class Data_t {
   public:
-    virtual bool      IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  { return false; };
-    virtual void      SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) {};
-    virtual uint64_t  ToUint64() { return 0; };
-    virtual string    ToString() { return ""; };
+    virtual bool      	IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  { return false; };
+    virtual void      	SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) {};
+    virtual uint64_t  	ToUint64() { return 0; };
+    virtual string    	ToString() { return ""; };
 
-    virtual bool      IsCommandNeedToExecute(ScenesCommandItem_t &) {return true;};
-    virtual void      ExecuteCommands(uint32_t ScenarioID)  {};
-    virtual bool      SensorUpdatedIsTriggered(uint8_t SensorID) { return false; };
-    virtual bool      TimeUpdatedIsTriggered() { return false; };
+    virtual bool      	IsCommandNeedToExecute(ScenesCommandItem_t &) {return true;};
+    virtual void      	ExecuteCommands(uint32_t ScenarioID)  {};
+    virtual bool      	SensorUpdatedIsTriggered(uint8_t SensorID) { return false; };
+    virtual bool      	TimeUpdatedIsTriggered() { return false; };
 
     virtual ~Data_t() { 	ESP_LOGI("DESTRUCTOR", "DATA_t");};
 };
 
 class EventData_t : public Data_t {
   public:
-	uint32_t		DeviceID          = 0;
-	uint8_t		SensorIdentifier  = 0;
-    uint8_t		EventCode         = 0;
-    uint8_t		EventOperand      = 0;
+	uint32_t			DeviceID          = 0;
+	uint8_t				SensorIdentifier  = 0;
+    uint8_t				EventCode         = 0;
+    uint8_t				EventOperand      = 0;
 
-    bool			IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void			SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
+    bool				IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
+    void				SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
 
-    uint64_t		ToUint64() override;
-    string		ToString() override;
+    uint64_t			ToUint64() override;
+    string				ToString() override;
 
-    void			ExecuteCommands(uint32_t ScenarioID)  override;
-    bool			SensorUpdatedIsTriggered(uint8_t SensorID) override;
+    void				ExecuteCommands(uint32_t ScenarioID)  override;
+    bool				SensorUpdatedIsTriggered(uint8_t SensorID) override;
 
-    ~EventData_t() { ESP_LOGI("DESTRUCTOR", "EventDATA_t") };
+    ~EventData_t() 		{ ESP_LOGI("DESTRUCTOR", "EventDATA_t") };
 };
 
 class TimerData_t : public Data_t {
   public:
     struct TimerDataStruct {
-      uint32_t ScenarioID = 0;
-      uint16_t TimerDelay = 0;
+      uint32_t 			ScenarioID = 0;
+      uint16_t 			TimerDelay = 0;
     };
 
-  	uint32_t		DeviceID          = 0;
-  	uint8_t		SensorIdentifier  = 0;
-  	uint8_t		EventCode         = 0;
-    uint16_t		TimerDelay        = 0; // максимально - 8 бит или 1280 секунд с шагом в 5 секунд
-    uint8_t		EventOperand      = 0;
+  	uint32_t			DeviceID          = 0;
+  	uint8_t				SensorIdentifier  = 0;
+  	uint8_t				EventCode         = 0;
+    uint16_t			TimerDelay        = 0; // максимально - 8 бит или 1280 секунд с шагом в 5 секунд
+    uint8_t				EventOperand      = 0;
 
-    bool			IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void			SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
+    bool				IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
+    void				SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
 
-    uint64_t		ToUint64() override;
-    string		ToString() override;
+    uint64_t			ToUint64() override;
+    string				ToString() override;
 
-    void			ExecuteCommands(uint32_t ScenarioID) override;
-    bool			SensorUpdatedIsTriggered(uint8_t SensorID) override;
+    void				ExecuteCommands(uint32_t ScenarioID) override;
+    bool				SensorUpdatedIsTriggered(uint8_t SensorID) override;
 
-    static void	TimerCallback(FreeRTOS::Timer *pTimer);
+    static void			TimerCallback(FreeRTOS::Timer *pTimer);
 
-    ~TimerData_t() { ESP_LOGI("DESTRUCTOR", "TimerDATA_t") };
+    ~TimerData_t() 		{ ESP_LOGI("DESTRUCTOR", "TimerDATA_t") };
 };
 
 class CalendarData_t : public Data_t {
   public:
-    bool			IsScheduled = false;
-    DateTime_t	DateTime;
-    bitset<8>	ScheduledDays;
+    bool				IsScheduled = false;
+    DateTime_t			DateTime;
+    bitset<8>			ScheduledDays;
 
-    bool			IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void			SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
+    bool				IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
+    void				SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
 
-    uint64_t		ToUint64() override;
-    string		ToString() override;
+    uint64_t			ToUint64() override;
+    string				ToString() override;
 
-    bool			IsCommandNeedToExecute(ScenesCommandItem_t &) override;
-    void			ExecuteCommands(uint32_t ScenarioID) override;
-    bool			TimeUpdatedIsTriggered() override;
+    bool				IsCommandNeedToExecute(ScenesCommandItem_t &) override;
+    void				ExecuteCommands(uint32_t ScenarioID) override;
+    bool				TimeUpdatedIsTriggered() override;
 
     ~CalendarData_t() {};
 };

@@ -18,20 +18,18 @@ using namespace std;
 class Query_t {
   public:
     QueryType           Type;
-    string              RequestHeader;
     string              RequestedUrl;
     vector<string>      RequestedUrlParts;
 
     string              RequestBody;
     map<string,string>  Params;
 
-    Query_t(string);
+    Query_t(string &);
 
     static string       UrlDecode(string);
 
   private:
-    string              SrcRequest;
-    void                FillParams(string);
+    void                FillParams(string &);
 };
 
 #endif

@@ -6,20 +6,18 @@
 #include "Globals.h"
 #include "Network.h"
 
-static char tag[] 			= "Network_t";
-static string NVSNetworkArea = "Network";
+static char tag[] 				= "Network_t";
+static string NVSNetworkArea 	= "Network";
 
-Network_t::Network_t() {
-	ESP_LOGD(tag, "Constructor");
-}
+Network_t::Network_t() {}
 
 void Network_t::Init() {
-	ESP_LOGD(tag, "Init");
 
 	NVS Memory(NVSNetworkArea);
 
 	JSON JSONObject(Memory.GetString(NVSNetworkWiFiSettings));
 	WiFiSettings = JSONObject.GetItems(NULL, true);
+
 
 	// Load saved network devices from NVS
 	uint8_t ArrayCount = Memory.ArrayCount(NVSNetworkDevicesArray);
@@ -34,7 +32,7 @@ void Network_t::Init() {
 	}
 
 	// Read info from network scan
-	for (WiFiAPRecord APRecord : WiFi->Scan())
+	for (WiFiAPRecord APRecord : WiFi.Scan())
 		WiFiList.push_back(APRecord.getSSID());
 }
 
@@ -54,7 +52,7 @@ void Network_t::SetNetworkDeviceFlagByIP(string IP, bool Flag) {
 		}
 }
 
-void Network_t::DeviceInfoReceived(string ID, string Type, string IP) {
+void Network_t::DeviceInfoReceived(string ID, string Type, string IP, string ScenariosVersion, string StorageVersion) {
 	ESP_LOGD(tag, "DeviceInfoReceived");
 
 	NVS Memory(NVSNetworkArea);
@@ -103,7 +101,7 @@ void Network_t::DeviceInfoReceived(string ID, string Type, string IP) {
 	}
 }
 
-bool	 Network_t::WiFiConnect(string SSID) {
+bool Network_t::WiFiConnect(string SSID) {
 	if (WiFiSettings.size() == 0)
 		return false;
 
@@ -113,12 +111,12 @@ bool	 Network_t::WiFiConnect(string SSID) {
 	for (auto &WiFiListItem : WiFiList) {
 		if (SSID != "") {
 			if (WiFiListItem == SSID) {
-				 WiFi->ConnectAP(SSID, WiFiSettings[SSID]);
+				 WiFi.ConnectAP(SSID, WiFiSettings[SSID]);
 				 return true;
 			}
 		}
 		else if (WiFiSettings.count(WiFiListItem) > 0) {
-			 WiFi->ConnectAP(WiFiListItem, WiFiSettings[WiFiListItem]);
+			 WiFi.ConnectAP(WiFiListItem, WiFiSettings[WiFiListItem]);
 			 return true;
 		}
 	}
@@ -129,11 +127,11 @@ bool	 Network_t::WiFiConnect(string SSID) {
 string Network_t::SerializeNetworkDevice(NetworkDevice_t Item) {
 	JSON JSONObject;
 
-	JSONObject.SetItems({
-		{"TypeHex"  , Converter::ToHexString(Item.TypeHex,2)},
-		{"ID"       , Converter::ToHexString(Item.ID,8) },
-		{"IP"       , Item.IP }
-	});
+	JSONObject.SetItems(vector<pair<string,string>>({
+		make_pair("TypeHex"	, Converter::ToHexString(Item.TypeHex,2)),
+		make_pair("ID"		, Converter::ToHexString(Item.ID,8)),
+		make_pair("IP"		, Item.IP)
+	}));
 
 	return JSONObject.ToString();
 }
@@ -158,11 +156,11 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		if (URLParts.size() == 0) {
 			JSON JSONObject;
 
-			JSONObject.SetItems({
-				{"Mode"     		, ModeToString()},
-				{"IP"       		, IPToString()},
-				{"CurrentSSID" 	, WiFiCurrentSSIDToString()}
-			});
+			JSONObject.SetItems(vector<pair<string,string>>({
+				make_pair("Mode"		, ModeToString()),
+				make_pair("IP"			, IPToString()),
+				make_pair("CurrentSSID"	, WiFiCurrentSSIDToString())
+			}));
 
 			vector<string> WiFiSettingsVector = vector<string>();
 			for (auto &Item : WiFiSettings)
@@ -240,7 +238,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				return;
 			}
 
-			if (WiFiSettings.size() >= WIFI_SETINGS_SIZE && WiFiSettings.count(Params["wifissid"]) == 0)
+			if (WiFiSettings.size() >= Settings.WiFi.SavedAPCount && WiFiSettings.count(Params["wifissid"]) == 0)
 				WiFiSettings.erase(WiFiSettings.cbegin());
 
 			WiFiSettings[Params["wifissid"]] = Params["wifipassword"];
@@ -263,10 +261,10 @@ string Network_t::ModeToString() {
 
 string Network_t::IPToString() {
 	if ((WiFi_t::GetMode() == "WIFI_MODE_AP"))
-		IP = WiFi->getApIpInfo();
+		IP = WiFi.getApIpInfo();
 
 	if ((WiFi_t::GetMode() == "WIFI_MODE_STA"))
-		IP = WiFi->getStaIpInfo();
+		IP = WiFi.getStaIpInfo();
 
 	return inet_ntoa(IP);
 }
