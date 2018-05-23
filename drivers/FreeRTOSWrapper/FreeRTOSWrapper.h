@@ -32,7 +32,6 @@ class FreeRTOS {
 		FreeRTOS();
 		virtual ~FreeRTOS();
 
-
 		static void 				Sleep(uint32_t ms);
 		static TaskHandle_t 		StartTask(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Priority = 5);
 		static TaskHandle_t 		StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Core = 0);
@@ -99,6 +98,8 @@ class FreeRTOS {
 
 				static BaseType_t			SendToBackFromISR	(QueueHandle_t QueueHandle, void *Item, bool IsHighPriorityTask = true);
 				static bool					IsQueueFullFromISR	(QueueHandle_t QueueHandle);
+				static uint8_t 				CountFromISR		(QueueHandle_t QueueHandle);
+
 		};
 
 		// experimental. need to test ringbuffer implamentation

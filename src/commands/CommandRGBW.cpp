@@ -49,49 +49,49 @@ class CommandColor_t : public Command_t {
     }
 
     void Overheated() override {
-    		Execute(0x01, 0x00000000);
+    	Execute(0x01, 0x00000000);
     }
 
     bool Execute(uint8_t EventCode, string StringOperand) override {
-    		bool Executed = false;
+    	bool Executed = false;
 
-    		uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
+    	uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
-    		if (EventCode == 0x01) {
-    			uint8_t Red, Green, Blue = 0;
+    	if (EventCode == 0x01) {
+    		uint8_t Red, Green, Blue = 0;
 
-    			Blue    = Operand&0x000000FF;
-    			Green   = (Operand&0x0000FF00)>>8;
-    			Red     = (Operand&0x00FF0000)>>16;
+    		Blue    = Operand&0x000000FF;
+    		Green   = (Operand&0x0000FF00)>>8;
+    		Red     = (Operand&0x00FF0000)>>16;
 
-    			//(Operand&0xFF000000)>>24;
-    			//floor((Red  * Power) / 255)
+    		//(Operand&0xFF000000)>>24;
+    		//floor((Red  * Power) / 255)
 
-    			if ((Blue == Green && Green == Red) && GPIOWhite != GPIO_NUM_0)
-    				GPIO::PWMFadeTo(PWMChannelWhite, Blue);
-    			else {
-    				if (GPIORed   != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelRED  , Red);
-    				if (GPIOGreen != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelGreen, Green);
-    				if (GPIOBlue  != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelBlue , Blue);
-    			}
-
-    			Executed = true;
+    		if ((Blue == Green && Green == Red) && GPIOWhite != GPIO_NUM_0)
+    			GPIO::PWMFadeTo(PWMChannelWhite, Blue);
+    		else {
+    			if (GPIORed   != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelRED  , Red);
+    			if (GPIOGreen != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelGreen, Green);
+    			if (GPIOBlue  != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelBlue , Blue);
     		}
 
-    		if (EventCode == 0x02)
-    			Executed = true;
+    		Executed = true;
+    	}
 
-    		if (Executed) {
-    			ESP_LOGI("CommandColor_t", "Executed. Event code: %s, Operand: %s", Converter::ToHexString(EventCode, 2).c_str(), Converter::ToHexString(Operand, 8).c_str());
-    			Sensor_t::GetSensorByID(ID + 0x80)->Update();
-    			return true;
-    		}
+    	if (EventCode == 0x02)
+    		Executed = true;
 
-    		return false;
+    	if (Executed) {
+    		ESP_LOGI("CommandColor_t", "Executed. Event code: %s, Operand: %s", Converter::ToHexString(EventCode, 2).c_str(), Converter::ToHexString(Operand, 8).c_str());
+    		Sensor_t::GetSensorByID(ID + 0x80)->Update();
+    		return true;
+    	}
+
+    	return false;
     }
 
-  private:
-    gpio_num_t      GPIORed, GPIOGreen, GPIOBlue, GPIOWhite;
-    ledc_timer_t    TimerIndex;
-    ledc_channel_t  PWMChannelRED, PWMChannelGreen, PWMChannelBlue, PWMChannelWhite;
+	private:
+    	gpio_num_t      GPIORed, GPIOGreen, GPIOBlue, GPIOWhite;
+    	ledc_timer_t    TimerIndex;
+    	ledc_channel_t  PWMChannelRED, PWMChannelGreen, PWMChannelBlue, PWMChannelWhite;
 };

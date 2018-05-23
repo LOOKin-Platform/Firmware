@@ -45,41 +45,21 @@ void Converter::Trim(std::string &s) {
     rTrim(s);
 }
 
-string Converter::ToString(int8_t Number) {
+template <typename T>
+string Converter::ToString(T Number) {
 	ostringstream Convert;
 	Convert << +Number;
 	return Convert.str();
 }
-
-string Converter::ToString(uint8_t Number) {
-	ostringstream Convert;
-	Convert << +Number;
-	return Convert.str();
-}
-
-string Converter::ToString(uint16_t Number) {
-	ostringstream Convert;
-	Convert << +Number;
-	return Convert.str();
-}
-
-string Converter::ToString(uint32_t Number) {
-	ostringstream Convert;
-	Convert << +Number;
-	return Convert.str();
-}
-
-string Converter::ToString(uint64_t Number) {
-	ostringstream Convert;
-	Convert << +Number;
-	return Convert.str();
-}
-
-string Converter::ToString(double Number) {
-  ostringstream Convert;
-  Convert << +Number;
-  return Convert.str();
-}
+template string Converter::ToString<int8_t>		(int8_t);
+template string Converter::ToString<int16_t>	(int16_t);
+template string Converter::ToString<int32_t>	(int32_t);
+template string Converter::ToString<uint8_t>	(uint8_t);
+template string Converter::ToString<uint16_t>	(uint16_t);
+template string Converter::ToString<uint32_t>	(uint32_t);
+template string Converter::ToString<uint64_t>	(uint64_t);
+template string Converter::ToString<float>		(float);
+template string Converter::ToString<double>		(double);
 
 string Converter::ToHexString(uint64_t Number, size_t Length) {
   stringstream sstream;
@@ -137,6 +117,13 @@ uint16_t Converter::ToUint16(string Str) {
 	return atoi(Str.c_str());
 }
 
+int32_t Converter::ToInt32(string Str) {
+	return atoi(Str.c_str());
+}
+
+bool Converter::Sign(int32_t Num) {
+	return (Num < 0) ? false : true;
+}
 
 template <typename T>
 T Converter::UintFromHexString(string HexString) {

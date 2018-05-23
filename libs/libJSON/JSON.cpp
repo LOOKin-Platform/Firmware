@@ -233,12 +233,12 @@ string JSON::CreateStringFromVector(vector<string> Vector) {
 }
 
 template <typename T>
-string JSON::CreateStringFromUintVector(vector<T> Vector, uint8_t HexCount) {
+string JSON::CreateStringFromIntVector(vector<T> Vector, uint8_t HexCount) {
 	cJSON *Array = cJSON_CreateArray();
 
 	for(auto &Item : Vector) {
-		if (HexCount == 0)
-			cJSON_AddItemToArray(Array, cJSON_CreateString(Converter::ToString(Item).c_str()));
+		if (HexCount == 0 || Item < 0)
+			cJSON_AddItemToArray(Array, cJSON_CreateString(Converter::ToString<T>(Item).c_str()));
 		else
 			cJSON_AddItemToArray(Array, cJSON_CreateString(Converter::ToHexString((T)Item, HexCount).c_str()));
 	}
@@ -251,8 +251,9 @@ string JSON::CreateStringFromUintVector(vector<T> Vector, uint8_t HexCount) {
 
 	return Result;
 }
-template string JSON::CreateStringFromUintVector<uint8_t> (vector<uint8_t>, uint8_t);
-template string JSON::CreateStringFromUintVector<uint16_t>(vector<uint16_t>, uint8_t);
+template string JSON::CreateStringFromIntVector<int32_t> (vector<int32_t>, uint8_t);
+template string JSON::CreateStringFromIntVector<uint8_t> (vector<uint8_t>, uint8_t);
+template string JSON::CreateStringFromIntVector<uint16_t>(vector<uint16_t>, uint8_t);
 
 void JSON::AddToMapOrTupple(map<string,string> &Value, string first, string second, bool CaseSensitive) {
 	Value[(CaseSensitive) ? first : Converter::ToLower(first)] = second;

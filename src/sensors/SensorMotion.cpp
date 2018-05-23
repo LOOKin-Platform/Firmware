@@ -59,7 +59,7 @@ class SensorMotion_t : public Sensor_t {
    		}
     };
 
-    double ReceiveValue(string Key = "Primary") override {
+    uint32_t ReceiveValue(string Key = "Primary") override {
     	return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
     };
 

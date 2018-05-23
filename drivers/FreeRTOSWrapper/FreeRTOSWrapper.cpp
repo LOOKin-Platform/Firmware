@@ -380,11 +380,15 @@ uint8_t FreeRTOS::Queue::Count(QueueHandle_t QueueHandle) {
 	return ::uxQueueMessagesWaiting(QueueHandle);
 }
 
+uint8_t FreeRTOS::Queue::CountFromISR(QueueHandle_t QueueHandle) {
+	return ::uxQueueMessagesWaitingFromISR(QueueHandle);
+}
+
 uint8_t FreeRTOS::Queue::SpaceAvaliable(QueueHandle_t QueueHandle) {
 	return ::uxQueueSpacesAvailable(QueueHandle);
 }
 
-void	 FreeRTOS::Queue::Reset(QueueHandle_t QueueHandle) {
+void FreeRTOS::Queue::Reset(QueueHandle_t QueueHandle) {
 	xQueueReset(QueueHandle);
 }
 
@@ -394,7 +398,7 @@ BaseType_t FreeRTOS::Queue::SendToBackFromISR(QueueHandle_t QueueHandle, void *I
 }
 
 bool FreeRTOS::Queue::IsQueueFullFromISR(QueueHandle_t QueueHandle) {
-	return (::xQueueIsQueueFullFromISR(QueueHandle) == 0) ? false : true;
+	return (::xQueueIsQueueFullFromISR(QueueHandle) == pdTRUE) ? true : false;
 }
 
 RingbufHandle_t	FreeRTOS::RingBuffer::Create(uint16_t Length, ringbuf_type_t Type) {
@@ -423,7 +427,7 @@ bool FreeRTOS::RingBuffer::Receive(RingbufHandle_t Handle, void *Item, size_t *I
 	return true;
 }
 
-bool FreeRTOS::RingBuffer::ReceiveFromISR	(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask) {
+bool FreeRTOS::RingBuffer::ReceiveFromISR(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask) {
 	Item = xRingbufferReceiveFromISR(Handle, &ItemSize);
 	BaseType_t HigherPriorityTaskWoken = (IsHighPriorityTask) ? pdTRUE : pdFALSE;
 

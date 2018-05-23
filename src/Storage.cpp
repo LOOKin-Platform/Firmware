@@ -216,7 +216,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 
 		if (URLParts.size() == 1 && URLParts[0] == "types") {
-			Result.Body = JSON::CreateStringFromUintVector<uint8_t>(GetItemsTypes(), 2);
+			Result.Body = JSON::CreateStringFromIntVector<uint8_t>(GetItemsTypes(), 2);
 			return;
 		}
 
@@ -305,7 +305,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 		if (URLParts.size() == 2 && URLParts[0] == "history") {
 			uint16_t VersionID = Converter::UintFromHexString<uint16_t>(URLParts[1]);
-			Result.Body =  JSON::CreateStringFromUintVector<uint16_t>(GetItemsForVersion(VersionID), 4);
+			Result.Body =  JSON::CreateStringFromIntVector<uint16_t>(GetItemsForVersion(VersionID), 4);
 
 			return;
 		}

@@ -63,7 +63,12 @@ void BluetoothServer_t::BluetoothServerTask(void *data)
 
 	ESP_LOGD(tag, "Advertising started!");
 
-	FreeRTOS::Sleep(500000);
+	while(1) {
+		uint8_t ttt = 0;
+		FreeRTOS::Sleep(100);
+		ttt++;
+	};
+	//FreeRTOS::Sleep(500000);
 }
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
@@ -89,7 +94,11 @@ void BluetoothServer_t::BluetoothClientTask(void *data)
 	pBLEScan->setActiveScan(true);
 	pBLEScan->start(15);
 
-	FreeRTOS::Sleep(500000);
+	while(1) {
+		uint8_t ttt = 0;
+		FreeRTOS::Sleep(100);
+		ttt++;
+	};
 }
 
 void BluetoothServer_t::Stop() {

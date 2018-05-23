@@ -47,7 +47,7 @@ class Command_t {
 };
 
 #include "../commands/CommandSwitch.cpp"
-#include "../commands/CommandColor.cpp"
+#include "../commands/CommandRGBW.cpp"
 #include "../commands/CommandIR.cpp"
 
 #endif

@@ -18,6 +18,8 @@ using namespace std;
 
 static char tag[] = "WebServer";
 
+static vector<uint16_t> UDPPorts = { Settings.WiFi.UPDPort };
+
 WebServer_t::WebServer_t() {
   HTTPListenerTaskHandle  = NULL;
   UDPListenerTaskHandle   = NULL;
@@ -74,18 +76,20 @@ void WebServer_t::UDPSendBroadcast(string Message) {
 	if (Message.length() > 128)
 		Message = Message.substr(0, 128);
 
-	Connection = netconn_new( NETCONN_UDP );
-	netconn_connect(Connection, IP_ADDR_BROADCAST, Settings.WiFi.UPDPort );
+	for (uint16_t Port : UDPPorts) {
+		Connection = netconn_new(NETCONN_UDP);
+		netconn_connect(Connection, IP_ADDR_BROADCAST, Port);
 
-	Buffer  = netbuf_new();
-	Data    = (char *)netbuf_alloc(Buffer, Message.length());
-	memcpy (Data, Message.c_str(), Message.length());
-	netconn_send(Connection, Buffer);
+		Buffer  = netbuf_new();
+		Data    = (char *)netbuf_alloc(Buffer, Message.length());
+		memcpy (Data, Message.c_str(), Message.length());
+		netconn_send(Connection, Buffer);
 
-	netconn_delete(Connection);
-	netbuf_delete(Buffer); // De-allocate packet buffer
+		netconn_delete(Connection);
+		netbuf_delete(Buffer); // De-allocate packet buffer
 
-	ESP_LOGI(tag, "UDP broadcast \"%s\" sended", Message.c_str());
+		ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d", Message.c_str(), Port);
+	}
 }
 
 void WebServer_t::UDPListenerTask(void *data) {
@@ -108,6 +112,11 @@ void WebServer_t::UDPListenerTask(void *data) {
 			string Datagram = inData;
 
 			ESP_LOGI(tag, "UDP RECEIVED \"%s\"", Datagram.c_str());
+
+			if(find(UDPPorts.begin(), UDPPorts.end(), inBuffer->port) == UDPPorts.end()) {
+				if (UDPPorts.size() == Settings.WiFi.UDPHoldPortsMax) UDPPorts.erase(UDPPorts.begin() + 1);
+				UDPPorts.push_back(inBuffer->port);
+			}
 
 			outBuffer = netbuf_new();
 

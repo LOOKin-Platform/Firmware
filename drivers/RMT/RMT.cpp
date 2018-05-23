@@ -22,18 +22,19 @@ vector<rmt_item32_t> RMT::OutputItems = {};
 void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart CallbackStart,
 							IRChannelCallbackBody CallbackBody, IRChannelCallbackEnd CallbackEnd) {
 	rmt_config_t config;
-	config.rmt_mode                  = RMT_MODE_RX;
-	config.channel                   = Channel;
-	config.gpio_num                  = Pin;
-	config.mem_block_num             = 1;
-	config.clk_div                   = RMT_CLK_DIV;
-	config.rx_config.filter_en 		= true;
-	config.rx_config.filter_ticks_thresh = 80;
+	config.rmt_mode                  	= RMT_MODE_RX;
+	config.channel                   	= Channel;
+	config.gpio_num                  	= Pin;
+	config.mem_block_num             	= 1;
+	config.clk_div                   	= RMT_CLK_DIV;
+	config.rx_config.filter_en 			= true;
+	config.rx_config.filter_ticks_thresh= 80;
 	config.rx_config.idle_threshold 	= rmt_item32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 1000, 0));
 
+	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;
 	ChannelsMap[Channel].CallbackBody 	= CallbackBody;
 	ChannelsMap[Channel].CallbackEnd 	= CallbackEnd;
@@ -96,33 +97,32 @@ void RMT::RXTask(void *TaskData) {
 
     while(rb) {
 		size_t rx_size = 0;
-		rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 1000);
+		rmt_item16_t* item = (rmt_item16_t*) xRingbufferReceive(rb, &rx_size, 1000);
+		//rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 1000);
 
 		if(item)
 		{
 			int offset = 0;
 
-			if (rx_size > 8) { // protect from sun ambient IR - light
-				ESP_LOGE("RXTask","Size: %d", rx_size);
+			if (ChannelsMap[Channel].CallbackStart != nullptr)
+				ChannelsMap[Channel].CallbackStart();
 
-				if (ChannelsMap[Channel].CallbackStart != nullptr)
-					ChannelsMap[Channel].CallbackStart();
+			uint16_t SignalSize = rx_size;
 
-				while (offset < rx_size)
-				{
-					if (ChannelsMap[Channel].CallbackBody != nullptr) {
-						ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level0, (item+offset)->duration0));
-						ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level1, (item+offset)->duration1));
-					}
-					offset++;
+			while (offset < SignalSize)
+			{
+				if (ChannelsMap[Channel].CallbackBody != nullptr) {
+					ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level, (item+offset)->duration));
+					//ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level1, (item+offset)->duration1));
 				}
+				offset++;
 			}
-
-			if (ChannelsMap[Channel].CallbackEnd != nullptr)
-				ChannelsMap[Channel].CallbackEnd();
 
 			//after parsing the data, return spaces to ringbuffer.
 			vRingbufferReturnItem(rb, (void*) item);
+
+			if (ChannelsMap[Channel].CallbackEnd != nullptr)
+				ChannelsMap[Channel].CallbackEnd();
 		}
 	}
 	vTaskDelete(NULL);
@@ -137,7 +137,7 @@ void RMT::RXTask(void *TaskData) {
  * @param [in] Frequent output Frequent for IR signal.
  */
 
-void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequent) {
+void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency) {
 	rmt_config_t config;
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = Channel;
@@ -148,49 +148,77 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequent)
 	config.tx_config.carrier_en      = 1; //?1
 	config.tx_config.idle_output_en  = 1;
 	config.tx_config.idle_level      = (rmt_idle_level_t)0;
-	config.tx_config.carrier_freq_hz = Frequent;
+	config.tx_config.carrier_freq_hz = Frequency;
 	config.tx_config.carrier_level   = (rmt_carrier_level_t)1;
 	config.tx_config.carrier_duty_percent = 50;
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 0, 0));
 
-	//::rtc_gpio_isolate(Pin);
+	ChannelsMap[Channel].Pin 			= Pin;
+	ChannelsMap[Channel].Frequency 		= Frequency;
+
+	 //::rtc_gpio_isolate(Pin);
 }
+
+/**
+ * @brief Set TX channel new frequency.
+ *
+ * @param [in] Pin The GPIO pin on which the signal is sent/received.
+ * @param [in] Channel The RMT channel to work with.
+ * @param [in] Frequent output Frequent for IR signal.
+ */
+void RMT::TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency) {
+	if (ChannelsMap.count(Channel) > 0) {
+		if (Frequency != ChannelsMap[Channel].Frequency) {
+			if (ChannelsMap[Channel].Pin != GPIO_NUM_0) {
+				rmt_driver_uninstall(Channel);
+				RMT::SetTXChannel(ChannelsMap[Channel].Pin, Channel, Frequency);
+			}
+		}
+	}
+}
+
 
 /**
  * @brief Add a level/duration to the transaction to be written.
  *
  * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
  */
-void RMT::AddItem(int32_t Bit) {
+void RMT::TXAddItem(int32_t Bit) {
 	if (OutputItems.size() == 0 || (OutputItems.back()).duration1 != 0) {
 		rmt_item32_t Item;
-		Item.level0 		= (Bit > 0 ) ? 1 : 0 ;
+		Item.level0 	= (Bit > 0 ) ? 1 : 0 ;
 		Item.duration0 	= abs(Bit);
-		Item.level1 		= 0;
+		Item.level1 	= 0;
 		Item.duration1 	= 0;
 
 		OutputItems.push_back(Item);
 	}
 	else {
 		OutputItems.back().level1	= (Bit > 0 ) ? 1 : 0 ;
-		OutputItems.back().duration1	= abs(Bit);
+		OutputItems.back().duration1= abs(Bit);
 	}
 }
 
-void RMT::SetItems(vector<int32_t> Items) {
-	Clear();
+/**
+ * @brief Set Items to be send by RMT.
+ *
+ * @param [in] Vector of int32_t items
+ *
+ */
+void RMT::TXSetItems(vector<int32_t> Items) {
+	TXClear();
 
 	for (int32_t &Item : Items)
-		AddItem(Item);
+		TXAddItem(Item);
 }
 
 
 /**
  * @brief Clear any previously written level/duration pairs that have not been sent.
  */
-void RMT::Clear() {
+void RMT::TXClear() {
 	OutputItems.clear();
 }
 
@@ -205,14 +233,17 @@ void RMT::Clear() {
  *
  */
 
-void RMT::Send(rmt_channel_t Channel) {
+void RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
 	if (OutputItems.size() > 0) {
-		AddItem(-1000);
+		if (OutputItems.back().duration0 > -30000 || OutputItems.back().duration1 > -30000)
+			TXAddItem(-45000);
+
+		TXChangeFrequency(Channel, Frequency);
 
 		::rmt_write_items(Channel, &OutputItems[0] , OutputItems.size(), true);
 	    ::rmt_wait_tx_done(Channel, portMAX_DELAY);
 
-	    Clear();
+	    TXClear();
 	}
 }
 

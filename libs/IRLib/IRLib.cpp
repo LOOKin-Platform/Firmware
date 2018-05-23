@@ -14,9 +14,7 @@ IRLib::IRLib(vector<int32_t> Raw) {
 
 IRLib::IRLib(string ProntoHex) {
 	Converter::FindAndRemove(ProntoHex, " ");
-
 	FillFromProntoHex(ProntoHex);
-
 	LoadDataFromRaw();
 }
 
@@ -42,11 +40,15 @@ string IRLib::GetProntoHex() {
 	return ProntoHexConstruct();
 }
 
-
 void IRLib::SetFrequency(uint16_t Freq) {
+	if (Freq < 30000 || Freq > 60000) {
+		Frequency = 0;
+		return;
+	}
+
 	Frequency = round(Freq/1000) * 1000;
 
-	if 		(Frequency > 35000 && Frequency <= 37000)
+	if 	(Frequency > 35000 && Frequency <= 37000)
 		Frequency = 36000;
 	else if (Frequency > 37000 && Frequency <= 39000)
 		Frequency = 38000;
@@ -57,19 +59,16 @@ void IRLib::SetFrequency(uint16_t Freq) {
 }
 
 IRLib::ProtocolEnum IRLib::GetProtocol() {
-	if (RawData.size() == 0)
-		return UNKNOWN;
-
 	if (IsNEC()) return NEC;
 
-	return UNKNOWN;
+	return RAW;
 }
-
 
 bool IRLib::IsNEC() {
 	if (RawData.size() >= 66) {
-		if (RawData.at(0) > 8900 && RawData.at(0) < 9100 &&
-			RawData.at(1) < -4350 && RawData.at(1) > -4650)
+		if (RawData.at(0) 	> 8900 	&& RawData.at(0) 	< 9100 &&
+			RawData.at(1) 	< -4350 && RawData.at(1) 	> -4650 &&
+			RawData.at(66) 	> 500 	&& RawData.at(66)	< 700)
 			return true;
 	}
 
@@ -89,7 +88,8 @@ uint32_t IRLib::NECData() {
 
 	vector<int32_t> Data = RawData;
 
-    Data.erase(Data.begin()); Data.erase(Data.begin());
+    Data.erase(Data.begin());
+    Data.erase(Data.begin());
 
     if (Data.size() == 16) { // repeat signal
     		return 0x00FFFFFF;

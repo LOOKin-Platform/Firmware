@@ -27,7 +27,8 @@ class Settings_t {
 			const uint8_t					SavedAPCount	= 8;
 			const string 					DefaultIP		= "192.168.4.1";
 
-			const uint16_t					UPDPort			= 61201;
+			static constexpr uint16_t		UPDPort			= 61201;
+			static constexpr uint8_t		UDPHoldPortsMax	= 8;
 			const string					UDPPacketPrefix	= "LOOK.in:";
 
 			static constexpr uint16_t		HTTPMaxQueryLen	= 6144;
@@ -118,11 +119,11 @@ extern Settings_t Settings;
 #define IR_REMOTE_DETECTOR_PIN			GPIO_NUM_4
 
 #define COLOR_REMOTE_TIMER_INDEX      	LEDC_TIMER_0
-#define COLOR_REMOTE_RED_PIN_NUM      	GPIO_NUM_0
+#define COLOR_REMOTE_RED_PIN_NUM      	GPIO_NUM_12
 #define COLOR_REMOTE_RED_PWMCHANNEL   	LEDC_CHANNEL_0
-#define COLOR_REMOTE_GREEN_PIN_NUM    	GPIO_NUM_0
+#define COLOR_REMOTE_GREEN_PIN_NUM    	GPIO_NUM_14
 #define COLOR_REMOTE_GREEN_PWMCHANNEL 	LEDC_CHANNEL_1
-#define COLOR_REMOTE_BLUE_PIN_NUM     	GPIO_NUM_21
+#define COLOR_REMOTE_BLUE_PIN_NUM     	GPIO_NUM_13
 #define COLOR_REMOTE_BLUE_PWMCHANNEL  	LEDC_CHANNEL_2
 #define COLOR_REMOTE_WHITE_PIN_NUM    	GPIO_NUM_0
 #define COLOR_REMOTE_WHITE_PWMCHANNEL 	LEDC_CHANNEL_3

@@ -8,3 +8,5 @@ sdkconfig.old
 snippets
 docs/
 Doxyfile
+.settings
+

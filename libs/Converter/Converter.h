@@ -36,12 +36,8 @@ class Converter {
 		static void				rTrim(string &);  // right trim
 		static void				Trim(string &);   // trim
 
-		static string			ToString(int8_t);
-		static string			ToString(uint8_t);
-		static string			ToString(uint16_t);
-		static string			ToString(uint32_t);
-		static string			ToString(uint64_t);
-		static string			ToString(double);
+		template <typename T>
+		static string			ToString(T);
 
 		static string			ToHexString(uint64_t, size_t);
 		static string			ToASCII(string HexString);
@@ -52,11 +48,14 @@ class Converter {
 
 		static float			ToFloat (string);
 		static uint16_t			ToUint16(string);
+		static int32_t 			ToInt32	(string);
+
+		static bool				Sign(int32_t);
 
 		template <typename T>
 		static T				UintFromHexString(string);
 
-		static vector<string> 	StringToVector		(string SourceStr, string Delimeter);
+		static vector<string> 	StringToVector(string SourceStr, string Delimeter);
 		static string			VectorToString(const vector<string>& Strings, const char* Delimeter);
 
 		static string			StringURLDecode(string);

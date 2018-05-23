@@ -41,7 +41,7 @@ class Sensor_t {
     virtual ~Sensor_t() = default;
 
     virtual void			Update() {};
-    virtual double			ReceiveValue(string = "") { return 0; };
+    virtual uint32_t		ReceiveValue(string = "") { return 0; };
     virtual bool			CheckOperand(uint8_t, uint8_t) { return false; };
     virtual string			FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
 
@@ -62,7 +62,7 @@ extern Automation_t Automation;
 extern WebServer_t  WebServer;
 
 #include "../sensors/SensorSwitch.cpp"
-#include "../sensors/SensorColor.cpp"
+#include "../sensors/SensorRGBW.cpp"
 #include "../sensors/SensorIR.cpp"
 #include "../sensors/SensorMotion.cpp"
 

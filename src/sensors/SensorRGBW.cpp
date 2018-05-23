@@ -25,7 +25,7 @@ class SensorColor_t : public Sensor_t {
     	}
     };
 
-    double ReceiveValue(string Key = "Primary") override {
+    uint32_t ReceiveValue(string Key = "Primary") override {
     	switch (GetDeviceTypeHex()) {
     		case Settings.Devices.Plug:
     			if (Key == "Red")     return GPIO::PWMValue(COLOR_PLUG_RED_PWMCHANNEL);

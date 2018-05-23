@@ -6,8 +6,8 @@
 # in the build directory. This behaviour is entirely configurable,
 # please read the ESP-IDF documents if you need to do this.
 #
-EXTRA_COMPONENT_DIRS += $(PROJECT_PATH)/src/drivers
-COMPONENT_ADD_INCLUDEDIRS += $(PROJECT_PATH)/src/drivers
+EXTRA_COMPONENT_DIRS 		+= $(PROJECT_PATH)/src/drivers
+COMPONENT_ADD_INCLUDEDIRS 	+= $(PROJECT_PATH)/src/drivers
 
 COMPONENT_ADD_LDFLAGS=-lstdc++ -l$(COMPONENT_NAME)
 CXXFLAGS += -D LOG_LOCAL_LEVEL=ESP_LOG_VERBOSE

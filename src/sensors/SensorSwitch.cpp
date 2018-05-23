@@ -19,7 +19,7 @@ class SensorSwitch_t : public Sensor_t {
    		}
     };
 
-    double ReceiveValue(string Key = "Primary") override {
+    uint32_t ReceiveValue(string Key = "Primary") override {
    		switch (GetDeviceTypeHex()) {
    			case Settings.Devices.Plug:
     			return (GPIO::Read(SWITCH_PLUG_PIN_NUM) == true) ? 1 : 0;

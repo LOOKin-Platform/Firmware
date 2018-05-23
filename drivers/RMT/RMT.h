@@ -33,21 +33,24 @@ typedef void (*IRChannelCallbackEnd)();
 class RMT {
 	public:
 		struct IRChannelInfo {
-			TaskHandle_t				Handle 			= 0;
+			TaskHandle_t			Handle 			= 0;
+			gpio_num_t				Pin				= GPIO_NUM_0;
+			uint16_t				Frequency		= 0;
 			IRChannelCallbackStart 	CallbackStart 	= nullptr;
 			IRChannelCallbackBody 	CallbackBody 	= nullptr;
-			IRChannelCallbackEnd 	CallbackEnd 		= nullptr;
+			IRChannelCallbackEnd 	CallbackEnd 	= nullptr;
 		};
 
 		static void SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart = nullptr, IRChannelCallbackBody = nullptr, IRChannelCallbackEnd = nullptr);
 		static void ReceiveStart(rmt_channel_t Channel);
 		static void ReceiveStop (rmt_channel_t Channel);
 
-		static void SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequent);
-		static void AddItem(int32_t);
-		static void SetItems(vector<int32_t>);
-		static void Clear();
-		static void Send(rmt_channel_t Channel);
+		static void SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency);
+		static void TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency);
+		static void TXAddItem(int32_t);
+		static void TXSetItems(vector<int32_t>);
+		static void TXClear();
+		static void TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
 
 		static int32_t PrepareBit(bool, uint32_t);
 

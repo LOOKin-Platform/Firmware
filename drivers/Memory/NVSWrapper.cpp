@@ -228,7 +228,7 @@ uint8_t NVS::StringArrayAdd(string ArrayName, string Item) {
 		return Count;
 	}
 
-	return MAX_NVSARRAY_INDEX +1;
+	return MAX_NVSARRAY_INDEX+1;
 }
 
 /**
@@ -241,7 +241,6 @@ uint8_t NVS::StringArrayAdd(string ArrayName, string Item) {
 string NVS::StringArrayGet(string ArrayName, uint8_t Index) {
 	 return GetString(ArrayName + "_" + Converter::ToString(Index));
 }
-
 
 /**
  * @brief Remove row from the string array by index .

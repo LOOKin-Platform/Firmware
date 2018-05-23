@@ -1,8 +1,8 @@
 /*
-*    IRlib.h
-*    Class resolve different IR signals
-*
-*/
+ *    IRlib.h
+ *    Class resolve different IR signals
+ *
+ */
 using namespace std;
 
 #include <vector>
@@ -12,11 +12,14 @@ using namespace std;
 
 class IRLib {
 	public:
-		enum ProtocolEnum { UNKNOWN = 0x00, NEC = 0x01 };
-		ProtocolEnum 	Protocol 		= UNKNOWN;
-		uint16_t			Frequency 		= 38000;
-		uint32_t			Uint32Data 		= 0;
-		vector<int32_t>	RawData 			= vector<int32_t>();
+		enum ProtocolEnum {
+			NEC = 0x01, RAW = 0xF1
+		};
+
+		ProtocolEnum 	Protocol 	= RAW;
+		uint16_t 		Frequency 	= 38000;
+		uint32_t 		Uint32Data 	= 0;
+		vector<int32_t> RawData 	= vector<int32_t>();
 
 		IRLib(string ProntoHex);
 		IRLib(vector<int32_t> Raw = vector<int32_t>());
@@ -28,16 +31,16 @@ class IRLib {
 		void 			SetFrequency(uint16_t);
 
 	private:
-		uint8_t			ProntoOneTimeBurst 	= 0;
-		uint8_t			ProntoRepeatBurst 	= 0;
+		uint8_t		 	ProntoOneTimeBurst = 0;
+		uint8_t 		ProntoRepeatBurst = 0;
 
-		ProtocolEnum 	GetProtocol();
+		ProtocolEnum GetProtocol();
 
 		bool 			IsNEC();
-		uint32_t			NECData();
-		vector<int32_t>	NECConstruct();
+		uint32_t 		NECData();
+		vector<int32_t> NECConstruct();
 
 		bool 			IsProntoHex();
 		void 			FillFromProntoHex(string);
-		string			ProntoHexConstruct();
+		string 			ProntoHexConstruct();
 };

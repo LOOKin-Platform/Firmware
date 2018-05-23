@@ -48,8 +48,7 @@ class JSON {
     string								ToString();
 
     static string						CreateStringFromVector(vector<string>);
-
-	template <typename T> static string	CreateStringFromUintVector(vector<T>, uint8_t HexCount = 0);
+    template <typename T> static string	CreateStringFromIntVector(vector<T>, uint8_t HexCount = 0);
 
   private:
 	void								AddToMapOrTupple(map<string,string> &, string first, string second, bool CaseSensitive);
