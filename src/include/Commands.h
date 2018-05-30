@@ -13,15 +13,15 @@
 
 #include <esp_log.h>
 
+#include "Settings.h"
+
 #include "Globals.h"
 #include "Device.h"
-#include "Query.h"
 #include "WebServer.h"
 #include "JSON.h"
 #include "HardwareIO.h"
 #include "Converter.h"
 #include "Sensors.h"
-#include "Settings.h"
 
 using namespace std;
 

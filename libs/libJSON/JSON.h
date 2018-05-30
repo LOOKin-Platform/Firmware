@@ -24,8 +24,11 @@ class JSON {
     JSON(string = "");
 
     ~JSON();
-    string								GetItem					(string Key);
 
+    enum RootType { Object, Array, Undefined };
+    RootType								GetType();
+
+    string								GetItem					(string Key);
     void								SetItem					(string Key, string Value);
 
     void								SetItems				(map<string,string>, cJSON *Item = NULL);

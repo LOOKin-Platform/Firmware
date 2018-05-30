@@ -91,7 +91,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 
       for (ScenesCommandItem_t Command : Scenario.Commands)
         if (Scenario.Data->IsCommandNeedToExecute(Command)) {
-          if (Command.DeviceID == Device.ID) {
+          if (Command.DeviceID == Settings.eFuse.DeviceID) {
             // выполнить локальную команду
             Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
             if (CommandToExecute!=nullptr)

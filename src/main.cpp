@@ -18,17 +18,22 @@ using namespace std;
 #include "WiFiEventHandler.h"
 #include "FreeRTOSWrapper.h"
 #include "DateTime.h"
+#include "Memory.h"
 #include "Sleep.h"
-#include "Storage.h"
 
 #include "handlers/OverheatHandler.cpp"
 #include "handlers/WiFiHandler.cpp"
 
 #include "I2C.h"
 
+#include "esp_efuse.h"
+
+
 extern "C" {
 	void app_main(void);
 }
+
+Settings_t			Settings;
 
 WiFi_t				WiFi;
 WebServer_t 		WebServer;
@@ -38,8 +43,6 @@ Device_t			Device;
 Network_t			Network;
 Automation_t		Automation;
 Storage_t			Storage;
-
-Settings_t			Settings;
 
 vector<Sensor_t*>	Sensors;
 vector<Command_t*>	Commands;
@@ -66,7 +69,6 @@ void app_main(void) {
 	Log::Add(LOG_DEVICE_ON);
 	Time::SetTimezone();
 
-	Device.Init();
 	Network.Init();
 	Automation.Init();
 
@@ -87,6 +89,10 @@ void app_main(void) {
 
 	I2C bus;
 	bus.Init(0x48);
+
+	for (int i = 0x92; i < 0x120; i++) {
+		SPIFlash::EraseSector(i);
+	}
 
 	while (1) {
 		ESP_LOGI("main","RAM left %d (Started: %d)", system_get_free_heap_size(), StartMemory);
@@ -145,4 +151,55 @@ void app_main(void) {
 		Sleep::LightSleep();
 	}
 	*/
+}
+
+Settings_t::eFuse_t::eFuse_t() {
+	uint32_t eFuseData = 0x00;
+
+	eFuseData = REG_READ(EFUSE_BLK3_RDATA7_REG);
+	Type 				= (uint8_t)(eFuseData >> 16);
+	Revision 			= (uint16_t)((eFuseData << 16) >> 16);
+
+	eFuseData = REG_READ(EFUSE_BLK3_RDATA6_REG);
+	Model 				= (uint8_t)eFuseData >> 24;
+	DeviceID 			= (uint32_t)((eFuseData << 8) >> 8);
+
+	eFuseData = REG_READ(EFUSE_BLK3_RDATA5_REG);
+	DeviceID 			= (DeviceID << 8) + (uint8_t)(eFuseData >> 24);
+	Misc				= (uint8_t)((eFuseData << 8) >> 24);
+	Produced.Month		= Converter::InterpretHexAsDec((uint8_t)((eFuseData << 16) >> 24));
+	Produced.Day		= Converter::InterpretHexAsDec((uint8_t)((eFuseData << 24) >> 24));
+
+	eFuseData = REG_READ(EFUSE_BLK3_RDATA4_REG);
+	Produced.Year		= (uint16_t)(eFuseData >> 16);
+	Produced.Year 		= Converter::InterpretHexAsDec(Produced.Year);
+
+	Produced.Factory	= (uint16_t)((eFuseData << 16) >> 24);
+	Produced.Destination= (uint16_t)((eFuseData << 24) >> 24);
+
+	// Type verification
+	if (Type == 0x0 || Type == Settings.Memory.Empty8Bit) {
+		Type = Device.GetTypeFromNVS();
+
+		if (Type == 0x0 || Type == 0xFF) {
+			Type = 0x81;
+			Device.SetTypeToNVS(Type);
+		}
+	}
+	else
+		Device.SetTypeToNVS(Type);
+
+
+	// DeviceID verification
+	if (DeviceID == 0x0 || DeviceID == Settings.Memory.Empty32Bit) {
+		DeviceID = Device.GetIDFromNVS();
+
+		if (DeviceID == 0x0 || DeviceID == Settings.Memory.Empty32Bit) {
+			DeviceID = Device.GenerateID();
+			Device.SetIDToNVS(DeviceID);
+		}
+	}
+	else
+		Device.SetIDToNVS(DeviceID);
+
 }

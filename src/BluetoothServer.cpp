@@ -30,7 +30,7 @@ BluetoothServer_t::BluetoothServer_t() {
 void BluetoothServer_t::Start() {
 	ESP_LOGD(tag, "Start");
 
-	BluetoothServerTaskHandle  = FreeRTOS::StartTask(BluetoothServerTask, "BluetoothServerTask", NULL, 8192);
+	BluetoothServerTaskHandle  = FreeRTOS::StartTask(BluetoothServerTask, "BluetoothServerTask", NULL, 4096);
 	//BluetoothClientTaskHandle  = FreeRTOS::StartTask(BluetoothClientTask, "BluetoothClientTask", NULL, 8192);
 }
 

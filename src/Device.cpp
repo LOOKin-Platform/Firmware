@@ -1,13 +1,12 @@
 /*
-*    Device.cpp
-*    Class to handle API /Device
-*
-*/
+ *    Device.cpp
+ *    Class to handle API /Device
+ *
+ */
 #include "Globals.h"
 #include "Device.h"
 
-static char tag[] = "Device_t";
-static string NVSDeviceArea = "Device";
+static char tag[] 			= "Device_t";
 
 DeviceType_t::DeviceType_t(string TypeStr) {
 	for(auto const &TypeItem : Settings.Devices.Literaly) {
@@ -42,35 +41,10 @@ string DeviceType_t::ToString(uint8_t Hex) {
 }
 
 Device_t::Device_t() {
-    Type              = DeviceType_t(Settings.Devices.Default);
-    Status            = DeviceStatus::RUNNING;
-    ID                = 0;
-    Name              = "";
-    PowerMode         = DevicePowerMode::CONST;
-    PowerModeVoltage  = 220;
-    FirmwareVersion   = Settings.FirmwareVersion;
-    Temperature       = 0;
-}
-
-void Device_t::Init() {
-	NVS Memory(NVSDeviceArea);
-
-	uint8_t DeviceType = Memory.GetInt8Bit(NVSDeviceType);
-
-	if (DeviceType > 0)
-		Type = DeviceType_t(DeviceType);
-	else
-		Memory.SetInt8Bit(NVSDeviceType, Type.Hex);
-
-	ID = Memory.GetUInt32Bit(NVSDeviceID);
-	if (ID == 0) {
-		ID = GenerateID();
-		Memory.SetUInt32Bit(NVSDeviceID, ID);
-	}
-
-	Name = Memory.GetString(NVSDeviceName);
-
+	Type = DeviceType_t(Settings.eFuse.Type);
 	PowerMode = (Type.IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
+
+	NVS Memory(NVSDeviceArea);
 
 	uint8_t PowerModeVoltageInt = Memory.GetInt8Bit(NVSDevicePowerModeVoltage);
 	if (PowerModeVoltageInt > +3) {
@@ -94,16 +68,16 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			JSON JSONObject;
 
 			JSONObject.SetItems(vector<pair<string,string>> ({
-					make_pair("Type"		, TypeToString()),
-					make_pair("Status"		, StatusToString()),
-					make_pair("ID"			, IDToString()),
-					make_pair("Name"		, NameToString()),
-					make_pair("Time"		, Time::UnixtimeString()),
-					make_pair("Timezone"	, Time::TimezoneStr()),
-					make_pair("PowerMode"	, PowerModeToString()),
-					make_pair("Firmware"	, FirmwareVersionToString()),
-					make_pair("Temperature"	, TemperatureToString())
-				}));
+				make_pair("Type"		, TypeToString()),
+						make_pair("Status"		, StatusToString()),
+						make_pair("ID"			, IDToString()),
+						make_pair("Name"		, NameToString()),
+						make_pair("Time"		, Time::UnixtimeString()),
+						make_pair("Timezone"	, Time::TimezoneStr()),
+						make_pair("PowerMode"	, PowerModeToString()),
+						make_pair("Firmware"	, FirmwareVersionToString()),
+						make_pair("Temperature"	, TemperatureToString())
+			}));
 
 			Result.Body = JSONObject.ToString();
 		}
@@ -171,33 +145,59 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 	}
 }
 
+string Device_t::GetName() {
+	NVS Memory(NVSDeviceArea);
+	return Memory.GetString(NVSDeviceName);
+}
+
+void Device_t::SetName(string Name) {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetString(NVSDeviceName, Name);
+	Memory.Commit();
+}
+
+uint8_t Device_t::GetTypeFromNVS() {
+	NVS Memory(NVSDeviceArea);
+	return Memory.GetInt8Bit(NVSDeviceType);
+}
+
+void Device_t::SetTypeToNVS(uint8_t Type) {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetInt8Bit(NVSDeviceType, Type);
+	Memory.Commit();
+}
+
+uint32_t Device_t::GetIDFromNVS() {
+	NVS Memory(NVSDeviceArea);
+	return Memory.GetUInt32Bit(NVSDeviceID);
+}
+
+void Device_t::SetIDToNVS(uint32_t ID) {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetUInt32Bit(NVSDeviceID, ID);
+	Memory.Commit();
+}
+
 // Генерация ID на основе MAC-адреса чипа
 uint32_t Device_t::GenerateID() {
-  uint8_t mac[6];
-	esp_wifi_get_mac(WIFI_IF_AP, mac);
+	uint8_t mac[6];
+	esp_efuse_mac_get_default(mac);
 
-  stringstream MacString;
-  MacString << std::dec << (int) mac[0] << (int) mac[1] << (int) mac[2] << (int) mac[3] << (int) mac[4] << (int) mac[5];
+	stringstream MacString;
+	MacString << std::dec << (int) mac[0] << (int) mac[1] << (int) mac[2] << (int) mac[3] << (int) mac[4] << (int) mac[5];
 
-  hash<std::string> hash_fn;
-  size_t str_hash = hash_fn(MacString.str());
+	hash<std::string> hash_fn;
+	size_t str_hash = hash_fn(MacString.str());
 
-  stringstream Hash;
-  Hash << std::uppercase << std::hex << (int)str_hash;
+	stringstream Hash;
+	Hash << std::uppercase << std::hex << (int)str_hash;
 
-  return Converter::UintFromHexString<uint32_t>(Hash.str());
+	return Converter::UintFromHexString<uint32_t>(Hash.str());
 }
 
 bool Device_t::POSTName(map<string,string> Params) {
-	map<string,string>::iterator NameIterator = Params.find("name");
-
-	if (NameIterator != Params.end()) {
-		Name = Params["name"];
-
-		NVS Memory(NVSDeviceArea);
-		Memory.SetString(NVSDeviceName, Name);
-		Memory.Commit();
-
+	if (Params.count("name") > 0) {
+		SetName(Params["name"]);
 		return true;
 	}
 
@@ -214,12 +214,12 @@ bool Device_t::POSTTime(map<string,string> Params) {
 }
 
 bool Device_t::POSTTimezone(map<string,string> Params) {
-  if (Params.count("timezone") > 0) {
-    Time::SetTimezone(Params["timezone"]);
-    return true;
-  }
+	if (Params.count("timezone") > 0) {
+		Time::SetTimezone(Params["timezone"]);
+		return true;
+	}
 
-  return false;
+	return false;
 }
 
 bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response) {
@@ -271,11 +271,11 @@ string Device_t::StatusToString() {
 }
 
 string Device_t::IDToString() {
-    return (ID > 0) ? Converter::ToHexString(ID, 8) : "";
+	return (ID > 0) ? Converter::ToHexString(ID, 8) : "";
 }
 
 string Device_t::NameToString() {
-	return Name;
+	return GetName();
 }
 
 string Device_t::PowerModeToString() {
@@ -286,9 +286,9 @@ string Device_t::PowerModeToString() {
 }
 
 string Device_t::FirmwareVersionToString() {
-  return FirmwareVersion;
+	return FirmwareVersion;
 }
 
 string Device_t::TemperatureToString() {
-  return Converter::ToString(Temperature);
+	return Converter::ToString(Temperature);
 }

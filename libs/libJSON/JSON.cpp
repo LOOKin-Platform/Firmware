@@ -25,6 +25,15 @@ JSON::~JSON() {
 	cJSON_Delete(Root);
 }
 
+JSON::RootType JSON::GetType() {
+	if (Root != NULL) {
+		if (Root->type == cJSON_Array) return Array;
+		if (Root->type == cJSON_Object)return Object;
+	}
+
+	return Undefined;
+}
+
 string JSON::GetItem(string Key) {
 	string Result;
 
@@ -61,6 +70,17 @@ template void JSON::SetItemsTemplated<map<string,string>> (map<string,string> Va
 template void JSON::SetItemsTemplated<vector<pair<string,string>>>(vector<pair<string,string>> Values, cJSON *Item);
 
 map<string,string> JSON::GetItems(cJSON* Parent, bool CaseSensitive) {
+	if (Parent == NULL && Root == NULL)
+		return  map<string,string>();
+
+	if (Parent == NULL) {
+		if (Root->type == cJSON_Array)
+			return map<string,string>();
+	}
+	else
+		if (Parent->type == cJSON_Array)
+			return map<string,string>();
+
 	return GetItemsTemplated<map<string,string>>(Parent, CaseSensitive);
 }
 

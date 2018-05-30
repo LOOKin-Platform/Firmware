@@ -1,4 +1,5 @@
 build/
+.settings/
 sdkconfig.old
 .pioenvs
 .piolibdeps
@@ -8,5 +9,4 @@ sdkconfig.old
 snippets
 docs/
 Doxyfile
-.settings
 

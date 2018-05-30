@@ -28,7 +28,7 @@ WebServer_t::WebServer_t() {
 void WebServer_t::Start() {
 	ESP_LOGD(tag, "Start");
 
-	HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 4096);
+	HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 6144);
 	UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
 }
 

@@ -55,6 +55,12 @@ class Converter {
 		template <typename T>
 		static T				UintFromHexString(string);
 
+		template <typename T>
+		static T				UintFromHex(T);
+
+		template <typename T>
+		static T				InterpretHexAsDec(T);
+
 		static vector<string> 	StringToVector(string SourceStr, string Delimeter);
 		static string			VectorToString(const vector<string>& Strings, const char* Delimeter);
 
@@ -67,6 +73,6 @@ class Converter {
 
 		static uint8_t			ReverseBits(uint8_t);
 
-		static uint16_t			CRC16(vector<uint8_t>);
+		static uint16_t			CRC16(vector<uint8_t> &, uint16_t Start, uint16_t Length);
 };
 #endif

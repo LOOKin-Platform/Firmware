@@ -51,8 +51,6 @@ class Settings_t {
 
 		struct Devices_t {
 			public:
-				static constexpr uint8_t	Default			= 0x81;
-
 				static constexpr uint8_t	Plug 			= 0x03;
 				static constexpr uint8_t	Remote			= 0x81;
 				static constexpr uint8_t	Motion			= 0x82;
@@ -63,6 +61,25 @@ class Settings_t {
 					{ Motion, "Motion" 	}
 			};
 		} Devices;
+
+		struct eFuse_t {
+			public:
+				uint8_t 		Type 		= 0x00; //Expandable for uint16_t
+				uint16_t		Revision	= 0x00;
+				uint8_t			Model		= 0x00;
+				uint32_t		DeviceID	= 0x00;
+				uint8_t			Misc		= 0x00;
+
+				struct 		Prodiced_t {
+					uint8_t 	Month 		= 0x00;
+					uint8_t 	Day 		= 0x00;
+					uint16_t	Year 		= 0x00;
+					uint8_t		Factory		= 0x00;
+					uint8_t		Destination	= 0x00;
+				} Produced;
+
+				eFuse_t();
+		} eFuse;
 
 		struct HTTPClient_t {
 			static constexpr uint16_t 		QueueSize		= 16;
@@ -95,8 +112,6 @@ class Settings_t {
 };
 
 extern Settings_t Settings;
-
-#endif
 
 // Commands and Sensors Pin Map
 
@@ -166,3 +181,5 @@ extern Settings_t Settings;
 #define MEMORY_COMMAND_COMMANDID		0x4
 #define MEMORY_COMMAND_EVENTID			0x5
 #define MEMORY_COMMAND_OPERAND			0x6
+
+#endif

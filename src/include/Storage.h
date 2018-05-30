@@ -10,12 +10,12 @@ using namespace std;
 
 #include <string>
 #include <map>
-#include <unordered_map>
 #include <bitset>
+
+#include "Settings.h"
 
 #include "Memory.h"
 #include "WebServer.h"
-#include "Query.h"
 #include "JSON.h"
 #include "DateTime.h"
 
@@ -42,7 +42,7 @@ class Storage_t {
 
 				vector<uint8_t>			GetData();
 				string					DataToString();
-
+				uint16_t				CRC16ForData(uint16_t Start, uint16_t Length);
 			private:
 				vector<uint8_t>			Data = vector<uint8_t>();
 				void					CalculateLength();
@@ -58,7 +58,7 @@ class Storage_t {
 
 		uint16_t						CurrentVersion();
 
-	    void							HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+	    void							HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>, string RequestBody);
 	private:
 		vector<Item>					*Patch = new vector<Item>();
 		uint32_t						AddressToWrite 	= Settings.Storage.Versions.StartAddress;

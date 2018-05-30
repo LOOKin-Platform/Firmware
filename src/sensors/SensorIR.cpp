@@ -189,4 +189,71 @@ class SensorIR_t : public Sensor_t {
 				return 0;
 		}
     }
+
+
+    string StorageEncode(map<string,string> Data) override {
+    	string Result = "";
+
+    	if (Data.count("title")) {
+    		vector<uint16_t> Title = Converter::ToUTF16Vector(Data["title"]);
+
+    		Data["title"] = "";
+
+    		while (Title.size()%2!=0) Title.push_back(0);
+
+    		if (Title.size() > 62)
+    			Title.erase(Title.begin() + 62, Title.end());
+
+        	Result += Converter::ToHexString(Title.size() * 2, 2);
+
+        	while (Title.size() > 0) {
+            	Result += Converter::ToHexString(Title.front(),4);
+            	Title.erase(Title.begin());
+        	}
+    	}
+    	else
+    		Result += "00";
+
+
+    	uint8_t Protocol = 0xF0;
+    	if (Data.count("protocol")) Protocol = (uint8_t)Converter::ToUint16(Data["protocol"]);
+    	Result += Converter::ToHexString(Protocol, 2);
+
+    	if (Protocol != 0xF0)
+    		while (Data["signal"].size() < 8) Data["signal"] = "0" + Data["signal"];
+
+    	if (Data.count("signal"))
+    		Result += Data["signal"];
+
+    	return Result;
+    }
+
+    map<string,string> StorageDecode(string DataString) override {
+    	map<string,string> Result = map<string,string>();
+
+    	if (DataString.size() < 4)
+    		return Result;
+
+    	uint8_t TitleLength = (uint8_t)Converter::ToUint16(DataString.substr(0,2));
+
+    	if (DataString.size() > TitleLength * 2 + 1) {
+
+    		for (uint8_t Pos = 0; Pos < TitleLength * 2; Pos+=4) {
+    			Result["Title"] += "\\u" + DataString.substr(2+Pos,4);
+    		}
+    	}
+    	else
+    		return Result;
+
+    	DataString = DataString.substr(2 + TitleLength * 2);
+
+    	if (DataString.size() > 1) {
+    		Result["Protocol"]	= DataString.substr(0,2);
+    		DataString = DataString.substr(2);
+    	}
+
+    	Result["Signal"] = DataString;
+
+    	return Result;
+    }
 };

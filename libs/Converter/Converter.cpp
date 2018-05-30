@@ -142,6 +142,36 @@ template uint16_t Converter::UintFromHexString<uint16_t>(string HexString);
 template uint32_t Converter::UintFromHexString<uint32_t>(string HexString);
 template uint64_t Converter::UintFromHexString<uint64_t>(string HexString);
 
+template <typename T>
+T Converter::UintFromHex(T Hex) {
+    stringstream stream;
+
+    T Result;
+
+    stream << Hex;
+    stream >> std::hex >> Result;
+
+    return Result;
+}
+template uint8_t  	Converter::UintFromHex<uint8_t> (uint8_t 	Hex);
+template uint16_t  	Converter::UintFromHex<uint16_t>(uint16_t 	Hex);
+
+template <typename T>
+T Converter::InterpretHexAsDec(T Hex) {
+	T Result = 0;
+	uint8_t ResultLength = 0;
+
+	while (Hex) {
+	  uint8_t Digit = Hex & 0xF;
+	  Result = Result + Digit*pow(10,ResultLength++);
+	  Hex >>= 4;
+	}
+
+	return Result;
+}
+template uint8_t  	Converter::InterpretHexAsDec<uint8_t> (uint8_t 	Hex);
+template uint16_t  	Converter::InterpretHexAsDec<uint16_t>(uint16_t Hex);
+
 vector<string> Converter::StringToVector(string SourceStr, string Delimeter) {
 	vector<string> Result = vector<string>();
 
@@ -285,11 +315,9 @@ const unsigned short CRC16Table[256] = {
     0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 };
 
-uint16_t Converter::CRC16(vector<uint8_t> Data) {
-    unsigned short crc = 0xFFFF;
-
-    for (uint8_t Item : Data)
-        crc = (crc >> 8) ^ CRC16Table[(crc & 0xFF) ^ Item];
-
+uint16_t Converter::CRC16(vector<uint8_t> &Data, uint16_t Start, uint16_t Length) {
+	unsigned short crc = 0xFFFF;
+	for (uint16_t i = Start; i< Start + Length; i++)
+        crc = (crc >> 8) ^ CRC16Table[(crc & 0xFF) ^ Data[i]];
     return crc;
 }

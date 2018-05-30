@@ -3,12 +3,16 @@
  *    Class resolve different IR signals
  *
  */
-using namespace std;
+
+#ifndef LIBS_IR_H
+#define LIBS_IR_H
 
 #include <vector>
 #include <bitset>
 
 #include <Converter.h>
+
+using namespace std;
 
 class IRLib {
 	public:
@@ -44,3 +48,5 @@ class IRLib {
 		void 			FillFromProntoHex(string);
 		string 			ProntoHexConstruct();
 };
+
+#endif

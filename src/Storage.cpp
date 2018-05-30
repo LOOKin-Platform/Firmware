@@ -5,6 +5,7 @@
 */
 
 #include "Storage.h"
+#include "Globals.h"
 
 static char tag[] = "Storage";
 
@@ -61,6 +62,11 @@ string Storage_t::Item::DataToString() {
 
 	return Result;
 }
+
+uint16_t Storage_t::Item::CRC16ForData(uint16_t Start, uint16_t Length) {
+	return Converter::CRC16(Data, Start, Length);
+}
+
 
 void Storage_t::Item::ClearData() {
 	Data.clear();
@@ -202,8 +208,7 @@ uint16_t Storage_t::CurrentVersion() {
 }
 
 
-void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
-
+void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
 	if (Type == QueryType::GET) {
 		if (URLParts.size() == 0) {
 			JSON JSONObject;
@@ -224,7 +229,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			uint8_t		TypeID 	= Converter::UintFromHexString<uint8_t>(URLParts[1]);
 			uint16_t	Items 	= CountItemsForTypeID(TypeID);
 
-			uint16_t	Limit = 256;
+			uint16_t	Limit = 64;
 			uint8_t		Page  = 0;
 
 			if (Params.count("page") > 0)
@@ -310,49 +315,133 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			return;
 		}
 
-		if (URLParts.size() == 1) {
+		if (URLParts.size() == 1 || (URLParts.size() == 2 && URLParts[1] == "decode")) {
 			uint16_t ItemID = Converter::UintFromHexString<uint16_t>(URLParts[0]);
 
-			Item Output = Read(ItemID);
-
-			if (Output.Header.Length == 0) {
+			if (ItemID > (Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize))
+			{
 				Result.SetInvalid();
 				return;
 			}
 
+			Item Output = Read(ItemID);
+
+			if ((Output.Header.Length == Settings.Memory.Empty8Bit && Output.Header.TypeID == Settings.Memory.Empty8Bit) ||
+					ItemID != Output.Header.MemoryID) {
+				Result.SetInvalid();
+				return;
+			}
+
+			map<string,string> OutputMap = map<string,string>();
+
+			if (URLParts.size() == 2) {
+				Sensor_t *Sensor = Sensor_t::GetSensorByID(Output.Header.TypeID);
+
+				if (Sensor != nullptr)
+					OutputMap = Sensor->StorageDecode(Output.DataToString());
+			}
+
+			if (OutputMap.size() != 0)
+				OutputMap["TypeID"] = Converter::ToHexString(Output.Header.TypeID,2);
+			else {
+				OutputMap["Data"] 	= Output.DataToString();
+				OutputMap["Size"] 	= Converter::ToString(Output.Header.Length);
+				OutputMap["TypeID"] = Converter::ToHexString(Output.Header.TypeID,2);
+			}
+
+			Output.ClearData();
+
 			JSON JSONObject;
-			JSONObject.SetItem("TypeID"	, Converter::ToHexString(Output.Header.TypeID,2));
-			JSONObject.SetItem("Size"	, Converter::ToString(Output.Header.Length));
-			JSONObject.SetItem("Data"	, Output.DataToString());
+			for (auto& item : OutputMap)
+				JSONObject.SetItem(item.first, item.second);
+
+			OutputMap.clear();
 
 			Result.Body = JSONObject.ToString();
 		}
 	}
 
-
 	if (Type == QueryType::POST) {
-		if (URLParts.size() == 0) {
-			Item ItemToSave;
-
-			if (Params.count("id"))
-				ItemToSave.Header.MemoryID	= Converter::UintFromHexString<uint16_t>(Params["id"]);
-
-			if (Params.count("typeid"))
-				ItemToSave.Header.TypeID	= Converter::UintFromHexString<uint8_t>(Params["typeid"]);
-
-			if (Params.count("data"))
-				ItemToSave.SetData(Params["data"]);
-
-			ItemToSave.Header.MemoryID = Write(ItemToSave);
-
-			Result.ResponseCode = WebServer_t::Response::CODE::OK;
-			Result.Body = "{\"success\" : \"true\", \"id\":\"" + Converter::ToHexString(ItemToSave.Header.MemoryID,3) + "\"}";
-		}
-
-
 		if (URLParts.size() == 1 && URLParts[0] == "commit") {
 			Commit();
 			Result.SetSuccess();
+			return;
+		}
+
+		if (URLParts.size()  == 0) {
+			vector<map<string,string>> Items = vector<map<string,string>>();
+
+			if (Params.empty()) {
+				JSON JSONObject(RequestBody);
+				if (JSONObject.GetType() == JSON::RootType::Array)
+					Items = JSONObject.GetObjectsArray();
+
+				RequestBody = "";
+			}
+			else {
+				Items.push_back(map<string,string>());
+
+				for (auto &MapItem : Params) {
+					if (MapItem.first == "data") {
+						const uint8_t PartLen = 100;
+						while (Params[MapItem.first].size() > 0) {
+							Items.at(0)[MapItem.first] += Params[MapItem.first].substr(0, (Params[MapItem.first].size() >= PartLen) ? PartLen : Params[MapItem.first].size());
+							Params[MapItem.first] = (Params[MapItem.first].size() < PartLen) ? "" : Params[MapItem.first].substr(PartLen);
+						}
+					}
+					else {
+						Items.at(0)[MapItem.first] = MapItem.second;
+						Params.erase(MapItem.first);
+					}
+				}
+			}
+
+			vector<uint16_t> InsertedIDs = vector<uint16_t>();
+
+			vector<map<string,string>>::iterator it = Items.begin();
+			while (it != Items.end()) {
+				Item ItemToSave;
+
+				if ((*it).count("id"))
+					ItemToSave.Header.MemoryID	= Converter::UintFromHexString<uint16_t>((*it)["id"]);
+
+				if ((*it).count("typeid"))
+					ItemToSave.Header.TypeID	= Converter::UintFromHexString<uint8_t>((*it)["typeid"]);
+
+				Sensor_t *Sensor = Sensor_t::GetSensorByID(ItemToSave.Header.TypeID);
+
+				if (Sensor != nullptr) {
+					ItemToSave.SetData(Sensor->StorageEncode((*it)));
+					ItemToSave.Header.TypeID = Sensor->ID;
+				}
+
+				if (ItemToSave.GetData().size() == 0 && (*it).count("data"))
+					ItemToSave.SetData((*it)["data"]);
+
+				if (ItemToSave.GetData().size() == 0 || ItemToSave.Header.TypeID == Settings.Memory.Empty8Bit) {
+					Result.SetInvalid();
+					return;
+				}
+
+				InsertedIDs.push_back(Write(ItemToSave));
+
+				it = Items.erase(it);
+			}
+
+			Result.ResponseCode = WebServer_t::Response::CODE::OK;
+
+			if (InsertedIDs.size() == 1)
+				Result.Body = "{\"success\" : \"true\", \"id\":\"" + Converter::ToHexString(InsertedIDs[0],3) + "\"}";
+			else {
+				Result.Body = "{\"success\" : \"true\", \"ids\": [";
+
+				for (uint8_t i = 0; i<InsertedIDs.size(); i++) {
+					Result.Body += "\"" + Converter::ToHexString(InsertedIDs[i],3) + "\"";
+					if (i<InsertedIDs.size()-1) Result.Body += ",";
+				}
+
+				Result.Body += "]\"}";
+			}
 		}
 	}
 
@@ -385,7 +474,7 @@ uint16_t Storage_t::FindFreeID() {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
-		if (Header.MemoryID != Settings.Memory.Empty16Bit)
+		if (Header.MemoryID != Settings.Memory.Empty16Bit && Header.MemoryID < FreeIndexes->size())
 			FreeIndexes->set(Header.MemoryID, false);
 
 		Address += Settings.Storage.Data.ItemSize;
@@ -439,8 +528,8 @@ uint16_t Storage_t::WriteNow(Item Record) {
 		uint16_t PartSize = ((i+1) * RecordDataSize() < Record.GetData().size()) ? RecordDataSize() : Record.GetData().size() - i * RecordDataSize();
 
 		RecordPartInfo PartInfo;
-		PartInfo.CRC = Converter::CRC16(vector<uint8_t>(Record.GetData().begin() + i * RecordDataSize(),
-														Record.GetData().begin() + i * RecordDataSize() + PartSize));
+		PartInfo.CRC = Record.CRC16ForData(i * RecordDataSize(), PartSize);
+
 		PartInfo.Size = PartSize - 1;
 
 		SPIFlash::WriteUint32(PartInfo.PartInfoAsInteger, AddressVector[i] + 0x04);

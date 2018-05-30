@@ -82,7 +82,9 @@ void Query_t::FillParams(string &Query) {
 
 		if (RequestBody != "") {
 			JSON JSONItem(RequestBody);
-			Params = JSONItem.GetItems();
+
+			if (JSONItem.GetType() == JSON::RootType::Object)
+				Params = JSONItem.GetItems();
 		}
 		else
 			Params = map<string,string>();

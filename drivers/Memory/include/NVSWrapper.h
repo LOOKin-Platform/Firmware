@@ -30,7 +30,7 @@ public:
 	string 		GetString(string key);
 	void 		SetString(string key, string data);
 
-	uint8_t 		GetInt8Bit(string key);
+	uint8_t 	GetInt8Bit(string key);
 	void 		SetInt8Bit(string key, uint8_t data);
 
 	uint32_t 	GetUInt32Bit(string key);

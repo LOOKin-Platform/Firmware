@@ -31,11 +31,12 @@
 
 using namespace std;
 
-#define  NVSDeviceType              "Type"
-#define  NVSDeviceID                "ID"
-#define  NVSDeviceName              "Name"
-#define  NVSDevicePowerMode         "PowerMode"
-#define  NVSDevicePowerModeVoltage  "PowerModeVoltage"
+#define	NVSDeviceArea				"Device"
+#define NVSDeviceType				"Type"
+#define NVSDeviceID					"ID"
+#define NVSDeviceName				"Name"
+#define NVSDevicePowerMode			"PowerMode"
+#define	NVSDevicePowerModeVoltage	"PowerModeVoltage"
 
 class DeviceType_t {
   public:
@@ -57,24 +58,33 @@ enum    DevicePowerMode { BATTERY, CONST };
 class Device_t {
   public:
     DeviceType_t    Type;
-    DeviceStatus    Status;
-    uint32_t        ID;
-    string          Name;
+    DeviceStatus    Status		= DeviceStatus::RUNNING;
+    uint32_t        ID			= 0x0;
 
-    DevicePowerMode PowerMode;
-    uint8_t         PowerModeVoltage;
+    DevicePowerMode PowerMode	= DevicePowerMode::CONST;
+    uint8_t         PowerModeVoltage = 220;
 
-    string          FirmwareVersion;
-    uint8_t         Temperature;
+    string          FirmwareVersion = Settings.FirmwareVersion;
+    uint8_t         Temperature = 0;
 
     Device_t();
     void    		Init();
     void    		HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
-    string			TypeToString();
+    string			GetName();
+    void			SetName(string);
+
+    static uint8_t	GetTypeFromNVS();
+    static void		SetTypeToNVS(uint8_t);
+
+    static uint32_t	GetIDFromNVS();
+    static void		SetIDToNVS(uint32_t);
+
     string			IDToString();
+    string			TypeToString();
+    static uint32_t GenerateID();
+
   private:
-    uint32_t 		GenerateID();
 
     bool 			POSTName(map<string,string>);
     bool 			POSTTime(map<string,string>);
