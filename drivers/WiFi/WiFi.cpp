@@ -8,7 +8,6 @@
 
 #include <esp_heap_trace.h>
 
-
 static char tag[]= "WiFi";
 
 /*
@@ -21,12 +20,85 @@ static void setDNSServer(char *ip) {
 }
 */
 
-WiFi_t::WiFi_t() {
-	ip      = "";
-	gw      = "";
-	netmask = "";
-	wifiEventHandler = new WiFiEventHandler();
+WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
+	m_eventLoopStarted  = false;
+	m_initCalled        = false;
+	//m_pWifiEventHandler = new WiFiEventHandler();
+	m_apConnectionStatus= UINT8_MAX;    // Are we connected to an access point?
 }
+
+/**
+ * @brief Primary event handler interface.
+ */
+esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
+	// This is the common event handler that we have provided for all event processing.  It is called for every event
+	// that is received by the WiFi subsystem.  The "ctx" parameter is an instance of the current WiFi object that we are
+	// processing.  We can then retrieve the specific/custom event handler from within it and invoke that.  This then makes this
+	// an indirection vector to the real caller.
+
+	WiFi_t *pWiFi = (WiFi_t *)ctx;   // retrieve the WiFi object from the passed in context.
+
+	// Invoke the event handler.
+	esp_err_t rc;
+	if (pWiFi->m_pWifiEventHandler != nullptr)
+		rc = pWiFi->m_pWifiEventHandler->getEventHandler()(pWiFi->m_pWifiEventHandler, event);
+	else
+		rc = ESP_OK;
+
+	// If the event we received indicates that we now have an IP address or that a connection was disconnected then unlock the mutex that
+	// indicates we are waiting for a connection complete.
+	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+
+		if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) // If we connected and have an IP, change the status to ESP_OK.  Otherwise, change it to the reason code.
+			pWiFi->m_apConnectionStatus = ESP_OK;
+		else
+			pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
+
+		pWiFi->m_connectFinished.Give();
+	}
+
+	return rc;
+} // eventHandler
+
+
+
+/**
+ * @brief Initialize WiFi.
+ */
+void WiFi_t::Init() {
+	// If we have already started the event loop, then change the handler otherwise
+	// start the event loop.
+	if (m_eventLoopStarted) {
+		esp_event_loop_set_cb(WiFi_t::eventHandler, this);   // Returns the old handler.
+	} else {
+		esp_err_t errRc = ::esp_event_loop_init(WiFi_t::eventHandler, this);  // Initialze the event handler.
+		if (errRc != ESP_OK) {
+			ESP_LOGE(tag, "esp_event_loop_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+			abort();
+		}
+		m_eventLoopStarted = true;
+	}
+	// Now, one way or another, the event handler is WiFi::eventHandler.
+
+	if (!m_initCalled) {
+		NVS::Init();
+		::tcpip_adapter_init();
+
+		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+		esp_err_t errRc = ::esp_wifi_init(&cfg);
+		if (errRc != ESP_OK) {
+			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+			abort();
+		}
+
+		errRc = ::esp_wifi_set_storage(WIFI_STORAGE_RAM);
+		if (errRc != ESP_OK) {
+			ESP_LOGE(tag, "esp_wifi_set_storage: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+			abort();
+		}
+	}
+	m_initCalled = true;
+} // Init
 
 
 /**
@@ -66,136 +138,202 @@ void WiFi_t::addDNSServer(string ip) {
  * @return A vector of WiFiAPRecord instances.
  */
 vector<WiFiAPRecord> WiFi_t::Scan() {
-	::tcpip_adapter_init();
+	ESP_LOGD(tag, ">> scan");
+	std::vector<WiFiAPRecord> apRecords;
 
-	if (ESP_OK != esp_event_loop_init(wifiEventHandler->getEventHandler(), wifiEventHandler))
-		esp_event_loop_set_cb(wifiEventHandler->getEventHandler(), wifiEventHandler);
+	Init();
 
-	//heap_trace_start(HEAP_TRACE_LEAKS);
+	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
 
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-	ESP_ERROR_CHECK(::esp_wifi_set_storage(WIFI_STORAGE_RAM));
-	ESP_ERROR_CHECK(::esp_wifi_set_mode(WIFI_MODE_STA));
-	ESP_ERROR_CHECK( esp_wifi_start() );
-	//esp_wifi_set_max_tx_power(+20);
-	//heap_trace_stop();
-	//heap_trace_dump();
+	errRc = ::esp_wifi_start();
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
 
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
 	conf.show_hidden = true;
+	conf.scan_time.active.min = 0;
+	conf.scan_time.active.max = 70;
 
 	esp_err_t rc = ::esp_wifi_scan_start(&conf, true);
 	if (rc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_scan_start: %d", rc);
+		return apRecords;
 	}
 
-	uint16_t apCount;
+	uint16_t apCount;  // Number of access points available.
 	rc = ::esp_wifi_scan_get_ap_num(&apCount);
 	ESP_LOGD(tag, "Count of found access points: %d", apCount);
 
-	wifi_ap_record_t *list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
-    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&apCount, list));
+	wifi_ap_record_t* list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
+	if (list == nullptr) {
+		ESP_LOGE(tag, "Failed to allocate memory");
+		return apRecords;
+	}
 
-    vector<WiFiAPRecord> apRecords;
+	errRc = ::esp_wifi_scan_get_ap_records(&apCount, list);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_scan_get_ap_records: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
 
-    for (auto i=0; i<apCount; i++) {
-    	WiFiAPRecord wifiAPRecord;
-    	memcpy(wifiAPRecord.m_bssid, list[i].bssid, 6);
-    	wifiAPRecord.m_ssid = string((char *)list[i].ssid);
-    	wifiAPRecord.m_authMode = list[i].authmode;
-    	apRecords.push_back(wifiAPRecord);
-    }
+	for (auto i=0; i<apCount; i++) {
+		WiFiAPRecord wifiAPRecord;
+		memcpy(wifiAPRecord.m_bssid, list[i].bssid, 6);
 
-    free(list);
+		wifiAPRecord.m_ssid     = string((char *)list[i].ssid);
+		wifiAPRecord.m_authMode = list[i].authmode;
+		wifiAPRecord.m_rssi     = list[i].rssi;
+		wifiAPRecord.m_channel	= list[i].primary;
+		apRecords.push_back(wifiAPRecord);
+	}
 
-	esp_wifi_stop();
+	free(list);   // Release the storage allocated to hold the records.
 
-    return apRecords;
+	std::sort(apRecords.begin(),
+		apRecords.end(),
+		[](const WiFiAPRecord& lhs,const WiFiAPRecord& rhs){ return lhs.m_rssi> rhs.m_rssi;});
+	return apRecords;
+
 } // scan
 
 /**
  * @brief Connect to an external access point.
  *
- * @param[in] ssid The network SSID of the access point to which we wish to connect.
- * @param[in] password The password of the access point to which we wish to connect.
- * @return N/A.
+ * The event handler will be called back with the outcome of the connection.
+ *
+ * @param [in] ssid The network SSID of the access point to which we wish to connect.
+ * @param [in] password The password of the access point to which we wish to connect.
+ * @param [in] waitForConnection Block until the connection has an outcome.
+ * @returns ESP_OK if successfully receives a SYSTEM_EVENT_STA_GOT_IP event.  Otherwise returns wifi_err_reason_t - use GeneralUtils::wifiErrorToString(uint8_t errCode) to print the error.
  */
-void WiFi_t::ConnectAP(string ssid, string password) {
-	::esp_wifi_stop();
-	::esp_wifi_disconnect();
+uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, const uint8_t& Channel, bool WaitForConnection) {
+	ESP_LOGD(tag, ">> connectAP");
 
-	::tcpip_adapter_init();
-	if (ip.length() > 0 && gw.length() > 0 && netmask.length() > 0) {
+	m_apConnectionStatus = UINT8_MAX;
+	Init();
+
+	if (ip != 0 && gw != 0 && Netmask != 0) {
 		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA); // Don't run a DHCP client
-		tcpip_adapter_ip_info_t ipInfo;
 
-		inet_pton(AF_INET, ip.data(), &ipInfo.ip);
-		inet_pton(AF_INET, gw.data(), &ipInfo.gw);
-		inet_pton(AF_INET, netmask.data(), &ipInfo.netmask);
+		tcpip_adapter_ip_info_t ipInfo;
+		ipInfo.ip.addr = ip;
+		ipInfo.gw.addr = gw;
+		ipInfo.netmask.addr = Netmask;
+
 		::tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
 	}
 
-	if (ESP_OK != esp_event_loop_init(wifiEventHandler->getEventHandler(), wifiEventHandler))
-		esp_event_loop_set_cb(wifiEventHandler->getEventHandler(), wifiEventHandler);
-
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK(::esp_wifi_init(&cfg));
-	ESP_ERROR_CHECK(::esp_wifi_set_storage(WIFI_STORAGE_RAM));
-	ESP_ERROR_CHECK(::esp_wifi_set_mode(WIFI_MODE_STA));
+	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
 	wifi_config_t sta_config;
 	::memset(&sta_config, 0, sizeof(sta_config));
-	::memcpy(sta_config.sta.ssid, ssid.data(), ssid.size());
-	::memcpy(sta_config.sta.password, password.data(), password.size());
+	::memcpy(sta_config.sta.ssid, SSID.data(), SSID.size());
+	::memcpy(sta_config.sta.password, Password.data(), Password.size());
 	sta_config.sta.bssid_set = 0;
-	ESP_ERROR_CHECK(::esp_wifi_set_config(WIFI_IF_STA, &sta_config));
-	ESP_ERROR_CHECK(::esp_wifi_start());
-	//esp_wifi_set_max_tx_power(+20);
 
-	::esp_wifi_connect();
+	if (Channel > 0)
+		sta_config.sta.channel = Channel;
+
+	errRc = ::esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
+
+	errRc = ::esp_wifi_start();
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
+
+	m_connectFinished.Take("connectAP");   // Take the semaphore to wait for a connection.
+    do {
+        ESP_LOGD(tag, "esp_wifi_connect");
+        errRc = ::esp_wifi_connect();
+        if (errRc != ESP_OK) {
+            ESP_LOGE(tag, "esp_wifi_connect: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+            m_connectFinished.Give();
+            return m_apConnectionStatus;
+        }
+    }
+    while (!m_connectFinished.Take(3000, "connectAP")); // retry if not connected within 3s
+    m_connectFinished.Give();
+
+	ESP_LOGD(tag, "<< connectAP");
+	return m_apConnectionStatus;  // Return ESP_OK if we are now connected and wifi_err_reason_t if not.
 } // connectAP
+
 
 /**
  * @brief Start being an access point.
  *
- * @param[in] ssid The SSID to use to advertize for stations.
- * @param[in] password The password to use for station connections.
+ * @param[in] SSID The SSID to use to advertize for stations.
+ * @param[in] Password The password to use for station connections.
+ * @param[in] Auth The authorization mode for access to this access point.  Options are:
+ * * WIFI_AUTH_OPEN
+ * * WIFI_AUTH_WPA_PSK
+ * * WIFI_AUTH_WPA2_PSK
+ * * WIFI_AUTH_WPA_WPA2_PSK
+ * * WIFI_AUTH_WPA2_ENTERPRISE
+ * * WIFI_AUTH_WEP
+ * @param[in] Channel from the access point.
+ * @param[in] is the ssid hidden or not.
+ * @param[in] limiting number of clients.
  * @return N/A.
  */
-void WiFi_t::StartAP(string ssid, string password) {
-	::tcpip_adapter_init();
 
-	if (WiFi_t::GetMode() == WIFI_MODE_STA_STR)
-	{
-		::esp_wifi_stop();
-		::esp_wifi_disconnect();
+void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_auth_mode_t Auth, uint8_t Channel, bool SSIDIsHidden, uint8_t MaxConnections) {
+	ESP_LOGD(tag, ">> startAP: ssid: %s", SSID.c_str());
+
+	Init();
+
+	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_AP);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
 	}
-	else
-		::esp_wifi_stop();
 
-	if (ESP_OK != esp_event_loop_init(wifiEventHandler->getEventHandler(), wifiEventHandler))
-		esp_event_loop_set_cb(wifiEventHandler->getEventHandler(), wifiEventHandler);
-
-	wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-	ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-	ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
-	ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_AP) );
-
+	// Build the apConfig structure.
 	wifi_config_t apConfig;
 	::memset(&apConfig, 0, sizeof(apConfig));
-	::memcpy(apConfig.ap.ssid, ssid.data(), ssid.size());
-	apConfig.ap.ssid_len = 0;
-	::memcpy(apConfig.ap.password, password.data(), password.size());
-	apConfig.ap.channel = 0;
-	apConfig.ap.authmode = WIFI_AUTH_WPA2_PSK;
-	apConfig.ap.ssid_hidden = 0;
-	apConfig.ap.max_connection = 4;
+	::memcpy(apConfig.ap.ssid, SSID.data(), SSID.size());
+	apConfig.ap.ssid_len = SSID.size();
+	::memcpy(apConfig.ap.password, Password.data(), Password.size());
+	apConfig.ap.channel         = Channel;
+	apConfig.ap.authmode        = Auth;
+	apConfig.ap.ssid_hidden     = (uint8_t) SSIDIsHidden;
+	apConfig.ap.max_connection  = MaxConnections;
 	apConfig.ap.beacon_interval = 100;
 
-	ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_AP, &apConfig) );
-	ESP_ERROR_CHECK( esp_wifi_start() );
-	//esp_wifi_set_max_tx_power(+20);
+	errRc = ::esp_wifi_set_config(WIFI_IF_AP, &apConfig);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
+
+	errRc = ::esp_wifi_start();
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
+
+	errRc = tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "tcpip_adapter_dhcps_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+	}
+
+	ESP_LOGD(tag, "<< startAP");
 
 } // startAP
 
@@ -309,7 +447,8 @@ string WiFi_t::getSSID() {
 } // getSSID
 
 /**
- * @brief Set the IP info used when connecting as a station to an external access point.
+ * @brief Set the IP info and enable DHCP if ip != 0. If called with ip == 0 then DHCP is enabled.
+ * If called with bad values it will do nothing.
  *
  * Do not call this method if we are being an access point ourselves.
  *
@@ -324,11 +463,54 @@ string WiFi_t::getSSID() {
  * @param [in] netmask Netmask value.
  * @return N/A.
  */
-void WiFi_t::setIPInfo(string ip, string gw, string netmask) {
-	this->ip = ip;
-	this->gw = gw;
-	this->netmask = netmask;
+void WiFi_t::SetIPInfo(const std::string& ip, const std::string& gw, const std::string& netmask) {
+	SetIPInfo(ip.c_str(), gw.c_str(), netmask.c_str());
 } // setIPInfo
+
+void WiFi_t::SetIPInfo(const char* ip, const char* gw, const char* netmask) {
+	uint32_t new_ip;
+	uint32_t new_gw;
+	uint32_t new_netmask;
+
+	auto success = (bool)inet_pton(AF_INET, ip, &new_ip);
+	success = success && inet_pton(AF_INET, gw, &new_gw);
+	success = success && inet_pton(AF_INET, netmask, &new_netmask);
+
+	if(!success) {
+		return;
+	}
+
+	SetIPInfo(new_ip, new_gw, new_netmask);
+} // SetIPInfo
+
+
+/**
+ * @brief Set the IP Info based on the IP address, gateway and netmask.
+ * @param [in] ip The IP address of our ESP32.
+ * @param [in] gw The gateway we should use.
+ * @param [in] netmask Our TCP/IP netmask value.
+ */
+void WiFi_t::SetIPInfo(uint32_t ip, uint32_t gw, uint32_t netmask) {
+	Init();
+
+	this->ip      = ip;
+	this->gw      = gw;
+	this->Netmask = netmask;
+
+	if(ip != 0 && gw != 0 && netmask != 0) {
+		tcpip_adapter_ip_info_t ipInfo;
+		ipInfo.ip.addr      = ip;
+		ipInfo.gw.addr      = gw;
+		ipInfo.netmask.addr = netmask;
+		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
+		::tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
+	}
+	else {
+		ip = 0;
+		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+	}
+} // setIPInfo
+
 
 
 /**
@@ -362,3 +544,13 @@ string WiFiAPRecord::toString() {
 	s<< "ssid: " << m_ssid << ", auth: " << auth << ", rssi: " << m_rssi;
 	return s.str();
 } // toString
+
+/**
+ * @brief Set the event handler to use to process detected events.
+ * @param[in] WiFiEventHandler The class that will be used to process events.
+ */
+void WiFi_t::SetWiFiEventHandler(WiFiEventHandler* WiFiEventHandler) {
+	ESP_LOGD(tag, ">> setWiFiEventHandler: 0x%d", (uint32_t)WiFiEventHandler);
+	this->m_pWifiEventHandler = WiFiEventHandler;
+	ESP_LOGD(tag, "<< setWiFiEventHandler");
+} // setWiFiEventHandler

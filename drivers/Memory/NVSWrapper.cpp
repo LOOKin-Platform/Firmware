@@ -10,6 +10,23 @@
 
 static string ArrayCountName = "_count";
 
+bool NVS::isInited = false;
+
+void NVS::Init() {
+	if (isInited) return;
+
+    esp_err_t err = ::nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+
+    if (err == ESP_OK) 	{	ESP_LOGI("main", "NVS flash init success");				}
+    else 				{	ESP_LOGE("main", "Error while NVS flash init, %d", err);}
+
+    isInited = true;
+}
+
 NVS::NVS(string name, nvs_open_mode openMode) {
 	m_name = name;
 	nvs_open(name.c_str(), openMode, &m_handle);

@@ -12,12 +12,10 @@ static string NVSNetworkArea 	= "Network";
 Network_t::Network_t() {}
 
 void Network_t::Init() {
-
 	NVS Memory(NVSNetworkArea);
 
 	JSON JSONObject(Memory.GetString(NVSNetworkWiFiSettings));
 	WiFiSettings = JSONObject.GetItems(NULL, true);
-
 
 	// Load saved network devices from NVS
 	uint8_t ArrayCount = Memory.ArrayCount(NVSNetworkDevicesArray);
@@ -30,10 +28,6 @@ void Network_t::Init() {
 			Devices.push_back(NetworkDevice);
 		}
 	}
-
-	// Read info from network scan
-	for (WiFiAPRecord APRecord : WiFi.Scan())
-		WiFiList.push_back(APRecord.getSSID());
 }
 
 NetworkDevice_t Network_t::GetNetworkDeviceByID(uint32_t ID) {
@@ -102,21 +96,18 @@ void Network_t::DeviceInfoReceived(string ID, string Type, string IP, string Sce
 }
 
 bool Network_t::WiFiConnect(string SSID) {
-	if (WiFiSettings.size() == 0)
-		return false;
-
 	if (SSID != "" && WiFiSettings.count(SSID) == 0)
 		return false;
 
-	for (auto &WiFiListItem : WiFiList) {
+	for (auto &WiFiScannedItem : WiFiScannedList) {
 		if (SSID != "") {
-			if (WiFiListItem == SSID) {
-				 WiFi.ConnectAP(SSID, WiFiSettings[SSID]);
+			if (WiFiScannedItem.getSSID() == SSID) {
+				 WiFi.ConnectAP(SSID, WiFiSettings[SSID], WiFiScannedItem.getChannel());
 				 return true;
 			}
 		}
-		else if (WiFiSettings.count(WiFiListItem) > 0) {
-			 WiFi.ConnectAP(WiFiListItem, WiFiSettings[WiFiListItem]);
+		else if (WiFiSettings.count(WiFiScannedItem.getSSID()) > 0) {
+			 WiFi.ConnectAP(WiFiScannedItem.getSSID(), WiFiSettings[WiFiScannedItem.getSSID()], WiFiScannedItem.getChannel());
 			 return true;
 		}
 	}
@@ -213,7 +204,12 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			}
 
 			if (URLParts[0] == "scannedssidlist") {
-				Result.Body = JSON::CreateStringFromVector(WiFiList);
+				vector<string> SSIDList = vector<string>();
+
+				for (auto &WiFiScannedItem : WiFiScannedList)
+					SSIDList.push_back(WiFiScannedItem.getSSID());
+
+				Result.Body = JSON::CreateStringFromVector(SSIDList);
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
 		}

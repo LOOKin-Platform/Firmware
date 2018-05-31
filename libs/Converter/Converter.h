@@ -23,6 +23,12 @@ using namespace std;
 #include <tcpip_adapter.h>
 #include <lwip/inet.h>
 
+#include <esp_err.h>
+#include <nvs.h>
+#include <esp_wifi.h>
+#include <esp_heap_caps.h>
+#include <esp_system.h>
+
 #include "Settings.h"
 
 class Converter {
@@ -74,5 +80,8 @@ class Converter {
 		static uint8_t			ReverseBits(uint8_t);
 
 		static uint16_t			CRC16(vector<uint8_t> &, uint16_t Start, uint16_t Length);
+
+		static const char* 		ErrorToString(esp_err_t errCode);
+
 };
 #endif

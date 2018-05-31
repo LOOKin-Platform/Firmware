@@ -23,22 +23,24 @@ using namespace std;
 #define  NVSNetworkDevicesArray "Devices"
 
 struct NetworkDevice_t {
-  uint8_t   TypeHex   = 0x00;
-  bool      IsActive  = false;
-  uint32_t  ID        = 0;
-  string    IP        = "";
+	uint8_t   TypeHex   = 0x00;
+	bool      IsActive  = false;
+	uint32_t  ID        = 0;
+	string    IP        = "";
 };
 
 class Network_t {
   public:
 	map<string,string>		WiFiSettings 	= {};
-    vector<string>			WiFiList 		= vector<string>();
+    vector<WiFiAPRecord>	WiFiScannedList = vector<WiFiAPRecord>();
     vector<NetworkDevice_t>	Devices			= vector<NetworkDevice_t>();
     tcpip_adapter_ip_info_t	IP;
 
     Network_t();
 
-    void  Init();
+    void 					Init();
+
+    void  					FillFromWiFiScan(vector<WiFiAPRecord>);
     NetworkDevice_t			GetNetworkDeviceByID(uint32_t);
     void					SetNetworkDeviceFlagByIP(string IP, bool Flag);
     void					DeviceInfoReceived(string ID, string Type, string IP, string ScenariosVersion, string StorageVersion);

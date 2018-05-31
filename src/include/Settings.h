@@ -78,7 +78,7 @@ class Settings_t {
 					uint8_t		Destination	= 0x00;
 				} Produced;
 
-				eFuse_t();
+				void ReadData();
 		} eFuse;
 
 		struct HTTPClient_t {

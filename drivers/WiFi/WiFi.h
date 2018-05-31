@@ -26,6 +26,9 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 
+#include "Memory.h"
+#include "Converter.h"
+#include "FreeRTOSWrapper.h"
 #include "WiFiEventHandler.h"
 
 using namespace std;
@@ -37,40 +40,49 @@ using namespace std;
 #define WIFI_MODE_UNKNOWN_STR	"WIFI_MODE_UNKNOWN"
 
 class WiFiAPRecord {
-public:
-	friend class WiFi_t;
+	public:
+		friend class WiFi_t;
 
-	/**
-	 * @brief Get the auth mode.
-	 * @return The auth mode.
-	 */
-	wifi_auth_mode_t getAuthMode() {
-		return m_authMode;
-	}
+		/**
+		 * @brief Get the auth mode.
+		 * @return The auth mode.
+		 */
+		wifi_auth_mode_t getAuthMode() {
+			return m_authMode;
+		}
 
-	/**
-	 * @brief Get the RSSI.
-	 * @return the RSSI.
-	 */
-	int8_t getRSSI() {
-		return m_rssi;
-	}
+		/**
+		 * @brief Get the RSSI.
+		 * @return the RSSI.
+		 */
+		int8_t getRSSI() {
+			return m_rssi;
+		}
 
-	/**
-	 * @brief Get the SSID.
-	 * @return the SSID.
-	 */
-	string getSSID() {
-		return m_ssid;
-	}
+		/**
+		 * @brief Get the SSID.
+		 * @return the SSID.
+		 */
+		string getSSID() {
+			return m_ssid;
+		}
 
-	string toString();
+		/**
+		 * @brief Get channel.
+		 * @return the channel num.
+		 */
+		uint8_t getChannel() {
+			return m_channel;
+		}
 
-private:
-	uint8_t m_bssid[6];
-	int8_t m_rssi;
-	string m_ssid;
-	wifi_auth_mode_t m_authMode;
+		string toString();
+
+	private:
+		uint8_t 			m_bssid[6];
+		int8_t 				m_rssi;
+		string 				m_ssid;
+		uint8_t				m_channel;
+		wifi_auth_mode_t 	m_authMode;
 };
 
 /**
@@ -87,12 +99,21 @@ private:
 
 class WiFi_t {
 	private:
-		string      		ip;
-		string      		gw;
-		string      		netmask;
-		WiFiEventHandler 	*wifiEventHandler;
+		uint32_t      		ip;
+		uint32_t      		gw;
+		uint32_t            Netmask;
+		WiFiEventHandler*	m_pWifiEventHandler;
+		uint8_t             m_dnsCount=0;
+		bool                m_eventLoopStarted;
+		bool                m_initCalled;
+		uint8_t             m_apConnectionStatus;   // ESP_OK = we are connected to an access point.  Otherwise receives wifi_err_reason_t.
+		FreeRTOS::Semaphore m_connectFinished = FreeRTOS::Semaphore("ConnectFinished");
+
+		static esp_err_t    eventHandler(void* ctx, system_event_t* event);
 
 	public:
+		void                Init();
+
 		WiFi_t();
 		void 				addDNSServer(string ip);
 		void 				dump();
@@ -103,26 +124,18 @@ class WiFi_t {
 		static string 		getStaSSID();
 		static string 		getSSID();
 
-
 		static tcpip_adapter_ip_info_t getApIpInfo();
 		static tcpip_adapter_ip_info_t getStaIpInfo();
 
 		vector<WiFiAPRecord> Scan();
-		void ConnectAP(string ssid, string passwd);
-		void StartAP(string ssid, string passwd);
+		uint8_t ConnectAP(const string& SSID, const string& Password, const uint8_t& Channel = 0, bool WaitForConnection = true);
+	    void 	StartAP	 (const string& SSID, const string& Password, wifi_auth_mode_t Auth = WIFI_AUTH_WPA2_PSK, uint8_t Channel = 0, bool SSIDIsHidden = false, uint8_t MaxConnections = 16);
 
-		void setIPInfo(string ip, string gw, string netmask);
+		void	SetIPInfo(const string& ip, const string& gw, const string& netmask);
+		void	SetIPInfo(const char* ip, const char* gw, const char* netmask);
+		void	SetIPInfo(uint32_t ip, uint32_t gw, uint32_t netmask);
 
-		/**
-		 * Set the event handler to use to process detected events.
-		 * @param[in] wifiEventHandler The class that will be used to process events.
-		 */
-		void setWifiEventHandler(WiFiEventHandler *wifiEventHandler) {
-			this->wifiEventHandler = wifiEventHandler;
-		}
-	private:
-		int m_dnsCount=0;
-		//char *m_dnsServer = nullptr;
+	    void 	SetWiFiEventHandler(WiFiEventHandler *WiFiEventHandler);
 };
 
 #endif /* DRIVERS_WIFI_H_ */

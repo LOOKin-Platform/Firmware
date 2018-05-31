@@ -59,7 +59,6 @@ class Device_t {
   public:
     DeviceType_t    Type;
     DeviceStatus    Status		= DeviceStatus::RUNNING;
-    uint32_t        ID			= 0x0;
 
     DevicePowerMode PowerMode	= DevicePowerMode::CONST;
     uint8_t         PowerModeVoltage = 220;

@@ -206,7 +206,7 @@ uint8_t Automation_t::ScenarioCacheItemCount() {
 void Automation_t::AddScenarioCacheItem(Scenario_t Scenario) {
 	ScenarioCacheItem_t NewCacheItem;
 
-	NewCacheItem.IsLinked       = Scenario.Data->IsLinked(Device.ID, Scenario.Commands);
+	NewCacheItem.IsLinked       = Scenario.Data->IsLinked(Settings.eFuse.DeviceID, Scenario.Commands);
 	NewCacheItem.ScenarioID     = Scenario.ID;
 	NewCacheItem.ScenarioType   = Scenario.Type;
 	NewCacheItem.Operand        = Converter::UintFromHexString<uint64_t>(Scenario.Data->ToString());

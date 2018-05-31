@@ -40,7 +40,9 @@ string DeviceType_t::ToString(uint8_t Hex) {
 	return Result;
 }
 
-Device_t::Device_t() {
+Device_t::Device_t() { }
+
+void Device_t::Init() {
 	Type = DeviceType_t(Settings.eFuse.Type);
 	PowerMode = (Type.IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
@@ -271,7 +273,7 @@ string Device_t::StatusToString() {
 }
 
 string Device_t::IDToString() {
-	return (ID > 0) ? Converter::ToHexString(ID, 8) : "";
+	return (Settings.eFuse.DeviceID > 0) ? Converter::ToHexString(Settings.eFuse.DeviceID, 8) : "";
 }
 
 string Device_t::NameToString() {

@@ -518,36 +518,37 @@ string CalendarData_t::ToString() {
 }
 
 bool CalendarData_t::IsCommandNeedToExecute(ScenesCommandItem_t &Command) {
-  return (Command.DeviceID == Device.ID);
+	return (Command.DeviceID == Settings.eFuse.DeviceID);
 }
 
 void CalendarData_t::ExecuteCommands(uint32_t ScenarioID) {
-  Scenario_t::ExecuteScenario(ScenarioID);
+	Scenario_t::ExecuteScenario(ScenarioID);
 };
 
 bool CalendarData_t:: TimeUpdatedIsTriggered() {
-  DateTime_t CurrentDateTime = Time::DateTime();
+	DateTime_t CurrentDateTime = Time::DateTime();
 
-  // DEBUG
-  // ESP_LOGI(tag, "Current  Date is %u.%u.%u. DayOfWeek:%u . Time is %u:%u:%u", CurrentDateTime.Day, CurrentDateTime.Month, CurrentDateTime.Year, CurrentDateTime.DayOfWeek, CurrentDateTime.Hours, CurrentDateTime.Minutes, CurrentDateTime.Seconds);
-  //ESP_LOGI(tag, "Calendar Date is %u.%u.%u. DayOfWeek:%u. Time is %u:%u:%u", DateTime.Day, DateTime.Month, DateTime.Year, DateTime.DayOfWeek, DateTime.Hours, DateTime.Minutes, DateTime.Seconds);
+	// DEBUG
+	// ESP_LOGI(tag, "Current  Date is %u.%u.%u. DayOfWeek:%u . Time is %u:%u:%u", CurrentDateTime.Day, CurrentDateTime.Month, CurrentDateTime.Year, CurrentDateTime.DayOfWeek, CurrentDateTime.Hours, CurrentDateTime.Minutes, CurrentDateTime.Seconds);
+	//ESP_LOGI(tag, "Calendar Date is %u.%u.%u. DayOfWeek:%u. Time is %u:%u:%u", DateTime.Day, DateTime.Month, DateTime.Year, DateTime.DayOfWeek, DateTime.Hours, DateTime.Minutes, DateTime.Seconds);
 
-  DateTime.Hours    = CurrentDateTime.Hours;
-  DateTime.Minutes  = CurrentDateTime.Minutes;
-  DateTime.Seconds  = CurrentDateTime.Seconds;
-  // END DEBUG
 
-  if (CurrentDateTime.Hours == DateTime.Hours &&
+	DateTime.Hours    = CurrentDateTime.Hours;
+	DateTime.Minutes  = CurrentDateTime.Minutes;
+	DateTime.Seconds  = CurrentDateTime.Seconds;
+	// END DEBUG
+
+	if (CurrentDateTime.Hours == DateTime.Hours &&
       CurrentDateTime.Minutes == DateTime.Minutes &&
       CurrentDateTime.Seconds == DateTime.Seconds) {
-        if (IsScheduled) {
-          return (bool)ScheduledDays[7-CurrentDateTime.DayOfWeek];
+		if (IsScheduled) {
+			return (bool)ScheduledDays[7-CurrentDateTime.DayOfWeek];
         }
         else if (CurrentDateTime.Day  == DateTime.Day &&
                 CurrentDateTime.Month == DateTime.Month &&
                 CurrentDateTime.Year  == DateTime.Year)
-          return true;
-      }
+        	return true;
+	}
 
-  return false;
+	return false;
 }

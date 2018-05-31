@@ -10,6 +10,7 @@
 using namespace std;
 
 #include <nvs.h>
+#include <nvs_flash.h>
 #include <string>
 
 #include "Converter.h"
@@ -18,6 +19,8 @@ using namespace std;
 
 class NVS {
 public:
+	static void Init();
+
 	NVS(string name, nvs_open_mode openMode = NVS_READWRITE);
 	NVS(const char[], nvs_open_mode openMode = NVS_READWRITE);
 
@@ -61,6 +64,8 @@ public:
 private:
 	string 		m_name;
 	nvs_handle 	m_handle;
+
+	static bool isInited;
 
 	void ArrayCountSet(string ArrayName, uint8_t Count);
 };

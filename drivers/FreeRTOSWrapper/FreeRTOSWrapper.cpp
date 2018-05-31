@@ -118,7 +118,7 @@ void FreeRTOS::Semaphore::Give() {
 	if (m_usePthreads) {
 		pthread_mutex_unlock(&m_pthread_mutex);
 	} else {
-		xSemaphoreGive(m_semaphore);
+		::xSemaphoreGive(m_semaphore);
 	}
 
 	m_owner = string("<N/A>");
@@ -179,9 +179,11 @@ bool FreeRTOS::Semaphore::Take(uint32_t timeoutMs, string owner) {
 	m_owner = owner;
 	if (rc) {
 		ESP_LOGV(TAG, "Semaphore taken:  %s", toString().c_str());
-	} else {
+	}
+	else {
 		ESP_LOGE(TAG, "Semaphore NOT taken:  %s", toString().c_str());
 	}
+
 	return rc;
 
 } // FreeRTOS::Semaphore::Take

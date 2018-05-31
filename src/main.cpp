@@ -5,8 +5,7 @@ using namespace std;
 #include "stdio.h"
 
 #include <esp_log.h>
-#include <nvs.h>
-#include <nvs_flash.h>
+
 #include <esp_system.h>
 #include <esp_heap_trace.h>
 
@@ -33,7 +32,7 @@ extern "C" {
 	void app_main(void);
 }
 
-Settings_t			Settings;
+Settings_t 			Settings;
 
 WiFi_t				WiFi;
 WebServer_t 		WebServer;
@@ -51,15 +50,8 @@ static char tag[] = "Main";
 
 void app_main(void) {
 	uint32_t StartMemory = system_get_free_heap_size();
+	NVS::Init();
 
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-
-    if (err != ESP_OK)
-    	ESP_LOGE("main", "Error while NVS flash init, %d", err);
 
 	if (!Log::VerifyLastBoot()) {
 		Log::Add(LOG_DEVICE_ROLLBACK);
@@ -67,8 +59,15 @@ void app_main(void) {
 	}
 
 	Log::Add(LOG_DEVICE_ON);
+
+	Network.WiFiScannedList = WiFi.Scan();
+	WebServer.Start();
+	BluetoothServer.Start();
+
 	Time::SetTimezone();
 
+	Settings.eFuse.ReadData();
+	Device.Init();
 	Network.Init();
 	Automation.Init();
 
@@ -77,13 +76,10 @@ void app_main(void) {
 
 	WiFi.addDNSServer("8.8.8.8");
 	WiFi.addDNSServer("8.8.4.4");
-	WiFi.setWifiEventHandler(new MyWiFiEventHandler());
+	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
 	if (!Network.WiFiConnect())
 		WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
-
-	WebServer.Start();
-	BluetoothServer.Start();
 
 	Log::Add(LOG_DEVICE_STARTED);
 
@@ -153,7 +149,7 @@ void app_main(void) {
 	*/
 }
 
-Settings_t::eFuse_t::eFuse_t() {
+void Settings_t::eFuse_t::ReadData() {
 	uint32_t eFuseData = 0x00;
 
 	eFuseData = REG_READ(EFUSE_BLK3_RDATA7_REG);

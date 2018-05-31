@@ -33,15 +33,16 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			//WebServer.Stop();
 
 			// Повторно подключится к Wi-Fi, если подключение оборвалось
-			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE)
-				Network.WiFiConnect();
+			//if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE)
+			//	Network.WiFiConnect();
 
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
-			// (отсутсвие точки доступа, неправильный пароль и т.д) подключение не удалось
+			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось
 			if (DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT	||
 				DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
-			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 			||
+			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL 		||
+				DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE		||
 				DisconnectedInfo.reason == WIFI_REASON_HANDSHAKE_TIMEOUT)
 				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 
