@@ -12,10 +12,9 @@ static string NVSNetworkArea 	= "Network";
 Network_t::Network_t() {}
 
 void Network_t::Init() {
-	NVS Memory(NVSNetworkArea);
+	LoadAccessPointsList();
 
-	JSON JSONObject(Memory.GetString(NVSNetworkWiFiSettings));
-	WiFiSettings = JSONObject.GetItems(NULL, true);
+	NVS Memory(NVSNetworkArea);
 
 	// Load saved network devices from NVS
 	uint8_t ArrayCount = Memory.ArrayCount(NVSNetworkDevicesArray);
@@ -46,7 +45,7 @@ void Network_t::SetNetworkDeviceFlagByIP(string IP, bool Flag) {
 		}
 }
 
-void Network_t::DeviceInfoReceived(string ID, string Type, string IP, string ScenariosVersion, string StorageVersion) {
+void Network_t::DeviceInfoReceived(string ID, string Type, string PowerMode, string IP, string ScenariosVersion, string StorageVersion) {
 	ESP_LOGD(tag, "DeviceInfoReceived");
 
 	NVS Memory(NVSNetworkArea);
@@ -95,24 +94,149 @@ void Network_t::DeviceInfoReceived(string ID, string Type, string IP, string Sce
 	}
 }
 
-bool Network_t::WiFiConnect(string SSID) {
-	if (SSID != "" && WiFiSettings.count(SSID) == 0)
+bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
+	string Password = "";
+	for (auto &item : WiFiSettings)
+		if (item.SSID == SSID) {
+			Password = item.Password;
+			break;
+		}
+
+	if (SSID != "" && Password == "")
 		return false;
 
-	for (auto &WiFiScannedItem : WiFiScannedList) {
-		if (SSID != "") {
-			if (WiFiScannedItem.getSSID() == SSID) {
-				 WiFi.ConnectAP(SSID, WiFiSettings[SSID], WiFiScannedItem.getChannel());
-				 return true;
+	if (SSID != "") // connect to specific WiFi SSID
+		for (auto &WiFiScannedItem : WiFiScannedList) {
+			ESP_LOGI("tag", "WiFiScannedItem %s", WiFiScannedItem.getSSID().c_str());
+
+			if (!DontUseCache) {
+				if (WiFiScannedItem.getSSID() == SSID) {
+					uint32_t IP			= 0;
+					uint32_t Gateway	= 0;
+					uint32_t Netmask	= 0;
+
+					for (auto &item : WiFiSettings)
+						if (item.SSID == SSID) {
+							IP 		= item.IP;
+							Gateway	= item.Gateway;
+							Netmask = item.Netmask;
+							break;
+						}
+
+					if (IP != 0 && Gateway != 0 && Netmask !=0) {
+						WiFi.SetIPInfo(IP, Gateway, Netmask);
+						WiFi.AddDNSServer(inet_ntoa(Gateway));
+					}
+				}
+
+				WiFi.ConnectAP(SSID, Password, WiFiScannedItem.getChannel());
+				return true;
 			}
 		}
-		else if (WiFiSettings.count(WiFiScannedItem.getSSID()) > 0) {
-			 WiFi.ConnectAP(WiFiScannedItem.getSSID(), WiFiSettings[WiFiScannedItem.getSSID()], WiFiScannedItem.getChannel());
-			 return true;
+
+	if (SSID == "")
+		for (auto &WiFiScannedItem : WiFiScannedList) {
+			ESP_LOGI("tag", "WiFiScannedItem %s", WiFiScannedItem.getSSID().c_str());
+				for (auto &item : WiFiSettings)
+					if (item.SSID == WiFiScannedItem.getSSID()) {
+						if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
+							ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
+							WiFi.SetIPInfo(item.IP, item.Gateway, item.Netmask);
+							WiFi.AddDNSServer(inet_ntoa(item.Gateway));
+						}
+
+						WiFi.ConnectAP(WiFiScannedItem.getSSID(), item.Password, WiFiScannedItem.getChannel());
+						return true;
+					}
 		}
-	}
 
 	return false;
+}
+
+void Network_t::UpdateWiFiIPInfo(string SSID, tcpip_adapter_ip_info_t Data) {
+	if (Data.ip.addr != 0 && Data.gw.addr != 0 && Data.netmask.addr != 0)
+		for (auto& Item : WiFiSettings )
+			if (Item.SSID == SSID) {
+				bool IsChanged = (Item.IP != Data.ip.addr || Item.Gateway != Data.gw.addr || Item.Netmask != Data.netmask.addr)
+						? true : false;
+
+				Item.IP 		= Data.ip.addr;
+				Item.Gateway 	= Data.gw.addr;
+				Item.Netmask	= Data.netmask.addr;
+
+				if (IsChanged)
+					SaveAccessPointsList();
+
+				return;
+			}
+}
+
+
+void Network_t::AddWiFiNetwork(string SSID, string Password) {
+	if (SSID == "" || Password == "")
+		return;
+
+	bool IsExist = false;
+
+	for (auto &item : WiFiSettings)
+		if (item.SSID == SSID) {
+			IsExist = true;
+			item.Password = Password;
+		}
+
+	if (!IsExist) {
+		if (WiFiSettings.size() >= Settings.WiFi.SavedAPCount)
+			WiFiSettings.erase(WiFiSettings.begin());
+
+		WiFiSettingsItem Item;
+		Item.SSID 		= SSID;
+		Item.Password 	= Password;
+
+		WiFiSettings.push_back(Item);
+	}
+
+	SaveAccessPointsList();
+}
+
+void Network_t::LoadAccessPointsList() {
+	NVS Memory(NVSNetworkArea);
+
+	JSON JSONObject(Memory.GetString(NVSNetworkWiFiSettings));
+
+	WiFiSettings.clear();
+	for (auto& JSONItem : JSONObject.GetObjectsArray()) {
+		WiFiSettingsItem Item;
+
+		if (JSONItem.count("ssid")) 	Item.SSID 			= JSONItem["ssid"];
+		if (JSONItem.count("password")) Item.Password 		= JSONItem["password"];
+		if (JSONItem.count("channel")) 	Item.Channel 		= (uint8_t)Converter::ToUint16(JSONItem["channel"]);
+		if (JSONItem.count("ip")) 		Item.IP				= Converter::ToUint32(JSONItem["ip"]);
+		if (JSONItem.count("gateway")) 	Item.Gateway 		= Converter::ToUint32(JSONItem["gateway"]);
+		if (JSONItem.count("netmask")) 	Item.Netmask 		= Converter::ToUint32(JSONItem["netmask"]);
+
+		WiFiSettings.push_back(Item);
+	}
+}
+
+void Network_t::SaveAccessPointsList() {
+	vector<map<string,string>> Serialized = {};
+	for (auto &Item : WiFiSettings) {
+		Serialized.push_back({
+			{ "ssid"	, Item.SSID 									},
+			{ "password", Item.Password									},
+			{ "channel" , Converter::ToString<uint8_t>(Item.Channel)	},
+			{ "ip" 		, Converter::ToString<uint32_t>(Item.IP)		},
+			{ "gateway" , Converter::ToString<uint32_t>(Item.Gateway)	},
+			{ "netmask" , Converter::ToString<uint32_t>(Item.Netmask)	}
+		});
+	}
+
+	JSON JSONObject;
+	JSONObject.SetObjectsArray("", Serialized);
+
+	NVS Memory(NVSNetworkArea);
+	Memory.SetString(NVSNetworkWiFiSettings, JSONObject.ToString());
+	Memory.Commit();
 }
 
 string Network_t::SerializeNetworkDevice(NetworkDevice_t Item) {
@@ -155,7 +279,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 			vector<string> WiFiSettingsVector = vector<string>();
 			for (auto &Item : WiFiSettings)
-				WiFiSettingsVector.push_back(Item.first);
+				WiFiSettingsVector.push_back(Item.SSID);
 
 			JSONObject.SetStringArray("SavedSSID", WiFiSettingsVector);
 
@@ -234,18 +358,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				return;
 			}
 
-			if (WiFiSettings.size() >= Settings.WiFi.SavedAPCount && WiFiSettings.count(Params["wifissid"]) == 0)
-				WiFiSettings.erase(WiFiSettings.cbegin());
-
-			WiFiSettings[Params["wifissid"]] = Params["wifipassword"];
-
-			JSON JSONObject;
-			JSONObject.SetItems(WiFiSettings);
-
-			NVS Memory(NVSNetworkArea);
-			Memory.SetString(NVSNetworkWiFiSettings, JSONObject.ToString());
-			Memory.Commit();
-
+			AddWiFiNetwork(Params["wifissid"], Params["wifipassword"]);
 			Result.SetSuccess();
 		}
 	}
@@ -265,6 +378,15 @@ string Network_t::IPToString() {
 	return inet_ntoa(IP);
 }
 
+vector<string> Network_t::GetSavedWiFiList() {
+	vector<string> Result = {};
+
+	for (auto &Item : WiFiSettings)
+		Result.push_back(Item.SSID);
+
+	return Result;
+}
+
 string Network_t::WiFiCurrentSSIDToString() {
-	return WiFi_t::getSSID();
+	return WiFi_t::GetSSID();
 }

@@ -15,59 +15,60 @@ static void MotionDetectTask(void *) {
 
 		if (Value > 2000) {
 			Sensor_t::GetSensorByID(SensorMotionID)->SetValue(1);
-			WebServer.UDPSendBroadcastUpdated(SensorMotionID, Converter::ToString(Sensor_t::GetSensorByID(SensorMotionID)->GetValue().Value));
+			Wireless.SendBroadcastUpdated(SensorMotionID, Converter::ToString(Sensor_t::GetSensorByID(SensorMotionID)->GetValue().Value));
 			Automation.SensorChanged(SensorMotionID);
 
 			while (Value > 2000) {
 				Value = (uint16_t)adc1_get_raw(SensorMotionChannel);
-				vTaskDelay(MOTION_GET_INTERVAL);
+				vTaskDelay(Settings.GPIOData.GetCurrent().Motion.PoolInterval);
 			}
 
 			Sensor_t::GetSensorByID(SensorMotionID)->SetValue(0);
 		}
 		else {
-			vTaskDelay(MOTION_GET_INTERVAL);
+			vTaskDelay(Settings.GPIOData.GetCurrent().Motion.PoolInterval);
 		}
 	}
 }
 
 class SensorMotion_t : public Sensor_t {
-  public:
-    SensorMotion_t() {
-        ID          = SensorMotionID;
-        Name        = "Motion";
-        EventCodes  = { 0x00, 0x01 };
+	public:
+		SensorMotion_t() {
+			if (GetIsInited()) return;
 
-	    switch (GetDeviceTypeHex()) {
-	    		case Settings.Devices.Motion:
-	    			SensorMotionChannel = MOTION_MOTION_CHANNEL; break;
-	    		default:
-	    			SensorMotionChannel = ADC1_CHANNEL_0;
-	    }
+			ID          = SensorMotionID;
+			Name        = "Motion";
+			EventCodes  = { 0x00, 0x01 };
 
-	    if (SensorMotionChannel != ADC1_CHANNEL_0) {
-	        adc1_config_width(ADC_WIDTH_BIT_12);
-	        adc1_config_channel_atten(SensorMotionChannel, atten);
-	        FreeRTOS::StartTask(MotionDetectTask, "MotionDetectTask", NULL, 4096);
-	    }
-    }
+			if (Settings.GPIOData.GetCurrent().Motion.ADCChannel != ADC1_CHANNEL_MAX)
+				SensorMotionChannel = Settings.GPIOData.GetCurrent().Motion.ADCChannel;
 
-    void Update() override {
-    	if (SetValue(ReceiveValue())) {
-    		WebServer.UDPSendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
-    		Automation.SensorChanged(ID);
-   		}
-    };
+			if (SensorMotionChannel != ADC1_CHANNEL_MAX) {
+				adc1_config_width(ADC_WIDTH_BIT_12);
+				adc1_config_channel_atten(SensorMotionChannel, atten);
+				FreeRTOS::StartTask(MotionDetectTask, "MotionDetectTask", NULL, 4096);
+			}
 
-    uint32_t ReceiveValue(string Key = "Primary") override {
-    	return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
-    };
+			SetIsInited(true);
+		}
 
-    bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-   		SensorValueItem ValueItem = GetValue();
+		void Update() override {
+			if (SetValue(ReceiveValue())) {
+				Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
+				Automation.SensorChanged(ID);
+			}
+		};
 
-   		if (SceneEventCode == 0x01 && ValueItem.Value == 1) return true;
+		uint32_t ReceiveValue(string Key = "Primary") override {
+			return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
+		};
 
-   		return false;
-    }
+		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
+			SensorValueItem ValueItem = GetValue();
+
+			if (SceneEventCode == 0x01 && ValueItem.Value == 1)
+				return true;
+
+			return false;
+		}
 };

@@ -3,6 +3,9 @@
 *    CommandIR_t implementation
 *
 */
+#ifndef COMMANDS_IR
+#define COMMANDS_IR
+
 #include <RMT.h>
 
 static rmt_channel_t TXChannel = RMT_CHANNEL_4;
@@ -18,12 +21,8 @@ class CommandIR_t : public Command_t {
 		Events["prontohex"]	= 0xF0;
 		Events["raw"]		= 0xF1;
 
-		switch (GetDeviceTypeHex()) {
-			case Settings.Devices.Remote:
-				if (IR_REMOTE_SENDER_GPIO != GPIO_NUM_0)
-					RMT::SetTXChannel(IR_REMOTE_SENDER_GPIO, TXChannel, 38000);
-			break;
-	    }
+		if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
+			RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
 	}
 
     bool Execute(uint8_t EventCode, string StringOperand) override {
@@ -67,3 +66,5 @@ class CommandIR_t : public Command_t {
     		return true;
     }
 };
+
+#endif

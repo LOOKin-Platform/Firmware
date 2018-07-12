@@ -56,7 +56,7 @@ static void ADCCallback(void *) {
     {
     		ValueStruct ValueItem;
 
-    	    ValueItem.Uptime	= Time::UptimeU();
+    	    ValueItem.Uptime	= Time::UptimeU(); //?
     	    ValueItem.Value1	= (uint16_t)adc1_get_raw(channel1);
     	    ValueItem.Value2	= (uint16_t)adc1_get_raw(channel2);
     	    ValueItem.Value3	= (uint16_t)adc1_get_raw(channel3);

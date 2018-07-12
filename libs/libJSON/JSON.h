@@ -26,7 +26,7 @@ class JSON {
     ~JSON();
 
     enum RootType { Object, Array, Undefined };
-    RootType								GetType();
+    RootType							GetType();
 
     string								GetItem					(string Key);
     void								SetItem					(string Key, string Value);

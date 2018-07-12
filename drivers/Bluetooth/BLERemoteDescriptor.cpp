@@ -10,12 +10,8 @@
 #include "BLERemoteDescriptor.h"
 #include "GeneralUtils.h"
 #include <esp_log.h>
-#ifdef ARDUINO_ARCH_ESP32
-#include "esp32-hal-log.h"
-#endif
 
-static const char* LOG_TAG = "BLERemoteDescriptor";
-
+static char tag[] = "BLERemoteDescriptor";
 
 BLERemoteDescriptor::BLERemoteDescriptor(
 	uint16_t                 handle,
@@ -56,11 +52,11 @@ BLEUUID BLERemoteDescriptor::getUUID() {
 
 
 std::string BLERemoteDescriptor::readValue(void) {
-	ESP_LOGD(LOG_TAG, ">> readValue: %s", toString().c_str());
+	ESP_LOGD(tag, ">> readValue: %s", toString().c_str());
 
 	// Check to see that we are connected.
 	if (!getRemoteCharacteristic()->getRemoteService()->getClient()->isConnected()) {
-		ESP_LOGE(LOG_TAG, "Disconnected");
+		ESP_LOGE(tag, "Disconnected");
 		throw BLEDisconnectedException();
 	}
 
@@ -74,7 +70,7 @@ std::string BLERemoteDescriptor::readValue(void) {
 		ESP_GATT_AUTH_REQ_NONE);                       // Security
 
 	if (errRc != ESP_OK) {
-		ESP_LOGE(LOG_TAG, "esp_ble_gattc_read_char: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "esp_ble_gattc_read_char: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
 		return "";
 	}
 
@@ -82,7 +78,7 @@ std::string BLERemoteDescriptor::readValue(void) {
 	// in m_value will contain our data.
 	m_semaphoreReadDescrEvt.Wait("readValue");
 
-	ESP_LOGD(LOG_TAG, "<< readValue(): length: %d", m_value.length());
+	ESP_LOGD(tag, "<< readValue(): length: %d", m_value.length());
 	return m_value;
 } // readValue
 
@@ -135,10 +131,10 @@ void BLERemoteDescriptor::writeValue(
 		uint8_t* data,
 		size_t   length,
 		bool     response) {
-	ESP_LOGD(LOG_TAG, ">> writeValue: %s", toString().c_str());
+	ESP_LOGD(tag, ">> writeValue: %s", toString().c_str());
 	// Check to see that we are connected.
 	if (!getRemoteCharacteristic()->getRemoteService()->getClient()->isConnected()) {
-		ESP_LOGE(LOG_TAG, "Disconnected");
+		ESP_LOGE(tag, "Disconnected");
 		throw BLEDisconnectedException();
 	}
 
@@ -152,9 +148,9 @@ void BLERemoteDescriptor::writeValue(
 		ESP_GATT_AUTH_REQ_NONE
 	);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(LOG_TAG, "esp_ble_gattc_write_char_descr: %d", errRc);
+		ESP_LOGE(tag, "esp_ble_gattc_write_char_descr: %d", errRc);
 	}
-	ESP_LOGD(LOG_TAG, "<< writeValue");
+	ESP_LOGD(tag, "<< writeValue");
 } // writeValue
 
 

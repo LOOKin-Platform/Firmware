@@ -9,8 +9,11 @@
 
 #include <esp_log.h>
 
+#if defined(CONFIG_BT_ENABLED)
 #include <esp_bt.h>
 #include <esp_bt_main.h>
+#endif /* Bluetooth enabled */
+
 #include <driver/rtc_io.h>
 #include <esp_wifi.h>
 #include <esp_sleep.h>

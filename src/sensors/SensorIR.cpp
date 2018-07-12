@@ -9,51 +9,11 @@
 
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
-static gpio_num_t 			SensorIRFrequencyDetectorGPIO 	= GPIO_NUM_0;
 static constexpr uint8_t 	SensorIRQueueSize				= 30;
 static QueueHandle_t 		SensorIRQueueFrequencyDetect	= FreeRTOS::Queue::Create(SensorIRQueueSize, sizeof(uint32_t));
 
-struct SettingsItem {
-	gpio_num_t	SenderGPIO;
-
-	SettingsItem(gpio_num_t GPIO = GPIO_NUM_0) : SenderGPIO(GPIO) {};
-};
-
-static map<uint8_t, SettingsItem> CommandSettings = {
-		{ 0x81, { .SenderGPIO = GPIO_NUM_23 }}
-};
-
-//static bool Previous = false;
-
 static IRLib 	LastSignal;
 static uint32_t SignalDetectionTime = 0;
-
-static void IRAM_ATTR FrequencyDetectHandler(void *args) {
-	/*
-	uint8_t ItemsInQueue = FreeRTOS::Queue::CountFromISR(SensorIRQueueFrequencyDetect);
-
-	if (ItemsInQueue < SensorIRQueueSize) {
-		bool Value = GPIO::Read(SensorIRFrequencyDetectorGPIO);
-
-		if (ItemsInQueue == 0 && Value) {
-			Previous = true;
-			return;
-		}
-
-		uint32_t CurrentTime = Time::Uptime(); //?
-
-		if (Previous && !Value) {
-			Previous = false;
-		 	FreeRTOS::Queue::SendToBackFromISR(SensorIRQueueFrequencyDetect, &CurrentTime);
-		}
-
-		if (!Previous && Value) {
-			Previous = true;
-		 	FreeRTOS::Queue::SendToBackFromISR(SensorIRQueueFrequencyDetect, &CurrentTime);
-		}
-	}
-	*/
-}
 
 class SensorIR_t : public Sensor_t {
 	public:
@@ -66,17 +26,9 @@ class SensorIR_t : public Sensor_t {
 
 			ESP_LOGI("SensorID", "Init %X", ID);
 
-			switch (GetDeviceTypeHex()) {
-				case Settings.Devices.Remote:
-					if (IR_REMOTE_RECEIVER_GPIO != GPIO_NUM_0) {
-						RMT::SetRXChannel(IR_REMOTE_RECEIVER_GPIO, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
-						RMT::ReceiveStart(RMT_CHANNEL_0);
-					}
-
-				if (IR_REMOTE_DETECTOR_PIN != GPIO_NUM_0)
-					FrequencyDetectInit(IR_REMOTE_DETECTOR_PIN);
-
-	    		break;
+			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
+				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
+				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
 
 			SetIsInited(true);
@@ -145,67 +97,13 @@ class SensorIR_t : public Sensor_t {
 
 			LastSignal = IRLib(SensorIRCurrentMessage);
 			SignalDetectionTime = Time::Unixtime();
-			LastSignal.SetFrequency(FrequencyDetectCalculate());
+			//LastSignal.SetFrequency(FrequencyDetectCalculate());
 
 			SensorIRCurrentMessage.empty();
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
 		};
-
-		static void FrequencyDetectInit(gpio_num_t GPIO) {
-			if (GPIO != GPIO_NUM_0) {
-				SensorIRFrequencyDetectorGPIO = GPIO;
-
-				gpio_config_t io_conf;
-				io_conf.pin_bit_mask 	= 1ULL<<SensorIRFrequencyDetectorGPIO;
-				io_conf.mode 			= GPIO_MODE_INPUT;
-				io_conf.pull_up_en 		= GPIO_PULLUP_DISABLE;
-				io_conf.pull_down_en 	= GPIO_PULLDOWN_DISABLE;
-				io_conf.intr_type 		= GPIO_INTR_ANYEDGE;
-				gpio_config(&io_conf);
-
-
-				::gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
-				::gpio_isr_handler_add(SensorIRFrequencyDetectorGPIO, FrequencyDetectHandler, NULL);
-			}
-		}
-
-		static uint16_t FrequencyDetectCalculate() {
-			if (IR_REMOTE_DETECTOR_PIN != GPIO_NUM_0) {
-				vector<uint16_t> Intervals;
-
-				while (FreeRTOS::Queue::Count(SensorIRQueueFrequencyDetect) > 2) {
-					uint32_t StartTime 	= 0;
-					uint32_t EndTime 	= 0;
-					FreeRTOS::Queue::Receive(SensorIRQueueFrequencyDetect, &StartTime);
-					FreeRTOS::Queue::Receive(SensorIRQueueFrequencyDetect, &EndTime);
-
-					Intervals.push_back(EndTime	- StartTime);
-				}
-
-				FreeRTOS::Queue::Reset(SensorIRQueueFrequencyDetect);
-
-				if (Intervals.size() > 10) {
-					uint8_t IntervalsSize = Intervals.size();
-					Intervals.erase(Intervals.begin() + round(0.8 * IntervalsSize), Intervals.end());
-					Intervals.erase(Intervals.begin(), Intervals.begin() + round(0.2 * Intervals.size()));
-
-					float IntervalsSum = 0;
-					for(auto &i : Intervals)
-					IntervalsSum += i;
-
-					for (uint16_t Interval : Intervals)
-					ESP_LOGI("Detector", "Interval %d", Interval);
-
-
-					return round(1000000/(IntervalsSum/Intervals.size()));
-				}
-				else
-					return 0;
-			}
-		}
-
 
 		string StorageEncode(map<string,string> Data) override {
 			string Result = "";

@@ -16,8 +16,8 @@
  * @param [in] UUID The UUID to look up the service.
  * @return The characteristic.
  */
-BLEService* BLEServiceMap::getByUUID(const char* uuid) {
-    return getByUUID(BLEUUID(uuid));
+BLEService* BLEServiceMap::GetByUUID(const char* uuid) {
+    return GetByUUID(BLEUUID(uuid));
 }
 	
 /**
@@ -25,9 +25,9 @@ BLEService* BLEServiceMap::getByUUID(const char* uuid) {
  * @param [in] UUID The UUID to look up the service.
  * @return The characteristic.
  */
-BLEService* BLEServiceMap::getByUUID(BLEUUID uuid) {
+BLEService* BLEServiceMap::GetByUUID(BLEUUID uuid) {
 	for (auto &myPair : m_uuidMap) {
-		if (myPair.second->getUUID().equals(uuid)) {
+		if (myPair.second->GetUUID().equals(uuid)) {
 			return myPair.second;
 		}
 	}
@@ -41,7 +41,7 @@ BLEService* BLEServiceMap::getByUUID(BLEUUID uuid) {
  * @param [in] handle The handle to look up the service.
  * @return The service.
  */
-BLEService* BLEServiceMap::getByHandle(uint16_t handle) {
+BLEService* BLEServiceMap::GetByHandle(uint16_t handle) {
 	return m_handleMap.at(handle);
 } // getByHandle
 
@@ -52,7 +52,7 @@ BLEService* BLEServiceMap::getByHandle(uint16_t handle) {
  * @param [in] characteristic The service to cache.
  * @return N/A.
  */
-void BLEServiceMap::setByUUID(BLEUUID uuid,
+void BLEServiceMap::SetByUUID(BLEUUID uuid,
 		BLEService *service) {
 	m_uuidMap.insert(std::pair<std::string, BLEService *>(uuid.toString(), service));
 } // setByUUID
@@ -64,7 +64,7 @@ void BLEServiceMap::setByUUID(BLEUUID uuid,
  * @param [in] service The service to cache.
  * @return N/A.
  */
-void BLEServiceMap::setByHandle(uint16_t handle,
+void BLEServiceMap::SetByHandle(uint16_t handle,
 		BLEService* service) {
 	m_handleMap.insert(std::pair<uint16_t, BLEService *>(handle, service));
 } // setByHandle
@@ -74,16 +74,16 @@ void BLEServiceMap::setByHandle(uint16_t handle,
  * @brief Return a string representation of the service map.
  * @return A string representation of the service map.
  */
-std::string BLEServiceMap::toString() {
+std::string BLEServiceMap::ToString() {
 	std::stringstream stringStream;
 	stringStream << std::hex << std::setfill('0');
 	for (auto &myPair: m_handleMap) {
-		stringStream << "handle: 0x" << std::setw(2) << myPair.first << ", uuid: " + myPair.second->getUUID().toString() << "\n";
+		stringStream << "handle: 0x" << std::setw(2) << myPair.first << ", uuid: " + myPair.second->GetUUID().toString() << "\n";
 	}
 	return stringStream.str();
 } // toString
 
-void BLEServiceMap::handleGATTServerEvent(
+void BLEServiceMap::HandleGATTServerEvent(
 		esp_gatts_cb_event_t      event,
 		esp_gatt_if_t             gatts_if,
 		esp_ble_gatts_cb_param_t *param) {

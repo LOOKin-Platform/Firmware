@@ -16,7 +16,8 @@ FreeRTOS::~FreeRTOS() {}
  * @param[in] ms The period in milliseconds for which to sleep.
  */
 void FreeRTOS::Sleep(uint32_t ms) {
-	::vTaskDelay(ms/portTICK_PERIOD_MS);
+	TickType_t Delay = ms/portTICK_PERIOD_MS;
+	::vTaskDelay(Delay);
 } // sleep
 
 

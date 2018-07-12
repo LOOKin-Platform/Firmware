@@ -18,11 +18,12 @@ using namespace std;
 
 static char tag[] = "WebServer";
 
-static vector<uint16_t> UDPPorts = { Settings.WiFi.UPDPort };
+static vector<uint16_t> UDPPorts 				= { Settings.WiFi.UPDPort };
+QueueHandle_t WebServer_t::UDPBroadcastQueue 	= FreeRTOS::Queue::Create(Settings.WiFi.UDPBroadcastQueue.Size, sizeof(UDPBroacastQueueItem));
 
 WebServer_t::WebServer_t() {
-  HTTPListenerTaskHandle  = NULL;
-  UDPListenerTaskHandle   = NULL;
+	HTTPListenerTaskHandle  = NULL;
+	UDPListenerTaskHandle   = NULL;
 }
 
 void WebServer_t::Start() {
@@ -44,13 +45,19 @@ void WebServer_t::UDPSendBroadcastDiscover() {
 }
 
 void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat) {
-	for (int i=0; i<Repeat; i++)
+	for (int i=0; i < Repeat; i++)
 		UDPSendBroadcast(UDPUpdatedBody(SensorID, Value));
 }
 
 string WebServer_t::UDPAliveBody() {
-	string Message = "Alive!" + Device.IDToString() + ":" + Device.Type.ToHexString() + ":"  + Network.IPToString() +
-			":" + Converter::ToHexString(Automation.CurrentVersion(),8) + ":" + Converter::ToHexString(Storage.CurrentVersion(),4);
+	string Message = "Alive!"
+			+ Device.IDToString()
+			+ ":" + Device.Type.ToHexString()
+			+ ":" + (Device.Type.IsBattery() ? "0" : "1")
+			+ ":" + Network.IPToString()
+			+ ":" + Converter::ToHexString(Automation.CurrentVersion(),8)
+			+ ":" + Converter::ToHexString(Storage.CurrentVersion(),4);
+
 	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 
@@ -65,6 +72,12 @@ string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value) {
 }
 
 void WebServer_t::UDPSendBroadcast(string Message) {
+	if (!WiFi.IsRunning()) {
+		UDPSendBroadcastQueueAdd(Message);
+		ESP_LOGE(tag, "WiFi switched off - can't send UDP message");
+		return;
+	}
+
 	struct netconn *Connection;
 	struct netbuf *Buffer;
 	char *Data;
@@ -82,14 +95,46 @@ void WebServer_t::UDPSendBroadcast(string Message) {
 		netconn_send(Connection, Buffer);
 
 		netconn_delete(Connection);
-		netbuf_delete(Buffer); // De-allocate packet buffer
+		netbuf_delete(Buffer); 		// De-allocate packet buffer
 
 		ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d", Message.c_str(), Port);
 	}
 }
 
+void WebServer_t::UDPSendBroacastFromQueue() {
+	UDPBroacastQueueItem ItemToSend;
+
+	if (UDPBroadcastQueue != 0)
+		while (FreeRTOS::Queue::Receive(UDPBroadcastQueue, &ItemToSend, (TickType_t) Settings.WiFi.UDPBroadcastQueue.BlockTicks)) {
+			if (ItemToSend.Updated + Settings.WiFi.UDPBroadcastQueue.CheckGap >= Time::Uptime()) {
+				for (int i=0; i<3; i++) {
+					UDPSendBroadcast(string(ItemToSend.Message));
+					FreeRTOS::Sleep(Settings.WiFi.UDPBroadcastQueue.Pause);
+				}
+			}
+		}
+}
+
+void WebServer_t::UDPSendBroadcastQueueAdd(string Message) {
+	if (Message.size() > Settings.WiFi.UDPBroadcastQueue.Size)
+		Message = Message.substr(0, Settings.WiFi.UDPBroadcastQueue.MaxMessageSize);
+
+	UDPBroacastQueueItem ItemToSend;
+	ItemToSend.Updated = Time::Uptime();
+	strcpy(ItemToSend.Message, Message.c_str());
+
+	FreeRTOS::Queue::SendToBack(UDPBroadcastQueue, &ItemToSend, (TickType_t) Settings.HTTPClient.BlockTicks );
+}
+
 void WebServer_t::UDPListenerTask(void *data) {
 	ESP_LOGD(tag, "UDPListenerTask Run");
+
+	if (!WiFi.IsRunning()) {
+		ESP_LOGE(tag, "WiFi switched off - can't start UDP listener task");
+		WebServer.UDPListenerTaskHandle = NULL;
+		FreeRTOS::DeleteTask();
+		return;
+	}
 
 	struct netconn *Connection;
 	struct netbuf *inBuffer, *outBuffer;
@@ -107,7 +152,7 @@ void WebServer_t::UDPListenerTask(void *data) {
 			netbuf_data(inBuffer, (void * *)&inData, &inDataLen);
 			string Datagram = inData;
 
-			ESP_LOGI(tag, "UDP RECEIVED \"%s\"", Datagram.c_str());
+			ESP_LOGI(tag, "UDP received \"%s\"", Datagram.c_str());
 
 			if(find(UDPPorts.begin(), UDPPorts.end(), inBuffer->port) == UDPPorts.end()) {
 				if (UDPPorts.size() == Settings.WiFi.UDPHoldPortsMax) UDPPorts.erase(UDPPorts.begin() + 1);
@@ -140,10 +185,10 @@ void WebServer_t::UDPListenerTask(void *data) {
 				Alive.replace(Alive.find(AliveText),AliveText.length(),"");
 				vector<string> Data = Converter::StringToVector(Alive, ":");
 
-				while (Data.size() < 5)
+				while (Data.size() < 6)
 					Data.push_back("");
 
-				Network.DeviceInfoReceived(Data[0], Data[1], Data[2], Data[3], Data[4]);
+				Network.DeviceInfoReceived(Data[0], Data[1], Data[2], Data[3], Data[4], Data[5]);
 			}
 
 			netbuf_delete(outBuffer);
@@ -159,6 +204,13 @@ void WebServer_t::UDPListenerTask(void *data) {
 
 void WebServer_t::HTTPListenerTask(void *data) {
 	ESP_LOGD(tag, "HTTPListenerTask Run");
+
+	if (!WiFi.IsRunning()) {
+		ESP_LOGE(tag, "WiFi switched off - can't start HTTP listener task");
+		WebServer.HTTPListenerTaskHandle = NULL;
+		FreeRTOS::DeleteTask();
+		return;
+	}
 
 	struct netconn *conn, *newconn;
 	err_t err;

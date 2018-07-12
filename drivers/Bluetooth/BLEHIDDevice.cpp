@@ -6,9 +6,11 @@
 
 #include "BLEHIDDevice.h"
 
-BLEHIDDevice::BLEHIDDevice(BLEServer* server) {
-	m_deviceInfoService = server->createService(BLEUUID((uint16_t) 0x180a));
-	m_hidService = server->createService(BLEUUID((uint16_t) 0x1812), 40);
+#if defined(CONFIG_BT_ENABLED)
+
+BLEHIDDevice::BLEHIDDevice(BLEServerGeneric* server) {
+	m_deviceInfoService = server->CreateService(BLEUUID((uint16_t) 0x180a));
+	m_hidService = server->CreateService(BLEUUID((uint16_t) 0x1812), 40);
 	//m_batteryService = server->createService(BLEUUID((uint16_t) 0x180f));
 	createDescriptors();
 	createCharacteristics();
@@ -45,18 +47,18 @@ void BLEHIDDevice::createDescriptors() {
 }
 
 void BLEHIDDevice::createCharacteristics() {
-	m_manufacturerCharacteristic = m_deviceInfoService->createCharacteristic((uint16_t)0x2a29, BLECharacteristic::PROPERTY_READ);
-	m_pnpCharacteristic = m_deviceInfoService->createCharacteristic((uint16_t)0x2a50, BLECharacteristic::PROPERTY_READ);
+	m_manufacturerCharacteristic 	= m_deviceInfoService->CreateCharacteristic((uint16_t)0x2a29, BLECharacteristic::PROPERTY_READ);
+	m_pnpCharacteristic 			= m_deviceInfoService->CreateCharacteristic((uint16_t)0x2a50, BLECharacteristic::PROPERTY_READ);
 
-	m_hidInfoCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a4a, BLECharacteristic::PROPERTY_READ);
-	m_reportMapCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a4b, BLECharacteristic::PROPERTY_READ);
-	m_hidControlCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a4c, BLECharacteristic::PROPERTY_WRITE_NR);
-	m_inputReportCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a4d, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
-	m_outputReportCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a4d, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
-	m_featureReportCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a4d, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
-	m_protocolModeCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a4e, BLECharacteristic::PROPERTY_WRITE_NR);
-	m_bootInputCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a22, BLECharacteristic::PROPERTY_NOTIFY);
-	m_bootOutputCharacteristic = m_hidService->createCharacteristic((uint16_t)0x2a32, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+	m_hidInfoCharacteristic 		= m_hidService->CreateCharacteristic((uint16_t)0x2a4a, BLECharacteristic::PROPERTY_READ);
+	m_reportMapCharacteristic 		= m_hidService->CreateCharacteristic((uint16_t)0x2a4b, BLECharacteristic::PROPERTY_READ);
+	m_hidControlCharacteristic 		= m_hidService->CreateCharacteristic((uint16_t)0x2a4c, BLECharacteristic::PROPERTY_WRITE_NR);
+	m_inputReportCharacteristic 	= m_hidService->CreateCharacteristic((uint16_t)0x2a4d, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
+	m_outputReportCharacteristic 	= m_hidService->CreateCharacteristic((uint16_t)0x2a4d, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+	m_featureReportCharacteristic 	= m_hidService->CreateCharacteristic((uint16_t)0x2a4d, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
+	m_protocolModeCharacteristic 	= m_hidService->CreateCharacteristic((uint16_t)0x2a4e, BLECharacteristic::PROPERTY_WRITE_NR);
+	m_bootInputCharacteristic 		= m_hidService->CreateCharacteristic((uint16_t)0x2a22, BLECharacteristic::PROPERTY_NOTIFY);
+	m_bootOutputCharacteristic 		= m_hidService->CreateCharacteristic((uint16_t)0x2a32, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_WRITE_NR);
 
 	m_inputReportCharacteristic->addDescriptor(m_inputReportDescriptor);
 	m_inputReportCharacteristic->addDescriptor(m_inputReportNotifications);
@@ -70,10 +72,10 @@ void BLEHIDDevice::createCharacteristics() {
 }
 
 void BLEHIDDevice::startServices() {
-	m_deviceInfoService->start();
-	m_hidService->start();
+	m_deviceInfoService->Start();
+	m_hidService->Start();
 	if(m_batteryService!=nullptr)
-		m_batteryService->start();
+		m_batteryService->Start();
 }
 
 BLEService* BLEHIDDevice::deviceInfo() {
@@ -151,3 +153,5 @@ BLEDescriptor*		BLEHIDDevice::featureReport() {
 BLEDescriptor*		BLEHIDDevice::batteryLevel() {
 	return m_batteryLevelDescriptor;
 }
+
+#endif

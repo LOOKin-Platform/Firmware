@@ -51,7 +51,7 @@ public:
 
 private:
 	BLERemoteCharacteristic(uint16_t handle, BLEUUID uuid, esp_gatt_char_prop_t charProp, BLERemoteService* pRemoteService);
-	friend class BLEClient;
+	friend class BLEClientGeneric;
 	friend class BLERemoteService;
 	friend class BLERemoteDescriptor;
 

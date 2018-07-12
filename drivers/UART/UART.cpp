@@ -64,7 +64,7 @@ void UART::ReadTask(void *TaskData) {
         int len = uart_read_bytes(Port, data, Item.BufferSize, 20 / portTICK_RATE_MS);
 
         if (len > 0) {
-        		ESP_LOGI("tada","callback issued")
+        		ESP_LOGI("tada","callback issued");
     			Item.Callback(Converter::ToString(*data));
         }
     }

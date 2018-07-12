@@ -80,7 +80,7 @@ class Log {
 
 #define LOG_TIME_SYNCED             0x1130
 
-// Wi-FI и Bluetooth события 0xX200...0xX2FF
+// Wi-FI события 0xX200...0xX2FF
 
 #define LOG_WIFI_AP_START           0x1201
 #define LOG_WIFI_AP_STOP            0x1202

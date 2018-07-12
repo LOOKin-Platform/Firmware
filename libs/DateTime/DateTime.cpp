@@ -30,11 +30,11 @@ uint32_t Time::Uptime() {
   return Now.tv_sec;
 }
 
-uint32_t Time::UptimeU() {
-  struct timeval Now;
-  ::gettimeofday(&Now, NULL);
+uint64_t Time::UptimeU() {
+	struct timeval Now;
+	::gettimeofday(&Now, NULL);
 
-  return Now.tv_usec;
+	return Now.tv_sec * 1000000 + Now.tv_usec;
 }
 
 uint32_t Time::Unixtime() {

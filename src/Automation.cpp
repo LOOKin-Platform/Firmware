@@ -26,7 +26,7 @@ void Automation_t::Init() {
 }
 
 uint32_t Automation_t::CurrentVersion() {
-	string SSID = WiFi_t::getStaSSID();
+	string SSID = WiFi_t::GetStaSSID();
 
 	if (VersionMap.count(SSID) > 0)
 		return VersionMap[SSID];
@@ -53,7 +53,7 @@ void Automation_t::SensorChanged(uint8_t SensorID) {
 
 void Automation_t::TimeChangedTask(void *) {
 	while (1) {
-		while (Time::Unixtime()%SCENARIOS_TIME_INTERVAL!=0)
+		while (Time::Unixtime()%Settings.Scenarios.TimePoolInterval!=0)
 			FreeRTOS::Sleep(1000);
 
 		for (auto& ScenarioCacheItem : Automation.ScenariosCache)
@@ -67,7 +67,7 @@ void Automation_t::TimeChangedTask(void *) {
 				delete Scenario;
 			}
 
-		if (SCENARIOS_TIME_INTERVAL > 1)
+		if (Settings.Scenarios.TimePoolInterval > 1)
 			FreeRTOS::Sleep(1000);
 	}
 }
@@ -132,7 +132,7 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Ty
 	if (Type == QueryType::POST) {
 		if (URLParts.size() == 0) {
 			if (Params.count("version") > 0) {
-				string SSID = (Params.count("SSID") > 0) ? Params["SSID"] : WiFi_t::getStaSSID();
+				string SSID = (Params.count("SSID") > 0) ? Params["SSID"] : WiFi_t::GetStaSSID();
 
 				if (SetVersionMap(SSID, Converter::UintFromHexString<uint32_t>(Params["version"])))
 					Result.Body = "{\"success\" : \"true\"}";

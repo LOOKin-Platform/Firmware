@@ -8,15 +8,19 @@
 #include <vector>
 
 #include "Automation.h"
-#include "BluetoothServer.h"
 #include "Commands.h"
 #include "Device.h"
 #include "Log.h"
 #include "Network.h"
 #include "Sensors.h"
-#include "WebServer.h"
-#include "WiFi.h"
 #include "Storage.h"
+
+#include "WiFi.h"
+#include "WebServer.h"
+#include "BLEServer.h"
+#include "BLEClient.h"
+#include "Wireless.h"
+
 #include "Settings.h"
 
 extern Settings_t				Settings;
@@ -30,6 +34,13 @@ extern Storage_t				Storage;
 
 extern WiFi_t					WiFi;
 extern WebServer_t				WebServer;
-extern BluetoothServer_t		BluetoothServer;
+
+#if defined(CONFIG_BT_ENABLED)
+extern BLEServer_t				BLEServer;
+extern BLEClient_t				BLEClient;
+#endif /* Bluetooth enabled */
+
+extern Wireless_t				Wireless;
+
 
 #endif

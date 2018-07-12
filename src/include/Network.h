@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <utility>
 #include <stdio.h>
 #include <string.h>
 
@@ -29,33 +30,47 @@ struct NetworkDevice_t {
 	string    IP        = "";
 };
 
+struct WiFiSettingsItem {
+	string		SSID 			= "";
+	string		Password 		= "";
+
+	uint8_t		Channel 		= 255;
+	uint32_t	IP				= 0;
+	uint32_t	Gateway			= 0;
+	uint32_t	Netmask			= 0;
+};
+
 class Network_t {
-  public:
-	map<string,string>		WiFiSettings 	= {};
-    vector<WiFiAPRecord>	WiFiScannedList = vector<WiFiAPRecord>();
-    vector<NetworkDevice_t>	Devices			= vector<NetworkDevice_t>();
-    tcpip_adapter_ip_info_t	IP;
+	public:
+		vector<WiFiSettingsItem>	WiFiSettings 	= {};
+		vector<WiFiAPRecord>		WiFiScannedList = {};
+		vector<NetworkDevice_t>		Devices			= {};
+		tcpip_adapter_ip_info_t		IP;
 
-    Network_t();
+		Network_t();
 
-    void 					Init();
+		void 					Init();
 
-    void  					FillFromWiFiScan(vector<WiFiAPRecord>);
-    NetworkDevice_t			GetNetworkDeviceByID(uint32_t);
-    void					SetNetworkDeviceFlagByIP(string IP, bool Flag);
-    void					DeviceInfoReceived(string ID, string Type, string IP, string ScenariosVersion, string StorageVersion);
+		NetworkDevice_t			GetNetworkDeviceByID(uint32_t);
+		void					SetNetworkDeviceFlagByIP(string IP, bool Flag);
+		void					DeviceInfoReceived(string ID, string Type, string PowerMode, string IP, string ScenariosVersion, string StorageVersion);
 
-    bool					WiFiConnect(string SSID = "");
-    string					IPToString();
+		bool					WiFiConnect(string SSID = "", bool DontUseCache = false);
+		void					UpdateWiFiIPInfo(string SSID, tcpip_adapter_ip_info_t Data);
+		void					AddWiFiNetwork(string SSID, string Password);
+		void					LoadAccessPointsList();
+		void					SaveAccessPointsList();
+		string					IPToString();
+		vector<string>			GetSavedWiFiList();
 
-    static string 			SerializeNetworkDevice(NetworkDevice_t);
-    static NetworkDevice_t 	DeserializeNetworkDevice(string);
+		static string 			SerializeNetworkDevice(NetworkDevice_t);
+		static NetworkDevice_t 	DeserializeNetworkDevice(string);
 
-    void HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
+		void HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
-  private:
-    string					ModeToString();
-    string					WiFiCurrentSSIDToString();
+	private:
+		string					ModeToString();
+		string					WiFiCurrentSSIDToString();
 };
 
 #endif

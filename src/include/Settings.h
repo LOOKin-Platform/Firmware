@@ -1,15 +1,26 @@
-#include <map>
-using namespace std;
-
+/*
+*    Settings.h
+*    General firmware settings
+*
+*/
 #ifndef SETTINGS_H
 #define SETTINGS_H
+
+#include <map>
+#include "esp_efuse.h"
+#include "driver/ledc.h"
+#include "driver/adc.h"
+
+#include "Converter.h"
+
+using namespace std;
 
 #define WIFI_AP_NAME		"LOOK.in_" + Device.TypeToString() + "_" + Device.IDToString()
 #define WIFI_AP_PASSWORD    Device.IDToString()
 
 class Settings_t {
 	public:
-		const string 						FirmwareVersion = "0.96";
+		const	string 						FirmwareVersion = "0.96";
 
 		struct {
 			const string					ServerHost 		= "download.look-in.club";
@@ -23,7 +34,7 @@ class Settings_t {
 		} TimeSync;
 
 		struct WiFi_t {
-			const uint16_t					IPCountdown 	= 10000;
+			const uint16_t					IPCountdown 	= 4000;
 			const uint8_t					SavedAPCount	= 8;
 			const string 					DefaultIP		= "192.168.4.1";
 
@@ -31,9 +42,37 @@ class Settings_t {
 			static constexpr uint8_t		UDPHoldPortsMax	= 8;
 			const string					UDPPacketPrefix	= "LOOK.in:";
 
+			uint32_t						BatteryUptime	= 3*60; // first time WiFi time to work in seconds
+
+			struct UDPBroadcastQueue_t {
+				static constexpr uint8_t	Size			= 10;
+				static constexpr uint8_t	BlockTicks		= 50;
+				static constexpr uint8_t	MaxMessageSize	= 64;
+				static constexpr uint16_t	Pause			= 100; // pause between UDP packets in ms
+				static constexpr uint8_t	CheckGap		= 5;   // if packet was scheduled and time expired - don't send. Time in seconds.
+			} UDPBroadcastQueue;
+
 			static constexpr uint16_t		HTTPMaxQueryLen	= 6144;
 
+			struct {
+				uint32_t Count		= 3;
+				uint32_t Timeout	= 100;
+				uint32_t Delay		= 10;
+			} PingAfterConnect;
+
 		} WiFi;
+
+		struct Bluetooth_t {
+			const string					DeviceNamePrefix= "LOOK.in ";
+		} Bluetooth;
+
+		struct Wireless_t {
+			map<uint8_t, pair<uint16_t,uint16_t>> AliveIntervals = {
+					{ 0x8, { 294, 6 }}
+			};
+
+			const uint8_t					IntervalID = 0x8;
+		} Wireless;
 
 		struct {
 			const uint8_t 					SystemLogSize	= 16;
@@ -47,6 +86,7 @@ class Settings_t {
 				const uint8_t 				OverheatTemp	= 90;
 				const uint8_t				ChilledTemp		= 77;
 			} OverHeat;
+
 		} Pooling;
 
 		struct Devices_t {
@@ -59,7 +99,7 @@ class Settings_t {
 					{ Plug	, "Plug"	},
 					{ Remote, "Remote" 	},
 					{ Motion, "Motion" 	}
-			};
+				};
 		} Devices;
 
 		struct eFuse_t {
@@ -94,6 +134,8 @@ class Settings_t {
 			static constexpr uint8_t		Empty8Bit		= 0xFF;
 			static constexpr uint16_t		Empty16Bit		= 0xFFFF;
 			static constexpr uint32_t		Empty32Bit		= 0xFFFFFFFF;
+
+			static constexpr uint32_t		BlockSize		= 0x1000;
 		} Memory;
 
 		struct Storage_t {
@@ -109,77 +151,98 @@ class Settings_t {
 				static constexpr uint16_t 	ItemSize		= 0x108;
 			} Data;
 		} Storage;
+
+		struct Scenarios_t {
+			static constexpr uint8_t		QueueSize		= 64;
+			static constexpr uint16_t		BlockTicks		= 50;
+			static constexpr uint16_t		TaskStackSize	= 8192;
+
+			static constexpr uint16_t		OperandBitLength= 64;
+			static constexpr uint8_t		NameLength		= 64;
+			static constexpr uint8_t		CacheBitLength	= 32;
+
+			static constexpr uint8_t		TimePoolInterval= 5;
+
+			struct Types_t {
+				static constexpr uint8_t	EventHex		= 0x00;
+				static constexpr uint8_t	TimerHex		= 0x01;
+				static constexpr uint8_t	CalendarHex		= 0x02;
+
+				static constexpr uint8_t	EmptyHex		= 0xFF;
+			} Types;
+
+			struct Memory_t {
+				static constexpr uint32_t	Start			= 0x32000;
+				static constexpr uint32_t	Size			= 0x60000;
+				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
+				static constexpr uint16_t	Count			= 256;	// 1536 байт
+
+				struct ItemOffset_t {
+					static constexpr uint16_t ID			= 0x0;
+					static constexpr uint16_t Type			= 0x4;
+					static constexpr uint16_t Operand		= 0x6;
+					static constexpr uint16_t Name			= 0xE;
+					static constexpr uint16_t Commands		= 0x81;
+				} ItemOffset;
+
+				struct CommandOffset_t {
+					static constexpr uint16_t Size			= 0xA;
+
+					static constexpr uint16_t DeviceID		= 0x0;
+					static constexpr uint16_t CommandID		= 0x4;
+					static constexpr uint16_t EventID		= 0x5;
+					static constexpr uint16_t Operand		= 0x6;
+				} CommandOffset;
+			} Memory;
+		} Scenarios;
+
+		// Commands and sensors data
+
+		struct GPIOData_t {
+			struct Switch_t {
+				gpio_num_t			GPIO 	= GPIO_NUM_0;
+			};
+
+			struct Color_t {
+				struct Item_t {
+					gpio_num_t		GPIO 	= GPIO_NUM_0;
+					ledc_channel_t	Channel = LEDC_CHANNEL_MAX;
+				};
+
+				ledc_timer_t		Timer	= LEDC_TIMER_MAX;
+				Item_t				Red, Green, Blue, White;
+			};
+
+			struct IR_t {
+				gpio_num_t			ReceiverGPIO38	= GPIO_NUM_0;
+				gpio_num_t			ReceiverGPIO56	= GPIO_NUM_0;
+				gpio_num_t			SenderGPIO		= GPIO_NUM_0;
+			};
+
+			struct Motion_t {
+				uint32_t			PoolInterval	= 50;
+				adc1_channel_t		ADCChannel		= ADC1_CHANNEL_MAX;
+			};
+
+			struct DeviceInfo_t {
+				Switch_t	Switch;
+				Color_t		Color;
+				IR_t		IR;
+				Motion_t	Motion;
+			};
+
+			DeviceInfo_t GetCurrent();
+
+			static map<uint8_t, DeviceInfo_t> Devices;
+
+			/* Implementation of this settings see Settings.cpp */
+
+		} GPIOData;
 };
 
 extern Settings_t Settings;
 
-// Commands and Sensors Pin Map
-
-// Plug
-#define SWITCH_PLUG_PIN_NUM				GPIO_NUM_23 // GPIO_NUM_2
-
-#define COLOR_PLUG_TIMER_INDEX      	LEDC_TIMER_0
-#define COLOR_PLUG_RED_PIN_NUM      	GPIO_NUM_0
-#define COLOR_PLUG_RED_PWMCHANNEL   	LEDC_CHANNEL_0
-#define COLOR_PLUG_GREEN_PIN_NUM    	GPIO_NUM_0
-#define COLOR_PLUG_GREEN_PWMCHANNEL 	LEDC_CHANNEL_1
-#define COLOR_PLUG_BLUE_PIN_NUM     	GPIO_NUM_2
-#define COLOR_PLUG_BLUE_PWMCHANNEL  	LEDC_CHANNEL_2
-#define COLOR_PLUG_WHITE_PIN_NUM    	GPIO_NUM_0
-#define COLOR_PLUG_WHITE_PWMCHANNEL 	LEDC_CHANNEL_3
-
 // Remote
-#define IR_REMOTE_RECEIVER_GPIO			GPIO_NUM_22 //GPIO_NUM_4
-#define IR_REMOTE_SENDER_GPIO			GPIO_NUM_23
-#define IR_REMOTE_DETECTOR_PIN			GPIO_NUM_4
-
-#define COLOR_REMOTE_TIMER_INDEX      	LEDC_TIMER_0
-#define COLOR_REMOTE_RED_PIN_NUM      	GPIO_NUM_12
-#define COLOR_REMOTE_RED_PWMCHANNEL   	LEDC_CHANNEL_0
-#define COLOR_REMOTE_GREEN_PIN_NUM    	GPIO_NUM_14
-#define COLOR_REMOTE_GREEN_PWMCHANNEL 	LEDC_CHANNEL_1
-#define COLOR_REMOTE_BLUE_PIN_NUM     	GPIO_NUM_13
-#define COLOR_REMOTE_BLUE_PWMCHANNEL  	LEDC_CHANNEL_2
-#define COLOR_REMOTE_WHITE_PIN_NUM    	GPIO_NUM_0
-#define COLOR_REMOTE_WHITE_PWMCHANNEL 	LEDC_CHANNEL_3
-
-// MOTION
-#define MOTION_GET_INTERVAL				50
-#define MOTION_MOTION_CHANNEL			ADC1_CHANNEL_3
-
-// SCENARIOS GLOBALS
-#define SCENARIOS_QUEUE_SIZE        	64
-#define SCENARIOS_BLOCK_TICKS       	50
-#define SCENARIOS_TASK_STACKSIZE    	8192
-#define SCENARIOS_OPERAND_BIT_LEN   	64
-#define SCENARIOS_NAME_LENGTH			57
-#define SCENARIOS_CACHE_BIT_LEN     	32
-
-#define SCENARIOS_TIME_INTERVAL     	5
-
-#define SCENARIOS_TYPE_EVENT_HEX    	0x00
-#define SCENARIOS_TYPE_TIMER_HEX    	0x01
-#define SCENARIOS_TYPE_CALENDAR_HEX 	0x02
-
-#define SCENARIOS_TYPE_EMPTY_HEX		0xFF
-
-#define MEMORY_BLOCK_SIZE				0x1000
-
-#define MEMORY_SCENARIOS_START			0x32000
-#define MEMORY_SCENARIOS_SIZE			0x60000
-#define MEMORY_SCENARIOS_OFFSET			0x600 	// 1536 байт
-#define MEMORY_SCENARIOS_MAX_COUNT		256
-
-#define MEMORY_SCENARIO_ID				0x0
-#define MEMORY_SCENARIO_TYPE			0x4
-#define MEMORY_SCENARIO_OPERAND			0x6
-#define MEMORY_SCENARIO_NAME			0xE
-#define MEMORY_SCENARIO_COMMANDS		0x81
-
-#define MEMORY_COMMAND_SIZE				0xA
-#define MEMORY_COMMAND_DEVICEID			0x0
-#define MEMORY_COMMAND_COMMANDID		0x4
-#define MEMORY_COMMAND_EVENTID			0x5
-#define MEMORY_COMMAND_OPERAND			0x6
+#define REMOTE_ELECTRICITY_PIN			GPIO_NUM_0
 
 #endif

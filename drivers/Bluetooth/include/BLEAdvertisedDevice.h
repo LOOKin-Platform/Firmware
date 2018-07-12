@@ -33,72 +33,72 @@ class BLEScan;
  * class provides a model of a detected device.
  */
 class BLEAdvertisedDevice {
-public:
-	BLEAdvertisedDevice();
+	public:
+		BLEAdvertisedDevice();
 
-	BLEAddress  getAddress();
-	uint16_t    getAppearance();
-	std::string getManufacturerData();
-	std::string getName();
-	int         getRSSI();
-	BLEScan*    getScan();
-	std::string getServiceData();
-	BLEUUID     getServiceDataUUID();
-	BLEUUID     getServiceUUID();
-	int8_t      getTXPower();
-
-
-	bool		    isAdvertisingService(BLEUUID uuid);
-	bool        haveAppearance();
-	bool        haveManufacturerData();
-	bool        haveName();
-	bool        haveRSSI();
-	bool        haveServiceData();
-	bool        haveServiceUUID();
-	bool        haveTXPower();
-
-	std::string toString();
-
-private:
-	friend class BLEScan;
-
-	void parseAdvertisement(uint8_t* payload);
-	void setAddress(BLEAddress address);
-	void setAdFlag(uint8_t adFlag);
-	void setAdvertizementResult(uint8_t* payload);
-	void setAppearance(uint16_t appearance);
-	void setManufacturerData(std::string manufacturerData);
-	void setName(std::string name);
-	void setRSSI(int rssi);
-	void setScan(BLEScan* pScan);
-	void setServiceData(std::string data);
-	void setServiceDataUUID(BLEUUID uuid);
-	void setServiceUUID(const char* serviceUUID);
-	void setServiceUUID(BLEUUID serviceUUID);
-	void setTXPower(int8_t txPower);
+		BLEAddress	getAddress();
+		uint16_t	getAppearance();
+		string		getManufacturerData();
+		string		getName();
+		int			getRSSI();
+		BLEScan*	getScan();
+		string		getServiceData();
+		BLEUUID		getServiceDataUUID();
+		BLEUUID		getServiceUUID();
+		int8_t		getTXPower();
 
 
-	bool m_haveAppearance;
-	bool m_haveManufacturerData;
-	bool m_haveName;
-	bool m_haveRSSI;
-	bool m_haveServiceData;
-	bool m_haveServiceUUID;
-	bool m_haveTXPower;
+		bool		isAdvertisingService(BLEUUID uuid);
+		bool		haveAppearance();
+		bool		haveManufacturerData();
+		bool		haveName();
+		bool		haveRSSI();
+		bool		haveServiceData();
+		bool		haveServiceUUID();
+		bool		haveTXPower();
+
+	string toString();
+
+	private:
+		friend class BLEScan;
+
+		void		parseAdvertisement(uint8_t* payload);
+		void		setAddress(BLEAddress address);
+		void		setAdFlag(uint8_t adFlag);
+		void		setAdvertizementResult(uint8_t* payload);
+		void		setAppearance(uint16_t appearance);
+		void		setManufacturerData(std::string manufacturerData);
+		void		setName(std::string name);
+		void		setRSSI(int rssi);
+		void		setScan(BLEScan* pScan);
+		void		setServiceData(std::string data);
+		void		setServiceDataUUID(BLEUUID uuid);
+		void		setServiceUUID(const char* serviceUUID);
+		void		setServiceUUID(BLEUUID serviceUUID);
+		void		setTXPower(int8_t txPower);
 
 
-	BLEAddress  m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
-	uint8_t     m_adFlag;
-	uint16_t    m_appearance;
-	int         m_deviceType;
-	std::string m_manufacturerData;
-	std::string m_name;
-	BLEScan*    m_pScan;
-	int         m_rssi;
-	std::vector<BLEUUID> m_serviceUUIDs;
-	int8_t      m_txPower;
-	std::string m_serviceData;
-	BLEUUID     m_serviceDataUUID;
+		bool		m_haveAppearance;
+		bool		m_haveManufacturerData;
+		bool		m_haveName;
+		bool		m_haveRSSI;
+		bool		m_haveServiceData;
+		bool		m_haveServiceUUID;
+		bool		m_haveTXPower;
+
+
+		BLEAddress	m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
+		uint8_t		m_adFlag;
+		uint16_t	m_appearance;
+		int			m_deviceType;
+		string		m_manufacturerData;
+		string		m_name;
+		BLEScan*    m_pScan;
+		int         m_rssi;
+		vector<BLEUUID> m_serviceUUIDs;
+		int8_t		m_txPower;
+		string		m_serviceData;
+		BLEUUID     m_serviceDataUUID;
 };
 
 /**
@@ -109,15 +109,15 @@ private:
  * a new advertised device has been found, we will be called back to be notified.
  */
 class BLEAdvertisedDeviceCallbacks {
-public:
-	virtual ~BLEAdvertisedDeviceCallbacks() {}
-	/**
-	 * @brief Called when a new scan result is detected.
-	 *
-	 * As we are scanning, we will find new devices.  When found, this call back is invoked with a reference to the
-	 * device that was found.  During any individual scan, a device will only be detected one time.
-	 */
-	virtual void onResult(BLEAdvertisedDevice advertisedDevice) = 0;
+	public:
+		virtual ~BLEAdvertisedDeviceCallbacks() {}
+		/**
+		 * @brief Called when a new scan result is detected.
+		 *
+		 * As we are scanning, we will find new devices.  When found, this call back is invoked with a reference to the
+		 * device that was found.  During any individual scan, a device will only be detected one time.
+		 */
+		virtual void onResult(BLEAdvertisedDevice advertisedDevice) = 0;
 };
 
 #endif /* CONFIG_BT_ENABLED */

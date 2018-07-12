@@ -18,13 +18,12 @@
 #include "Settings.h"
 
 #include "Globals.h"
-#include "WebServer.h"
+#include "Wireless.h"
 #include "Automation.h"
 #include "JSON.h"
 #include "RMT.h"
 #include "HardwareIO.h"
 #include "DateTime.h"
-
 
 using namespace std;
 
@@ -35,37 +34,44 @@ struct SensorValueItem {
 };
 
 class Sensor_t {
-  public:
-    uint8_t           ID;
-    string            Name;
-    vector<uint8_t>   EventCodes;
+	public:
+		uint8_t           	ID;
+		string            	Name;
+		vector<uint8_t>   	EventCodes;
 
-    map<string, SensorValueItem> Values;
-    virtual ~Sensor_t() = default;
+		map<string, SensorValueItem> Values;
+		Sensor_t();
+		virtual ~Sensor_t() = default;
 
-    virtual void				Update() {};
-    virtual uint32_t			ReceiveValue(string = "") { return 0; };
-    virtual bool				CheckOperand(uint8_t, uint8_t) { return false; };
-    virtual string				FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
+		virtual void				Update() {};
+		virtual uint32_t			ReceiveValue(string = "") { return 0; };
+		virtual bool				CheckOperand(uint8_t, uint8_t) { return false; };
+		virtual string				FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
 
-    static void					UpdateSensors();
-    static vector<Sensor_t*>	GetSensorsForDevice();
-    static Sensor_t*			GetSensorByName(string);
-    static Sensor_t*			GetSensorByID(uint8_t);
-    static uint8_t				GetDeviceTypeHex();
+		static void					UpdateSensors();
+		static vector<Sensor_t*>	GetSensorsForDevice();
+		static Sensor_t*			GetSensorByName(string);
+		static Sensor_t*			GetSensorByID(uint8_t);
+		static uint8_t				GetDeviceTypeHex();
 
-    bool						SetValue(uint32_t Value, string Key = "Primary");
-    SensorValueItem				GetValue(string Key = "Primary");
+		bool						SetValue(uint32_t Value, string Key = "Primary");
+		SensorValueItem				GetValue(string Key = "Primary");
 
-    virtual string				StorageEncode(map<string,string>) 	{ return ""; };
-    virtual map<string,string>	StorageDecode(string) 				{ return map<string,string> ();};
+		virtual string				StorageEncode(map<string,string>) 	{ return ""; };
+		virtual map<string,string>	StorageDecode(string) 				{ return map<string,string> ();};
 
-    static void HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+		static void HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+
+		bool						GetIsInited() 		{ return IsInited; 	}
+		void						SetIsInited(bool V)	{ IsInited = V; 	};
+
+	private:
+		bool 						IsInited	= false;
 };
 
 extern Settings_t 	Settings;
 extern Automation_t Automation;
-extern WebServer_t  WebServer;
+extern Wireless_t	Wireless;
 
 #include "../sensors/SensorSwitch.cpp"
 #include "../sensors/SensorRGBW.cpp"

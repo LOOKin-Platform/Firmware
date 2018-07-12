@@ -80,7 +80,7 @@ void BLECharacteristic::executeCreate(BLEService* pService) {
 
 	ESP_LOGD(LOG_TAG, "Registering characteristic (esp_ble_gatts_add_char): uuid: %s, service: %s",
 		getUUID().toString().c_str(),
-		m_pService->toString().c_str());
+		m_pService->ToString().c_str());
 
 	esp_attr_control_t control;
 	control.auto_rsp = ESP_GATT_RSP_BY_APP;
@@ -95,7 +95,7 @@ void BLECharacteristic::executeCreate(BLEService* pService) {
 	*/
 
 	esp_err_t errRc = ::esp_ble_gatts_add_char(
-		m_pService->getHandle(),
+		m_pService->GetHandle(),
 		getUUID().getNative(),
 		static_cast<esp_gatt_perm_t>(m_permissions),
 		getProperties(),
@@ -238,7 +238,7 @@ void BLECharacteristic::handleGATTServerEvent(
 		case ESP_GATTS_ADD_CHAR_EVT: {
 			if (getUUID().equals(BLEUUID(param->add_char.char_uuid)) &&
 					getHandle() == param->add_char.attr_handle &&
-					getService()->getHandle()==param->add_char.service_handle) {
+					getService()->GetHandle()==param->add_char.service_handle) {
 				m_semaphoreCreateEvt.Give();
 			}
 			break;
@@ -447,11 +447,11 @@ void BLECharacteristic::indicate() {
 	ESP_LOGD(LOG_TAG, ">> indicate: length: %d", m_value.getValue().length());
 
 	assert(getService() != nullptr);
-	assert(getService()->getServer() != nullptr);
+	assert(getService()->GetServer() != nullptr);
 
 	GeneralUtils::hexDump((uint8_t*)m_value.getValue().data(), m_value.getValue().length());
 
-	if (getService()->getServer()->getConnectedCount() == 0) {
+	if (getService()->GetServer()->GetConnectedCount() == 0) {
 		ESP_LOGD(LOG_TAG, "<< indicate: No connected clients.");
 		return;
 	}
@@ -477,8 +477,8 @@ void BLECharacteristic::indicate() {
 	m_semaphoreConfEvt.Take("indicate");
 
 	esp_err_t errRc = ::esp_ble_gatts_send_indicate(
-			getService()->getServer()->getGattsIf(),
-			getService()->getServer()->getConnId(),
+			getService()->GetServer()->GetGattsIf(),
+			getService()->GetServer()->GetConnId(),
 			getHandle(), length, (uint8_t*)m_value.getValue().data(), true); // The need_confirm = true makes this an indication.
 
 	if (errRc != ESP_OK) {
@@ -502,12 +502,12 @@ void BLECharacteristic::notify() {
 
 
 	assert(getService() != nullptr);
-	assert(getService()->getServer() != nullptr);
+	assert(getService()->GetServer() != nullptr);
 
 
 	GeneralUtils::hexDump((uint8_t*)m_value.getValue().data(), m_value.getValue().length());
 
-	if (getService()->getServer()->getConnectedCount() == 0) {
+	if (getService()->GetServer()->GetConnectedCount() == 0) {
 		ESP_LOGD(LOG_TAG, "<< notify: No connected clients.");
 		return;
 	}
@@ -533,8 +533,8 @@ void BLECharacteristic::notify() {
 	m_semaphoreConfEvt.Take("notify");
 
 	esp_err_t errRc = ::esp_ble_gatts_send_indicate(
-			getService()->getServer()->getGattsIf(),
-			getService()->getServer()->getConnId(),
+			getService()->GetServer()->GetGattsIf(),
+			getService()->GetServer()->GetConnId(),
 			getHandle(), length, (uint8_t*)m_value.getValue().data(), false); // The need_confirm = false makes this a notify.
 	if (errRc != ESP_OK) {
 		ESP_LOGE(LOG_TAG, "<< esp_ble_gatts_send_indicate: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
@@ -643,10 +643,12 @@ void BLECharacteristic::setValue(uint8_t* data, size_t length) {
 	char *pHex = BLEUtils::buildHexData(nullptr, data, length);
 	ESP_LOGD(LOG_TAG, ">> setValue: length=%d, data=%s, characteristic UUID=%s", length, pHex, getUUID().toString().c_str());
 	free(pHex);
+
 	if (length > ESP_GATT_MAX_ATTR_LEN) {
 		ESP_LOGE(LOG_TAG, "Size %d too large, must be no bigger than %d", length, ESP_GATT_MAX_ATTR_LEN);
 		return;
 	}
+
 	m_value.setValue(data, length);
 	ESP_LOGD(LOG_TAG, "<< setValue");
 } // setValue
@@ -659,7 +661,7 @@ void BLECharacteristic::setValue(uint8_t* data, size_t length) {
  * @param [in] Set the value of the characteristic.
  * @return N/A.
  */
-void BLECharacteristic::setValue(std::string value) {
+void BLECharacteristic::setValue(string value) {
 	setValue((uint8_t*)(value.data()), value.length());
 } // setValue
 

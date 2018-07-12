@@ -25,10 +25,10 @@ using namespace std;
 
 enum QueryType { NONE, POST, GET, DELETE };
 
-typedef void (*ReadStarted)(char[]);
-typedef bool (*ReadBody)(char[], int, char[]);
+typedef void (*ReadStarted)	(char[]);
+typedef bool (*ReadBody)	(char[], int, char[]);
 typedef void (*ReadFinished)(char []);
-typedef void (*Aborted)(char[]);
+typedef void (*Aborted)		(char[]);
 
 /**
  * @brief Interface to performing HTTP queries

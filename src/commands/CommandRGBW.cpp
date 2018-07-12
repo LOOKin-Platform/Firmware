@@ -7,45 +7,18 @@
 class CommandColor_t : public Command_t {
 	public:
 		CommandColor_t() {
-        ID          = 0x04;
-        Name        = "RGBW";
+		ID          = 0x04;
+		Name        = "RGBW";
 
-        Events["color"]       = 0x01;
-        Events["brightness"]  = 0x02;
+		Events["color"]       = 0x01;
+		Events["brightness"]  = 0x02;
 
-        switch (GetDeviceTypeHex()) {
-        	case Settings.Devices.Plug:
-            	TimerIndex  = COLOR_PLUG_TIMER_INDEX;
-        		GPIORed     = COLOR_PLUG_RED_PIN_NUM;
-        		GPIOGreen   = COLOR_PLUG_GREEN_PIN_NUM;
-        		GPIOBlue    = COLOR_PLUG_BLUE_PIN_NUM;
-        		GPIOWhite   = COLOR_PLUG_WHITE_PIN_NUM;
+		Settings_t::GPIOData_t::Color_t GPIO = Settings.GPIOData.GetCurrent().Color;
 
-        		PWMChannelRED   = COLOR_PLUG_RED_PWMCHANNEL;
-        		PWMChannelGreen = COLOR_PLUG_GREEN_PWMCHANNEL;
-        		PWMChannelBlue  = COLOR_PLUG_BLUE_PWMCHANNEL;
-        		PWMChannelWhite = COLOR_PLUG_WHITE_PWMCHANNEL;
-        		break;
-
-        	case Settings.Devices.Remote:
-        		TimerIndex  = COLOR_REMOTE_TIMER_INDEX;
-
-        		GPIORed     = COLOR_REMOTE_RED_PIN_NUM;
-        		GPIOGreen   = COLOR_REMOTE_GREEN_PIN_NUM;
-        		GPIOBlue    = COLOR_REMOTE_BLUE_PIN_NUM;
-        		GPIOWhite   = COLOR_REMOTE_WHITE_PIN_NUM;
-
-        		PWMChannelRED   = COLOR_REMOTE_RED_PWMCHANNEL;
-        		PWMChannelGreen = COLOR_REMOTE_GREEN_PWMCHANNEL;
-        		PWMChannelBlue  = COLOR_REMOTE_BLUE_PWMCHANNEL;
-        		PWMChannelWhite = COLOR_REMOTE_WHITE_PWMCHANNEL;
-        		break;
-        }
-
-        GPIO::SetupPWM(GPIORed  , TimerIndex, PWMChannelRED);
-        GPIO::SetupPWM(GPIOGreen, TimerIndex, PWMChannelGreen);
-        GPIO::SetupPWM(GPIOBlue , TimerIndex, PWMChannelBlue);
-        GPIO::SetupPWM(GPIOWhite, TimerIndex, PWMChannelWhite);
+		if (GPIO.Red.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Red.GPIO		, GPIO.Timer, GPIO.Red.Channel	);
+		if (GPIO.Green.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
+		if (GPIO.Blue.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
+		if (GPIO.White.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.White.GPIO	, GPIO.Timer, GPIO.White.Channel);
     }
 
     void Overheated() override {
@@ -54,6 +27,8 @@ class CommandColor_t : public Command_t {
 
     bool Execute(uint8_t EventCode, string StringOperand) override {
     	bool Executed = false;
+
+		Settings_t::GPIOData_t::Color_t GPIO = Settings.GPIOData.GetCurrent().Color;
 
     	uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
@@ -67,12 +42,12 @@ class CommandColor_t : public Command_t {
     		//(Operand&0xFF000000)>>24;
     		//floor((Red  * Power) / 255)
 
-    		if ((Blue == Green && Green == Red) && GPIOWhite != GPIO_NUM_0)
-    			GPIO::PWMFadeTo(PWMChannelWhite, Blue);
+    		if ((GPIO.Blue.GPIO == GPIO.Green.GPIO && Green == GPIO.Red.GPIO) && GPIO.White.GPIO != GPIO_NUM_0)
+    			GPIO::PWMFadeTo(GPIO.White.Channel, Blue);
     		else {
-    			if (GPIORed   != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelRED  , Red);
-    			if (GPIOGreen != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelGreen, Green);
-    			if (GPIOBlue  != GPIO_NUM_0) GPIO::PWMFadeTo(PWMChannelBlue , Blue);
+    			if (GPIO.Red.GPIO   != GPIO_NUM_0) GPIO::PWMFadeTo(GPIO.Red.Channel		, Red);
+    			if (GPIO.Green.GPIO != GPIO_NUM_0) GPIO::PWMFadeTo(GPIO.Green.Channel	, Green);
+    			if (GPIO.Blue.GPIO  != GPIO_NUM_0) GPIO::PWMFadeTo(GPIO.Blue.Channel 	, Blue);
     		}
 
     		Executed = true;
@@ -91,7 +66,4 @@ class CommandColor_t : public Command_t {
     }
 
 	private:
-    	gpio_num_t      GPIORed, GPIOGreen, GPIOBlue, GPIOWhite;
-    	ledc_timer_t    TimerIndex;
-    	ledc_channel_t  PWMChannelRED, PWMChannelGreen, PWMChannelBlue, PWMChannelWhite;
 };

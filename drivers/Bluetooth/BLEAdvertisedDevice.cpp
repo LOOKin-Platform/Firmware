@@ -483,9 +483,11 @@ void BLEAdvertisedDevice::setTXPower(int8_t txPower) {
 std::string BLEAdvertisedDevice::toString() {
 	std::stringstream ss;
 	ss << "Name: " << getName() << ", Address: " << getAddress().toString();
+
 	if (haveAppearance()) {
 		ss << ", appearance: " << getAppearance();
 	}
+
 	if (haveManufacturerData()) {
 		char *pHex = BLEUtils::buildHexData(nullptr, (uint8_t*)getManufacturerData().data(), getManufacturerData().length());
 		ss << ", manufacturer data: " << pHex;

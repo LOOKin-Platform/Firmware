@@ -4,77 +4,79 @@
 *
 */
 class SensorColor_t : public Sensor_t {
-  public:
-	SensorColor_t() {
-	    ID          = 0x84;
-	    Name        = "RGBW";
-	    EventCodes  = { 0x00, 0x02, 0x03, 0x04 };
-    }
+	public:
+		SensorColor_t() {
+			if (GetIsInited()) return;
 
-    void Update() override {
-    	SetValue(ReceiveValue("Red")  , "Red");
-    	SetValue(ReceiveValue("Green"), "Green");
-    	SetValue(ReceiveValue("Blue") , "Blue");
-    	SetValue(ReceiveValue("White"), "White");
+			ID          = 0x84;
+			Name        = "RGBW";
+			EventCodes  = { 0x00, 0x02, 0x03, 0x04 };
 
-    	double Color = (double)floor(GetValue("Red").Value * 255 * 255 + GetValue("Green").Value * 255 + GetValue("Blue").Value);
+			SetIsInited(true);
+		}
 
-    	if (SetValue(Color)) {
-    		WebServer.UDPSendBroadcastUpdated(ID, Converter::ToHexString(Color,6));
-    		Automation.SensorChanged(ID);
-    	}
-    };
+		void Update() override {
+			SetValue(ReceiveValue("Red")  , "Red");
+			SetValue(ReceiveValue("Green"), "Green");
+			SetValue(ReceiveValue("Blue") , "Blue");
+			SetValue(ReceiveValue("White"), "White");
 
-    uint32_t ReceiveValue(string Key = "Primary") override {
-    	switch (GetDeviceTypeHex()) {
-    		case Settings.Devices.Plug:
-    			if (Key == "Red")     return GPIO::PWMValue(COLOR_PLUG_RED_PWMCHANNEL);
-    			if (Key == "Green")   return GPIO::PWMValue(COLOR_PLUG_GREEN_PWMCHANNEL);
-    			if (Key == "Blue")    return GPIO::PWMValue(COLOR_PLUG_BLUE_PWMCHANNEL);
-    			if (Key == "White")   return GPIO::PWMValue(COLOR_PLUG_WHITE_PWMCHANNEL);
-    			if (Key == "Primary") return (double)floor(GetValue("Red").Value * 255 * 255 + GetValue("Green").Value * 255 + GetValue("Blue").Value);
-    			break;
-    	}
+			double Color = (double)floor(GetValue("Red").Value * 255 * 255 + GetValue("Green").Value * 255 + GetValue("Blue").Value);
 
-    	return 0;
-    };
+			if (SetValue(Color)) {
+				Wireless.SendBroadcastUpdated(ID, Converter::ToHexString(Color,6));
+				Automation.SensorChanged(ID);
+			}
+		};
 
-    string FormatValue(string Key) override {
-    	if (Key == "Primary")
-    		return Converter::ToHexString(Values[Key].Value, 6);
-    	else
-    		return Converter::ToHexString(Values[Key].Value, 2);
-    }
+		uint32_t ReceiveValue(string Key = "Primary") override {
+			Settings_t::GPIOData_t::Color_t GPIO = Settings.GPIOData.GetCurrent().Color;
 
-    bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-   		double Red    = GetValue("Red").Value;
-   		double Green  = GetValue("Green").Value;
-   		double Blue   = GetValue("Blue").Value;
+			if (Key == "Red" 	&& GPIO.Red.GPIO != GPIO_NUM_0)		return GPIO::PWMValue(GPIO.Red.Channel	);
+			if (Key == "Green"	&& GPIO.Green.GPIO != GPIO_NUM_0)	return GPIO::PWMValue(GPIO.Green.Channel);
+			if (Key == "Blue"	&& GPIO.Blue.GPIO != GPIO_NUM_0)	return GPIO::PWMValue(GPIO.Blue.Channel	);
+			if (Key == "White"	&& GPIO.White.GPIO != GPIO_NUM_0)	return GPIO::PWMValue(GPIO.White.Channel);
+			if (Key == "Primary") return (double)floor(GetValue("Red").Value * 255 * 255 + GetValue("Green").Value * 255 + GetValue("Blue").Value);
 
-    	// Установленная яркость равна значению в сценарии
-    	if (SceneEventCode == 0x02 && SceneEventOperand == ToBrightness(Red, Green, Blue))
-    		return true;
+			return 0;
+		};
 
-    	// Установленная яркость меньше значения в сценарии
-    	if (SceneEventCode == 0x03 && SceneEventOperand > ToBrightness(Red, Green, Blue))
-    		return true;
+		string FormatValue(string Key) override {
+			if (Key == "Primary")
+				return Converter::ToHexString(Values[Key].Value, 6);
+			else
+				return Converter::ToHexString(Values[Key].Value, 2);
+		}
 
-    	// Установленная яркость меньше значения в сценарии
-    	if (SceneEventCode == 0x04 && SceneEventOperand < ToBrightness(Red, Green, Blue))
-    		return true;
+		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
+			double Red    = GetValue("Red").Value;
+			double Green  = GetValue("Green").Value;
+			double Blue   = GetValue("Blue").Value;
 
-    	return false;
-    }
+			// Установленная яркость равна значению в сценарии
+			if (SceneEventCode == 0x02 && SceneEventOperand == ToBrightness(Red, Green, Blue))
+				return true;
 
-    uint8_t ToBrightness(uint32_t Color) {
-    	uint8_t oBlue    = Color&0x000000FF;
-    	uint8_t oGreen   = (Color&0x0000FF00)>>8;
-    	uint8_t oRed     = (Color&0x00FF0000)>>16;
+			// Установленная яркость меньше значения в сценарии
+			if (SceneEventCode == 0x03 && SceneEventOperand > ToBrightness(Red, Green, Blue))
+				return true;
 
-    	return ToBrightness(oRed, oGreen, oBlue);
-    }
+			// Установленная яркость меньше значения в сценарии
+			if (SceneEventCode == 0x04 && SceneEventOperand < ToBrightness(Red, Green, Blue))
+				return true;
 
-    uint8_t ToBrightness(uint8_t Red, uint8_t Green, uint8_t Blue) {
-    	return max(max(Red,Green), Blue);
-    }
+			return false;
+		}
+
+		uint8_t ToBrightness(uint32_t Color) {
+			uint8_t oBlue    = Color&0x000000FF;
+			uint8_t oGreen   = (Color&0x0000FF00)>>8;
+			uint8_t oRed     = (Color&0x00FF0000)>>16;
+
+			return ToBrightness(oRed, oGreen, oBlue);
+		}
+
+		uint8_t ToBrightness(uint8_t Red, uint8_t Green, uint8_t Blue) {
+			return max(max(Red,Green), Blue);
+		}
 };

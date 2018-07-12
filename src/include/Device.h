@@ -39,17 +39,17 @@ using namespace std;
 #define	NVSDevicePowerModeVoltage	"PowerModeVoltage"
 
 class DeviceType_t {
-  public:
-    uint8_t Hex = 0x00;
+	public:
+		uint8_t Hex = 0x00;
 
-    DeviceType_t(string);
-    DeviceType_t(uint8_t = 0x0);
+		DeviceType_t(string);
+		DeviceType_t(uint8_t = 0x0);
 
-    bool   IsBattery();
-    string ToString();
-    string ToHexString();
+		bool   IsBattery();
+		string ToString();
+		string ToHexString();
 
-    static string ToString(uint8_t);
+		static string ToString(uint8_t);
 };
 
 enum    DeviceStatus    { RUNNING, UPDATING };

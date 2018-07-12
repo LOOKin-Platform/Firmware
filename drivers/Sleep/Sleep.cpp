@@ -54,8 +54,10 @@ void Sleep::SetGPIOWakeupSource(gpio_num_t gpio_num, int level) {
 
 void Sleep::LightSleep(uint16_t Interval) {
 	// switch off Bluetooth
+	#if defined(CONFIG_BT_ENABLED)
 	::esp_bluedroid_disable();
 	::esp_bt_controller_disable();
+	#endif /* Bluetooth enabled */
 
 	// switch off Wi-Fi
 	::esp_wifi_stop();

@@ -23,6 +23,7 @@ static void setDNSServer(char *ip) {
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
 	m_eventLoopStarted  = false;
 	m_initCalled        = false;
+	m_WiFiRunning		= false;
 	//m_pWifiEventHandler = new WiFiEventHandler();
 	m_apConnectionStatus= UINT8_MAX;    // Are we connected to an access point?
 }
@@ -38,6 +39,27 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 
 	WiFi_t *pWiFi = (WiFi_t *)ctx;   // retrieve the WiFi object from the passed in context.
 
+	// If the event we received indicates that we now have an IP address or that a connection was disconnected then unlock the mutex that
+	// indicates we are waiting for a connection complete.
+	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+		if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) { // If we connected and have an IP, change the status to ESP_OK.  Otherwise, change it to the reason code.
+			pWiFi->m_apConnectionStatus = ESP_OK;
+			pWiFi->m_WiFiRunning = true;
+		}
+		else {
+			pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
+			pWiFi->m_WiFiRunning = false;
+		}
+
+		pWiFi->m_connectFinished.Give();
+	}
+
+	if (event->event_id == SYSTEM_EVENT_AP_START || event->event_id == SYSTEM_EVENT_STA_GOT_IP)
+		pWiFi->m_WiFiRunning = true;
+
+	if (event->event_id == SYSTEM_EVENT_AP_STOP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED)
+		pWiFi->m_WiFiRunning = false;
+
 	// Invoke the event handler.
 	esp_err_t rc;
 	if (pWiFi->m_pWifiEventHandler != nullptr)
@@ -45,17 +67,6 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 	else
 		rc = ESP_OK;
 
-	// If the event we received indicates that we now have an IP address or that a connection was disconnected then unlock the mutex that
-	// indicates we are waiting for a connection complete.
-	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
-
-		if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) // If we connected and have an IP, change the status to ESP_OK.  Otherwise, change it to the reason code.
-			pWiFi->m_apConnectionStatus = ESP_OK;
-		else
-			pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
-
-		pWiFi->m_connectFinished.Give();
-	}
 
 	return rc;
 } // eventHandler
@@ -100,6 +111,10 @@ void WiFi_t::Init() {
 	m_initCalled = true;
 } // Init
 
+void WiFi_t::Stop() {
+	::esp_wifi_stop();
+}
+
 
 /**
  * @brief Add a reference to a DNS server.
@@ -118,7 +133,7 @@ void WiFi_t::Init() {
  * @param [in] ip The IP address of the DNS Server.
  * @return N/A.
  */
-void WiFi_t::addDNSServer(string ip) {
+void WiFi_t::AddDNSServer(string ip) {
 	ip_addr_t dnsserver;
 	ESP_LOGD(tag, "Setting DNS[%d] to %s", m_dnsCount, ip.c_str());
 	inet_pton(AF_INET, ip.c_str(), &dnsserver);
@@ -340,7 +355,7 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 /**
  * @brief Dump diagnostics to the log.
  */
-void WiFi_t::dump() {
+void WiFi_t::Dump() {
 	ESP_LOGD(tag, "WiFi Dump");
 	ESP_LOGD(tag, "---------");
 	char ipAddrStr[30];
@@ -363,7 +378,7 @@ tcpip_adapter_ip_info_t WiFi_t::getApIpInfo() {
  * @brief Get the MAC address of the AP interface.
  * @return The MAC address of the AP interface.
  */
-string WiFi_t::getApMac() {
+string WiFi_t::GetApMac() {
 	uint8_t mac[6];
 	esp_wifi_get_mac(WIFI_IF_AP, mac);
 	stringstream s;
@@ -376,7 +391,7 @@ string WiFi_t::getApMac() {
  * @brief Get the AP SSID.
  * @return The AP SSID.
  */
-string WiFi_t::getApSSID() {
+string WiFi_t::GetApSSID() {
 	wifi_config_t conf;
 	esp_wifi_get_config(WIFI_IF_AP, &conf);
 	return string((char *)conf.sta.ssid);
@@ -414,7 +429,7 @@ tcpip_adapter_ip_info_t WiFi_t::getStaIpInfo() {
  * @brief Get the MAC address of the STA interface.
  * @return The MAC address of the STA interface.
  */
-string WiFi_t::getStaMac() {
+string WiFi_t::GetStaMac() {
 	uint8_t mac[6];
 	esp_wifi_get_mac(WIFI_IF_STA, mac);
 	stringstream s;
@@ -427,7 +442,7 @@ string WiFi_t::getStaMac() {
  * @brief Get the STA SSID.
  * @return The STA SSID.
  */
-string WiFi_t::getStaSSID() {
+string WiFi_t::GetStaSSID() {
 	wifi_config_t conf;
 	esp_wifi_get_config(WIFI_IF_STA, &conf);
 	return string((char *)conf.ap.ssid);
@@ -437,11 +452,11 @@ string WiFi_t::getStaSSID() {
  * @brief Get the connected WiFi SSID.
  * @return The SSID.
  */
-string WiFi_t::getSSID() {
+string WiFi_t::GetSSID() {
 	string Mode = WiFi_t::GetMode();
 
-	if (Mode == WIFI_MODE_STA_STR) 	return getStaSSID();
-	if (Mode == WIFI_MODE_AP_STR)	return getApSSID();
+	if (Mode == WIFI_MODE_STA_STR) 	return GetStaSSID();
+	if (Mode == WIFI_MODE_AP_STR)	return GetApSSID();
 
 	return "";
 } // getSSID
@@ -510,8 +525,6 @@ void WiFi_t::SetIPInfo(uint32_t ip, uint32_t gw, uint32_t netmask) {
 		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
 	}
 } // setIPInfo
-
-
 
 /**
  * @brief Return a string representation of the WiFi access point record.

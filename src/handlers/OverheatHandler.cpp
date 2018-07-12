@@ -13,7 +13,7 @@ class OverheatHandler
 	public:
 		static void Start();
 		static void Stop();
-		static void Pool(uint16_t Expired);
+		static void Pool();
 };
 
 void OverheatHandler::Start()  {
@@ -26,12 +26,12 @@ void OverheatHandler::Stop()  {
 	OverheatTimer 	= 0;
 }
 
-void OverheatHandler::Pool(uint16_t Expired) {
+void OverheatHandler::Pool() {
 	bool IsOverheated = false;
 
 	if (!IsActive) return;
 
-	OverheatTimer += Expired;
+	OverheatTimer += Settings.Pooling.Interval;
 
 	if (OverheatTimer < Settings.Pooling.OverHeat.Inverval)
 		return;

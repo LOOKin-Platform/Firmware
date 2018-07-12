@@ -14,51 +14,48 @@
 #include <string>
 #include <esp_bt.h>
 
-#include "BLEServer.h"
-#include "BLEClient.h"
+#include "BLEServerGeneric.h"
+#include "BLEClientGeneric.h"
 #include "BLEUtils.h"
 #include "BLEScan.h"
 #include "BLEAddress.h"
+
+using namespace std;
 
 /**
  * @brief %BLE functions.
  */
 class BLEDevice {
-public:
+	public:
+		static void					Init(string deviceName);	// Initialize the local BLE environment.
+		static void					Deinit();
 
-	static BLEClient*  createClient();    // Create a new BLE client.
-	static BLEServer*  createServer();    // Create a new BLE server.
-	static BLEAddress  getAddress();      // Retrieve our own local BD address.
-	static BLEScan*    getScan();         // Get the scan object
-	static std::string getValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID);	  // Get the value of a characteristic of a service on a server.
-	static void        init(std::string deviceName);   // Initialize the local BLE environment.
-	static void        setPower(esp_power_level_t powerLevel);  // Set our power level.
-	static void        setValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID, std::string value);   // Set the value of a characteristic on a service on a server.
-	static std::string toString();        // Return a string representation of our device.
-	static void        whiteListAdd(BLEAddress address);    // Add an entry to the BLE white list.
-	static void        whiteListRemove(BLEAddress address); // Remove an entry from the BLE white list.
+		static BLEClientGeneric*	CreateClient();    // Create a new BLE client.
+		static BLEServerGeneric*	CreateServer();    // Create a new BLE server.
+		static BLEAddress  			GetAddress();      // Retrieve our own local BD address.
+		static BLEScan*				GetScan();         // Get the scan object
+		static string				GetValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID); // Get the value of a characteristic of a service on a server.
 
-private:
-	static BLEServer *m_pServer;
-	static BLEScan   *m_pScan;
-	static BLEClient *m_pClient;
+		static void					SetPower(esp_power_level_t powerLevel);  // Set our power level.
+		static void					SetValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID, string value);   // Set the value of a characteristic on a service on a server.
+		static string 				toString();        // Return a string representation of our device.
+		static void					WhiteListAdd(BLEAddress address);    // Add an entry to the BLE white list.
+		static void					WhiteListRemove(BLEAddress address); // Remove an entry from the BLE white list.
 
-	static esp_gatt_if_t getGattcIF();
+	    static bool					IsRunning() { return IsInitialized; }
 
-	static void gattClientEventHandler(
-		esp_gattc_cb_event_t      event,
-		esp_gatt_if_t             gattc_if,
-		esp_ble_gattc_cb_param_t* param);
+	private:
+		static BLEServerGeneric		*m_pServer;
+		static BLEScan				*m_pScan;
+		static BLEClientGeneric		*m_pClient;
 
-	static void gattServerEventHandler(
-	   esp_gatts_cb_event_t      event,
-	   esp_gatt_if_t             gatts_if,
-	   esp_ble_gatts_cb_param_t* param);
+		static bool					IsInitialized;
 
-	static void gapEventHandler(
-		esp_gap_ble_cb_event_t  event,
-		esp_ble_gap_cb_param_t* param);
+		static esp_gatt_if_t		getGattcIF();
 
+		static void gattClientEventHandler	(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* param);
+		static void gattServerEventHandler	(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param);
+		static void gapEventHandler			(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param);
 }; // class BLE
 
 #endif // CONFIG_BT_ENABLED

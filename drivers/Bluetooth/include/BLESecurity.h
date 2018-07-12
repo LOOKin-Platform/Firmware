@@ -6,6 +6,9 @@
 
 #ifndef DRIVERS_BLESECURITY_H_
 #define DRIVERS_BLESECURITY_H_
+
+#if defined(CONFIG_BT_ENABLED)
+
 #include <esp_gap_ble_api.h>
 
 class BLESecurity {
@@ -55,5 +58,7 @@ public:
 	 */
 	virtual void onAuthenticationComplete(esp_ble_auth_cmpl_t);
 };
+
+#endif /* Bluetooth enabled */
 
 #endif /* DRIVERS_BLESECURITY_H_ */

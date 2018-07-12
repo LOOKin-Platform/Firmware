@@ -13,9 +13,8 @@ class CommandSwitch_t : public Command_t {
 		Events["on"]  = 0x01;
 		Events["off"] = 0x02;
 
-		switch (GetDeviceTypeHex()) {
-			case Settings.Devices.Plug	: GPIO::Setup(SWITCH_PLUG_PIN_NUM); break;
-		}
+		if (Settings.GPIOData.GetCurrent().Switch.GPIO != GPIO_NUM_0)
+			GPIO::Setup(Settings.GPIOData.GetCurrent().Switch.GPIO);
     }
     
     void Overheated() override {
@@ -29,12 +28,12 @@ class CommandSwitch_t : public Command_t {
     			return false;
 
     		if (EventCode == 0x01) {
-    			GPIO::Write(SWITCH_PLUG_PIN_NUM, true);
+				GPIO::Write(Settings.GPIOData.GetCurrent().Switch.GPIO, true);
     			Executed = true;
     		}
 
     		if (EventCode == 0x02) {
-    			GPIO::Write(SWITCH_PLUG_PIN_NUM, false);
+    			GPIO::Write(Settings.GPIOData.GetCurrent().Switch.GPIO, true);
     			Executed = true;
     		}
 

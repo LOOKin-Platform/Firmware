@@ -20,11 +20,14 @@ using namespace std;
 
 #include "../../../src/include/Settings.h"
 
+/**
+ * @brief Interface to direct functions interacting with memory.
+ */
+
 class SPIFlash {
 	public:
 		static esp_err_t 	EraseSector(uint32_t);
-
-		static void			EraseRange(uint32_t Start, uint32_t Range);
+		static void			EraseRange(uint32_t Start, uint32_t Length);
 
 		static esp_err_t 	Write 	  	(void *		Data, uint32_t Address, size_t Size = 0);
 		static esp_err_t 	WriteUint8 	(uint8_t	Data, uint32_t Address);

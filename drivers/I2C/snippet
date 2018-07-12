@@ -1,0 +1,22 @@
+	I2C bus;
+	bus.Init(0x48);
+	
+	
+	bus.BeginTransaction();
+	uint8_t* byte = (uint8_t*) malloc(2);
+	bus.Read(byte, 2, false);
+	bus.EndTransaction();
+
+	float temp = byte[0];
+
+	if (byte[0] >= 0x80)
+		temp = - (temp - 0x80);
+
+	if (byte[1] == 0x80)
+		temp += 0.5;
+
+	float ChipTemperature = temprature_sens_read();
+	ChipTemperature = (ChipTemperature - 32) * (5.0/9.0) + 0.5;
+
+	ESP_LOGI("main","I2C temp: %f, Chip temp: %f", temp, ChipTemperature);
+	free(byte);

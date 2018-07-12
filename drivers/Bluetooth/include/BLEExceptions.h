@@ -1,7 +1,8 @@
 /*
- *    BLEExceptions.h
- *    Bluetooth driver
+ * BLExceptions.h
  *
+ *  Created on: Nov 27, 2017
+ *      Author: kolban
  */
 
 #ifndef DRIVERS_BLEEXCEPTIONS_H_
@@ -14,16 +15,9 @@
 
 #include <exception>
 
-
 class BLEDisconnectedException : public std::exception {
 	const char *what() const throw () {
 		return "BLE Disconnected";
-	}
-};
-
-class BLEUuidNotFoundException : public std::exception {
-	const char *what() const throw () {
-		return "No such UUID";
 	}
 };
 

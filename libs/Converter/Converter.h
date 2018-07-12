@@ -54,6 +54,7 @@ class Converter {
 
 		static float			ToFloat (string);
 		static uint16_t			ToUint16(string);
+		static uint32_t			ToUint32(string);
 		static int32_t 			ToInt32	(string);
 
 		static bool				Sign(int32_t);
@@ -74,6 +75,7 @@ class Converter {
 		static string			StringURLEncode(string);
 
 		static void				StringMove(string &Destination, string &Src);
+		static void				NormalizeHexString(string &src, uint8_t Length);
 
 		static uint32_t			IPToUint32(tcpip_adapter_ip_info_t);
 

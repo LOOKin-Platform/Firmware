@@ -17,12 +17,8 @@
 #include "BLEScan.h"
 #include "BLEUtils.h"
 #include "GeneralUtils.h"
-#ifdef ARDUINO_ARCH_ESP32
-#include "esp32-hal-log.h"
-#endif
 
 static const char* LOG_TAG = "BLEScan";
-
 
 /**
  * Constructor
@@ -87,8 +83,8 @@ void BLEScan::handleGAPEvent(
 						break;
 					}
 
-// Examine our list of previously scanned addresses and, if we found this one already,
-// ignore it.
+					// Examine our list of previously scanned addresses and, if we found this one already,
+					// ignore it.
 					BLEAddress advertisedAddress(param->scan_rst.bda);
 					bool found = false;
 

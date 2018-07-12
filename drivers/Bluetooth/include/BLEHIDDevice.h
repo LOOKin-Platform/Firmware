@@ -6,6 +6,9 @@
 
 #ifndef DRIVERS_BLEHIDDEVICE_H_
 #define DRIVERS_BLEHIDDEVICE_H_
+
+#if defined(CONFIG_BT_ENABLED)
+
 #include "BLECharacteristic.h"
 #include "BLEService.h"
 #include "BLEDescriptor.h"
@@ -13,9 +16,9 @@
 #include "HIDTypes.h"
 
 #define GENERIC_HID		960
-#define HID_KEYBOARD		961
+#define HID_KEYBOARD	961
 #define HID_MOUSE		962
-#define HID_JOYSTICK		963
+#define HID_JOYSTICK	963
 #define HID_GAMEPAD		964
 #define HID_TABLET		965
 #define HID_CARD_READER	966
@@ -24,7 +27,7 @@
 
 class BLEHIDDevice {
 public:
-	BLEHIDDevice(BLEServer*);
+	BLEHIDDevice(BLEServerGeneric*);
 	virtual ~BLEHIDDevice();
 
 	void setReportMap(uint8_t* map, uint16_t);
@@ -56,16 +59,16 @@ private:
 	void createCharacteristics();
 	void createDescriptors();
 
-	BLEService*			m_deviceInfoService;				//0x180a
+	BLEService*			m_deviceInfoService;			//0x180a
 	BLEService*			m_hidService;					//0x1812
 	BLEService*			m_batteryService = 0;			//0x180f
 
 	BLECharacteristic* 	m_manufacturerCharacteristic;	//0x2a29
-	BLECharacteristic* 	m_pnpCharacteristic;				//0x2a50
-	BLECharacteristic* 	m_hidInfoCharacteristic;			//0x2a4a
+	BLECharacteristic* 	m_pnpCharacteristic;			//0x2a50
+	BLECharacteristic* 	m_hidInfoCharacteristic;		//0x2a4a
 	BLECharacteristic* 	m_reportMapCharacteristic;		//0x2a4b
 	BLECharacteristic* 	m_hidControlCharacteristic;		//0x2a4c
-	BLECharacteristic* 	m_inputReportCharacteristic;		//0x2a4d
+	BLECharacteristic* 	m_inputReportCharacteristic;	//0x2a4d
 	BLECharacteristic* 	m_outputReportCharacteristic;	//0x2a4d
 	BLECharacteristic* 	m_featureReportCharacteristic;	//0x2a4d
 	BLECharacteristic* 	m_protocolModeCharacteristic;	//0x2a4e
@@ -73,14 +76,16 @@ private:
 	BLECharacteristic* 	m_bootOutputCharacteristic;		//0x2a32
 	BLECharacteristic*	m_batteryLevelCharacteristic;	//0x2a19
 
-	BLEDescriptor* 		m_inputReportDescriptor;			//0x2908
+	BLEDescriptor* 		m_inputReportDescriptor;		//0x2908
 	BLEDescriptor* 		m_outputReportDescriptor;		//0x2908
 	BLEDescriptor* 		m_featureReportDescriptor;		//0x2908
-	BLE2902*				m_inputReportNotifications;		//0x2902
-	BLE2902*				m_bootInputNotifications;		//0x2902
+	BLE2902*			m_inputReportNotifications;		//0x2902
+	BLE2902*			m_bootInputNotifications;		//0x2902
 	BLEDescriptor*		m_batteryLevelDescriptor;		//0x2904
-	BLE2902*				m_batteryLevelNotifications;		//0x2902
+	BLE2902*			m_batteryLevelNotifications;	//0x2902
 
 };
+
+#endif
 
 #endif /* DRIVERS_BLEHIDDEVICE_H_ */

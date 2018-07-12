@@ -16,7 +16,7 @@
  * @param [in] handle The handle to look up the characteristic.
  * @return The characteristic.
  */
-BLECharacteristic* BLECharacteristicMap::getByHandle(uint16_t handle) {
+BLECharacteristic* BLECharacteristicMap::GetByHandle(uint16_t handle) {
 	return m_handleMap.at(handle);
 } // getByHandle
 
@@ -26,8 +26,8 @@ BLECharacteristic* BLECharacteristicMap::getByHandle(uint16_t handle) {
  * @param [in] UUID The UUID to look up the characteristic.
  * @return The characteristic.
  */
-BLECharacteristic* BLECharacteristicMap::getByUUID(const char* uuid) {
-    return getByUUID(BLEUUID(uuid));
+BLECharacteristic* BLECharacteristicMap::GetByUUID(const char* uuid) {
+    return GetByUUID(BLEUUID(uuid));
 }
 
 
@@ -36,7 +36,7 @@ BLECharacteristic* BLECharacteristicMap::getByUUID(const char* uuid) {
  * @param [in] UUID The UUID to look up the characteristic.
  * @return The characteristic.
  */
-BLECharacteristic* BLECharacteristicMap::getByUUID(BLEUUID uuid) {
+BLECharacteristic* BLECharacteristicMap::GetByUUID(BLEUUID uuid) {
 	for (auto &myPair : m_uuidMap) {
 		if (myPair.first->getUUID().equals(uuid)) {
 			return myPair.first;
@@ -51,7 +51,7 @@ BLECharacteristic* BLECharacteristicMap::getByUUID(BLEUUID uuid) {
  * @brief Get the first characteristic in the map.
  * @return The first characteristic in the map.
  */
-BLECharacteristic* BLECharacteristicMap::getFirst() {
+BLECharacteristic* BLECharacteristicMap::GetFirst() {
 	m_iterator = m_uuidMap.begin();
 	if (m_iterator == m_uuidMap.end()) {
 		return nullptr;
@@ -66,7 +66,7 @@ BLECharacteristic* BLECharacteristicMap::getFirst() {
  * @brief Get the next characteristic in the map.
  * @return The next characteristic in the map.
  */
-BLECharacteristic* BLECharacteristicMap::getNext() {
+BLECharacteristic* BLECharacteristicMap::GetNext() {
 	if (m_iterator == m_uuidMap.end()) {
 		return nullptr;
 	}
@@ -99,7 +99,7 @@ void BLECharacteristicMap::handleGATTServerEvent(
  * @param [in] characteristic The characteristic to cache.
  * @return N/A.
  */
-void BLECharacteristicMap::setByHandle(uint16_t handle,
+void BLECharacteristicMap::SetByHandle(uint16_t handle,
 		BLECharacteristic *characteristic) {
 	m_handleMap.insert(std::pair<uint16_t, BLECharacteristic *>(handle, characteristic));
 } // setByHandle
@@ -111,7 +111,7 @@ void BLECharacteristicMap::setByHandle(uint16_t handle,
  * @param [in] characteristic The characteristic to cache.
  * @return N/A.
  */
-void BLECharacteristicMap::setByUUID(
+void BLECharacteristicMap::SetByUUID(
 		BLECharacteristic *pCharacteristic,
 		BLEUUID            uuid) {
 	m_uuidMap.insert(std::pair<BLECharacteristic *, std::string>(pCharacteristic, uuid.toString()));
@@ -122,7 +122,7 @@ void BLECharacteristicMap::setByUUID(
  * @brief Return a string representation of the characteristic map.
  * @return A string representation of the characteristic map.
  */
-std::string BLECharacteristicMap::toString() {
+std::string BLECharacteristicMap::ToString() {
 	std::stringstream stringStream;
 	stringStream << std::hex << std::setfill('0');
 	int count=0;

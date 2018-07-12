@@ -13,7 +13,7 @@
 #include <esp_gatts_api.h>   // ESP32 BLE
 #include <esp_gap_ble_api.h> // ESP32 BLE
 #include <string>
-#include "BLEClient.h"
+#include "BLEClientGeneric.h"
 
 /**
  * @brief A set of general %BLE utilities.
@@ -41,8 +41,8 @@ public:
 		esp_gatt_if_t             gatts_if,
 		esp_ble_gatts_cb_param_t* evtParam);
 	static const char* eventTypeToString(esp_ble_evt_type_t eventType);
-	static BLEClient*  findByAddress(BLEAddress address);
-	static BLEClient*  findByConnId(uint16_t conn_id);
+	static BLEClientGeneric*  findByAddress(BLEAddress address);
+	static BLEClientGeneric*  findByConnId(uint16_t conn_id);
 	static const char* gapEventToString(uint32_t eventType);
 	static std::string gattCharacteristicUUIDToString(uint32_t characteristicUUID);
 	static std::string gattClientEventTypeToString(esp_gattc_cb_event_t eventType);
@@ -54,8 +54,8 @@ public:
 	static std::string gattServiceToString(uint32_t serviceId);
 	static std::string gattStatusToString(esp_gatt_status_t status);
 	static std::string getMember(uint32_t memberId);
-	static void        registerByAddress(BLEAddress address, BLEClient* pDevice);
-	static void        registerByConnId(uint16_t conn_id, BLEClient* pDevice);
+	static void        registerByAddress(BLEAddress address, BLEClientGeneric* pDevice);
+	static void        registerByConnId(uint16_t conn_id, BLEClientGeneric* pDevice);
 	static const char* searchEventTypeToString(esp_gap_search_evt_t searchEvt);
 };
 

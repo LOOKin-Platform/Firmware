@@ -17,6 +17,11 @@ using namespace std;
 
 #include "FreeRTOSWrapper.h"
 
+struct UDPBroacastQueueItem {
+	char		Message[Settings.WiFi.UDPBroadcastQueue.MaxMessageSize + 1];
+	uint32_t	Updated;
+};
+
 class WebServer_t {
 	public:
 		class Response {
@@ -50,7 +55,12 @@ class WebServer_t {
 		void UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1);
 		void UDPSendBroadcast(string);
 
+		void UDPSendBroacastFromQueue();
+		void UDPSendBroadcastQueueAdd(string Message);
+
 	private:
+	    static QueueHandle_t UDPBroadcastQueue;
+
 		TaskHandle_t HTTPListenerTaskHandle;
 		TaskHandle_t UDPListenerTaskHandle;
 

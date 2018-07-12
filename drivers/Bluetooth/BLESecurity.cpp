@@ -5,6 +5,7 @@
  */
 
 #include <BLESecurity.h>
+#if defined(CONFIG_BT_ENABLED)
 
 BLESecurity::BLESecurity() {
 }
@@ -88,3 +89,5 @@ char* BLESecurity::esp_key_type_to_str(esp_ble_key_type_t key_type)
     }
      return key_str;
 }
+
+#endif /* Bluetooth enabled */

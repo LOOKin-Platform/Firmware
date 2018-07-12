@@ -12,12 +12,12 @@
 
 #include <vector>
 #include "BLEAdvertisedDevice.h"
-#include "BLEClient.h"
+#include "BLEClientGeneric.h"
 #include "FreeRTOSWrapper.h"
 
 class BLEAdvertisedDevice;
 class BLEAdvertisedDeviceCallbacks;
-class BLEClient;
+class BLEClientGeneric;
 class BLEScan;
 
 
@@ -59,7 +59,7 @@ private:
 	BLEScan();   // One doesn't create a new instance instead one asks the BLEDevice for the singleton.
 	friend class 	BLEDevice;
 	void				handleGAPEvent(esp_gap_ble_cb_event_t  event, esp_ble_gap_cb_param_t* param);
-	void				parseAdvertisement(BLEClient* pRemoteDevice, uint8_t *payload);
+	void				parseAdvertisement(BLEClientGeneric* pRemoteDevice, uint8_t *payload);
 
 
 	esp_ble_scan_params_t         m_scan_params;

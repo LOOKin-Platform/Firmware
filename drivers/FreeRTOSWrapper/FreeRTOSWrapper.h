@@ -67,21 +67,21 @@ class FreeRTOS {
 		 */
 		class Timer {
 			public:
-				Timer(string Name, TickType_t period, UBaseType_t reload, void *data, void (*callback)(FreeRTOS::Timer *pTimer));
-				virtual ~Timer();
-				void ChangePeriod(TickType_t newPeriod, TickType_t blockTime=portMAX_DELAY);
-				void *GetData();
-				const char *GetName();
-				TickType_t GetPeriod();
-				void Reset(TickType_t blockTime=portMAX_DELAY);
-				void Start(TickType_t blockTime=portMAX_DELAY);
-				void Stop(TickType_t blockTime=portMAX_DELAY);
+				Timer		(string Name, TickType_t period, UBaseType_t reload, void *data, void (*callback)(FreeRTOS::Timer *pTimer));
+				virtual 	~Timer();
+				void 		ChangePeriod(TickType_t newPeriod, TickType_t blockTime=portMAX_DELAY);
+				void 		*GetData();
+				const char	*GetName();
+				TickType_t 	GetPeriod();
+				void 		Reset(TickType_t blockTime=portMAX_DELAY);
+				void		Start(TickType_t blockTime=portMAX_DELAY);
+				void		Stop(TickType_t blockTime=portMAX_DELAY);
 
 			private:
-				TimerHandle_t timerHandle;
-				TickType_t period;
-				void (*callback)(Timer *pTimer);
-				static void internalCallback(TimerHandle_t xTimer);
+				TimerHandle_t	timerHandle;
+				TickType_t		period;
+				void			(*callback)(Timer *pTimer);
+				static void		internalCallback(TimerHandle_t xTimer);
 
 				static map<void *, FreeRTOS::Timer *> TimersMap;
 		};
@@ -107,7 +107,7 @@ class FreeRTOS {
 			public:
 				static RingbufHandle_t		Create				(uint16_t Length, ringbuf_type_t type);
 				static RingbufHandle_t		CreateNoSplit		(uint16_t Length, size_t ItemSize);
-				static BaseType_t			Send					(RingbufHandle_t Handle, void *Item, size_t ItemSize, TickType_t xTicksToWait = 50);
+				static BaseType_t			Send				(RingbufHandle_t Handle, void *Item, size_t ItemSize, TickType_t xTicksToWait = 50);
 				static BaseType_t			SendFromISR			(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask = true);
 				static bool					Receive				(RingbufHandle_t Handle, void *Item, size_t *ItemSize, TickType_t xTicksToWait = 50);
 				static bool					ReceiveFromISR		(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask = true);

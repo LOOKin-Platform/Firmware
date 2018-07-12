@@ -6,6 +6,9 @@
 #include "Globals.h"
 #include "Sensors.h"
 
+Sensor_t::Sensor_t() {
+}
+
 vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 	vector<Sensor_t*> Sensors = {};
 

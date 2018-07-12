@@ -106,23 +106,26 @@ class WiFi_t {
 		uint8_t             m_dnsCount=0;
 		bool                m_eventLoopStarted;
 		bool                m_initCalled;
+		bool				m_WiFiRunning;
 		uint8_t             m_apConnectionStatus;   // ESP_OK = we are connected to an access point.  Otherwise receives wifi_err_reason_t.
+
 		FreeRTOS::Semaphore m_connectFinished = FreeRTOS::Semaphore("ConnectFinished");
 
 		static esp_err_t    eventHandler(void* ctx, system_event_t* event);
 
 	public:
 		void                Init();
+		void 				Stop();
 
 		WiFi_t();
-		void 				addDNSServer(string ip);
-		void 				dump();
-		static string 		getApMac();
-		static string 		getApSSID();
+		void 				AddDNSServer(string ip);
+		void 				Dump();
+		static string 		GetApMac();
+		static string 		GetApSSID();
 		static string 		GetMode();
-		static string 		getStaMac();
-		static string 		getStaSSID();
-		static string 		getSSID();
+		static string 		GetStaMac();
+		static string 		GetStaSSID();
+		static string 		GetSSID();
 
 		static tcpip_adapter_ip_info_t getApIpInfo();
 		static tcpip_adapter_ip_info_t getStaIpInfo();
@@ -136,6 +139,9 @@ class WiFi_t {
 		void	SetIPInfo(uint32_t ip, uint32_t gw, uint32_t netmask);
 
 	    void 	SetWiFiEventHandler(WiFiEventHandler *WiFiEventHandler);
+
+	    uint8_t	GetConnectionStatus() 	{ return m_apConnectionStatus; }
+	    uint8_t	IsRunning() 			{ return m_WiFiRunning; }
 };
 
 #endif /* DRIVERS_WIFI_H_ */

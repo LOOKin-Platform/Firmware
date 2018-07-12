@@ -1,7 +1,35 @@
-FreeRTOS::Timer *IPDidntGetTimer;
+#include <esp_log.h>
+
+#include <esp_ping.h>
+#include <ping.h>
+
+FreeRTOS::Timer 	*IPDidntGetTimer;
+FreeRTOS::Semaphore IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPData");
+static bool 		IsIPCheckSuccess 	= false;
+static bool			IsEventDrivenStart	= false;
+
 static void IPDidntGetCallback(FreeRTOS::Timer *pTimer) {
 	Log::Add(LOG_WIFI_STA_UNDEFINED_IP);
 	WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+}
+
+esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
+	ESP_LOGI("tag","ping. Received %d, Sended %d", pf->recv_count, pf->send_count);
+
+	if (pf->recv_count > 0) {
+		IsIPCheckSuccess = true;
+		IsCorrectIPData.Give();
+		ping_deinit();
+	}
+
+	if (pf->send_count == Settings.WiFi.PingAfterConnect.Count && pf->recv_count == 0) {
+		IsIPCheckSuccess = false;
+		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+		IsCorrectIPData.Give();
+		ping_deinit();
+	}
+
+	return ESP_OK;
 }
 
 class MyWiFiEventHandler: public WiFiEventHandler {
@@ -13,11 +41,14 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	private:
 		esp_err_t apStart() {
 			Log::Add(LOG_WIFI_AP_START);
+			WebServer.Start();
+
 			return ESP_OK;
 		}
 
 		esp_err_t apStop() {
 			Log::Add(LOG_WIFI_AP_STOP);
+			Wireless.IsEventDrivenStart = false;
 			return ESP_OK;
 		}
 
@@ -33,8 +64,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			//WebServer.Stop();
 
 			// Повторно подключится к Wi-Fi, если подключение оборвалось
-			//if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE)
-			//	Network.WiFiConnect();
+			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE) {
+				Wireless.StartInterfaces();
+			}
 
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось
@@ -50,17 +82,83 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
+			tcpip_adapter_ip_info_t StaIPInfo = WiFi.getStaIpInfo();
+
+			IsIPCheckSuccess = false;
+			IsCorrectIPData.Take("CorrectTCPIP");
+
+			esp_ping_set_target(PING_TARGET_IP_ADDRESS, &StaIPInfo.gw.addr, sizeof(uint32_t));
+			esp_ping_set_target(PING_TARGET_IP_ADDRESS_COUNT, &Settings.WiFi.PingAfterConnect.Count, sizeof(uint32_t));
+			esp_ping_set_target(PING_TARGET_RCV_TIMEO, &Settings.WiFi.PingAfterConnect.Timeout, sizeof(uint32_t));
+			esp_ping_set_target(PING_TARGET_DELAY_TIME, &Settings.WiFi.PingAfterConnect.Delay, sizeof(uint32_t));
+			esp_ping_set_target(PING_TARGET_RES_FN, (void *)pingResults, sizeof((void *)pingResults));
+			ping_init();
+
+			IsCorrectIPData.Wait("CorrectTCPIP");
+
 			IPDidntGetTimer->Stop();
+
+			if (!IsIPCheckSuccess)
+				return ESP_OK;
+
+			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
+
+			WebServer.Start();
 
 			Network.IP = event_sta_got_ip.ip_info;
 
-			WebServer.UDPSendBroadcastAlive();
-			WebServer.UDPSendBroadcastDiscover();
+			WebServer.UDPSendBroacastFromQueue();
+
+			if (!Wireless.IsEventDrivenStart) {
+				WebServer.UDPSendBroadcastAlive();
+				WebServer.UDPSendBroadcastDiscover();
+			}
 
 			Log::Add(LOG_WIFI_STA_GOT_IP, Converter::IPToUint32(event_sta_got_ip.ip_info));
 
 			Time::ServerSync(Settings.TimeSync.ServerHost, Settings.TimeSync.APIUrl);
+			Wireless.IsEventDrivenStart = false;
 
 			return ESP_OK;
 		}
 };
+
+class WiFiUptimeHandler {
+	public:
+		static void Pool();
+
+	private:
+		static uint64_t WiFiStartedTime;
+};
+
+uint64_t WiFiUptimeHandler::WiFiStartedTime = 0;
+
+void WiFiUptimeHandler::Pool() {
+	if (!Device.Type.IsBattery())
+		return;
+
+	if (WiFi.IsRunning()) {
+		if (WiFiStartedTime == 0)
+			WiFiStartedTime = Time::UptimeU();
+
+		if (Settings.WiFi.BatteryUptime > 0) {
+			if (Time::UptimeU() >= WiFiStartedTime + Settings.WiFi.BatteryUptime * 1000000) {
+				WiFiStartedTime = 0;
+				Settings.WiFi.BatteryUptime = 0;
+				WiFi.Stop();
+			}
+		}
+		else {
+			if (Time::UptimeU() >= WiFiStartedTime + Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second * 1000000) {
+				WiFiStartedTime = 0;
+				WiFi.Stop();
+			}
+		}
+	}
+	else {
+		if (Wireless.IsPeriodicPool()) {
+			IsEventDrivenStart = false;
+			Wireless.StartInterfaces();
+		}
+	}
+}

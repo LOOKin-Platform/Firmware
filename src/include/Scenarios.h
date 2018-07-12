@@ -42,12 +42,12 @@ class Scenario_t {
 	public:
 		uint8_t     Type;
 		uint32_t    ID;
-		uint16_t	Name[SCENARIOS_NAME_LENGTH] = { 0 };
+		uint16_t	Name[Settings.Scenarios.NameLength] = { 0 };
 		Data_t      *Data;
 
 		vector<ScenesCommandItem_t> Commands;
 
-		Scenario_t(uint8_t TypeHex = SCENARIOS_TYPE_EMPTY_HEX);
+		Scenario_t(uint8_t TypeHex = Settings.Scenarios.Types.EmptyHex);
 		~Scenario_t();
 
 		void				SetType(uint8_t TypeHex);
@@ -72,8 +72,8 @@ class Scenario_t {
 		static string		SerializeScene(Scenario_t);
 		static Scenario_t	DeserializeScene(string);
 
-		template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<SCENARIOS_OPERAND_BIT_LEN>, size_t Start, size_t Length);
-		template <size_t SrcSize>     static void AddRangeTo(bitset<SCENARIOS_OPERAND_BIT_LEN> &, bitset<SrcSize>, size_t Position);
+		template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<Settings_t::Scenarios_t::OperandBitLength>, size_t Start, size_t Length);
+		template <size_t SrcSize>     static void AddRangeTo(bitset<Settings_t::Scenarios_t::OperandBitLength> &, bitset<SrcSize>, size_t Position);
 
 		// HTTP Callbacks
 		static void ReadFinished(char[]);
@@ -87,7 +87,7 @@ class Scenario_t {
 class Data_t {
   public:
     virtual bool      	IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  { return false; };
-    virtual void      	SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) {};
+    virtual void      	SetData(bitset<Settings.Scenarios.OperandBitLength>) {};
     virtual uint64_t  	ToUint64() { return 0; };
     virtual string    	ToString() { return ""; };
 
@@ -107,7 +107,7 @@ class EventData_t : public Data_t {
     uint8_t				EventOperand      = 0;
 
     bool				IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void				SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
+    void				SetData(bitset<Settings.Scenarios.OperandBitLength>) override;
 
     uint64_t			ToUint64() override;
     string				ToString() override;
@@ -115,7 +115,7 @@ class EventData_t : public Data_t {
     void				ExecuteCommands(uint32_t ScenarioID)  override;
     bool				SensorUpdatedIsTriggered(uint8_t SensorID) override;
 
-    ~EventData_t() 		{ ESP_LOGI("DESTRUCTOR", "EventDATA_t") };
+    ~EventData_t() 		{ ESP_LOGI("DESTRUCTOR", "EventDATA_t"); };
 };
 
 class TimerData_t : public Data_t {
@@ -132,7 +132,7 @@ class TimerData_t : public Data_t {
     uint8_t				EventOperand      = 0;
 
     bool				IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void				SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
+    void				SetData(bitset<Settings.Scenarios.OperandBitLength>) override;
 
     uint64_t			ToUint64() override;
     string				ToString() override;
@@ -142,7 +142,7 @@ class TimerData_t : public Data_t {
 
     static void			TimerCallback(FreeRTOS::Timer *pTimer);
 
-    ~TimerData_t() 		{ ESP_LOGI("DESTRUCTOR", "TimerDATA_t") };
+    ~TimerData_t() 		{ ESP_LOGI("DESTRUCTOR", "TimerDATA_t"); };
 };
 
 class CalendarData_t : public Data_t {
@@ -152,7 +152,7 @@ class CalendarData_t : public Data_t {
     bitset<8>			ScheduledDays;
 
     bool				IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void				SetData(bitset<SCENARIOS_OPERAND_BIT_LEN>) override;
+    void				SetData(bitset<Settings.Scenarios.OperandBitLength>) override;
 
     uint64_t			ToUint64() override;
     string				ToString() override;

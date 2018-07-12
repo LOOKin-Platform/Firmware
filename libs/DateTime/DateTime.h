@@ -37,7 +37,7 @@ class Time {
     static int8_t     TimezoneOffset;
 
     static uint32_t   Uptime();
-    static uint32_t   UptimeU();
+    static uint64_t   UptimeU();
     static uint32_t   Unixtime();
     static DateTime_t DateTime();
     static string     UnixtimeString();

@@ -6,7 +6,7 @@
 #include "Globals.h"
 #include "Device.h"
 
-static char tag[] 			= "Device_t";
+static char tag[] = "Device_t";
 
 DeviceType_t::DeviceType_t(string TypeStr) {
 	for(auto const &TypeItem : Settings.Devices.Literaly) {
@@ -20,7 +20,16 @@ DeviceType_t::DeviceType_t(uint8_t Type) {
 }
 
 bool DeviceType_t::IsBattery() {
-	return (Hex > 0x7F) ? true : false; // First bit in device type describe is it battery or not
+	if (Hex < 0x80)
+		return false;
+
+	if (Hex == Settings.Devices.Remote) {
+		if (REMOTE_ELECTRICITY_PIN != GPIO_NUM_0)
+			if (GPIO::Read(REMOTE_ELECTRICITY_PIN))
+				return false;
+	}
+
+	return true;
 }
 
 string DeviceType_t::ToString() {
