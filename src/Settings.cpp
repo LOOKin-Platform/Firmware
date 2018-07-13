@@ -28,7 +28,7 @@ void FillDevices() {
 
 	Remote.IR.ReceiverGPIO38	= GPIO_NUM_22;
 	Remote.IR.ReceiverGPIO56	= GPIO_NUM_4;
-	Remote.IR.ReceiverGPIO56	= GPIO_NUM_23;
+	Remote.IR.SenderGPIO		= GPIO_NUM_23;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Motion;
 	Motion.Motion.PoolInterval	= 50;
