@@ -101,9 +101,8 @@ void app_main(void) {
 	//BLEServer.StartAdvertising();
 
 	while (1) {
-
 		if (Time::Uptime() % 10 == 0)
-			ESP_LOGI("main","RAM left %d", system_get_free_heap_size());
+			ESP_LOGI("main","RAM left %d", esp_get_free_heap_size());
 
 		//heap_trace_start(HEAP_TRACE_LEAKS);
 

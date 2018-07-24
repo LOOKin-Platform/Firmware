@@ -33,7 +33,7 @@ class CommandSwitch_t : public Command_t {
     		}
 
     		if (EventCode == 0x02) {
-    			GPIO::Write(Settings.GPIOData.GetCurrent().Switch.GPIO, true);
+    			GPIO::Write(Settings.GPIOData.GetCurrent().Switch.GPIO, false);
     			Executed = true;
     		}
 

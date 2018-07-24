@@ -127,14 +127,14 @@ void WebServer_t::UDPSendBroadcastQueueAdd(string Message) {
 }
 
 void WebServer_t::UDPListenerTask(void *data) {
-	ESP_LOGD(tag, "UDPListenerTask Run");
-
 	if (!WiFi.IsRunning()) {
 		ESP_LOGE(tag, "WiFi switched off - can't start UDP listener task");
 		WebServer.UDPListenerTaskHandle = NULL;
 		FreeRTOS::DeleteTask();
 		return;
 	}
+
+	ESP_LOGD(tag, "UDPListenerTask Run");
 
 	struct netconn *Connection;
 	struct netbuf *inBuffer, *outBuffer;
@@ -203,14 +203,14 @@ void WebServer_t::UDPListenerTask(void *data) {
 }
 
 void WebServer_t::HTTPListenerTask(void *data) {
-	ESP_LOGD(tag, "HTTPListenerTask Run");
-
 	if (!WiFi.IsRunning()) {
 		ESP_LOGE(tag, "WiFi switched off - can't start HTTP listener task");
 		WebServer.HTTPListenerTaskHandle = NULL;
 		FreeRTOS::DeleteTask();
 		return;
 	}
+
+	ESP_LOGD(tag, "HTTPListenerTask Run");
 
 	struct netconn *conn, *newconn;
 	err_t err;

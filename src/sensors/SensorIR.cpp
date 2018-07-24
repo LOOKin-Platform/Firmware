@@ -96,9 +96,9 @@ class SensorIR_t : public Sensor_t {
 			}
 
 			LastSignal = IRLib(SensorIRCurrentMessage);
-			SignalDetectionTime = Time::Unixtime();
 			//LastSignal.SetFrequency(FrequencyDetectCalculate());
 
+			ESP_LOGI("SensorIR", "Last signal %s", LastSignal.GetProntoHex().c_str());
 			SensorIRCurrentMessage.empty();
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
@@ -107,6 +107,9 @@ class SensorIR_t : public Sensor_t {
 
 		string StorageEncode(map<string,string> Data) override {
 			string Result = "";
+
+			if (!Data.count("protocol") && !Data.count("title") && !Data.count("signal") && Data.count("data"))
+				return Data["data"];
 
 			if (Data.count("title")) {
 				vector<uint16_t> Title = Converter::ToUTF16Vector(Data["title"]);

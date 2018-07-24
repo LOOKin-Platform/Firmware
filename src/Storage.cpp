@@ -13,7 +13,6 @@ Storage_t::Storage_t() {
 	AddressToWrite = Settings.Storage.Versions.StartAddress;
 	while (AddressToWrite < Settings.Storage.Versions.StartAddress + Settings.Storage.Versions.Size) {
 		uint16_t FindedID = SPIFlash::ReadUint16(AddressToWrite);
-
 		if (FindedID == Settings.Memory.Empty16Bit)
 			break;
 
@@ -81,6 +80,9 @@ Storage_t::Item Storage_t::Read(uint16_t ItemID) {
 	uint32_t 			Address 		= Settings.Storage.Data.StartAddress;
 	vector<uint32_t> 	AddressVector 	= vector<uint32_t>();
 	Storage_t::Item 	Result;
+
+	if (ItemID > Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize)
+		return Result;
 
 	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
 		RecordHeader Header;
@@ -810,16 +812,22 @@ vector<Storage_t::Item> Storage_t::GetUpgradeItems(uint16_t From, uint16_t &ToCu
 		PartCount = 0;
 
 		for (auto& FindedItem: GetItemsForVersion(From, LastAddress, LastAddress)) {
-			if (FindedItem < 0x1000) {
-				ResultPart.push_back(Read(FindedItem));
-				PartCount += ResultPart.back().Header.Length;
-			}
+			if ((uint16_t)((FindedItem << 4) >> 4) <= (Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize)) {
+				if (FindedItem < 0x1000) {
+					Item ReadedItem = Read(FindedItem);
 
-			if (FindedItem >= 0x1000 && FindedItem < 0x2000) {
-				Item ItemToDelete;
-				ItemToDelete.Header.MemoryID = FindedItem - 0x1000;
-				ResultPart.push_back(ItemToDelete);
-				PartCount++;
+					if (ReadedItem.Header.MemoryID != Settings.Memory.Empty16Bit) {
+						ResultPart.push_back(ReadedItem);
+						PartCount += ReadedItem.Header.Length;
+					}
+				}
+
+				if (FindedItem >= 0x1000 && FindedItem < 0x2000) {
+					Item ItemToDelete;
+					ItemToDelete.Header.MemoryID = FindedItem - 0x1000;
+					ResultPart.push_back(ItemToDelete);
+					PartCount++;
+				}
 			}
 		}
 
@@ -832,6 +840,22 @@ vector<Storage_t::Item> Storage_t::GetUpgradeItems(uint16_t From, uint16_t &ToCu
 
 			ToCurrent = From;
 		}
+	}
+
+	if (ToCurrent > 0x2000)
+		ToCurrent--;
+
+	// clean up history to prevent dublicates
+    vector<Item>::iterator it = Result.end();
+    vector<uint16_t> Indexes = {};
+    while (it > Result.begin()) {
+        it--;
+    	uint16_t ID = it->Header.MemoryID;
+
+    	if (find(Indexes.begin(), Indexes.end(), ID) != Indexes.end())
+    		it = Result.erase(it);
+    	else
+    		Indexes.push_back(ID);
 	}
 
 	return Result;

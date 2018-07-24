@@ -42,7 +42,7 @@ class Settings_t {
 			static constexpr uint8_t		UDPHoldPortsMax	= 8;
 			const string					UDPPacketPrefix	= "LOOK.in:";
 
-			uint32_t						BatteryUptime	= 3*60; // first time WiFi time to work in seconds
+			uint32_t						BatteryUptime	= 10*60*60;//3*60; // first time WiFi time to work in seconds
 
 			struct UDPBroadcastQueue_t {
 				static constexpr uint8_t	Size			= 10;

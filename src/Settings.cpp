@@ -21,14 +21,14 @@ void FillDevices() {
 	Remote.Color.Timer			= LEDC_TIMER_0;
 	Remote.Color.Red.GPIO		= GPIO_NUM_12;
 	Remote.Color.Red.Channel	= LEDC_CHANNEL_0;
-	Remote.Color.Green.GPIO		= GPIO_NUM_14;
+	Remote.Color.Green.GPIO		= GPIO_NUM_25;
 	Remote.Color.Green.Channel	= LEDC_CHANNEL_1;
 	Remote.Color.Blue.GPIO		= GPIO_NUM_13;
 	Remote.Color.Blue.Channel	= LEDC_CHANNEL_2;
 
-	Remote.IR.ReceiverGPIO38	= GPIO_NUM_22;
-	Remote.IR.ReceiverGPIO56	= GPIO_NUM_4;
-	Remote.IR.SenderGPIO		= GPIO_NUM_23;
+	Remote.IR.ReceiverGPIO38	= GPIO_NUM_27;//GPIO_NUM_23;
+	Remote.IR.ReceiverGPIO56	= GPIO_NUM_22;
+	Remote.IR.SenderGPIO		= GPIO_NUM_4;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Motion;
 	Motion.Motion.PoolInterval	= 50;
