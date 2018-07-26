@@ -34,11 +34,13 @@ class IRLib {
 
 		void 			SetFrequency(uint16_t);
 
+		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);
+
 	private:
 		uint8_t		 	ProntoOneTimeBurst = 0;
 		uint8_t 		ProntoRepeatBurst = 0;
 
-		ProtocolEnum GetProtocol();
+		ProtocolEnum	GetProtocol();
 
 		bool 			IsNEC();
 		uint32_t 		NECData();

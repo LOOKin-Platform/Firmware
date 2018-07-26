@@ -265,8 +265,6 @@ string Automation_t::SerializeVersionMap() {
   return JSONObject.ToString();
 }
 
-
-
 void Automation_t::Debug(ScenarioCacheItem_t Item) {
   ESP_LOGI(tag, "IsLinked     = %u"   , Item.IsLinked);
   ESP_LOGI(tag, "ScenarioID   = %s"   , Converter::ToHexString(Item.ScenarioID, 2).c_str());

@@ -22,6 +22,7 @@
 #include "HardwareIO.h"
 #include "Converter.h"
 #include "Sensors.h"
+#include "Storage.h"
 
 using namespace std;
 
@@ -45,6 +46,8 @@ class Command_t {
     static vector<Command_t*>	GetCommandsForDevice();
     static void					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 };
+
+extern Storage_t Storage;
 
 #include "../commands/CommandSwitch.cpp"
 #include "../commands/CommandRGBW.cpp"

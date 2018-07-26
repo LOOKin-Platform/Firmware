@@ -71,6 +71,20 @@ class SensorIR_t : public Sensor_t {
 			// test data
 			SensorValueItem ValueItem = GetValue();
 
+			if (SceneEventCode == 0xEE) {
+    			Storage_t::Item Item = Storage.Read(SceneEventOperand);
+
+    			map<string,string> DecodedValue = StorageDecode(Item.DataToString());
+    			if (DecodedValue.count("Signal") > 0) {
+    				IRLib IRSignal(DecodedValue["Signal"]);
+    				return IRLib::CompareIsIdentical(LastSignal, IRSignal);
+    			}
+    			else {
+    				ESP_LOGE("CommandIR","Can't find Data in memory");
+    				return false;
+    			}
+			}
+
 			if (SceneEventCode == 0x01 && ValueItem.Value == 0x1) return true;
 			if (SceneEventCode == 0xF1 && ValueItem.Value == 0xF1) return true;
 

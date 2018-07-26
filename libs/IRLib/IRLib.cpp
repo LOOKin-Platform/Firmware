@@ -6,6 +6,9 @@
 
 #include "IRLib.h"
 
+static char tag[] = "IRLib";
+
+
 IRLib::IRLib(vector<int32_t> Raw) {
 	RawData = Raw;
 
@@ -56,6 +59,27 @@ void IRLib::SetFrequency(uint16_t Freq) {
 		Frequency = 40000;
 	else if (Frequency > 52000 && Frequency <= 60000)
 		Frequency = 56000;
+}
+
+bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
+	if (Signal1.Protocol == Signal2.Protocol) {
+		uint16_t SizeDiff		= abs(Signal1.RawData.size() - Signal2.RawData.size());
+		uint16_t MinimalSize	= min(Signal1.RawData.size(), Signal2.RawData.size());
+
+		if (SizeDiff >= 5) // too big difference between signals length
+			return false;
+
+		for (uint16_t i=0; i< MinimalSize; i++) {
+			uint16_t PartDif = abs(Signal1.RawData[i] - Signal2.RawData[i]);
+
+			if (PartDif > 0.1 * max(abs(Signal1.RawData[i]), abs(Signal2.RawData[i])))
+				return false;
+		}
+
+		return true;
+	}
+
+	return false;
 }
 
 IRLib::ProtocolEnum IRLib::GetProtocol() {
@@ -175,10 +199,15 @@ bool IRLib::IsProntoHex() {
 }
 
 void IRLib::FillFromProntoHex(string SrcString) {
+	if (SrcString.size() < 20) {
+		ESP_LOGE(tag, "Too small ProntoHEX data. Skipped");
+		return;
+	}
+
 	//uint8_t	Learned = Converter::UintFromHexString<uint8_t>(SrcString.substr(0,4));
 	Frequency = (uint16_t)(1000000/((Converter::UintFromHexString<uint16_t>(SrcString.substr(4,4)))* 0.241246));
 
-	uint8_t OneTimeBurstLength 	= Converter::UintFromHexString<uint8_t>(SrcString.substr(8,4));
+	uint8_t OneTimeBurstLength 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(8,4));
 	uint8_t BurstPairLength 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(12,4));
 	uint8_t USec					= (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
 

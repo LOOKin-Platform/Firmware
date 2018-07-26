@@ -35,11 +35,11 @@ void FillDevices() {
 	Motion.Motion.ADCChannel	= ADC1_CHANNEL_3;
 
 	Settings_t::GPIOData_t::Devices =
-		{
-				{ 0x03, Plug 	},
-				{ 0x81, Remote 	},
-				{ 0x82, Motion 	}
-		};
+	{
+		{ 0x03, Plug 	},
+		{ 0x81, Remote 	},
+		{ 0x82, Motion 	}
+	};
 }
 
 Settings_t::GPIOData_t::DeviceInfo_t Settings_t::GPIOData_t::GetCurrent() {

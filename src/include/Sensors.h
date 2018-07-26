@@ -24,6 +24,7 @@
 #include "RMT.h"
 #include "HardwareIO.h"
 #include "DateTime.h"
+#include "Storage.h"
 
 using namespace std;
 
@@ -72,6 +73,7 @@ class Sensor_t {
 extern Settings_t 	Settings;
 extern Automation_t Automation;
 extern Wireless_t	Wireless;
+extern Storage_t	Storage;
 
 #include "../sensors/SensorSwitch.cpp"
 #include "../sensors/SensorRGBW.cpp"
