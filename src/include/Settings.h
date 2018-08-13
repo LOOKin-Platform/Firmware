@@ -34,7 +34,7 @@ class Settings_t {
 		} TimeSync;
 
 		struct WiFi_t {
-			const uint16_t					IPCountdown 	= 4000;
+			const uint16_t					IPCountdown 	= 100000;
 			const uint8_t					SavedAPCount	= 8;
 			const string 					DefaultIP		= "192.168.4.1";
 
@@ -42,7 +42,8 @@ class Settings_t {
 			static constexpr uint8_t		UDPHoldPortsMax	= 8;
 			const string					UDPPacketPrefix	= "LOOK.in:";
 
-			uint32_t						BatteryUptime	= 3*60; // first time WiFi time to work in seconds
+			uint32_t						BatteryUptime	= 120*1000; // first time WiFi time to work, ms
+			uint32_t						KeepWiFiTime	= 60*1000; 	// Keep wifi after /network/KeepWiFi command executing, ms
 
 			struct UDPBroadcastQueue_t {
 				static constexpr uint8_t	Size			= 10;
@@ -68,7 +69,7 @@ class Settings_t {
 
 		struct Wireless_t {
 			map<uint8_t, pair<uint16_t,uint16_t>> AliveIntervals = {
-					{ 0x8, { 294, 6 }}
+				{ 0x8, { 294, 6 }}
 			};
 
 			const uint8_t					IntervalID = 0x8;

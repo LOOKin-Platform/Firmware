@@ -81,7 +81,8 @@ void WiFi_t::Init() {
 	// start the event loop.
 	if (m_eventLoopStarted) {
 		esp_event_loop_set_cb(WiFi_t::eventHandler, this);   // Returns the old handler.
-	} else {
+	}
+	else {
 		esp_err_t errRc = ::esp_event_loop_init(WiFi_t::eventHandler, this);  // Initialze the event handler.
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_event_loop_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
@@ -113,6 +114,7 @@ void WiFi_t::Init() {
 
 void WiFi_t::Stop() {
 	::esp_wifi_stop();
+	m_WiFiRunning = false;
 }
 
 
@@ -408,7 +410,7 @@ string WiFi_t::GetMode() {
 		case WIFI_MODE_NULL	: return WIFI_MODE_NULL_STR;
 		case WIFI_MODE_STA	: return WIFI_MODE_STA_STR;
 		case WIFI_MODE_AP	: return WIFI_MODE_AP_STR;
-		case WIFI_MODE_APSTA	: return WIFI_MODE_APSTA_STR;
+		case WIFI_MODE_APSTA: return WIFI_MODE_APSTA_STR;
 		default				: return WIFI_MODE_UNKNOWN_STR;
 	}
 } // getMode

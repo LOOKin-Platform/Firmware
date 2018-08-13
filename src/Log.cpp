@@ -18,33 +18,33 @@ Log::Log() {}
  * @param [in] Data log event Data if exist.
  */
 void Log::Add(uint16_t Code, uint32_t Data) {
-  Log::Item Record;
+	Log::Item Record;
 
-  Record.Code = Code;
-  Record.Data = Data;
-  Record.Time = Time::Unixtime();
+	Record.Code = Code;
+	Record.Data = Data;
+	Record.Time = Time::Unixtime();
 
-  if (GetItemType(Code) == SYSTEM) { // важное системные события
-    NVS Memory(NVSLogArea);
-    uint8_t Index = Memory.StringArrayAdd(NVSLogArray, Serialize(Record));
+	if (GetItemType(Code) == SYSTEM) { // важное системные события
+		NVS Memory(NVSLogArea);
+		uint8_t Index = Memory.StringArrayAdd(NVSLogArray, Serialize(Record));
 
-    if (Index > Settings.Log.SystemLogSize)
-      Memory.StringArrayRemove(NVSLogArray, 0);
+		if (Index > Settings.Log.SystemLogSize)
+			Memory.StringArrayRemove(NVSLogArray, 0);
 
-    Memory.Commit();
-  }
-  else { // событие, не требующее хранение в NVS
-    Items.push_back(Record);
+		Memory.Commit();
+	}
+	else { // событие, не требующее хранение в NVS
+		Items.push_back(Record);
 
-    if (Items.size() >= Settings.Log.EventsLogSize)
-      Items.erase(Items.begin());
+		if (Items.size() >= Settings.Log.EventsLogSize)
+			Items.erase(Items.begin());
 
-    if (GetItemType(Code) == ERROR)
-      ESP_LOGE(tag, "Error code %04X(%08X)", Code, Data);
+		if (GetItemType(Code) == ERROR)
+			ESP_LOGE(tag, "Error code %04X(%08X)", Code, Data);
 
-    if (GetItemType(Code) == INFO)
-      ESP_LOGI(tag, "Info code %04X(%08X)", Code, Data);
-  }
+		if (GetItemType(Code) == INFO)
+			ESP_LOGI(tag, "Info code %04X(%08X)", Code, Data);
+	}
 }
 
 /**
@@ -54,16 +54,16 @@ void Log::Add(uint16_t Code, uint32_t Data) {
  * @return log item with given index.
  */
 vector<Log::Item> Log::GetSystemLog() {
-  vector<Item> Result = vector<Item>();
+	vector<Item> Result = vector<Item>();
 
-  NVS *Memory = new NVS(NVSLogArea);
+	NVS *Memory = new NVS(NVSLogArea);
 
-  for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--)
-    Result.push_back(GetSystemLogItem(i));
+	for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--)
+		Result.push_back(GetSystemLogItem(i));
 
-  delete Memory;
+	delete Memory;
 
-  return Result;
+	return Result;
 }
 
 /**

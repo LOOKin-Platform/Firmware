@@ -15,19 +15,13 @@
 #include "Memory.h"
 #include "Sleep.h"
 
-#include "handlers/OverheatHandler.cpp"
-#include "handlers/WiFiHandler.cpp"
-#include "handlers/BluetoothHandler.cpp"
-
-#include <esp_heap_trace.h>
+#include "handlers/Pooling.cpp"
 
 using namespace std;
 
 extern "C" {
 	void app_main(void);
 }
-
-static heap_trace_record_t trace_record[1024]; // This buffer must be in internal RAM
 
 Settings_t 			Settings;
 
@@ -54,12 +48,6 @@ static char tag[] = "Main";
 void app_main(void) {
 
 	NVS::Init();
-
-	esp_err_t errRc = ::heap_trace_init_standalone(trace_record, 1024);
-	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "heap_trace_init_standalone error: rc=%d", errRc);
-		abort();
-	}
 
 	if (!Log::VerifyLastBoot()) {
 		Log::Add(LOG_DEVICE_ROLLBACK);
@@ -91,45 +79,11 @@ void app_main(void) {
 
 	Log::Add(LOG_DEVICE_STARTED);
 
-	//FreeRTOS::Sleep(10000);
-	//WiFi.Stop();
-	//FreeRTOS::Sleep(5000);
-	//ESP_LOGI("tag", "event occured");
-	//Wireless.SendBroadcastUpdated(0x80,"bugaga");
-
 	//BLEClient.Scan();
 	//BLEServer.StartAdvertising();
 
-	while (1) {
-		if (Time::Uptime() % 10 == 0)
-			ESP_LOGI("main","RAM left %d", esp_get_free_heap_size());
-
-		//heap_trace_start(HEAP_TRACE_LEAKS);
-
-		/*
-		ESP_LOGI(tag, "Advertising started")
-		BLEServer.StartAdvertising();
-		FreeRTOS::Sleep(5000);
-		ESP_LOGI(tag, "Advertising stopped")
-		BLEServer.StopAdvertising();
-		FreeRTOS::Sleep(5000);
-*/
-		//}
-
-		//if (i==4)
-		//	BLEServer.StartAdvertising();
-
-		//heap_trace_stop();
-		//heap_trace_dump();
-
-		//i++;
-
-		OverheatHandler::Pool();
-		WiFiUptimeHandler::Pool();
-		BluetoothPeriodicHandler::Pool();
-
-		FreeRTOS::Sleep(Settings.Pooling.Interval);
-	}
+	static Pooling_t Pooling = Pooling_t();
+	Pooling.start();
 
 	/*
 	if (Sleep::GetWakeUpReason() != ESP_SLEEP_WAKEUP_EXT0) {

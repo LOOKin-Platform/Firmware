@@ -1,3 +1,6 @@
+#ifndef BLUETOOTH_HANDLER
+#define BLUETOOTH_HANDLER
+
 class BluetoothPeriodicHandler {
 	public:
 		static void Pool();
@@ -65,3 +68,5 @@ void BluetoothPeriodicHandler::Pool() {
 
 	#endif /* Bluetooth enabled */
 }
+
+#endif

@@ -27,8 +27,11 @@ WebServer_t::WebServer_t() {
 }
 
 void WebServer_t::Start() {
-	HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 6144);
-	UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
+	if (HTTPListenerTaskHandle == NULL)
+		HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 6144);
+
+	if (UDPListenerTaskHandle == NULL)
+		UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
 }
 
 void WebServer_t::Stop() {
@@ -94,7 +97,10 @@ void WebServer_t::UDPSendBroadcast(string Message) {
 		memcpy (Data, Message.c_str(), Message.length());
 		netconn_send(Connection, Buffer);
 
+		netconn_close(Connection);
 		netconn_delete(Connection);
+
+		netbuf_free(Buffer);
 		netbuf_delete(Buffer); 		// De-allocate packet buffer
 
 		ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d", Message.c_str(), Port);
@@ -133,33 +139,32 @@ void WebServer_t::UDPListenerTask(void *data) {
 		FreeRTOS::DeleteTask();
 		return;
 	}
-
 	ESP_LOGD(tag, "UDPListenerTask Run");
 
-	struct netconn *Connection;
-	struct netbuf *inBuffer, *outBuffer;
-	char *inData, *outData;
+	struct netconn 	*UDPConnection;
+	struct netbuf 	*UDPInBuffer, *UDPOutBuffer;
+	char 			*UDPInData	, *UDPOutData;
 	u16_t inDataLen;
 	err_t err;
 
-	Connection = netconn_new(NETCONN_UDP);
-	netconn_bind(Connection, IP_ADDR_ANY, Settings.WiFi.UPDPort);
+	UDPConnection = netconn_new(NETCONN_UDP);
+	netconn_bind(UDPConnection, IP_ADDR_ANY, Settings.WiFi.UPDPort);
 
 	do {
-		err = netconn_recv(Connection, &inBuffer);
+		err = netconn_recv(UDPConnection, &UDPInBuffer);
 
 		if (err == ERR_OK) {
-			netbuf_data(inBuffer, (void * *)&inData, &inDataLen);
-			string Datagram = inData;
+			netbuf_data(UDPInBuffer, (void * *)&UDPInData, &inDataLen);
+			string Datagram = UDPInData;
 
 			ESP_LOGI(tag, "UDP received \"%s\"", Datagram.c_str());
 
-			if(find(UDPPorts.begin(), UDPPorts.end(), inBuffer->port) == UDPPorts.end()) {
+			if(find(UDPPorts.begin(), UDPPorts.end(), UDPInBuffer->port) == UDPPorts.end()) {
 				if (UDPPorts.size() == Settings.WiFi.UDPHoldPortsMax) UDPPorts.erase(UDPPorts.begin() + 1);
-				UDPPorts.push_back(inBuffer->port);
+				UDPPorts.push_back(UDPInBuffer->port);
 			}
 
-			outBuffer = netbuf_new();
+			UDPOutBuffer = netbuf_new();
 
 			// Redirect UDP message if in access point mode
 			//if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
@@ -169,12 +174,12 @@ void WebServer_t::UDPListenerTask(void *data) {
 			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device.IDToString())) {
 				string Answer = WebServer_t::UDPAliveBody();
 
-				outData = (char *)netbuf_alloc(outBuffer, Answer.length());
-				memcpy (outData, Answer.c_str(), Answer.length());
+				UDPOutData = (char *)netbuf_alloc(UDPOutBuffer, Answer.length());
+				memcpy (UDPOutData, Answer.c_str(), Answer.length());
 
-				netconn_sendto(Connection, outBuffer, &inBuffer->addr, inBuffer->port);
+				netconn_sendto(UDPConnection, UDPOutBuffer, &UDPInBuffer->addr, UDPInBuffer->port);
 
-				ESP_LOGD(tag, "UDP \"%s\" sended to %s:%u", Answer.c_str(), inet_ntoa(inBuffer->addr), inBuffer->port);
+				ESP_LOGD(tag, "UDP \"%s\" sended to %s:%u", Answer.c_str(), inet_ntoa(UDPInBuffer->addr), UDPInBuffer->port);
 			}
 
 			string AliveText = Settings.WiFi.UDPPacketPrefix + string("Alive!");
@@ -191,15 +196,15 @@ void WebServer_t::UDPListenerTask(void *data) {
 				Network.DeviceInfoReceived(Data[0], Data[1], Data[2], Data[3], Data[4], Data[5]);
 			}
 
-			netbuf_delete(outBuffer);
-			netbuf_delete(inBuffer);
+			netbuf_delete(UDPOutBuffer);
+			netbuf_delete(UDPInBuffer);
 		}
 
 	} while(err == ERR_OK);
 
-	netbuf_delete(inBuffer);
-	netconn_close(Connection);
-	netconn_delete(Connection);
+	netbuf_delete(UDPInBuffer);
+	netconn_close(UDPConnection);
+	netconn_delete(UDPConnection);
 }
 
 void WebServer_t::HTTPListenerTask(void *data) {
@@ -209,28 +214,27 @@ void WebServer_t::HTTPListenerTask(void *data) {
 		FreeRTOS::DeleteTask();
 		return;
 	}
-
 	ESP_LOGD(tag, "HTTPListenerTask Run");
 
-	struct netconn *conn, *newconn;
+	struct netconn	*HTTPConnection, *HTTPNewConnection;
 	err_t err;
 
-	conn = netconn_new(NETCONN_TCP);
-	netconn_bind(conn, NULL, 80);
-	netconn_listen(conn);
+	HTTPConnection = netconn_new(NETCONN_TCP);
+	netconn_bind(HTTPConnection, NULL, 80);
+	netconn_listen(HTTPConnection);
 
 	do {
-		err = netconn_accept(conn, &newconn);
+		err = netconn_accept(HTTPConnection, &HTTPNewConnection);
 
 		if (err == ERR_OK) {
-			WebServer_t::HandleHTTP(newconn);
-			netconn_close(newconn);
-			netconn_delete(newconn);
+			WebServer_t::HandleHTTP(HTTPNewConnection);
+			netconn_close(HTTPNewConnection);
+			netconn_delete(HTTPNewConnection);
 		}
 	} while(err == ERR_OK);
 
-	netconn_close(conn);
-	netconn_delete(conn);
+	netconn_close(HTTPConnection);
+	netconn_delete(HTTPConnection);
 }
 
 void WebServer_t::HandleHTTP(struct netconn *conn) {
@@ -267,18 +271,17 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 
 			ESP_LOGI(tag,"RAM left %d", system_get_free_heap_size());
 		} while(netbuf_next(inbuf) >= 0);
+
 		netbuf_free(inbuf);
 		netbuf_delete(inbuf);
 	}
 
-	ESP_LOGI(tag,"RAM left %d", system_get_free_heap_size());
+	netbuf_delete(inbuf);
 
 	if (!HTTPString.empty()) {
 		Query_t Query(HTTPString);
 		WebServer_t::Response Result;
 		HTTPString = "";
-
-		ESP_LOGI(tag,"RAM left %d", system_get_free_heap_size());
 
 		API::Handle(Result, Query);
 		Write(conn, Result.toString());

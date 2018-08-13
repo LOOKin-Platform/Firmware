@@ -66,6 +66,8 @@ class Network_t {
 		static string 			SerializeNetworkDevice(NetworkDevice_t);
 		static NetworkDevice_t 	DeserializeNetworkDevice(string);
 
+		uint32_t 				KeepWiFiTimer 	= 0;
+
 		void HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
 	private:

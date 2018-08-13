@@ -336,6 +336,12 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.Body = JSON::CreateStringFromVector(SSIDList);
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
+
+			if (URLParts[0] == "keepwifi") {
+				KeepWiFiTimer = Settings.WiFi.KeepWiFiTime;
+
+				Result.SetSuccess();
+			}
 		}
 
 		if (URLParts.size() == 2) {

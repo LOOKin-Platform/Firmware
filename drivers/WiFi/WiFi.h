@@ -141,7 +141,7 @@ class WiFi_t {
 	    void 	SetWiFiEventHandler(WiFiEventHandler *WiFiEventHandler);
 
 	    uint8_t	GetConnectionStatus() 	{ return m_apConnectionStatus; }
-	    uint8_t	IsRunning() 			{ return m_WiFiRunning; }
+	    bool	IsRunning() 			{ return m_WiFiRunning; }
 };
 
 #endif /* DRIVERS_WIFI_H_ */

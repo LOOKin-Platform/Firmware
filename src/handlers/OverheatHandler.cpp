@@ -1,3 +1,6 @@
+#ifndef OVERHEAT_HANDLER
+#define OVERHEAT_HANDLER
+
 #include "Log.h"
 #include "FreeRTOSWrapper.h"
 
@@ -57,3 +60,5 @@ void OverheatHandler::Pool() {
 
 	OverheatTimer = 0;
 }
+
+#endif

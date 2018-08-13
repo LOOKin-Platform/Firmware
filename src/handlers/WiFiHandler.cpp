@@ -1,17 +1,15 @@
+#ifndef WIFI_HANDLER
+#define WIFI_HANDLER
+
 #include <esp_log.h>
 
 #include <esp_ping.h>
 #include <ping.h>
 
-FreeRTOS::Timer 	*IPDidntGetTimer;
-FreeRTOS::Semaphore IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPData");
-static bool 		IsIPCheckSuccess 	= false;
-static bool			IsEventDrivenStart	= false;
-
-static void IPDidntGetCallback(FreeRTOS::Timer *pTimer) {
-	Log::Add(LOG_WIFI_STA_UNDEFINED_IP);
-	WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
-}
+static FreeRTOS::Timer		*IPDidntGetTimer;
+static FreeRTOS::Semaphore	IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPData");
+static bool 				IsIPCheckSuccess 	= false;
+static bool					IsEventDrivenStart	= false;
 
 esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 	ESP_LOGI("tag","ping. Received %d, Sended %d", pf->recv_count, pf->send_count);
@@ -19,18 +17,25 @@ esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 	if (pf->recv_count > 0) {
 		IsIPCheckSuccess = true;
 		IsCorrectIPData.Give();
-		ping_deinit();
 	}
 
 	if (pf->send_count == Settings.WiFi.PingAfterConnect.Count && pf->recv_count == 0) {
 		IsIPCheckSuccess = false;
+
+		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
 		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+
 		IsCorrectIPData.Give();
-		ping_deinit();
 	}
 
 	return ESP_OK;
 }
+
+void IPDidntGetCallback(FreeRTOS::Timer *pTimer) {
+	Log::Add(LOG_WIFI_STA_UNDEFINED_IP);
+	WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+}
+
 
 class MyWiFiEventHandler: public WiFiEventHandler {
 	public:
@@ -91,10 +96,11 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			esp_ping_set_target(PING_TARGET_IP_ADDRESS_COUNT, &Settings.WiFi.PingAfterConnect.Count, sizeof(uint32_t));
 			esp_ping_set_target(PING_TARGET_RCV_TIMEO, &Settings.WiFi.PingAfterConnect.Timeout, sizeof(uint32_t));
 			esp_ping_set_target(PING_TARGET_DELAY_TIME, &Settings.WiFi.PingAfterConnect.Delay, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_RES_FN, (void *)pingResults, sizeof((void *)pingResults));
+			esp_ping_set_target(PING_TARGET_RES_FN, (void *)pingResults, 0);
 			ping_init();
 
 			IsCorrectIPData.Wait("CorrectTCPIP");
+			ping_deinit();
 
 			IPDidntGetTimer->Stop();
 
@@ -126,7 +132,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 class WiFiUptimeHandler {
 	public:
 		static void Pool();
-
 	private:
 		static uint64_t WiFiStartedTime;
 };
@@ -138,19 +143,28 @@ void WiFiUptimeHandler::Pool() {
 		return;
 
 	if (WiFi.IsRunning()) {
-		if (WiFiStartedTime == 0)
-			WiFiStartedTime = Time::UptimeU();
+		if (WiFiStartedTime == 0) 		WiFiStartedTime = Time::UptimeU();
+
+		if (Network.KeepWiFiTimer > 0) 	{
+			Network.KeepWiFiTimer -= Settings.Pooling.Interval;
+			if (Network.KeepWiFiTimer < Settings.Pooling.Interval)
+				Network.KeepWiFiTimer = Settings.Pooling.Interval;
+		}
 
 		if (Settings.WiFi.BatteryUptime > 0) {
-			if (Time::UptimeU() >= WiFiStartedTime + Settings.WiFi.BatteryUptime * 1000000) {
+			if (Time::UptimeU() >= WiFiStartedTime + Settings.WiFi.BatteryUptime * 1000
+					&& Network.KeepWiFiTimer <= 0) {
 				WiFiStartedTime = 0;
 				Settings.WiFi.BatteryUptime = 0;
+				//WebServer.Stop();
 				WiFi.Stop();
 			}
 		}
 		else {
-			if (Time::UptimeU() >= WiFiStartedTime + Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second * 1000000) {
+			if (Time::UptimeU() >= WiFiStartedTime + Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second * 1000000
+					&& Network.KeepWiFiTimer <= 0) {
 				WiFiStartedTime = 0;
+				//WebServer.Stop();
 				WiFi.Stop();
 			}
 		}
@@ -162,3 +176,5 @@ void WiFiUptimeHandler::Pool() {
 		}
 	}
 }
+
+#endif

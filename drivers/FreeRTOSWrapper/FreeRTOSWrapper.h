@@ -40,6 +40,8 @@ class FreeRTOS {
 		static uint32_t 			GetTimeSinceStart();
 		static uint8_t				GetCurrentCoreID();
 
+		static void					CleanUpMemory();
+
 		class Semaphore {
 			public:
 				Semaphore(string owner = "<Unknown>");

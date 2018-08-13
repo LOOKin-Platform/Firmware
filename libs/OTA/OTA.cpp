@@ -43,7 +43,6 @@ void OTA::ReadStarted(char IP[]) {
     ESP_LOGI(tag, "Writing to partition subtype %d at offset 0x%x", partition->subtype, partition->address);
     assert(partition != NULL);
 
-
 	err = esp_ota_begin( partition, OTA_SIZE_UNKNOWN, &OutHandle);
 	if (err != ESP_OK) {
 		ESP_LOGE(tag, "esp_ota_begin failed err=0x%x!", err);
@@ -54,8 +53,14 @@ void OTA::ReadStarted(char IP[]) {
 		isInitSucceed = true;
 	}
 
-	if (isInitSucceed) 	{	ESP_LOGI(tag, "OTA Init succeeded");}
-	else 				{	ESP_LOGE(tag, "OTA Init failed");	}
+	if (isInitSucceed) 	{
+		ESP_LOGI(tag, "OTA Init succeeded");
+		Device.Status = DeviceStatus::UPDATING;
+	}
+	else 				{
+		ESP_LOGE(tag, "OTA Init failed");
+		Device.Status = DeviceStatus::RUNNING;
+	}
 }
 
 bool OTA::ReadBody(char Data[], int DataLen, char IP[]) {
@@ -63,6 +68,7 @@ bool OTA::ReadBody(char Data[], int DataLen, char IP[]) {
 
 	if (err != ESP_OK) {
 		ESP_LOGE(tag, "Error: esp_ota_write failed! err=0x%x", err);
+		Device.Status = DeviceStatus::RUNNING;
 		return false;
 	}
 
