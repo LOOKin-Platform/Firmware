@@ -45,6 +45,8 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 		if (GetItemType(Code) == INFO)
 			ESP_LOGI(tag, "Info code %04X(%08X)", Code, Data);
 	}
+
+	Indicator_t::Display(Code);
 }
 
 /**
@@ -93,9 +95,8 @@ uint8_t Log::GetSystemLogCount(NVS *MemoryLink) {
 Log::Item Log::GetSystemLogItem(uint8_t Index,NVS *MemoryLink) {
 	Item Result;
 
-	if (MemoryLink == nullptr) {
+	if (MemoryLink == nullptr)
 		Result = Deserialize(GetSystemLogJSONItem(Index));
-	}
 	else
 		Result = Deserialize(GetSystemLogJSONItem(Index, MemoryLink));
 
@@ -260,6 +261,111 @@ bool Log::VerifyLastBoot() {
 
 	delete Memory;
 	return false;
+}
+
+/**
+ * @brief Use indicator to display code
+ *
+ * @param [in] LogItem Code of code to display
+ */
+
+void Log::Indicator_t::Display(uint16_t LogItem) {
+	switch (LogItem) {
+		case LOG_DEVICE_ON				: Execute(0		, 255	, 255	, BLINKING	, 10); break;
+		case LOG_WIFI_AP_START			: Execute(255	, 255	, 0		, CONST		, 4); break;
+		case LOG_WIFI_STA_CONNECTING	: Execute(0		, 255	, 0		, BLINKING	, 0); break;
+		case LOG_WIFI_STA_GOT_IP		: Execute(0		, 255	, 0		, CONST		, 4); break;
+		default: break;
+	}
+}
+
+/**
+ * @brief Low-level function to switch on Indicator
+ *
+ * @param [in] Red		Red color brightness
+ * @param [in] Green	Green color brightness
+ * @param [in] Blue		Blue color brightness
+ * @param [in] Blinking	Indicator
+ * @param [in] Duration	Duration of signal
+ *
+ */
+
+uint8_t		Log::Indicator_t::tRed 		= 0;
+uint8_t		Log::Indicator_t::tGreen	= 0;
+uint8_t		Log::Indicator_t::tBlue		= 0;
+bool 		Log::Indicator_t::IsInited 	= false;
+uint32_t	Log::Indicator_t::tDuration = 0;
+uint32_t	Log::Indicator_t::tExpired	= 0;
+Log::Indicator_t::MODE
+			Log::Indicator_t::tBlinking = CONST;
+
+ISR::HardwareTimer Log::Indicator_t::IndicatorTimer = ISR::HardwareTimer();
+
+void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint8_t Duration) {
+	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
+
+	if (!IsInited) {
+		if (GPIO.Red.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Red.GPIO		, GPIO.Timer, GPIO.Red.Channel	);
+		if (GPIO.Green.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
+		if (GPIO.Blue.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
+
+		IndicatorTimer = ISR::HardwareTimer(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex, TIMER_ALARM, &IndicatorCallback);
+		IndicatorTimer.Pause();
+		IsInited = true;
+	}
+
+	IndicatorTimer.Stop();
+
+	tRed 		= (uint8_t)(Red 	* Brightness);
+	tGreen 		= (uint8_t)(Green 	* Brightness);
+	tBlue 		= (uint8_t)(Blue 	* Brightness);
+
+	tDuration	= Duration * 1000000;
+	tExpired	= 0;
+	tBlinking	= Blinking;
+
+	GPIO::PWMFadeTo(GPIO.Red	, tRed	, 	1);
+	GPIO::PWMFadeTo(GPIO.Green	, tGreen, 	1);
+	GPIO::PWMFadeTo(GPIO.Blue 	, tBlue	, 	1);
+
+	IndicatorTimer.Start();
+}
+
+/**
+ * @brief Hardware timer for indicator const light handler
+ */
+void Log::Indicator_t::IndicatorCallback(void *Param) {
+	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
+	ISR::HardwareTimer::CallbackPrefix(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex);
+
+	if (tBlinking == NONE) return;
+
+	tExpired += TIMER_ALARM;
+
+	bool IsLighted = false;
+
+	if (tDuration > 0 && tExpired > tDuration)
+		tBlinking = NONE;
+
+	if (tBlinking == BLINKING) {
+		if (tExpired % (BLINKING_DIVIDER * TIMER_ALARM) != 0)
+			return;
+
+		if (tDuration == 0 && tExpired >= (BLINKING_DIVIDER * TIMER_ALARM))
+			tExpired = 0;
+
+		IsLighted =!(GPIO::PWMValue(GPIO.Red.Channel)+GPIO::PWMValue(GPIO.Green.Channel)+GPIO::PWMValue(GPIO.Blue.Channel) == 0);
+	}
+
+	if ((tDuration > 0 && tExpired > tDuration) || (tBlinking == NONE))
+		IsLighted = true;
+
+	if (tBlinking == NONE)
+		tRed = tGreen = tBlue = 0;
+
+	GPIO::PWMFadeTo(GPIO.Red	, (IsLighted) ? 0 : tRed, 	50);
+	GPIO::PWMFadeTo(GPIO.Green	, (IsLighted) ? 0 : tGreen, 50);
+	GPIO::PWMFadeTo(GPIO.Blue 	, (IsLighted) ? 0 : tBlue, 	50);
 }
 
 /**

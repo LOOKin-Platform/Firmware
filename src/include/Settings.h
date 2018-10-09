@@ -10,6 +10,7 @@
 #include "esp_efuse.h"
 #include "driver/ledc.h"
 #include "driver/adc.h"
+#include "driver/timer.h"
 
 #include "Converter.h"
 
@@ -20,7 +21,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "0.96";
+		const	string 						FirmwareVersion = "0.97";
 
 		struct {
 			const string					ServerHost 		= "download.look-in.club";
@@ -87,7 +88,6 @@ class Settings_t {
 				const uint8_t 				OverheatTemp	= 90;
 				const uint8_t				ChilledTemp		= 77;
 			} OverHeat;
-
 		} Pooling;
 
 		struct Devices_t {
@@ -225,12 +225,25 @@ class Settings_t {
 				adc1_channel_t		ADCChannel		= ADC1_CHANNEL_MAX;
 			};
 
+			struct Indicator_t {
+				ledc_timer_t		Timer	= LEDC_TIMER_MAX;
+				Settings_t::GPIOData_t::Color_t::Item_t
+									Red, Green, Blue, White;
+
+				timer_group_t 		ISRTimerGroup = TIMER_GROUP_MAX;
+				timer_idx_t			ISRTimerIndex = TIMER_MAX;
+			};
+
 			struct DeviceInfo_t {
 				Switch_t	Switch;
 				Color_t		Color;
 				IR_t		IR;
 				Motion_t	Motion;
+
+				// Device modes indicator
+				Indicator_t	Indicator;
 			};
+
 
 			DeviceInfo_t GetCurrent();
 
@@ -242,8 +255,5 @@ class Settings_t {
 };
 
 extern Settings_t Settings;
-
-// Remote
-#define REMOTE_ELECTRICITY_PIN			GPIO_NUM_0
 
 #endif

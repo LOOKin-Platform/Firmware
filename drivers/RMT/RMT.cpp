@@ -168,17 +168,18 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
  * @param [in] Channel The RMT channel to work with.
  * @param [in] Frequent output Frequent for IR signal.
  */
+
 void RMT::TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency) {
 	if (ChannelsMap.count(Channel) > 0) {
 		if (Frequency != ChannelsMap[Channel].Frequency) {
 			if (ChannelsMap[Channel].Pin != GPIO_NUM_0) {
+				rmt_tx_stop(Channel);
 				rmt_driver_uninstall(Channel);
 				RMT::SetTXChannel(ChannelsMap[Channel].Pin, Channel, Frequency);
 			}
 		}
 	}
 }
-
 
 /**
  * @brief Add a level/duration to the transaction to be written.

@@ -56,45 +56,44 @@ enum    DeviceStatus    { RUNNING, UPDATING };
 enum    DevicePowerMode { BATTERY, CONST };
 
 class Device_t {
-  public:
-    DeviceType_t    Type;
-    DeviceStatus    Status		= DeviceStatus::RUNNING;
+	public:
+		DeviceType_t    Type;
+		DeviceStatus    Status		= DeviceStatus::RUNNING;
 
-    DevicePowerMode PowerMode	= DevicePowerMode::CONST;
-    uint8_t         PowerModeVoltage = 220;
+		DevicePowerMode PowerMode	= DevicePowerMode::CONST;
+		uint8_t         PowerModeVoltage = 220;
 
-    string          FirmwareVersion = Settings.FirmwareVersion;
-    uint8_t         Temperature = 0;
+		string          FirmwareVersion = Settings.FirmwareVersion;
+		uint8_t         Temperature = 0;
 
-    Device_t();
-    void    		Init();
-    void    		HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params);
+		Device_t();
+		void    		Init();
+		void    		HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params);
 
-    string			GetName();
-    void			SetName(string);
+		string			GetName();
+		void			SetName(string);
 
-    static uint8_t	GetTypeFromNVS();
-    static void		SetTypeToNVS(uint8_t);
+		static uint8_t	GetTypeFromNVS();
+		static void		SetTypeToNVS(uint8_t);
 
-    static uint32_t	GetIDFromNVS();
-    static void		SetIDToNVS(uint32_t);
+		static uint32_t	GetIDFromNVS();
+		static void		SetIDToNVS(uint32_t);
 
-    string			IDToString();
-    string			TypeToString();
-    static uint32_t GenerateID();
+		string			IDToString();
+		string			TypeToString();
+		static uint32_t GenerateID();
 
-  private:
+	private:
+		bool 			POSTName(map<string,string>);
+		bool 			POSTTime(map<string,string>);
+		bool 			POSTTimezone(map<string,string>);
+		bool 			POSTFirmwareVersion(map<string,string>, WebServer_t::Response &);
 
-    bool 			POSTName(map<string,string>);
-    bool 			POSTTime(map<string,string>);
-    bool 			POSTTimezone(map<string,string>);
-    bool 			POSTFirmwareVersion(map<string,string>, WebServer_t::Response &);
-
-    string 			StatusToString();
-    string 			NameToString();
-    string 			PowerModeToString();
-    string 			FirmwareVersionToString();
-    string 			TemperatureToString();
+		string 			StatusToString();
+		string 			NameToString();
+		string 			PowerModeToString();
+		string 			FirmwareVersionToString();
+		string 			TemperatureToString();
 };
 
 #endif

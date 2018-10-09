@@ -129,6 +129,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 					}
 				}
 
+				Log::Add(LOG_WIFI_STA_CONNECTING);
 				WiFi.ConnectAP(SSID, Password, WiFiScannedItem.getChannel());
 				return true;
 			}
@@ -145,6 +146,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 							WiFi.AddDNSServer(inet_ntoa(item.Gateway));
 						}
 
+						Log::Add(LOG_WIFI_STA_CONNECTING);
 						WiFi.ConnectAP(WiFiScannedItem.getSSID(), item.Password, WiFiScannedItem.getChannel());
 						return true;
 					}

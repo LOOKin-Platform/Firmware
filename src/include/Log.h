@@ -28,43 +28,65 @@ using namespace std;
  * @brief Interface to logging functions
  */
 class Log {
-  public:
-    struct Item {
-      uint16_t  Code  = 0;
-      uint32_t  Data  = 0;
-      uint32_t  Time  = 0;
-    };
+	public:
+		struct Item {
+			uint16_t  Code  = 0;
+			uint32_t  Data  = 0;
+			uint32_t  Time  = 0;
+		};
 
-    enum ItemType { SYSTEM, ERROR, INFO };
+		enum ItemType { SYSTEM, ERROR, INFO };
 
-    Log();
+		Log();
 
-    static void         Add(uint16_t Code, uint32_t Data = 0);
+		static void         Add(uint16_t Code, uint32_t Data = 0);
 
-    static vector<Item> GetSystemLog();
-    static uint8_t      GetSystemLogCount(NVS *Memory = nullptr);
-    static Item         GetSystemLogItem(uint8_t Index, NVS *Memory = nullptr);
-    static string       GetSystemLogJSONItem(uint8_t Index, NVS *MemoryLink = nullptr);
-    static string       GetSystemLogJSON();
+		static vector<Item> GetSystemLog();
+		static uint8_t      GetSystemLogCount(NVS *Memory = nullptr);
+		static Item         GetSystemLogItem(uint8_t Index, NVS *Memory = nullptr);
+		static string       GetSystemLogJSONItem(uint8_t Index, NVS *MemoryLink = nullptr);
+		static string       GetSystemLogJSON();
 
-    static vector<Item> GetEventsLog();
-    static uint8_t      GetEventsLogCount();
-    static Item         GetEventsLogItem(uint8_t Index);
-    static string       GetEventsLogJSONItem(uint8_t Index);
-    static string       GetEventsLogJSON();
+		static vector<Item> GetEventsLog();
+		static uint8_t      GetEventsLogCount();
+		static Item         GetEventsLogItem(uint8_t Index);
+		static string       GetEventsLogJSONItem(uint8_t Index);
+		static string       GetEventsLogJSON();
 
-    static ItemType     GetItemType(uint16_t Code);
+		static ItemType     GetItemType(uint16_t Code);
 
-    static void         CorrectTime();
-    static bool         VerifyLastBoot();
+		static void         CorrectTime();
+		static bool         VerifyLastBoot();
 
-    static void         HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+		class Indicator_t {
+			public:
+				enum MODE { NONE, CONST, BLINKING, FAST };
 
-  private:
-    static vector<Log::Item> Items;
-    static string       Serialize(Log::Item Item);
-    static Log::Item    Deserialize(string JSONString);
+				static void Display(uint16_t);
+				static void Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint8_t Duration = 0);
+			private:
+				static bool		IsInited;
+				static constexpr float Brightness	= 0.03;
+				static uint32_t	tDuration;
+				static uint32_t	tExpired;
+				static MODE		tBlinking;
+
+				static uint8_t	tRed, tGreen, tBlue;
+			    static ISR::HardwareTimer IndicatorTimer;
+
+			    static void IndicatorCallback(void *);
+		} Indicator;
+
+		static void         HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+	private:
+		static vector<Log::Item> Items;
+		static string       Serialize(Log::Item Item);
+		static Log::Item    Deserialize(string JSONString);
 };
+
+#define TIMER_ALARM					100000 // 1/10 секунды
+#define BLINKING_DIVIDER			7 // моргание каждые 0.7 секунды
+#define BLINKING_SPEED				1.5*1000000
 
 // Cистемные события 0x0000..0x00FF - сохраняются в NVS
 // События с кодом, 1XXX - информация, 0XXX - ошибки
@@ -84,10 +106,11 @@ class Log {
 
 #define LOG_WIFI_AP_START           0x1201
 #define LOG_WIFI_AP_STOP            0x1202
-#define LOG_WIFI_STA_CONNECTED      0x1203
-#define LOG_WIFI_STA_DISCONNECTED   0x1204
-#define LOG_WIFI_STA_GOT_IP         0x1205
-#define LOG_WIFI_STA_UNDEFINED_IP   0x0206
+#define LOG_WIFI_STA_CONNECTING		0x1203
+#define LOG_WIFI_STA_CONNECTED      0x1204
+#define LOG_WIFI_STA_DISCONNECTED   0x1205
+#define LOG_WIFI_STA_GOT_IP         0x1206
+#define LOG_WIFI_STA_UNDEFINED_IP   0x0207
 
 // Bluetooth события 0xX300...0xX3FF
 

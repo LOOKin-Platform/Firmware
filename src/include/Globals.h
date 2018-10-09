@@ -42,5 +42,4 @@ extern BLEClient_t				BLEClient;
 
 extern Wireless_t				Wireless;
 
-
 #endif

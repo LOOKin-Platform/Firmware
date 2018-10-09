@@ -16,6 +16,7 @@ using namespace std;
 #include <driver/rtc_io.h>
 
 #include "DateTime.h"
+#include "Settings.h"
 
 #include "esp_log.h"
 
@@ -43,7 +44,8 @@ class GPIO {
 		// PWM to rule diods
 		static void 	SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel);
 		static uint8_t 	PWMValue(ledc_channel_t PWMChannel);
-		static void 	PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty = 255);
+		static void 	PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty = 255, uint16_t FadeTime = PWM_FADING_LENGTH);
+		static void 	PWMFadeTo(Settings_t::GPIOData_t::Color_t::Item_t, uint8_t Duty = 255, uint16_t FadeTime = PWM_FADING_LENGTH);
 
 		static map<ledc_channel_t, PWMCacheItem> PWMValuesCache;
 };

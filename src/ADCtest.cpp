@@ -32,7 +32,8 @@ static void check_efuse() {
     //Check Vref is burned into eFuse
     if (esp_adc_cal_check_efuse(ESP_ADC_CAL_VAL_EFUSE_VREF) == ESP_OK) {
         printf("eFuse Vref: Supported\n");
-    } else {
+    }
+    else {
         printf("eFuse Vref: NOT supported\n");
     }
 }

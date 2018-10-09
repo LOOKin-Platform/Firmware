@@ -26,7 +26,6 @@ class CommandIR_t : public Command_t {
 	}
 
     bool Execute(uint8_t EventCode, string StringOperand) override {
-
     		uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
     		if (EventCode == 0x01) {
@@ -36,6 +35,7 @@ class CommandIR_t : public Command_t {
     			IRSignal.FillRawData();
 
     			RMT::TXSetItems(IRSignal.RawData);
+        		RMT::TXSend(RMT_CHANNEL_4, IRSignal.Frequency);
     		}
 
     		if (EventCode == 0xEE) {

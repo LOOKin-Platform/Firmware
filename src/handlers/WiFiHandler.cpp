@@ -47,7 +47,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t apStart() {
 			Log::Add(LOG_WIFI_AP_START);
 			WebServer.Start();
-
 			return ESP_OK;
 		}
 
@@ -134,13 +133,24 @@ class WiFiUptimeHandler {
 		static void Pool();
 	private:
 		static uint64_t WiFiStartedTime;
+		static uint32_t BatteryUptime;
 };
 
 uint64_t WiFiUptimeHandler::WiFiStartedTime = 0;
+uint32_t WiFiUptimeHandler::BatteryUptime 	= 0;
 
 void WiFiUptimeHandler::Pool() {
-	if (!Device.Type.IsBattery())
+	if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
+		WiFiStartedTime = 0;
+		Network.KeepWiFiTimer = 0;
+		BatteryUptime = Settings.WiFi.BatteryUptime;
+		Wireless.StartInterfaces();
+	}
+
+	if (Device.PowerMode == DevicePowerMode::CONST) {
+		BatteryUptime = Settings.WiFi.BatteryUptime;
 		return;
+	}
 
 	if (WiFi.IsRunning()) {
 		if (WiFiStartedTime == 0) 		WiFiStartedTime = Time::UptimeU();
@@ -151,11 +161,11 @@ void WiFiUptimeHandler::Pool() {
 				Network.KeepWiFiTimer = Settings.Pooling.Interval;
 		}
 
-		if (Settings.WiFi.BatteryUptime > 0) {
-			if (Time::UptimeU() >= WiFiStartedTime + Settings.WiFi.BatteryUptime * 1000
+		if (BatteryUptime > 0) {
+			if (Time::UptimeU() >= WiFiStartedTime + BatteryUptime * 1000
 					&& Network.KeepWiFiTimer <= 0) {
 				WiFiStartedTime = 0;
-				Settings.WiFi.BatteryUptime = 0;
+				BatteryUptime = 0;
 				//WebServer.Stop();
 				WiFi.Stop();
 			}

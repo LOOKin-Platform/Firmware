@@ -46,7 +46,6 @@ vector<Command_t*>	Commands;
 static char tag[] = "Main";
 
 void app_main(void) {
-
 	NVS::Init();
 
 	if (!Log::VerifyLastBoot()) {
@@ -54,9 +53,8 @@ void app_main(void) {
 		OTA::Rollback();
 	}
 
-	Log::Add(LOG_DEVICE_ON);
-
 	Settings.eFuse.ReadData();
+	Log::Add(LOG_DEVICE_ON);
 
 	Network.WiFiScannedList = WiFi.Scan();
 
@@ -65,6 +63,10 @@ void app_main(void) {
 	Device.Init();
 	Network.Init();
 	Automation.Init();
+
+	// Remote temporary hack
+	GPIO::Setup(GPIO_NUM_22);
+	GPIO::Write(GPIO_NUM_22, 0);
 
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();
@@ -93,4 +95,3 @@ void app_main(void) {
 	}
 	*/
 }
-

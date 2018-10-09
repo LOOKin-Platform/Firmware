@@ -117,8 +117,13 @@ uint8_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
   * @param [in] Duty 				Channel Power [0..255]
   */
 
-void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty) {
-	if (ESP_OK == ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty*4, PWM_FADING_LENGTH))
+void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty, uint16_t FadeTime) {
+	if (ESP_OK == ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty*4, FadeTime))
 		if (ESP_OK == ledc_fade_start(LEDC_HIGH_SPEED_MODE, PWMChannel, LEDC_FADE_NO_WAIT))
 			PWMValuesCache[PWMChannel] = PWMCacheItem(Duty, Time::Uptime());
+}
+
+void GPIO::PWMFadeTo(Settings_t::GPIOData_t::Color_t::Item_t Color, uint8_t Duty, uint16_t FadeTime) {
+	if (Color.GPIO != GPIO_NUM_0)
+		GPIO::PWMFadeTo(Color.Channel, Duty, FadeTime);
 }

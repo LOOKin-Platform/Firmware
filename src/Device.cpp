@@ -23,11 +23,8 @@ bool DeviceType_t::IsBattery() {
 	if (Hex < 0x80)
 		return false;
 
-	if (Hex == Settings.Devices.Remote) {
-		if (REMOTE_ELECTRICITY_PIN != GPIO_NUM_0)
-			if (GPIO::Read(REMOTE_ELECTRICITY_PIN))
-				return false;
-	}
+	if (Hex == Settings.Devices.Remote)
+		return (Device.PowerMode == DevicePowerMode::BATTERY);
 
 	return true;
 }
@@ -55,21 +52,10 @@ void Device_t::Init() {
 	Type = DeviceType_t(Settings.eFuse.Type);
 	PowerMode = (Type.IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
-	NVS Memory(NVSDeviceArea);
-
-	uint8_t PowerModeVoltageInt = Memory.GetInt8Bit(NVSDevicePowerModeVoltage);
-	if (PowerModeVoltageInt > +3) {
-		PowerModeVoltage = PowerModeVoltageInt;
+	switch (Type.Hex) {
+		case Settings.Devices.Plug	: PowerModeVoltage = +220; break;
+		case Settings.Devices.Remote: PowerModeVoltage = +5; break;
 	}
-	else {
-		switch (Type.Hex) {
-			case Settings.Devices.Plug: PowerModeVoltage = +220; break;
-		}
-
-		Memory.SetInt8Bit(NVSDevicePowerModeVoltage, +PowerModeVoltage);
-	}
-
-	Memory.Commit();
 }
 
 void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {

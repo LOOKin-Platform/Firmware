@@ -10,9 +10,11 @@
 static char tag[] = "Wireless";
 
 void Wireless_t::StartInterfaces() {
-	if (!WiFi.IsRunning())
-		if (!Network.WiFiConnect("", IsFirstWiFiStart))
+	if (!WiFi.IsRunning()) {
+		if (!Network.WiFiConnect("", IsFirstWiFiStart)) {
 			WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+		}
+	}
 
 	IsFirstWiFiStart = false;
 }

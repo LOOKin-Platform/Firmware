@@ -18,16 +18,19 @@ void FillDevices() {
 	Plug.Color.Blue.Channel		= LEDC_CHANNEL_2;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Remote;
-	Remote.Color.Timer			= LEDC_TIMER_0;
-	Remote.Color.Red.GPIO		= GPIO_NUM_12;
-	Remote.Color.Red.Channel	= LEDC_CHANNEL_0;
-	Remote.Color.Green.GPIO		= GPIO_NUM_25;
-	Remote.Color.Green.Channel	= LEDC_CHANNEL_1;
-	Remote.Color.Blue.GPIO		= GPIO_NUM_13;
-	Remote.Color.Blue.Channel	= LEDC_CHANNEL_2;
+	Remote.Indicator.Timer			= LEDC_TIMER_0;
+	Remote.Indicator.Red.GPIO		= GPIO_NUM_25;
+	Remote.Indicator.Red.Channel	= LEDC_CHANNEL_0;
+	Remote.Indicator.Green.GPIO		= GPIO_NUM_12;
+	Remote.Indicator.Green.Channel	= LEDC_CHANNEL_1;
+	Remote.Indicator.Blue.GPIO		= GPIO_NUM_13;
+	Remote.Indicator.Blue.Channel	= LEDC_CHANNEL_2;
+	Remote.Indicator.ISRTimerGroup	= TIMER_GROUP_0;
+	Remote.Indicator.ISRTimerIndex	= TIMER_0;
 
-	Remote.IR.ReceiverGPIO38	= GPIO_NUM_27;//GPIO_NUM_23;
-	Remote.IR.ReceiverGPIO56	= GPIO_NUM_22;
+
+	Remote.IR.ReceiverGPIO38	= GPIO_NUM_26;
+	Remote.IR.ReceiverGPIO56	= GPIO_NUM_27;
 	Remote.IR.SenderGPIO		= GPIO_NUM_4;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Motion;
@@ -55,28 +58,36 @@ Settings_t::GPIOData_t::DeviceInfo_t Settings_t::GPIOData_t::GetCurrent() {
 
 
 void Settings_t::eFuse_t::ReadData() {
-	uint32_t eFuseData = 0x00;
+	uint32_t eFuseData1, eFuseData2, eFuseData3, eFuseData4 = 0x00;
 
-	eFuseData = REG_READ(EFUSE_BLK3_RDATA7_REG);
-	Type 				= (uint8_t)(eFuseData >> 16);
-	Revision 			= (uint16_t)((eFuseData << 16) >> 16);
+	eFuseData1 = REG_READ(EFUSE_BLK3_RDATA7_REG);
+	eFuseData2 = REG_READ(EFUSE_BLK3_RDATA6_REG);
+	eFuseData3 = REG_READ(EFUSE_BLK3_RDATA5_REG);
+	eFuseData4 = REG_READ(EFUSE_BLK3_RDATA4_REG);
 
-	eFuseData = REG_READ(EFUSE_BLK3_RDATA6_REG);
-	Model 				= (uint8_t)eFuseData >> 24;
-	DeviceID 			= (uint32_t)((eFuseData << 8) >> 8);
+	if (eFuseData1 + eFuseData2 + eFuseData3 + eFuseData4 == 0x0) {
+		eFuseData1 = REG_READ(EFUSE_BLK3_RDATA0_REG);
+		eFuseData2 = REG_READ(EFUSE_BLK3_RDATA1_REG);
+		eFuseData3 = REG_READ(EFUSE_BLK3_RDATA2_REG);
+		eFuseData4 = REG_READ(EFUSE_BLK3_RDATA3_REG);
+	}
 
-	eFuseData = REG_READ(EFUSE_BLK3_RDATA5_REG);
-	DeviceID 			= (DeviceID << 8) + (uint8_t)(eFuseData >> 24);
-	Misc				= (uint8_t)((eFuseData << 8) >> 24);
-	Produced.Month		= Converter::InterpretHexAsDec((uint8_t)((eFuseData << 16) >> 24));
-	Produced.Day		= Converter::InterpretHexAsDec((uint8_t)((eFuseData << 24) >> 24));
+	Type 				= (uint8_t)(eFuseData1 >> 16);
+	Revision 			= (uint16_t)((eFuseData1 << 16) >> 16);
 
-	eFuseData = REG_READ(EFUSE_BLK3_RDATA4_REG);
-	Produced.Year		= (uint16_t)(eFuseData >> 16);
+	Model 				= (uint8_t)eFuseData2 >> 24;
+	DeviceID 			= (uint32_t)((eFuseData2 << 8) >> 8);
+
+	DeviceID 			= (DeviceID << 8) + (uint8_t)(eFuseData3 >> 24);
+	Misc				= (uint8_t)((eFuseData3 << 8) >> 24);
+	Produced.Month		= Converter::InterpretHexAsDec((uint8_t)((eFuseData3 << 16) >> 24));
+	Produced.Day		= Converter::InterpretHexAsDec((uint8_t)((eFuseData3 << 24) >> 24));
+
+	Produced.Year		= (uint16_t)(eFuseData4 >> 16);
 	Produced.Year 		= Converter::InterpretHexAsDec(Produced.Year);
 
-	Produced.Factory	= (uint16_t)((eFuseData << 16) >> 24);
-	Produced.Destination= (uint16_t)((eFuseData << 24) >> 24);
+	Produced.Factory	= (uint16_t)((eFuseData4 << 16) >> 24);
+	Produced.Destination= (uint16_t)((eFuseData4 << 24) >> 24);
 
 	// Type verification
 	if (Type == 0x0 || Type == Settings.Memory.Empty8Bit) {
@@ -89,7 +100,6 @@ void Settings_t::eFuse_t::ReadData() {
 	}
 	else
 		Device.SetTypeToNVS(Type);
-
 
 	// DeviceID verification
 	if (DeviceID == 0x0 || DeviceID == Settings.Memory.Empty32Bit) {
