@@ -10,13 +10,13 @@
 static char tag[] = "Wireless";
 
 void Wireless_t::StartInterfaces() {
+	ESP_LOGI(tag, "StartInterfaces");
+
 	if (!WiFi.IsRunning()) {
 		if (!Network.WiFiConnect("", IsFirstWiFiStart)) {
 			WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 		}
 	}
-
-	IsFirstWiFiStart = false;
 }
 
 void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string Value, string AdditionalData) {

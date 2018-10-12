@@ -17,9 +17,9 @@ class Wireless_t {
 		void SendBroadcastUpdated(uint8_t SensorID, string Value, string AdditionalData = "");
 		bool IsPeriodicPool();
 
+		bool IsFirstWiFiStart	= true;
 		bool IsEventDrivenStart = false;
 	private:
-		bool IsFirstWiFiStart	= true;
 };
 
 #endif // WIRELESS_H

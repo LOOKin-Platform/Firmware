@@ -324,9 +324,9 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	tExpired	= 0;
 	tBlinking	= Blinking;
 
-	GPIO::PWMFadeTo(GPIO.Red	, tRed	, 	1);
-	GPIO::PWMFadeTo(GPIO.Green	, tGreen, 	1);
-	GPIO::PWMFadeTo(GPIO.Blue 	, tBlue	, 	1);
+	GPIO::PWMFadeTo(GPIO.Red	, tRed	, 	0);
+	GPIO::PWMFadeTo(GPIO.Green	, tGreen, 	0);
+	GPIO::PWMFadeTo(GPIO.Blue 	, tBlue	, 	0);
 
 	IndicatorTimer.Start();
 }
@@ -334,7 +334,7 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 /**
  * @brief Hardware timer for indicator const light handler
  */
-void Log::Indicator_t::IndicatorCallback(void *Param) {
+void IRAM_ATTR Log::Indicator_t::IndicatorCallback(void *Param) {
 	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
 	ISR::HardwareTimer::CallbackPrefix(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex);
 
@@ -363,9 +363,9 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 	if (tBlinking == NONE)
 		tRed = tGreen = tBlue = 0;
 
-	GPIO::PWMFadeTo(GPIO.Red	, (IsLighted) ? 0 : tRed, 	50);
-	GPIO::PWMFadeTo(GPIO.Green	, (IsLighted) ? 0 : tGreen, 50);
-	GPIO::PWMFadeTo(GPIO.Blue 	, (IsLighted) ? 0 : tBlue, 	50);
+	GPIO::PWMFadeTo(GPIO.Red	, (IsLighted) ? 0 : tRed, 	0);
+	GPIO::PWMFadeTo(GPIO.Green	, (IsLighted) ? 0 : tGreen, 0);
+	GPIO::PWMFadeTo(GPIO.Blue 	, (IsLighted) ? 0 : tBlue, 	0);
 }
 
 /**

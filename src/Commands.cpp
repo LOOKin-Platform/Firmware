@@ -44,10 +44,10 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 
 	switch (Device.Type.Hex) {
 		case Settings.Devices.Plug:
-			Commands = { new CommandSwitch_t(), new CommandColor_t() };
+			Commands = { new CommandSwitch_t()	};
 			break;
 		case Settings.Devices.Remote:
-			Commands = { new CommandIR_t() , new CommandColor_t() };
+			Commands = { new CommandIR_t() 		};
 			break;
 		case Settings.Devices.Motion:
 			Commands = { };

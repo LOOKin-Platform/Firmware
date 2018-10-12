@@ -35,7 +35,7 @@ class Settings_t {
 		} TimeSync;
 
 		struct WiFi_t {
-			const uint16_t					IPCountdown 	= 100000;
+			const uint32_t					IPCountdown 	= 100000;
 			const uint8_t					SavedAPCount	= 8;
 			const string 					DefaultIP		= "192.168.4.1";
 

@@ -8,8 +8,51 @@
 
 static char tag[] = "RMT";
 
-map<rmt_channel_t,RMT::IRChannelInfo> RMT::ChannelsMap = {};
-vector<rmt_item32_t> RMT::OutputItems = {};
+bool 									RMT::IsInited = false;
+map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap = {};
+vector<rmt_item32_t> 					RMT::OutputItems = {};
+esp_pm_lock_handle_t 					RMT::APBLock, RMT::CPULock;
+
+/**
+ * @brief Firstly init RMT driver
+ *
+ */
+
+void RMT::Init() {
+	if (IsInited) return;
+
+	#if defined(CONFIG_PM_ENABLE)
+
+	// Create APB clock to accurate signal handling
+	if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "RMT_APB_FREQ_MAX", &APBLock) == ESP_OK) {
+		if (esp_pm_lock_acquire(APBLock) != ESP_OK)
+			ESP_LOGE(tag, "Error while acquiring APB Lock");
+	}
+	else
+		ESP_LOGE(tag, "Error while creating APB Lock");
+
+	// Create CPU clock to accurate signal handling
+	if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "RMT_CPU_FREQ_MAX", &CPULock) == ESP_OK) {
+		if (esp_pm_lock_acquire(CPULock) != ESP_OK)
+			ESP_LOGE(tag, "Error while acquiring CPU Lock");
+	}
+	else
+		ESP_LOGE(tag, "Error while creating CPU Lock");
+
+	#endif
+
+	IsInited = true;
+}
+
+void RMT::Deinit() {
+	if (!IsInited) return;
+
+	if (esp_pm_lock_release(APBLock) != ESP_OK)
+		ESP_LOGE(tag, "Error while releasing APB Lock");
+
+	if (esp_pm_lock_release(CPULock) != ESP_OK)
+		ESP_LOGE(tag, "Error while releasing CPU Lock");
+}
 
 /**
  * @brief Set RX channel using for receiving data.
@@ -21,6 +64,8 @@ vector<rmt_item32_t> RMT::OutputItems = {};
 
 void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart CallbackStart,
 							IRChannelCallbackBody CallbackBody, IRChannelCallbackEnd CallbackEnd) {
+	Init();
+
 	rmt_config_t config;
 	config.rmt_mode                  	= RMT_MODE_RX;
 	config.channel                   	= Channel;
@@ -138,6 +183,8 @@ void RMT::RXTask(void *TaskData) {
  */
 
 void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency) {
+	Init();
+
 	rmt_config_t config;
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = Channel;
@@ -235,17 +282,15 @@ void RMT::TXClear() {
  */
 
 void RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
-	if (OutputItems.size() > 0) {
-		if (OutputItems.back().duration0 > -30000 || OutputItems.back().duration1 > -30000)
-			TXAddItem(-45000);
+	if (OutputItems.size() == 0) return;
 
-		TXChangeFrequency(Channel, Frequency);
+	if (OutputItems.back().duration0 > -30000 || OutputItems.back().duration1 > -30000)
+		TXAddItem(-45000);
 
-		::rmt_write_items(Channel, &OutputItems[0] , OutputItems.size(), true);
-	    ::rmt_wait_tx_done(Channel, portMAX_DELAY);
+	TXChangeFrequency(Channel, Frequency);
 
-	    TXClear();
-	}
+	::rmt_write_items(Channel, &OutputItems[0] , OutputItems.size(), true);
+	::rmt_wait_tx_done(Channel, portMAX_DELAY);
 }
 
 /**

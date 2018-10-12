@@ -24,8 +24,6 @@ class SensorIR_t : public Sensor_t {
 			Name        = "IR";
 			EventCodes  = { 0x00, 0x01 };
 
-			ESP_LOGI("SensorID", "Init %X", ID);
-
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
 				RMT::ReceiveStart(RMT_CHANNEL_0);
@@ -43,26 +41,24 @@ class SensorIR_t : public Sensor_t {
 				return;
 			}
 
-			Values["Primary"]	= SensorValueItem(static_cast<uint8_t>(LastSignal.Protocol), SignalDetectionTime);
-			Values["Signal"]	= SensorValueItem(LastSignal.Uint32Data, SignalDetectionTime);
-			Values["Frequency"] = SensorValueItem(LastSignal.Frequency, SignalDetectionTime);
-		};
+			Values["Primary"]	= SensorValueItem(static_cast<uint8_t>(LastSignal.Protocol)	, SignalDetectionTime);
+			Values["Signal"]	= SensorValueItem(LastSignal.Uint32Data						, SignalDetectionTime);
+			Values["Frequency"] = SensorValueItem(LastSignal.Frequency						, SignalDetectionTime);
+			Values["Raw"] 		= SensorValueItem(0											, SignalDetectionTime);
+		}
 
 		string FormatValue(string Key = "Primary") override {
 			if (Key == "Primary")
 				return Converter::ToHexString(Values[Key].Value, 2);
 
-			if (Key == "Signal" && LastSignal.Protocol == IRLib::ProtocolEnum::RAW && LastSignal.RawData.size() != 0) {
-				string SignalOutput = "";
-
-				for (int i=0; i < LastSignal.RawData.size(); i++)
-					SignalOutput += Converter::ToString(LastSignal.RawData[i]) + ((i != LastSignal.RawData.size() - 1) ? " " : "");
-
-				return SignalOutput;
-			}
+			if (Key == "Signal" && LastSignal.Protocol == IRLib::ProtocolEnum::RAW)
+				return "";
 
 			if (Key == "Frequency")
 				return Converter::ToString(LastSignal.Frequency);
+
+			if (Key == "Raw")
+				return LastSignal.GetRawSignal();
 
 			return Converter::ToHexString(Values[Key].Value, 8);
 		}
@@ -113,6 +109,7 @@ class SensorIR_t : public Sensor_t {
 			//LastSignal.SetFrequency(FrequencyDetectCalculate());
 
 			ESP_LOGI("SensorIR", "Last signal %s", LastSignal.GetProntoHex().c_str());
+
 			SensorIRCurrentMessage.empty();
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));

@@ -41,6 +41,14 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 
 	// If the event we received indicates that we now have an IP address or that a connection was disconnected then unlock the mutex that
 	// indicates we are waiting for a connection complete.
+
+	if (event->event_id == SYSTEM_EVENT_STA_CONNECTED) {
+		pWiFi->m_apConnectionStatus = ESP_OK;
+		pWiFi->m_WiFiRunning = true;
+
+		pWiFi->m_connectFinished.Give();
+	}
+
 	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
 		if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) { // If we connected and have an IP, change the status to ESP_OK.  Otherwise, change it to the reason code.
 			pWiFi->m_apConnectionStatus = ESP_OK;
@@ -66,7 +74,6 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 		rc = pWiFi->m_pWifiEventHandler->getEventHandler()(pWiFi->m_pWifiEventHandler, event);
 	else
 		rc = ESP_OK;
-
 
 	return rc;
 } // eventHandler
@@ -284,7 +291,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
             return m_apConnectionStatus;
         }
     }
-    while (!m_connectFinished.Take(3000, "connectAP")); // retry if not connected within 3s
+    while (!m_connectFinished.Take(5000, "connectAP")); // retry if not connected within 5s
     m_connectFinished.Give();
 
 	ESP_LOGD(tag, "<< connectAP");

@@ -43,6 +43,15 @@ string IRLib::GetProntoHex() {
 	return ProntoHexConstruct();
 }
 
+string IRLib::GetRawSignal() {
+	string SignalOutput = "";
+
+	for (int i=0; i < RawData.size(); i++)
+		SignalOutput += Converter::ToString(RawData[i]) + ((i != RawData.size() - 1) ? " " : "");
+
+	return SignalOutput;
+}
+
 void IRLib::SetFrequency(uint16_t Freq) {
 	if (Freq < 30000 || Freq > 60000) {
 		Frequency = 0;
@@ -90,16 +99,16 @@ IRLib::ProtocolEnum IRLib::GetProtocol() {
 
 bool IRLib::IsNEC() {
 	if (RawData.size() >= 66) {
-		if (RawData.at(0) 	> 8900 	&& RawData.at(0) 	< 9100 &&
-			RawData.at(1) 	< -4350 && RawData.at(1) 	> -4650 &&
+		if (RawData.at(0) 	> 8700 	&& RawData.at(0) 	< 9300 &&
+			RawData.at(1) 	< -4200 && RawData.at(1) 	> -4800 &&
 			RawData.at(66) 	> 500 	&& RawData.at(66)	< 700)
 			return true;
 	}
 
 	if (RawData.size() == 16) {
-		if (RawData.at(0) > 8900 && RawData.at(0) < 9100 &&
-			RawData.at(1) < -2000 && RawData.at(1) > -2400 &&
-			RawData.at(2) > 500 && RawData.at(2) < 700)
+		if (RawData.at(0) > 8700 && RawData.at(0) < 9300 &&
+			RawData.at(1) < -1900 && RawData.at(1) > -2500 &&
+			RawData.at(2) > 470 && RawData.at(2) < 700)
 		return true;
 	}
 

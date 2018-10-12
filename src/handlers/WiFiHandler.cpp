@@ -47,6 +47,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t apStart() {
 			Log::Add(LOG_WIFI_AP_START);
 			WebServer.Start();
+			Wireless.IsFirstWiFiStart = false;
+
 			return ESP_OK;
 		}
 
@@ -105,6 +107,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			if (!IsIPCheckSuccess)
 				return ESP_OK;
+
+			Wireless.IsFirstWiFiStart = false;
 
 			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
 

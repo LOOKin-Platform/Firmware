@@ -3,6 +3,7 @@
 #include "stdio.h"
 
 #include <esp_log.h>
+#include <esp_pm.h>
 #include <esp_system.h>
 
 #include "Globals.h"
@@ -56,6 +57,19 @@ void app_main(void) {
 	Settings.eFuse.ReadData();
 	Log::Add(LOG_DEVICE_ON);
 
+	#if defined(CONFIG_PM_ENABLE)
+
+    esp_pm_config_esp32_t pm_config = {
+		.max_cpu_freq = RTC_CPU_FREQ_160M,
+		.min_cpu_freq = RTC_CPU_FREQ_XTAL
+    };
+
+    esp_err_t ret;
+    if((ret = esp_pm_configure(&pm_config)) != ESP_OK)
+        ESP_LOGI(tag, "pm config error %s\n",  ret == ESP_ERR_INVALID_ARG ?  "ESP_ERR_INVALID_ARG": "ESP_ERR_NOT_SUPPORTED");
+
+	#endif
+
 	Network.WiFiScannedList = WiFi.Scan();
 
 	Time::SetTimezone();
@@ -74,8 +88,6 @@ void app_main(void) {
 	WiFi.AddDNSServer("8.8.8.8");
 	WiFi.AddDNSServer("8.8.4.4");
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
-
-	ESP_LOGI("tag", "Network.WiFiConnect()) start");
 
 	Wireless.StartInterfaces();
 

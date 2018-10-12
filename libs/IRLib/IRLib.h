@@ -31,6 +31,7 @@ class IRLib {
 		void 			LoadDataFromRaw();
 		void 			FillRawData();
 		string 			GetProntoHex();
+		string			GetRawSignal();
 
 		void 			SetFrequency(uint16_t);
 

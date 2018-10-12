@@ -14,6 +14,8 @@ using namespace std;
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 #include <driver/rtc_io.h>
+#include <esp_pm.h>
+
 
 #include "DateTime.h"
 #include "Settings.h"
@@ -41,7 +43,8 @@ class GPIO {
 		static bool 	Read(gpio_num_t pin);
 		static void 	Write(gpio_num_t pin, bool value);
 
-		// PWM to rule diods
+		// PWM to rule LEDs
+		static bool		PWMIsInited;
 		static void 	SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel);
 		static uint8_t 	PWMValue(ledc_channel_t PWMChannel);
 		static void 	PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty = 255, uint16_t FadeTime = PWM_FADING_LENGTH);

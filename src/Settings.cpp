@@ -28,7 +28,6 @@ void FillDevices() {
 	Remote.Indicator.ISRTimerGroup	= TIMER_GROUP_0;
 	Remote.Indicator.ISRTimerIndex	= TIMER_0;
 
-
 	Remote.IR.ReceiverGPIO38	= GPIO_NUM_26;
 	Remote.IR.ReceiverGPIO56	= GPIO_NUM_27;
 	Remote.IR.SenderGPIO		= GPIO_NUM_4;
