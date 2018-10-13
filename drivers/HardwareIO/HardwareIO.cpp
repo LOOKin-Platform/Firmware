@@ -10,7 +10,6 @@
  * @brief Class instance constructor.
  */
 GPIO::GPIO() {}
-
 static char tag[]= "GPIO";
 
 /**
@@ -66,6 +65,9 @@ bool GPIO::PWMIsInited = false;
  */
 
 void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel) {
+	if (GPIO == GPIO_NUM_0)
+		return;
+
 	if (!PWMIsInited) {
 		#if defined(CONFIG_PM_ENABLE)
 
@@ -92,28 +94,26 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
 		PWMIsInited = true;
 	}
 
-	if (GPIO != GPIO_NUM_0) {
-		//::rtc_gpio_isolate(GPIO);
+	//::rtc_gpio_isolate(GPIO);
 
-	 	ledc_timer_config_t ledc_timer;
+	ledc_timer_config_t ledc_timer;
 
-	 	ledc_timer.duty_resolution	= LEDC_TIMER_10_BIT;
-	 	ledc_timer.freq_hz			= 5000;
-	 	ledc_timer.speed_mode		= LEDC_HIGH_SPEED_MODE;
-	 	ledc_timer.timer_num		= TimerIndex;
+	ledc_timer.duty_resolution	= LEDC_TIMER_10_BIT;
+	ledc_timer.freq_hz			= 5000;
+	ledc_timer.speed_mode		= LEDC_HIGH_SPEED_MODE;
+	ledc_timer.timer_num		= TimerIndex;
 
-	 	ledc_timer_config(&ledc_timer);
+	ledc_timer_config(&ledc_timer);
 
-	 	ledc_channel_config_t ledc_channel;
-	 	ledc_channel.duty 		= 0;
-	 	ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;
-	 	ledc_channel.timer_sel	= TimerIndex;
-		ledc_channel.channel	= PWMChannel;
-	 	ledc_channel.gpio_num	= GPIO;
+	ledc_channel_config_t ledc_channel;
+	ledc_channel.duty 		= 0;
+	ledc_channel.speed_mode = LEDC_HIGH_SPEED_MODE;
+	ledc_channel.timer_sel	= TimerIndex;
+	ledc_channel.channel	= PWMChannel;
+	ledc_channel.gpio_num	= GPIO;
 
-	 	ledc_channel_config(&ledc_channel);
-	 	ledc_fade_func_install(0);
-	}
+	ledc_channel_config(&ledc_channel);
+	ledc_fade_func_install(0);
  }
 
  /**
@@ -150,6 +150,7 @@ void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty, uint16_t FadeTime)
 
 	if (FadeTime < 50) {
 		::ledc_set_duty(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty*4);
+        ::ledc_update_duty(LEDC_HIGH_SPEED_MODE, PWMChannel);
 		return;
 	}
 

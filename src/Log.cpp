@@ -305,9 +305,9 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
 
 	if (!IsInited) {
-		if (GPIO.Red.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Red.GPIO		, GPIO.Timer, GPIO.Red.Channel	);
-		if (GPIO.Green.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
-		if (GPIO.Blue.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
+		GPIO::SetupPWM(GPIO.Red.GPIO	, GPIO.Timer, GPIO.Red.Channel	);
+		GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
+		GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
 
 		IndicatorTimer = ISR::HardwareTimer(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex, TIMER_ALARM, &IndicatorCallback);
 		IndicatorTimer.Pause();
@@ -334,7 +334,7 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 /**
  * @brief Hardware timer for indicator const light handler
  */
-void IRAM_ATTR Log::Indicator_t::IndicatorCallback(void *Param) {
+void Log::Indicator_t::IndicatorCallback(void *Param) {
 	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
 	ISR::HardwareTimer::CallbackPrefix(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex);
 

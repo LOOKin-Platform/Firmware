@@ -12,21 +12,19 @@
 
 #include <Converter.h>
 
+#include "Protocol.h"
+
 using namespace std;
 
 class IRLib {
 	public:
-		enum ProtocolEnum {
-			NEC = 0x01, RAW = 0xF1
-		};
-
-		ProtocolEnum 	Protocol 	= RAW;
+		uint8_t 		Protocol 	= 0xF1;
 		uint16_t 		Frequency 	= 38000;
 		uint32_t 		Uint32Data 	= 0;
 		vector<int32_t> RawData 	= vector<int32_t>();
 
 		IRLib(string ProntoHex);
-		IRLib(vector<int32_t> Raw = vector<int32_t>());
+		IRLib(vector<int32_t> Raw	= vector<int32_t>());
 
 		void 			LoadDataFromRaw();
 		void 			FillRawData();
@@ -41,15 +39,14 @@ class IRLib {
 		uint8_t		 	ProntoOneTimeBurst = 0;
 		uint8_t 		ProntoRepeatBurst = 0;
 
-		ProtocolEnum	GetProtocol();
-
-		bool 			IsNEC();
-		uint32_t 		NECData();
-		vector<int32_t> NECConstruct();
+		IRProto*		GetProtocol();
+		IRProto*		GetProtocolByID(uint8_t);
 
 		bool 			IsProntoHex();
 		void 			FillFromProntoHex(string);
 		string 			ProntoHexConstruct();
+
+		static vector<IRProto *> Protocols;
 };
 
 #endif

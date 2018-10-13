@@ -130,7 +130,6 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 							Result.Body = JSONObject.ToString();
 							break;
 						}
-						break;
 					}
 			}
 
@@ -139,9 +138,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 		for (Sensor_t* Sensor : Sensors)
 			if (Converter::ToLower(Sensor->Name) == URLParts[0])
 				for (const auto &Value : Sensor->Values) {
-					string ValueItemName = Value.first;
-
-					if (ValueItemName == URLParts[1])
+					if (Converter::ToLower(Value.first) == URLParts[1])
 					{
 						if (URLParts[2] == "value")   Result.Body = Sensor->FormatValue(Value.first);
 						if (URLParts[2] == "updated") Result.Body = Converter::ToString(Value.second.Updated);
@@ -152,15 +149,15 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 }
 
 // возвращаемое значение - было ли изменено значение в памяти
-bool Sensor_t::SetValue(uint32_t Value, string Key) {
+bool Sensor_t::SetValue(uint32_t Value, string Key, uint32_t UpdatedTime) {
 	if (Values.count(Key) > 0) {
-		if (Values[Key].Value != Value) {
-			Values[Key] = SensorValueItem(Value, Time::Unixtime());
+		if (Values[Key].Value != Value || UpdatedTime > 0) {
+			Values[Key] = SensorValueItem(Value, (UpdatedTime > 0) ? UpdatedTime : Time::Unixtime());
 			return true;
 		}
 	}
 	else {
-		Values[Key] = SensorValueItem(Value, Time::Unixtime());
+		Values[Key] = SensorValueItem(Value, (UpdatedTime > 0) ? UpdatedTime : Time::Unixtime());
 		return true;
 	}
 

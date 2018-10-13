@@ -55,7 +55,7 @@ class Sensor_t {
 		static Sensor_t*			GetSensorByID(uint8_t);
 		static uint8_t				GetDeviceTypeHex();
 
-		bool						SetValue(uint32_t Value, string Key = "Primary");
+		bool						SetValue(uint32_t Value, string Key = "Primary", uint32_t UpdatedTime = 0);
 		SensorValueItem				GetValue(string Key = "Primary");
 
 		virtual string				StorageEncode(map<string,string>) 	{ return ""; };

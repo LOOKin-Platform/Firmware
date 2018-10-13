@@ -30,7 +30,7 @@ class CommandIR_t : public Command_t {
 
     		if (EventCode == 0x01) {
     			IRLib IRSignal;
-    			IRSignal.Protocol 	= IRLib::ProtocolEnum::NEC;
+    			IRSignal.Protocol 	= 0x01;
     			IRSignal.Uint32Data = Operand;
     			IRSignal.FillRawData();
 
@@ -55,7 +55,7 @@ class CommandIR_t : public Command_t {
         				IRLib IRSignal(DecodedValue["Signal"]);
 
         				if (DecodedValue.count("Protocol") > 0) {
-            				IRSignal.Protocol = static_cast<IRLib::ProtocolEnum>((uint8_t)Converter::ToUint16(DecodedValue["Protocol"]));
+            				IRSignal.Protocol = (uint8_t)Converter::ToUint16(DecodedValue["Protocol"]);
         				}
 
             			RMT::TXSetItems(IRSignal.RawData);

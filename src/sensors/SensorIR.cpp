@@ -13,7 +13,7 @@ static constexpr uint8_t 	SensorIRQueueSize				= 30;
 static QueueHandle_t 		SensorIRQueueFrequencyDetect	= FreeRTOS::Queue::Create(SensorIRQueueSize, sizeof(uint32_t));
 
 static IRLib 	LastSignal;
-static uint32_t SignalDetectionTime = 0;
+static uint32_t SignalDetectionTime = 0x1;
 
 class SensorIR_t : public Sensor_t {
 	public:
@@ -35,23 +35,25 @@ class SensorIR_t : public Sensor_t {
 		void Update() override {
 			Values.clear();
 
-			if (LastSignal.Protocol == IRLib::ProtocolEnum::RAW && LastSignal.RawData.size() == 0)
-			{
+			if (LastSignal.Protocol == IR_PROTOCOL_RAW && LastSignal.RawData.size() == 0) {
 				SetValue(0);
 				return;
 			}
 
-			Values["Primary"]	= SensorValueItem(static_cast<uint8_t>(LastSignal.Protocol)	, SignalDetectionTime);
-			Values["Signal"]	= SensorValueItem(LastSignal.Uint32Data						, SignalDetectionTime);
-			Values["Frequency"] = SensorValueItem(LastSignal.Frequency						, SignalDetectionTime);
-			Values["Raw"] 		= SensorValueItem(0											, SignalDetectionTime);
+			if (Time::IsUptime(SignalDetectionTime) && Time::Offset > 0)
+				SignalDetectionTime = Time::Unixtime() - (Time::Uptime() - SignalDetectionTime);
+
+			SetValue(LastSignal.Protocol	, "Primary"		, SignalDetectionTime);
+			SetValue(LastSignal.Uint32Data	, "Signal" 		, SignalDetectionTime);
+			SetValue(LastSignal.Frequency	, "Frequency" 	, SignalDetectionTime);
+			SetValue(0						, "Raw"			, SignalDetectionTime);
 		}
 
 		string FormatValue(string Key = "Primary") override {
 			if (Key == "Primary")
 				return Converter::ToHexString(Values[Key].Value, 2);
 
-			if (Key == "Signal" && LastSignal.Protocol == IRLib::ProtocolEnum::RAW)
+			if (Key == "Signal" && LastSignal.Protocol == IR_PROTOCOL_RAW)
 				return "";
 
 			if (Key == "Frequency")
@@ -105,6 +107,7 @@ class SensorIR_t : public Sensor_t {
 				return;
 			}
 
+			SignalDetectionTime = Time::Unixtime();
 			LastSignal = IRLib(SensorIRCurrentMessage);
 			//LastSignal.SetFrequency(FrequencyDetectCalculate());
 

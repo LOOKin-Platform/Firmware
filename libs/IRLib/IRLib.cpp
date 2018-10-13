@@ -8,9 +8,13 @@
 
 static char tag[] = "IRLib";
 
+vector<IRProto *> IRLib::Protocols = vector<IRProto *>();
 
 IRLib::IRLib(vector<int32_t> Raw) {
 	RawData = Raw;
+
+	if (IRLib::Protocols.size() == 0)
+		Protocols = { new NEC1() };
 
 	LoadDataFromRaw();
 }
@@ -22,21 +26,24 @@ IRLib::IRLib(string ProntoHex) {
 }
 
 void IRLib::LoadDataFromRaw() {
-	Protocol = GetProtocol();
+	IRProto *Protocol = GetProtocol();
 
-	switch (Protocol) {
-		case NEC: Uint32Data = NECData(); break;
-		default:
-			Uint32Data = 0;
+	this->Protocol 		= 0x0;
+	this->Uint32Data 	= 0x0;
+
+	if (Protocol!=nullptr) {
+		this->Protocol 	= Protocol->ID;
+		this->Uint32Data= Protocol->GetData(RawData);
 	}
 }
 
 void IRLib::FillRawData() {
-	switch (Protocol) {
-		case NEC: RawData = NECConstruct(); break;
-		default:
-			break;
-	}
+	IRProto *Proto = GetProtocolByID(this->Protocol);
+
+	if (Proto != nullptr)
+		this->RawData = Proto->ConstructRaw(this->Uint32Data);
+	else
+		this->RawData = vector<int32_t>();
 }
 
 string IRLib::GetProntoHex() {
@@ -91,116 +98,20 @@ bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 	return false;
 }
 
-IRLib::ProtocolEnum IRLib::GetProtocol() {
-	if (IsNEC()) return NEC;
+IRProto* IRLib::GetProtocol() {
+	for (auto& Protocol : IRLib::Protocols)
+		if (Protocol->IsProtocol(RawData))
+			return Protocol;
 
-	return RAW;
+	return nullptr;
 }
 
-bool IRLib::IsNEC() {
-	if (RawData.size() >= 66) {
-		if (RawData.at(0) 	> 8700 	&& RawData.at(0) 	< 9300 &&
-			RawData.at(1) 	< -4200 && RawData.at(1) 	> -4800 &&
-			RawData.at(66) 	> 500 	&& RawData.at(66)	< 700)
-			return true;
-	}
+IRProto* IRLib::GetProtocolByID(uint8_t ProtocolID) {
+	for (auto& Protocol : IRLib::Protocols)
+		if (Protocol->ID == ProtocolID)
+			return Protocol;
 
-	if (RawData.size() == 16) {
-		if (RawData.at(0) > 8700 && RawData.at(0) < 9300 &&
-			RawData.at(1) < -1900 && RawData.at(1) > -2500 &&
-			RawData.at(2) > 470 && RawData.at(2) < 700)
-		return true;
-	}
-
-	return false;
-}
-
-uint32_t IRLib::NECData() {
-	uint16_t 	Address = 0x0;
-	uint8_t		Command = 0x0;
-
-	vector<int32_t> Data = RawData;
-
-    Data.erase(Data.begin());
-    Data.erase(Data.begin());
-
-    if (Data.size() == 16) { // repeat signal
-    		return 0x00FFFFFF;
-    }
-
-    for (uint8_t BlockId = 0; BlockId < 4; BlockId++) {
-    		bitset<8> Block;
-
-		for (int i=0; i<8; i++) {
-			if (Data[0] > 500 && Data[0] < 720) {
-				if (Data[1] > -700)
-					Block[i] = 0;
-				if (Data[1] < -1200)
-					Block[i] = 1;
-			}
-
-			Data.erase(Data.begin()); Data.erase(Data.begin());
-		}
-
-		uint8_t BlockInt = (uint8_t)Block.to_ulong();
-
-		switch (BlockId) {
-			case 0: Address = BlockInt; break;
-			case 1:
-				if ((uint8_t)Address != (uint8_t)~BlockInt) {
-					uint16_t tmpAddress = BlockInt;
-					tmpAddress = tmpAddress << 8;
-					Address += tmpAddress;
-				}
-				break;
-			case 2: Command = BlockInt; break;
-			case 3:
-				if (Command != (uint8_t)~BlockInt) Command = 0;
-				break;
-		}
-    }
-
-    return (Address << 8) + Command;
-};
-
-vector<int32_t> IRLib::NECConstruct() {
-	uint16_t	 NECAddress = (uint16_t)((Uint32Data >> 8));
-	uint8_t 	 NECCommand = (uint8_t) ((Uint32Data << 24) >> 24);
-
-	vector<int32_t> Data = vector<int32_t>();
-
-	/* raw NEC header */
-	Data.push_back(+9000);
-	Data.push_back(-4500);
-
-	if (NECAddress <= 0xFF)
-		NECAddress += (((uint8_t)~NECAddress) << 8);
-
-	bitset<16> AddressItem(NECAddress);
-	for (int i=0;i<16;i++) {
-		Data.push_back(+560);
-		Data.push_back((AddressItem[i] == true) ? -1650 : -560);
-	}
-
-	bitset<8> CommandItem(NECCommand);
-	for (int i=0;i<8;i++) {
-		Data.push_back(+560);
-		Data.push_back((CommandItem[i] == true) ? -1650 : -560);
-	}
-
-	for (int i=0;i<8;i++) {
-		Data.push_back(+560);
-		Data.push_back((CommandItem[i] == false) ? -1650 : -560);
-	}
-
-	Data.push_back(+560);
-	Data.push_back(-1650);
-	Data.push_back(-1650);
-	Data.push_back(+8900);
-	Data.push_back(-2250);
-	Data.push_back(+560);
-
-	return Data;
+	return nullptr;
 }
 
 bool IRLib::IsProntoHex() {
