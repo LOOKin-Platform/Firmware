@@ -7,7 +7,7 @@
 #ifndef LIBS_IR_PROTOCOL_H
 #define LIBS_IR_PROTOCOL_H
 
-#define IR_PROTOCOL_RAW 0xF1
+#define IR_PROTOCOL_RAW 0xFF
 
 class IRProto {
 	public:

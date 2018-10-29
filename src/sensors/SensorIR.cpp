@@ -66,9 +66,6 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-			// test data
-			SensorValueItem ValueItem = GetValue();
-
 			if (SceneEventCode == 0xEE) {
     			Storage_t::Item Item = Storage.Read(SceneEventOperand);
 
@@ -77,14 +74,13 @@ class SensorIR_t : public Sensor_t {
     				IRLib IRSignal(DecodedValue["Signal"]);
     				return IRLib::CompareIsIdentical(LastSignal, IRSignal);
     			}
-    			else {
-    				ESP_LOGE("CommandIR","Can't find Data in memory");
-    				return false;
-    			}
+
+				ESP_LOGE("CommandIR","Can't find Data in memory");
+				return false;
 			}
 
-			if (SceneEventCode == 0x01 && ValueItem.Value == 0x1) return true;
-			if (SceneEventCode == 0xF1 && ValueItem.Value == 0xF1) return true;
+			//if (SceneEventCode == 0x01 && ValueItem.Value == 0x1) return true;
+			//if (SceneEventCode == 0xFF && ValueItem.Value == 0xFF) return true;
 
 			return false;
 		};
@@ -165,12 +161,11 @@ class SensorIR_t : public Sensor_t {
 			if (DataString.size() < 4)
 				return Result;
 
-			uint8_t TitleLength = (uint8_t)Converter::ToUint16(DataString.substr(0,2));
+			uint8_t TitleLength = (uint8_t)Converter::UintFromHexString<uint8_t>(DataString.substr(0,2));
 
 			if (DataString.size() > TitleLength * 2 + 1) {
-				for (uint8_t Pos = 0; Pos < TitleLength * 2; Pos+=4) {
+				for (uint8_t Pos = 0; Pos < TitleLength * 2; Pos+=4)
 					Result["Title"] += "\\u" + DataString.substr(2+Pos,4);
-				}
 			}
 			else
 				return Result;

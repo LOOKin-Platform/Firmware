@@ -176,14 +176,14 @@ class Settings_t {
 				static constexpr uint32_t	Start			= 0x32000;
 				static constexpr uint32_t	Size			= 0x60000;
 				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
-				static constexpr uint16_t	Count			= 256;	// 1536 байт
+				static constexpr uint16_t	Count			= 256;		// 1536 байт
 
 				struct ItemOffset_t {
 					static constexpr uint16_t ID			= 0x0;
 					static constexpr uint16_t Type			= 0x4;
 					static constexpr uint16_t Operand		= 0x6;
 					static constexpr uint16_t Name			= 0xE;
-					static constexpr uint16_t Commands		= 0x81;
+					static constexpr uint16_t Commands		= 0x90;
 				} ItemOffset;
 
 				struct CommandOffset_t {

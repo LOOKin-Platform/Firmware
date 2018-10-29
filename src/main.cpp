@@ -94,7 +94,7 @@ void app_main(void) {
 	Log::Add(LOG_DEVICE_STARTED);
 
 	//BLEClient.Scan();
-	//BLEServer.StartAdvertising();
+	//BLEServer.StartAdvertising("!!");
 
 	static Pooling_t Pooling = Pooling_t();
 	Pooling.start();

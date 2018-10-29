@@ -202,7 +202,6 @@ uint8_t Automation_t::ScenarioCacheItemCount() {
 	return ScenariosCache.size();
 }
 
-
 void Automation_t::AddScenarioCacheItem(Scenario_t Scenario) {
 	ScenarioCacheItem_t NewCacheItem;
 
@@ -236,29 +235,29 @@ void Automation_t::LoadVersionMap() {
 }
 
 bool Automation_t::SetVersionMap(string SSID, uint32_t Version) {
-  if (SSID.empty())
-    return false;
+	if (SSID.empty())
+		return false;
 
-  VersionMap[SSID] = Version;
+	VersionMap[SSID] = Version;
 
-  NVS Memory(NVSAutomationArea);
+	NVS Memory(NVSAutomationArea);
 
-  Memory.SetString(NVSAutomationVersionMap, SerializeVersionMap());
-  Memory.Commit();
+	Memory.SetString(NVSAutomationVersionMap, SerializeVersionMap());
+	Memory.Commit();
 
-  return true;
+	return true;
 }
 
 string Automation_t::SerializeVersionMap() {
-  JSON JSONObject;
+	JSON JSONObject;
 
-  vector<map<string,string>> tmpVector = vector<map<string,string>>();
-  for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
-    tmpVector.push_back({
-      { "SSID"  	, it->first},
-      { "Version"	, Converter::ToHexString(it->second, 8)}
-    });
-  }
+	vector<map<string,string>> tmpVector = vector<map<string,string>>();
+	for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
+		tmpVector.push_back({
+			{ "SSID"  	, it->first},
+			{ "Version"	, Converter::ToHexString(it->second, 8)}
+		});
+	}
 
   JSONObject.SetObjectsArray("", tmpVector);
 
@@ -266,22 +265,21 @@ string Automation_t::SerializeVersionMap() {
 }
 
 void Automation_t::Debug(ScenarioCacheItem_t Item) {
-  ESP_LOGI(tag, "IsLinked     = %u"   , Item.IsLinked);
-  ESP_LOGI(tag, "ScenarioID   = %s"   , Converter::ToHexString(Item.ScenarioID, 2).c_str());
-  ESP_LOGI(tag, "ScenarioType = %s"   , Converter::ToHexString(Item.ScenarioType,2).c_str());
-  ESP_LOGI(tag, "Operand      = %s"   , Converter::ToHexString(Item.Operand, 16).c_str());
+	ESP_LOGI(tag, "IsLinked     = %u"   , Item.IsLinked);
+	ESP_LOGI(tag, "ScenarioID   = %s"   , Converter::ToHexString(Item.ScenarioID, 2).c_str());
+	ESP_LOGI(tag, "ScenarioType = %s"   , Converter::ToHexString(Item.ScenarioType,2).c_str());
+	ESP_LOGI(tag, "Operand      = %s"   , Converter::ToHexString(Item.Operand, 16).c_str());
 }
 
 void Automation_t::Debug(Scenario_t Scene) {
-  ESP_LOGI(tag, "Scene Type     = %s"   , Converter::ToHexString(Scene.Type,2).c_str());
-  ESP_LOGI(tag, "Scene ID       = %s"   , Converter::ToHexString(Scene.ID,8).c_str());
-  //ESP_LOGI(tag, "Scene Name     = %s"   , Scene.Name.c_str());
-  ESP_LOGI(tag, "Scene Operand  = %s"   , Scene.GetDataHexString().c_str());
+	ESP_LOGI(tag, "Scene Type     = %s"   , Converter::ToHexString(Scene.Type,2).c_str());
+	ESP_LOGI(tag, "Scene ID       = %s"   , Converter::ToHexString(Scene.ID,8).c_str());
+	//ESP_LOGI(tag, "Scene Name   = %s"   , Scene.Name.c_str());
+	ESP_LOGI(tag, "Scene Operand  = %s"   , Scene.GetDataHexString().c_str());
 
-  for (int i=0; i < Scene.Commands.size(); i++) {
-    ESP_LOGI(tag, "Command[%u] DeviceID   = %s", i, Converter::ToHexString(Scene.Commands[i].DeviceID,8).c_str());
-    ESP_LOGI(tag, "Command[%u] Command    = %s", i, Converter::ToHexString(Scene.Commands[i].CommandID,2).c_str());
-    ESP_LOGI(tag, "Command[%u] Event      = %s", i, Converter::ToHexString(Scene.Commands[i].EventCode,2).c_str());
-  }
-
+	for (int i=0; i < Scene.Commands.size(); i++) {
+		ESP_LOGI(tag, "Command[%u] DeviceID   = %s", i, Converter::ToHexString(Scene.Commands[i].DeviceID,8).c_str());
+		ESP_LOGI(tag, "Command[%u] Command    = %s", i, Converter::ToHexString(Scene.Commands[i].CommandID,2).c_str());
+		ESP_LOGI(tag, "Command[%u] Event      = %s", i, Converter::ToHexString(Scene.Commands[i].EventCode,2).c_str());
+	}
 }

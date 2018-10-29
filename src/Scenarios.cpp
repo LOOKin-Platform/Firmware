@@ -8,10 +8,6 @@
 
 static char tag[] = "Scenarios";
 
-/************************************/
-/*         Scenario class           */
-/************************************/
-
 QueueHandle_t Scenario_t::Queue = FreeRTOS::Queue::Create(Settings.Scenarios.QueueSize, sizeof( uint32_t ));
 uint8_t       Scenario_t::ThreadsCounter = 0;
 
@@ -79,42 +75,42 @@ void Scenario_t::ExecuteScenario(uint32_t ScenarioID) {
 }
 
 void Scenario_t::ExecuteCommandsTask(void *TaskData) {
-  ESP_LOGD(tag, "Scenario executed task %u created", (uint32_t) TaskData);
+	ESP_LOGD(tag, "Scenario executed task %u created", (uint32_t) TaskData);
 
-  uint32_t ScenarioID = 0;
+	uint32_t ScenarioID = 0;
 
-  if (Queue != 0)
-    while (FreeRTOS::Queue::Receive(Scenario_t::Queue, &ScenarioID, (TickType_t) Settings.Scenarios.TaskStackSize)) {
-      Scenario_t Scenario;
+	if (Queue != 0)
+		while (FreeRTOS::Queue::Receive(Scenario_t::Queue, &ScenarioID, (TickType_t) Settings.Scenarios.TaskStackSize)) {
+			Scenario_t Scenario;
 
-      LoadScenario(Scenario,ScenarioID);
+			LoadScenario(Scenario,ScenarioID);
 
-      for (ScenesCommandItem_t Command : Scenario.Commands)
-        if (Scenario.Data->IsCommandNeedToExecute(Command)) {
-          if (Command.DeviceID == Settings.eFuse.DeviceID) {
-            // выполнить локальную команду
-            Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
-            if (CommandToExecute!=nullptr)
-              CommandToExecute->Execute(Command.EventCode, Converter::ToString((uint32_t)Command.Operand));
-          }
-          else {
-            // отправить команду по HTTP
-            NetworkDevice_t NetworkDevice = Network.GetNetworkDeviceByID(Command.DeviceID);
+			for (ScenesCommandItem_t Command : Scenario.Commands)
+				if (Scenario.Data->IsCommandNeedToExecute(Command)) {
+					if (Command.DeviceID == Settings.eFuse.DeviceID) {
+						// выполнить локальную команду
+						Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
+						if (CommandToExecute!=nullptr)
+							CommandToExecute->Execute(Command.EventCode, Converter::ToString((uint32_t)Command.Operand));
+					}
+					else {
+						// отправить команду по HTTP
+						NetworkDevice_t NetworkDevice = Network.GetNetworkDeviceByID(Command.DeviceID);
 
-            if (!NetworkDevice.IP.empty() && NetworkDevice.IsActive) {
-              string URL = "/commands?command=" + Converter::ToHexString(Command.CommandID,2) +
-                                     "&action=" + Converter::ToHexString(Command.EventCode,2) +
-                                    "&operand=" + Converter::ToHexString(Command.Operand, 8);
+						if (!NetworkDevice.IP.empty() && NetworkDevice.IsActive) {
+							string URL = "/commands?command=" + Converter::ToHexString(Command.CommandID,2) +
+								"&action=" + Converter::ToHexString(Command.EventCode,2) +
+								"&operand=" + Converter::ToHexString(Command.Operand, 8);
 
-              HTTPClient::Query("", 80, URL, QueryType::GET, NetworkDevice.IP, false, NULL, NULL, &ReadFinished, &Aborted);
-            }
-          }
-        }
-    }
+							HTTPClient::Query("", 80, URL, QueryType::GET, NetworkDevice.IP, false, NULL, NULL, &ReadFinished, &Aborted);
+						}
+					}
+				}
+			}
 
-  ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
-  Scenario_t::ThreadsCounter--;
-  FreeRTOS::DeleteTask();
+	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
+	Scenario_t::ThreadsCounter--;
+	FreeRTOS::DeleteTask();
 }
 
 void Scenario_t::LoadScenarios() {
@@ -173,8 +169,8 @@ void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
 			break;
 
 		ScenesCommandItem_t Command;
-		Command.DeviceID 	= FindedCommandDeviceID;
-		Command.CommandID 	= SPIFlash::ReadUint8 (CommandAddress + Settings.Scenarios.Memory.CommandOffset.CommandID);
+		Command.DeviceID	= FindedCommandDeviceID;
+		Command.CommandID	= SPIFlash::ReadUint8 (CommandAddress + Settings.Scenarios.Memory.CommandOffset.CommandID);
 		Command.EventCode	= SPIFlash::ReadUint8 (CommandAddress + Settings.Scenarios.Memory.CommandOffset.EventID);
 		Command.Operand		= SPIFlash::ReadUint32(CommandAddress + Settings.Scenarios.Memory.CommandOffset.Operand);
 
@@ -202,23 +198,21 @@ bool Scenario_t::SaveScenario(Scenario_t Scenario) {
 	if (Scenario.IsEmpty())
 		return false;
 
-	SPIFlash::WriteUint32(Scenario.ID	, Address + Settings.Scenarios.Memory.ItemOffset.ID);
-	SPIFlash::WriteUint8 (Scenario.Type	, Address + Settings.Scenarios.Memory.ItemOffset.Type);
+	SPIFlash::WriteUint32(Scenario.ID				, Address + Settings.Scenarios.Memory.ItemOffset.ID);
+	SPIFlash::WriteUint8 (Scenario.Type				, Address + Settings.Scenarios.Memory.ItemOffset.Type);
+	SPIFlash::WriteUint64(Scenario.Data->ToUint64()	, Address + Settings.Scenarios.Memory.ItemOffset.Operand);
 
 	for (int i=0; i< Settings.Scenarios.NameLength; i++)
 		SPIFlash::WriteUint16(Scenario.Name[i], Address + Settings.Scenarios.Memory.ItemOffset.Name + i*0x2);
 
-	SPIFlash::WriteUint64(Scenario.Data->ToUint64(), Address + Settings.Scenarios.Memory.ItemOffset.Operand);
-
-	//NAME SAVE
 	uint32_t CommandAddress 	= Address + Settings.Scenarios.Memory.ItemOffset.Commands;
 
 	for (int i=0 ; i < Scenario.Commands.size(); i++) {
-		CommandAddress += i*Settings.Scenarios.Memory.CommandOffset.Size;
+		CommandAddress += i * Settings.Scenarios.Memory.CommandOffset.Size;
 
 		SPIFlash::WriteUint32(Scenario.Commands[i].DeviceID	, CommandAddress + Settings.Scenarios.Memory.CommandOffset.DeviceID);
-		SPIFlash::WriteUint8 (Scenario.Commands[i].CommandID	, CommandAddress + Settings.Scenarios.Memory.CommandOffset.CommandID);
-		SPIFlash::WriteUint8 (Scenario.Commands[i].EventCode	, CommandAddress + Settings.Scenarios.Memory.CommandOffset.EventID);
+		SPIFlash::WriteUint8 (Scenario.Commands[i].CommandID, CommandAddress + Settings.Scenarios.Memory.CommandOffset.CommandID);
+		SPIFlash::WriteUint8 (Scenario.Commands[i].EventCode, CommandAddress + Settings.Scenarios.Memory.CommandOffset.EventID);
 		SPIFlash::WriteUint32(Scenario.Commands[i].Operand	, CommandAddress + Settings.Scenarios.Memory.CommandOffset.Operand);
 	}
 
@@ -395,14 +389,14 @@ bool TimerData_t::IsLinked(uint32_t LinkedDeviceID, const vector<ScenesCommandIt
 }
 
 void TimerData_t::SetData(bitset<Settings.Scenarios.OperandBitLength> Operand) {
-	DeviceID				= (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ulong();
-	SensorIdentifier		= (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
+	DeviceID			= (uint32_t)Scenario_t::Range<32>(Operand, 0, 32).to_ulong();
+	SensorIdentifier	= (uint8_t) Scenario_t::Range<8> (Operand, 32, 8).to_ulong();
 	EventCode			= (uint8_t) Scenario_t::Range<8> (Operand, 40, 8).to_ulong();
 	TimerDelay			= (uint16_t)Scenario_t::Range<8> (Operand, 48, 8).to_ulong();
-	EventOperand			= (uint8_t) Scenario_t::Range<8> (Operand << 56, 0, 8).to_ulong();
+	EventOperand		= (uint8_t) Scenario_t::Range<8> (Operand << 56, 0, 8).to_ulong();
 
 	if (TimerDelay >= 10)
-		TimerDelay		= (TimerDelay - 8) * 5;
+	TimerDelay		= (TimerDelay - 8) * 5;
 }
 
 uint64_t TimerData_t::ToUint64() {
@@ -528,15 +522,9 @@ void CalendarData_t::ExecuteCommands(uint32_t ScenarioID) {
 bool CalendarData_t:: TimeUpdatedIsTriggered() {
 	DateTime_t CurrentDateTime = Time::DateTime();
 
-	// DEBUG
-	// ESP_LOGI(tag, "Current  Date is %u.%u.%u. DayOfWeek:%u . Time is %u:%u:%u", CurrentDateTime.Day, CurrentDateTime.Month, CurrentDateTime.Year, CurrentDateTime.DayOfWeek, CurrentDateTime.Hours, CurrentDateTime.Minutes, CurrentDateTime.Seconds);
-	//ESP_LOGI(tag, "Calendar Date is %u.%u.%u. DayOfWeek:%u. Time is %u:%u:%u", DateTime.Day, DateTime.Month, DateTime.Year, DateTime.DayOfWeek, DateTime.Hours, DateTime.Minutes, DateTime.Seconds);
-
-
 	DateTime.Hours    = CurrentDateTime.Hours;
 	DateTime.Minutes  = CurrentDateTime.Minutes;
 	DateTime.Seconds  = CurrentDateTime.Seconds;
-	// END DEBUG
 
 	if (CurrentDateTime.Hours == DateTime.Hours &&
       CurrentDateTime.Minutes == DateTime.Minutes &&

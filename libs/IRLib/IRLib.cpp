@@ -28,7 +28,7 @@ IRLib::IRLib(string ProntoHex) {
 void IRLib::LoadDataFromRaw() {
 	IRProto *Protocol = GetProtocol();
 
-	this->Protocol 		= 0x0;
+	this->Protocol 		= 0xFF;
 	this->Uint32Data 	= 0x0;
 
 	if (Protocol!=nullptr) {
@@ -88,7 +88,7 @@ bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 		for (uint16_t i=0; i< MinimalSize; i++) {
 			uint16_t PartDif = abs(Signal1.RawData[i] - Signal2.RawData[i]);
 
-			if (PartDif > 0.1 * max(abs(Signal1.RawData[i]), abs(Signal2.RawData[i])))
+			if (PartDif > 0.15 * max(abs(Signal1.RawData[i]), abs(Signal2.RawData[i])))
 				return false;
 		}
 

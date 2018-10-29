@@ -4,10 +4,11 @@
 *
 */
 
-#include "BLEServer.h"
 #include "Globals.h"
+#include "BLEServer.h"
 #include "Converter.h"
 #include "FreeRTOSTask.h"
+
 #if defined(CONFIG_BT_ENABLED)
 
 static char tag[] = "BLEServer";
