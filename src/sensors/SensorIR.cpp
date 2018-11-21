@@ -10,7 +10,6 @@
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
 static constexpr uint8_t 	SensorIRQueueSize				= 30;
-static QueueHandle_t 		SensorIRQueueFrequencyDetect	= FreeRTOS::Queue::Create(SensorIRQueueSize, sizeof(uint32_t));
 
 static IRLib 	LastSignal;
 static uint32_t SignalDetectionTime = 0x1;
@@ -22,7 +21,7 @@ class SensorIR_t : public Sensor_t {
 
 			ID          = SensorIRID;
 			Name        = "IR";
-			EventCodes  = { 0x00, 0x01 };
+			EventCodes  = { 0x00, 0x01, 0xEE, 0xFF };
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
@@ -98,10 +97,14 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageEnd() {
-			if (SensorIRCurrentMessage.size() <= 8) {
-				FreeRTOS::Queue::Reset(SensorIRQueueFrequencyDetect);
+			if (SensorIRCurrentMessage.size() <= 8)
 				return;
-			}
+
+			if (Command_t::GetCommandByID(SensorIRID - 0x80) != nullptr)
+				if (Command_t::GetCommandByID(SensorIRID - 0x80)->InOperation)
+					return;
+
+			Log::Add(Log::Events::Sensors::IRReceived);
 
 			SignalDetectionTime = Time::Unixtime();
 			LastSignal = IRLib(SensorIRCurrentMessage);

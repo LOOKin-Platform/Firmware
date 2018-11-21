@@ -58,7 +58,9 @@ class CommandColor_t : public Command_t {
 
     	if (Executed) {
     		ESP_LOGI("CommandColor_t", "Executed. Event code: %s, Operand: %s", Converter::ToHexString(EventCode, 2).c_str(), Converter::ToHexString(Operand, 8).c_str());
-    		Sensor_t::GetSensorByID(ID + 0x80)->Update();
+
+    		if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr)
+				Sensor_t::GetSensorByID(ID + 0x80)->Update();
     		return true;
     	}
 

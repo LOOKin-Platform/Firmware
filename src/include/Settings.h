@@ -73,7 +73,7 @@ class Settings_t {
 				{ 0x8, { 294, 6 }}
 			};
 
-			const uint8_t					IntervalID = 0x8;
+			const uint8_t					IntervalID 		= 0x8;
 		} Wireless;
 
 		struct {

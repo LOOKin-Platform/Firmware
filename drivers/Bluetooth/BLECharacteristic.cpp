@@ -214,7 +214,8 @@ void BLECharacteristic::handleGATTServerEvent(
 				if (m_pCallbacks != nullptr) {
 					m_pCallbacks->onWrite(this); // Invoke the onWrite callback handler.
 				}
-			} else {
+			}
+			else {
 				m_value.cancel();
 			}
 
@@ -259,9 +260,10 @@ void BLECharacteristic::handleGATTServerEvent(
 		// - uint8_t      *value
 		//
 		case ESP_GATTS_WRITE_EVT: {
-// We check if this write request is for us by comparing the handles in the event.  If it is for us
-// we save the new value.  Next we look at the need_rsp flag which indicates whether or not we need
-// to send a response.  If we do, then we formulate a response and send it.
+		// We check if this write request is for us by comparing the handles in the event.  If it is for us
+		// we save the new value.  Next we look at the need_rsp flag which indicates whether or not we need
+		// to send a response.  If we do, then we formulate a response and send it.
+
 			if (param->write.handle == m_handle) {
 				if (param->write.is_prep) {
 					m_value.addPart(param->write.value, param->write.len);

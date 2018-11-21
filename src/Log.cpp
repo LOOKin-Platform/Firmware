@@ -252,10 +252,10 @@ bool Log::VerifyLastBoot() {
 	for (int i = GetSystemLogCount(Memory) - 1; i > 0; i--) {
 		Log::Item Record = Log::GetSystemLogItem(i, Memory);
 
-		if (Record.Code == LOG_DEVICE_ON)
+		if (Record.Code == Events::System::DeviceOn)
 			break;
 
-		if (Record.Code == LOG_DEVICE_STARTED || Record.Code == LOG_DEVICE_ROLLBACK)
+		if (Record.Code == Events::System::DeviceStarted || Record.Code == Events::System::DeviceRollback)
 			return true;
 	}
 
@@ -270,11 +270,17 @@ bool Log::VerifyLastBoot() {
  */
 
 void Log::Indicator_t::Display(uint16_t LogItem) {
+
 	switch (LogItem) {
-		case LOG_DEVICE_ON				: Execute(0		, 255	, 255	, BLINKING	, 10); break;
-		case LOG_WIFI_AP_START			: Execute(255	, 255	, 0		, CONST		, 4); break;
-		case LOG_WIFI_STA_CONNECTING	: Execute(0		, 255	, 0		, BLINKING	, 0); break;
-		case LOG_WIFI_STA_GOT_IP		: Execute(0		, 255	, 0		, CONST		, 4); break;
+		case Events::System::DeviceOn		: Execute(0		, 255	, 255	, BLINKING	, 10);	break;
+		case Events::WiFi::APStart			: Execute(255	, 255	, 0		, CONST		, 4);	break;
+		case Events::WiFi::STAConnecting	: Execute(0		, 255	, 0		, BLINKING	, 0);	break;
+		case Events::WiFi::STAGotIP			: Execute(0		, 255	, 0		, CONST		, 4);	break;
+
+		case Events::Commands::IRExecuted	:
+		case Events::Sensors ::IRReceived	:
+			Execute(60, 0, 0, STROBE, 2);	break;
+
 		default: break;
 	}
 }
@@ -347,12 +353,20 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 	if (tDuration > 0 && tExpired > tDuration)
 		tBlinking = NONE;
 
-	if (tBlinking == BLINKING) {
-		if (tExpired % (BLINKING_DIVIDER * TIMER_ALARM) != 0)
+	if (tBlinking == BLINKING || tBlinking == STROBE) {
+		uint8_t Divider = (tBlinking == BLINKING) ? BLINKING_DIVIDER : STROBE_DIVIDER;
+
+		if (tExpired % (Divider * TIMER_ALARM) != 0)
 			return;
 
-		if (tDuration == 0 && tExpired >= (BLINKING_DIVIDER * TIMER_ALARM))
+		if (tDuration == 0 && tExpired >= (Divider * TIMER_ALARM))
 			tExpired = 0;
+
+		if (tBlinking == STROBE && (tExpired / TIMER_ALARM) >= ((tDuration / 1000000)*2 )) {
+			tExpired = 0;
+			tBlinking = NONE;
+		}
+
 
 		IsLighted =!(GPIO::PWMValue(GPIO.Red.Channel)+GPIO::PWMValue(GPIO.Green.Channel)+GPIO::PWMValue(GPIO.Blue.Channel) == 0);
 	}

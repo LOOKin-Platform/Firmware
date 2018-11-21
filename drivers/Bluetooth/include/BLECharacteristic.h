@@ -100,15 +100,15 @@ class BLECharacteristic {
 		friend class BLEDescriptor;
 		friend class BLECharacteristicMap;
 
-		BLEUUID m_bleUUID;
-		BLEDescriptorMap m_descriptorMap;
-		uint16_t m_handle;
-		esp_gatt_char_prop_t m_properties;
-		BLECharacteristicCallbacks* m_pCallbacks;
-		BLEService* m_pService;
-		BLEValue m_value;
-		esp_gatt_perm_t m_permissions = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
-		uint16_t m_mtu = 23;
+		BLEUUID						m_bleUUID;
+		BLEDescriptorMap			m_descriptorMap;
+		uint16_t					m_handle;
+		esp_gatt_char_prop_t		m_properties;
+		BLECharacteristicCallbacks*	m_pCallbacks;
+		BLEService*					m_pService;
+		BLEValue					m_value;
+		esp_gatt_perm_t				m_permissions = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
+		uint16_t					m_mtu = 23;
 
 		void handleGATTServerEvent(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param);
 

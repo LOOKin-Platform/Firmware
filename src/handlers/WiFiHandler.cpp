@@ -32,7 +32,7 @@ esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 }
 
 void IPDidntGetCallback(FreeRTOS::Timer *pTimer) {
-	Log::Add(LOG_WIFI_STA_UNDEFINED_IP);
+	Log::Add(Log::Events::WiFi::STAUndefinedIP);
 	WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 }
 
@@ -45,7 +45,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 	private:
 		esp_err_t apStart() {
-			Log::Add(LOG_WIFI_AP_START);
+			Log::Add(Log::Events::WiFi::APStart);
 			WebServer.Start();
 			Wireless.IsFirstWiFiStart = false;
 
@@ -53,20 +53,20 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t apStop() {
-			Log::Add(LOG_WIFI_AP_STOP);
+			Log::Add(Log::Events::WiFi::APStop);
 			Wireless.IsEventDrivenStart = false;
 			return ESP_OK;
 		}
 
 		esp_err_t staConnected() {
-			Log::Add(LOG_WIFI_STA_CONNECTED);
+			Log::Add(Log::Events::WiFi::STAConnected);
 			IPDidntGetTimer->Start();
 
 			return ESP_OK;
 		}
 
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
-			Log::Add(LOG_WIFI_STA_DISCONNECTED);
+			Log::Add(Log::Events::WiFi::STADisconnected);
 			//WebServer.Stop();
 
 			// Повторно подключится к Wi-Fi, если подключение оборвалось
@@ -123,7 +123,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 				WebServer.UDPSendBroadcastDiscover();
 			}
 
-			Log::Add(LOG_WIFI_STA_GOT_IP, Converter::IPToUint32(event_sta_got_ip.ip_info));
+			Log::Add(Log::Events::WiFi::STAGotIP, Converter::IPToUint32(event_sta_got_ip.ip_info));
 
 			Time::ServerSync(Settings.TimeSync.ServerHost, Settings.TimeSync.APIUrl);
 			Wireless.IsEventDrivenStart = false;

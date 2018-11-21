@@ -16,7 +16,8 @@ using namespace std;
 #include "JSON.h"
 #include "Memory.h"
 #include "DateTime.h"
-#include "Globals.h"
+#include "ISR.h"
+#include "HardwareIO.h"
 
 #include "Query.h"
 #include "WebServer.h"
@@ -60,13 +61,13 @@ class Log {
 
 		class Indicator_t {
 			public:
-				enum MODE { NONE, CONST, BLINKING, FAST };
+				enum MODE { NONE, CONST, BLINKING, STROBE };
 
 				static void Display(uint16_t);
 				static void Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint8_t Duration = 0);
 			private:
 				static bool		IsInited;
-				static constexpr float Brightness	= 0.03;
+				static constexpr float Brightness = 0.03;
 				static uint32_t	tDuration;
 				static uint32_t	tExpired;
 				static MODE		tBlinking;
@@ -78,46 +79,61 @@ class Log {
 		} Indicator;
 
 		static void         HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+
 	private:
+
 		static vector<Log::Item> Items;
 		static string       Serialize(Log::Item Item);
 		static Log::Item    Deserialize(string JSONString);
+
+	public:
+		 // 1XXX - информация, 0XXX - ошибки
+		class Events {
+			public:
+				enum System {
+					// Cистемные события 0x0000..0x00FF - сохраняются в NVS
+					DeviceOn 		= 0x0001,
+					DeviceStarted 	= 0x0002,
+					DeviceRollback	= 0x00f0,
+
+					// Неинвазивные системные события 0xX100...0xX1FF
+					DeviceOverheat	= 0x1105,
+					DeviceCooled	= 0x1106,
+					TimeSynced		= 0x1130
+				};
+
+				enum WiFi {
+					// Wi-FI события 0xX200...0xX2FF
+					APStart			= 0x1201,
+					APStop			= 0x1202,
+					STAConnecting	= 0x1203,
+					STAConnected	= 0x1204,
+					STADisconnected	= 0x1205,
+					STAUndefinedIP	= 0x0206,
+					STAGotIP		= 0x1206,
+				};
+
+				// Bluetooth события 0xX300...0xX3FF
+
+				enum Sensors {
+					// События сенсоров 0xX400...0xX4FF
+					IRReceived		= 0x1487
+				};
+
+				enum Commands {
+					// События команд 0xX500...0xX5FF
+					IRFailed 		= 0x0507,
+					IRExecuted		= 0x1507
+				};
+
+				// События автоматизации 0xX600...0xX6FF
+				// События Storage 0xX700...0xX7FF
+
+		} ;
 };
 
 #define TIMER_ALARM					100000 // 1/10 секунды
 #define BLINKING_DIVIDER			7 // моргание каждые 0.7 секунды
-#define BLINKING_SPEED				1.5*1000000
-
-// Cистемные события 0x0000..0x00FF - сохраняются в NVS
-// События с кодом, 1XXX - информация, 0XXX - ошибки
-#define LOG_DEVICE_ON               0x0001
-#define LOG_DEVICE_STARTED          0x0002
-
-#define LOG_DEVICE_ROLLBACK         0x00F0
-
-// Неинвазивные системные события 0xX100...0xX1FF
-
-#define LOG_DEVICE_OVERHEAT         0x1105
-#define LOG_DEVICE_COOLLED          0x1106
-
-#define LOG_TIME_SYNCED             0x1130
-
-// Wi-FI события 0xX200...0xX2FF
-
-#define LOG_WIFI_AP_START           0x1201
-#define LOG_WIFI_AP_STOP            0x1202
-#define LOG_WIFI_STA_CONNECTING		0x1203
-#define LOG_WIFI_STA_CONNECTED      0x1204
-#define LOG_WIFI_STA_DISCONNECTED   0x1205
-#define LOG_WIFI_STA_GOT_IP         0x1206
-#define LOG_WIFI_STA_UNDEFINED_IP   0x0207
-
-// Bluetooth события 0xX300...0xX3FF
-
-// События сенсоров 0xX400...0xX4FF
-
-// События команд 0xX500...0xX5FF
-
-// События сценариев 0xX600...0xX6FF
+#define	STROBE_DIVIDER				1 // стробоскоп - каждые 0.1 секунды
 
 #endif

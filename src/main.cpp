@@ -50,12 +50,12 @@ void app_main(void) {
 	NVS::Init();
 
 	if (!Log::VerifyLastBoot()) {
-		Log::Add(LOG_DEVICE_ROLLBACK);
+		Log::Add(Log::Events::System::DeviceRollback);
 		OTA::Rollback();
 	}
 
 	Settings.eFuse.ReadData();
-	Log::Add(LOG_DEVICE_ON);
+	Log::Add(Log::Events::System::DeviceOn);
 
 	#if defined(CONFIG_PM_ENABLE)
 
@@ -91,10 +91,10 @@ void app_main(void) {
 
 	Wireless.StartInterfaces();
 
-	Log::Add(LOG_DEVICE_STARTED);
+	Log::Add(Log::Events::System::DeviceStarted);
 
 	//BLEClient.Scan();
-	//BLEServer.StartAdvertising("!!");
+	BLEServer.StartAdvertising("!!");
 
 	static Pooling_t Pooling = Pooling_t();
 	Pooling.start();

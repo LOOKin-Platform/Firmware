@@ -27,7 +27,7 @@ void EnergyPeriodicHandler::Pool() {
 	    uint16_t USBValue	= (uint16_t)adc1_get_raw(ADC1_CHANNEL_5);
 	    uint16_t BATValue	= (uint16_t)adc1_get_raw(ADC1_CHANNEL_4);
 
-		if (USBValue > 620)
+		if (USBValue > 3072)
 			Device.PowerMode = DevicePowerMode::CONST;
 		else
 			Device.PowerMode = DevicePowerMode::BATTERY;

@@ -29,9 +29,8 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 
 Sensor_t* Sensor_t::GetSensorByName(string SensorName) {
 	for (auto& Sensor : Sensors)
-		if (Converter::ToLower(Sensor->Name) == Converter::ToLower(SensorName)) {
+		if (Converter::ToLower(Sensor->Name) == Converter::ToLower(SensorName))
 			return Sensor;
-		}
 
 	return nullptr;
 }
@@ -41,7 +40,7 @@ Sensor_t* Sensor_t::GetSensorByID(uint8_t SensorID) {
 		if (Sensor->ID == SensorID)
 			return Sensor;
 
-	return new Sensor_t();
+	return nullptr;
 }
 
 uint8_t Sensor_t::GetDeviceTypeHex() {

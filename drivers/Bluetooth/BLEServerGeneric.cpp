@@ -248,6 +248,7 @@ void BLEServerGeneric::HandleGATTServerEvent(
 		//
 		case ESP_GATTS_CONNECT_EVT: {
 			m_connId = param->connect.conn_id; // Save the connection id.
+
 			if(m_securityLevel){
 				esp_ble_set_encryption(param->connect.remote_bda, m_securityLevel);
 				memcpy(m_remote_bda, param->connect.remote_bda, sizeof(m_remote_bda));

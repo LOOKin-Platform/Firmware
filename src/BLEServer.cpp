@@ -27,6 +27,7 @@ void ControlFlagCallback::onWrite(BLECharacteristic *pCharacteristic) {
 
 void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	string Value = pCharacteristic->getValue();
+
 	if (Value.length() > 0) {
 		size_t Delimeter = Value.find(" ");
 
@@ -39,6 +40,7 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 
 void ServerCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	string Value = pCharacteristic->getValue();
+
 	if (Value.length() > 0) {
 
 		uint8_t 	EventCode 	= 0;
@@ -68,6 +70,7 @@ void BLEServer_t::SetScanPayload(string Payload) {
 
 void BLEServer_t::StartAdvertising(string Payload) {
 	BLEDevice::Init(Settings.Bluetooth.DeviceNamePrefix + DeviceType_t::ToString(Settings.eFuse.Type) + " " + Device.IDToString());
+	//BLEDevice::SetPower(ESP_PWR_LVL_N12);
 
 	pServer  = BLEDevice::CreateServer();
 
@@ -93,7 +96,7 @@ void BLEServer_t::StartAdvertising(string Payload) {
 	pCharacteristicWiFiNetworks->setCallbacks(new WiFiNetworksCallback());
 
 	// FFFF - Sensors and Commands Information
-	pServiceActuators = pServer->CreateService((uint16_t)0xFFFF);
+	//pServiceActuators = pServer->CreateService((uint16_t)0xFFFF);
 
 	/*
 	for (auto& Sensor : Sensors) {
@@ -108,12 +111,12 @@ void BLEServer_t::StartAdvertising(string Payload) {
 	*/
 
 	pServiceDevice		->Start();
-	pServiceActuators	->Start();
+	//pServiceActuators	->Start();
 
 	pAdvertising = pServer->GetAdvertising();
 
 	pAdvertising->AddServiceUUID(BLEUUID(pServiceDevice->GetUUID()));
-	pAdvertising->AddServiceUUID(BLEUUID(pServiceActuators->GetUUID()));
+	//pAdvertising->AddServiceUUID(BLEUUID(pServiceActuators->GetUUID()));
 
 	if (Payload != "")
 		SetScanPayload(Payload);
@@ -137,7 +140,7 @@ void BLEServer_t::StopAdvertising() {
 	delete(pCharacteristicControlFlag);
 	delete(pCharacteristicWiFiNetworks);
 	delete(pServiceDevice);
-	delete(pServiceActuators);
+	//delete(pServiceActuators);
 
 	delete(pServer);
 

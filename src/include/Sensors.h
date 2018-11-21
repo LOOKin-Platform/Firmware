@@ -24,7 +24,9 @@
 #include "RMT.h"
 #include "HardwareIO.h"
 #include "DateTime.h"
+#include "Commands.h"
 #include "Storage.h"
+#include "Log.h"
 
 using namespace std;
 
@@ -36,7 +38,7 @@ struct SensorValueItem {
 
 class Sensor_t {
 	public:
-		uint8_t           	ID;
+		uint8_t           	ID = 0x0;
 		string            	Name;
 		vector<uint8_t>   	EventCodes;
 

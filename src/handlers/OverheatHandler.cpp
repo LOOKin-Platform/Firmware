@@ -45,7 +45,7 @@ void OverheatHandler::Pool() {
 
 	if (ChipTemperature > Settings.Pooling.OverHeat.OverheatTemp) {
 		IsOverheated = true;
-		Log::Add(LOG_DEVICE_OVERHEAT);
+		Log::Add(Log::Events::System::DeviceOverheat);
 
 		for (auto& Command : Commands)
 			Command->Overheated();
@@ -54,7 +54,7 @@ void OverheatHandler::Pool() {
 	if (ChipTemperature < Settings.Pooling.OverHeat.ChilledTemp) {
 		if (IsOverheated) {
 			IsOverheated = false;
-			Log::Add(LOG_DEVICE_COOLLED);
+			Log::Add(Log::Events::System::DeviceCooled);
 		}
 	}
 

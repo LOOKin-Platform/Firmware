@@ -54,7 +54,7 @@ void Device_t::Init() {
 
 	switch (Type.Hex) {
 		case Settings.Devices.Plug	: PowerModeVoltage = +220; break;
-		case Settings.Devices.Remote: PowerModeVoltage = +5; break;
+		case Settings.Devices.Remote: PowerModeVoltage = +3; break;
 	}
 }
 
@@ -279,7 +279,7 @@ string Device_t::PowerModeToString() {
 	stringstream s;
 	s << std::dec << +PowerModeVoltage;
 
-	return (PowerMode == DevicePowerMode::BATTERY) ? "Battery" : s.str() + "v";
+	return (PowerMode == DevicePowerMode::BATTERY) ? "Battery": s.str() + "v";
 }
 
 string Device_t::FirmwareVersionToString() {

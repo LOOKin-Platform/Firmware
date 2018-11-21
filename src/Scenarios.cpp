@@ -371,7 +371,8 @@ string EventData_t::ToString() {
 
 bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
 	if (SensorIdentifier == SensorID)
-		return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
+		if (Sensor_t::GetSensorByID(SensorID) != nullptr)
+			return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
 
 	return false;
 };
@@ -426,11 +427,11 @@ string TimerData_t::ToString() {
 }
 
 bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
-  if (SensorIdentifier == SensorID) {
-    return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
-  }
+	if (SensorIdentifier == SensorID)
+		if (Sensor_t::GetSensorByID(SensorID) != nullptr)
+			return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
 
-  return false;
+	return false;
 };
 
 void TimerData_t::ExecuteCommands(uint32_t ScenarioID) {

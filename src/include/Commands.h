@@ -21,30 +21,33 @@
 #include "JSON.h"
 #include "HardwareIO.h"
 #include "Converter.h"
-#include "Sensors.h"
 #include "Storage.h"
+
+#include "Log.h"
 
 using namespace std;
 
 class Command_t {
-  public:
-    uint8_t               		ID;
-    string                		Name;
-    map<string,uint8_t>   		Events;
+	public:
+		uint8_t               		ID;
+		string                		Name;
+		map<string,uint8_t>   		Events;
 
-    virtual ~Command_t() = default;
+		bool						InOperation = false;
 
-    virtual bool				Execute(uint8_t EventCode, string StringOperand = "0") { return true; };
-    virtual void				Overheated() {};
+		virtual ~Command_t() = default;
 
-    uint8_t						GetEventCode(string Action);
+		virtual bool				Execute(uint8_t EventCode, string StringOperand = "0") { return true; };
+		virtual void				Overheated() {};
 
-    static Command_t*			GetCommandByName(string);
-    static Command_t*			GetCommandByID(uint8_t);
-    static uint8_t				GetDeviceTypeHex();
+		uint8_t						GetEventCode(string Action);
 
-    static vector<Command_t*>	GetCommandsForDevice();
-    static void					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+		static Command_t*			GetCommandByName(string);
+		static Command_t*			GetCommandByID(uint8_t);
+		static uint8_t				GetDeviceTypeHex();
+
+		static vector<Command_t*>	GetCommandsForDevice();
+		static void					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 };
 
 extern Storage_t Storage;
