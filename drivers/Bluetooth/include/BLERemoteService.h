@@ -30,11 +30,11 @@ class BLERemoteService {
 		virtual ~BLERemoteService();
 
 		// Public methods
-		BLERemoteCharacteristic* 					getCharacteristic(const char* uuid);// Get the specified characteristic reference.
-		BLERemoteCharacteristic* 					getCharacteristic(BLEUUID uuid); // Get the specified characteristic reference.
-		BLERemoteCharacteristic* 					getCharacteristic(uint16_t uuid); // Get the specified characteristic reference.
-		map<std::string, BLERemoteCharacteristic*>* getCharacteristics();
-		void 										getCharacteristics(map<uint16_t, BLERemoteCharacteristic*>* pCharacteristicMap); // Get the characteristics map.
+		BLERemoteCharacteristic* 					GetCharacteristic(const char* uuid);// Get the specified characteristic reference.
+		BLERemoteCharacteristic* 					GetCharacteristic(BLEUUID uuid); // Get the specified characteristic reference.
+		BLERemoteCharacteristic* 					GetCharacteristic(uint16_t uuid); // Get the specified characteristic reference.
+		map<std::string, BLERemoteCharacteristic*>* GetCharacteristics();
+		void 										GetCharacteristics(map<uint16_t, BLERemoteCharacteristic*>* pCharacteristicMap); // Get the characteristics map.
 
 		BLEClientGeneric* 							getClient(void);// Get a reference to the client associated with this service.
 		uint16_t 									getHandle(); 	// Get the handle of this service.

@@ -20,7 +20,6 @@ class BLEAdvertisedDeviceCallbacks;
 class BLEClientGeneric;
 class BLEScan;
 
-
 /**
  * @brief The result of having performed a scan.
  * When a scan completes, we have a set of found devices.  Each device is described
@@ -29,14 +28,15 @@ class BLEScan;
  * index (starting at 0) of the desired device.
  */
 class BLEScanResults {
-public:
-	void                dump();
-	int                 getCount();
-	BLEAdvertisedDevice getDevice(uint32_t i);
+	public:
+		void                Dump();
+		int                 GetCount();
+		BLEAdvertisedDevice GetDevice(uint32_t i);
 
 private:
 	friend BLEScan;
-	std::vector<BLEAdvertisedDevice> m_vectorAdvertisedDevices;
+	std::vector<BLEAdvertisedDevice>
+		m_vectorAdvertisedDevices;
 };
 
 /**
@@ -45,29 +45,29 @@ private:
  * Scanning is associated with a %BLE client that is attempting to locate BLE servers.
  */
 class BLEScan {
-public:
-	void           setActiveScan(bool active);
-	void           setAdvertisedDeviceCallbacks(
-			              BLEAdvertisedDeviceCallbacks* pAdvertisedDeviceCallbacks,
-										bool wantDuplicates = false);
-	void           setInterval(uint16_t intervalMSecs);
-	void           setWindow(uint16_t windowMSecs);
-	BLEScanResults start(uint32_t duration);
-	void           stop();
+	public:
+		void			SetActiveScan(bool active);
+		void			SetAdvertisedDeviceCallbacks(BLEAdvertisedDeviceCallbacks* pAdvertisedDeviceCallbacks, bool wantDuplicates = false);
+		void			SetInterval(uint16_t intervalMSecs);
+		void			SetWindow(uint16_t windowMSecs);
+		BLEScanResults	Start(uint32_t duration);
+		void			Stop();
 
-private:
-	BLEScan();   // One doesn't create a new instance instead one asks the BLEDevice for the singleton.
-	friend class 	BLEDevice;
-	void				handleGAPEvent(esp_gap_ble_cb_event_t  event, esp_ble_gap_cb_param_t* param);
-	void				parseAdvertisement(BLEClientGeneric* pRemoteDevice, uint8_t *payload);
+		uint32_t		ScanDuration = 0;
+
+	private:
+		BLEScan();		// One doesn't create a new instance instead one asks the BLEDevice for the singleton.
+		friend class	BLEDevice;
+		void			HandleGAPEvent(esp_gap_ble_cb_event_t  event, esp_ble_gap_cb_param_t* param);
+		void			ParseAdvertisement(BLEClientGeneric* pRemoteDevice, uint8_t *payload);
 
 
-	esp_ble_scan_params_t         m_scan_params;
-	BLEAdvertisedDeviceCallbacks* m_pAdvertisedDeviceCallbacks;
-	bool                          m_stopped;
-	FreeRTOS::Semaphore           m_semaphoreScanEnd = FreeRTOS::Semaphore("ScanEnd");
-	BLEScanResults                m_scanResults;
-	bool                          m_wantDuplicates;
+		esp_ble_scan_params_t			m_scan_params;
+		BLEAdvertisedDeviceCallbacks*	m_pAdvertisedDeviceCallbacks;
+		bool							m_stopped;
+		FreeRTOS::Semaphore				m_semaphoreScanEnd = FreeRTOS::Semaphore("ScanEnd");
+		BLEScanResults					m_scanResults;
+		bool							m_wantDuplicates;
 }; // BLEScan
 
 #endif /* CONFIG_BT_ENABLED */

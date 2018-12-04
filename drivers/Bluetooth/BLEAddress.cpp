@@ -47,8 +47,8 @@ BLEAddress::BLEAddress(string stringAddress) {
  * @param [in] otherAddress The other address to compare against.
  * @return True if the addresses are equal.
  */
-bool BLEAddress::equals(BLEAddress otherAddress) {
-	return memcmp(otherAddress.getNative(), m_address, 6) == 0;
+bool BLEAddress::Equals(BLEAddress otherAddress) {
+	return memcmp(otherAddress.GetNative(), m_address, 6) == 0;
 } // equals
 
 
@@ -56,7 +56,7 @@ bool BLEAddress::equals(BLEAddress otherAddress) {
  * @brief Return the native representation of the address.
  * @return The native representation of the address.
  */
-esp_bd_addr_t *BLEAddress::getNative() {
+esp_bd_addr_t *BLEAddress::GetNative() {
 	return &m_address;
 } // getNative
 
@@ -72,7 +72,7 @@ esp_bd_addr_t *BLEAddress::getNative() {
  *
  * @return The string representation of the address.
  */
-std::string BLEAddress::toString() {
+std::string BLEAddress::ToString() {
 	std::stringstream stream;
 	stream << std::setfill('0') << std::setw(2) << std::hex << (int)((uint8_t *)(m_address))[0] << ':';
 	stream << std::setfill('0') << std::setw(2) << std::hex << (int)((uint8_t *)(m_address))[1] << ':';

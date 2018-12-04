@@ -188,10 +188,7 @@ std::string BLECharacteristic::getValue() {
 } // getValue
 
 
-void BLECharacteristic::handleGATTServerEvent(
-		esp_gatts_cb_event_t      event,
-		esp_gatt_if_t             gatts_if,
-		esp_ble_gatts_cb_param_t* param) {
+void BLECharacteristic::handleGATTServerEvent(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param) {
 	switch(event) {
 	// Events handled:
 	// ESP_GATTS_ADD_CHAR_EVT

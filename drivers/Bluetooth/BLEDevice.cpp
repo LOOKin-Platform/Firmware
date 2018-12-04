@@ -50,6 +50,10 @@ void BLEDevice::Init(std::string deviceName) {
 
 		NVS::Init();
 
+#ifndef CLASSIC_BT_ENABLED
+		::esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);
+#endif
+
 		esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
 		esp_err_t errRc = ::esp_bt_controller_init(&bt_cfg);
 
@@ -59,7 +63,6 @@ void BLEDevice::Init(std::string deviceName) {
 		}
 
 #ifndef CLASSIC_BT_ENABLED
-		::esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT);  //FIXME waiting for response from esp-idf issue
 		errRc = ::esp_bt_controller_enable(ESP_BT_MODE_BLE);
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_bt_controller_enable: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
@@ -257,7 +260,7 @@ void BLEDevice::Deinit() {
 	}
 
 	if (BLEDevice::m_pScan != nullptr) {
-		BLEDevice::GetScan()->handleGAPEvent(event, param);
+		BLEDevice::GetScan()->HandleGAPEvent(event, param);
 	}
 } // gapEventHandler
 
@@ -297,11 +300,11 @@ void BLEDevice::Deinit() {
  * @param [in] characteristicUUID
  */
 /* STATIC */ std::string BLEDevice::GetValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID) {
-	ESP_LOGD(tag, ">> getValue: bdAddress: %s, serviceUUID: %s, characteristicUUID: %s", bdAddress.toString().c_str(), serviceUUID.toString().c_str(), characteristicUUID.toString().c_str());
+	ESP_LOGD(tag, ">> getValue: bdAddress: %s, serviceUUID: %s, characteristicUUID: %s", bdAddress.ToString().c_str(), serviceUUID.toString().c_str(), characteristicUUID.toString().c_str());
 	BLEClientGeneric *pClient = CreateClient();
-	pClient->connect(bdAddress);
+	pClient->Connect(bdAddress);
 	std::string ret = pClient->getValue(serviceUUID, characteristicUUID);
-	pClient->disconnect();
+	pClient->Disconnect();
 	ESP_LOGD(tag, "<< getValue");
 	return ret;
 } // getValue
@@ -338,11 +341,11 @@ void BLEDevice::SetPower(esp_power_level_t powerLevel) {
  * @param [in] characteristicUUID
  */
 /* STATIC */ void BLEDevice::SetValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID, std::string value) {
-	ESP_LOGD(tag, ">> setValue: bdAddress: %s, serviceUUID: %s, characteristicUUID: %s", bdAddress.toString().c_str(), serviceUUID.toString().c_str(), characteristicUUID.toString().c_str());
+	ESP_LOGD(tag, ">> setValue: bdAddress: %s, serviceUUID: %s, characteristicUUID: %s", bdAddress.ToString().c_str(), serviceUUID.toString().c_str(), characteristicUUID.toString().c_str());
 	BLEClientGeneric *pClient = CreateClient();
-	pClient->connect(bdAddress);
+	pClient->Connect(bdAddress);
 	pClient->setValue(serviceUUID, characteristicUUID, value);
-	pClient->disconnect();
+	pClient->Disconnect();
 } // setValue
 
 
@@ -352,7 +355,7 @@ void BLEDevice::SetPower(esp_power_level_t powerLevel) {
  */
 /* STATIC */ std::string BLEDevice::toString() {
 	std::ostringstream oss;
-	oss << "BD Address: " << GetAddress().toString();
+	oss << "BD Address: " << GetAddress().ToString();
 	return oss.str();
 } // toString
 
@@ -362,8 +365,8 @@ void BLEDevice::SetPower(esp_power_level_t powerLevel) {
  * @param [in] address The address to add to the white list.
  */
 void BLEDevice::WhiteListAdd(BLEAddress address) {
-	ESP_LOGD(tag, ">> whiteListAdd: %s", address.toString().c_str());
-	esp_err_t errRc = esp_ble_gap_update_whitelist(true, *address.getNative());  // True to add an entry.
+	ESP_LOGD(tag, ">> whiteListAdd: %s", address.ToString().c_str());
+	esp_err_t errRc = esp_ble_gap_update_whitelist(true, *address.GetNative());  // True to add an entry.
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_ble_gap_update_whitelist: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
 	}
@@ -375,8 +378,8 @@ void BLEDevice::WhiteListAdd(BLEAddress address) {
  * @param [in] address The address to remove from the white list.
  */
 void BLEDevice::WhiteListRemove(BLEAddress address) {
-	ESP_LOGD(tag, ">> whiteListRemove: %s", address.toString().c_str());
-	esp_err_t errRc = esp_ble_gap_update_whitelist(false, *address.getNative());  // False to remove an entry.
+	ESP_LOGD(tag, ">> whiteListRemove: %s", address.ToString().c_str());
+	esp_err_t errRc = esp_ble_gap_update_whitelist(false, *address.GetNative());  // False to remove an entry.
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_ble_gap_update_whitelist: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
 	}

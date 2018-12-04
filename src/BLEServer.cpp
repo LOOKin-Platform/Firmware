@@ -29,12 +29,26 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	string Value = pCharacteristic->getValue();
 
 	if (Value.length() > 0) {
-		size_t Delimeter = Value.find(" ");
+		vector<string> Parts = Converter::StringToVector(Value," ");
 
-		if (Delimeter != string::npos && Delimeter < Value.size()) {
-			ESP_LOGI(tag, "WiFi Data received. SSID: %s, Password: %s", Value.substr(0, Delimeter).c_str(), Value.substr(Delimeter+1).c_str());
-			Network.AddWiFiNetwork(Value.substr(0, Delimeter), Value.substr(Delimeter+1));
+		if (Parts.size() != 3) {
+			ESP_LOGE(tag, "WiFi characteristics error input format");
+			return;
 		}
+
+		if (Parts[0] != BLEServer.SecretCodeString()) {
+			ESP_LOGE(tag, "Secret code invalid");
+			return;
+		}
+
+		ESP_LOGI(tag, "WiFi Data received. SSID: %s, Password: %s", Parts[1].c_str(), Parts[2].c_str());
+		Network.AddWiFiNetwork(Parts[1], Parts[2]);
+
+		// If device in AP mode or can't connect as Station - try to connect with new data
+		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() != WIFI_MODE_STA_STR))
+			Network.WiFiConnect(Parts[1], true);
+
+		//BLEClient.ScanStop();
 	}
 }
 
@@ -76,22 +90,22 @@ void BLEServer_t::StartAdvertising(string Payload) {
 
 	pServiceDevice = pServer->CreateService((uint16_t)0x180A);
 
-	pCharacteristicManufacturer = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A29), BLECharacteristic::PROPERTY_READ);
+	pCharacteristicManufacturer = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A29), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
 	pCharacteristicManufacturer->setValue("LOOK.in");
 
-	pCharacteristicModel = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A24), BLECharacteristic::PROPERTY_READ);
+	pCharacteristicModel = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A24), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
 	pCharacteristicModel->setValue(Converter::ToHexString(Settings.eFuse.Type,2));
 
-	pCharacteristicID = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A25), BLECharacteristic::PROPERTY_READ);
+	pCharacteristicID = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A25), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
 	pCharacteristicID->setValue(Converter::ToHexString(Settings.eFuse.DeviceID,8));
 
-	pCharacteristicFirmware = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A26), BLECharacteristic::PROPERTY_READ);
+	pCharacteristicFirmware = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A26), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
 	pCharacteristicFirmware->setValue(Settings.FirmwareVersion);
 
-	pCharacteristicControlFlag = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x3000), BLECharacteristic::PROPERTY_WRITE);
+	pCharacteristicControlFlag = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x3000), BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
 	pCharacteristicControlFlag->setCallbacks(new ControlFlagCallback());
 
-	pCharacteristicWiFiNetworks = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x4000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE);
+	pCharacteristicWiFiNetworks = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x4000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
 	pCharacteristicWiFiNetworks->setValue(Converter::VectorToString(Network.GetSavedWiFiList(), ","));
 	pCharacteristicWiFiNetworks->setCallbacks(new WiFiNetworksCallback());
 
@@ -147,6 +161,13 @@ void BLEServer_t::StopAdvertising() {
 	//delete(pAdvertising);
 
 	ESP_LOGI(tag, "Stop advertising");
+}
+
+string BLEServer_t::SecretCodeString() {
+	if (SecretCode == 0)
+		SecretCode = (uint32_t)esp_random();
+
+	return Converter::ToHexString(SecretCode, 8);
 }
 
 #endif /* Bluetooth enabled */

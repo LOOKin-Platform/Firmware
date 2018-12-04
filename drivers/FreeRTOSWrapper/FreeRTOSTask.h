@@ -35,12 +35,12 @@ class Task {
 	public:
 		Task(std::string taskName="Task", uint16_t stackSize=10000, uint8_t priority=5);
 		virtual ~Task();
-		void setStackSize(uint16_t stackSize);
-		void setPriority(uint8_t priority);
-		void setName(std::string name);
-		void setCore(BaseType_t coreId);
-		void start(void* taskData=nullptr);
-		void stop();
+		void SetStackSize(uint16_t stackSize);
+		void SetPriority(uint8_t priority);
+		void SetName(std::string name);
+		void SetCore(BaseType_t coreId);
+		void Start(void* taskData=nullptr);
+		void Stop();
 		/**
 		 * @brief Body of the task to execute.
 		 *
@@ -50,13 +50,13 @@ class Task {
 		 *
 		 * @param [in] data The data passed in to the newly started task.
 		 */
-		virtual void run(void *data) = 0; // Make run pure virtual
-		void delay(int ms);
+		virtual void Run(void *data) = 0; // Make run pure virtual
+		void Delay(int ms);
 
 	private:
 		xTaskHandle m_handle;
 		void*       m_taskData;
-		static void runTask(void *data);
+		static void RunTask(void *data);
 		std::string m_taskName;
 		uint16_t    m_stackSize;
 		uint8_t     m_priority;

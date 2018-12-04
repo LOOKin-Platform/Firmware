@@ -105,12 +105,8 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 	if (SSID != "" && Password == "")
 		return false;
 
-	ESP_LOGI("tag", "SSID %s", SSID.c_str());
-
 	if (SSID != "") // connect to specific WiFi SSID
 		for (auto &WiFiScannedItem : WiFiScannedList) {
-			ESP_LOGI("tag", "WiFiScannedItem %s", WiFiScannedItem.getSSID().c_str());
-
 			if (!DontUseCache) {
 				if (WiFiScannedItem.getSSID() == SSID) {
 					uint32_t IP			= 0;
@@ -130,11 +126,11 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 						WiFi.AddDNSServer(inet_ntoa(Gateway));
 					}
 				}
-
-				Log::Add(Log::Events::WiFi::STAConnecting);
-				WiFi.ConnectAP(SSID, Password, WiFiScannedItem.getChannel());
-				return true;
 			}
+
+			Log::Add(Log::Events::WiFi::STAConnecting);
+			WiFi.ConnectAP(SSID, Password, WiFiScannedItem.getChannel());
+			return true;
 		}
 
 	if (SSID == "")

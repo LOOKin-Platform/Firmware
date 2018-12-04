@@ -1147,7 +1147,7 @@ void BLEUtils::dumpGapEvent(
 		//
 		case ESP_GAP_BLE_AUTH_CMPL_EVT: {
 			ESP_LOGD(tag, "[bd_addr: %s, key_present: %d, key: ***, key_type: %d, success: %d, fail_reason: %d, addr_type: ***, dev_type: %s]",
-				BLEAddress(param->ble_security.auth_cmpl.bd_addr).toString().c_str(),
+				BLEAddress(param->ble_security.auth_cmpl.bd_addr).ToString().c_str(),
 				param->ble_security.auth_cmpl.key_present,
 				param->ble_security.auth_cmpl.key_type,
 				param->ble_security.auth_cmpl.success,
@@ -1191,7 +1191,7 @@ void BLEUtils::dumpGapEvent(
 		//
 		case ESP_GAP_BLE_NC_REQ_EVT: {
 			ESP_LOGD(tag, "[bd_addr: %s, passkey: %d]",
-				BLEAddress(param->ble_security.key_notif.bd_addr).toString().c_str(),
+				BLEAddress(param->ble_security.key_notif.bd_addr).ToString().c_str(),
 				param->ble_security.key_notif.passkey);
 			break;
 		} // ESP_GAP_BLE_NC_REQ_EVT
@@ -1209,7 +1209,7 @@ void BLEUtils::dumpGapEvent(
 			ESP_LOGD(tag, "[status: %d, rssi: %d, remote_addr: %s]",
 					param->read_rssi_cmpl.status,
 					param->read_rssi_cmpl.rssi,
-					BLEAddress(param->read_rssi_cmpl.remote_addr).toString().c_str()
+					BLEAddress(param->read_rssi_cmpl.remote_addr).ToString().c_str()
 			);
 			break;
 		} // ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT
@@ -1248,7 +1248,7 @@ void BLEUtils::dumpGapEvent(
 				case ESP_GAP_SEARCH_INQ_RES_EVT: {
 					ESP_LOGD(tag, "search_evt: %s, bda: %s, dev_type: %s, ble_addr_type: %s, ble_evt_type: %s, rssi: %d, ble_adv: ??, flag: %d (%s), num_resps: %d, adv_data_len: %d, scan_rsp_len: %d",
 						searchEventTypeToString(param->scan_rst.search_evt),
-						BLEAddress(param->scan_rst.bda).toString().c_str(),
+						BLEAddress(param->scan_rst.bda).ToString().c_str(),
 						devTypeToString(param->scan_rst.dev_type),
 						addressTypeToString(param->scan_rst.ble_addr_type),
 						eventTypeToString(param->scan_rst.ble_evt_type),
@@ -1330,7 +1330,7 @@ void BLEUtils::dumpGapEvent(
 		case ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT: {
 			ESP_LOGD(tag, "[status: %d, bd_addr: %s, min_int: %d, max_int: %d, latency: %d, conn_int: %d, timeout: %d]",
 				param->update_conn_params.status,
-				BLEAddress(param->update_conn_params.bda).toString().c_str(),
+				BLEAddress(param->update_conn_params.bda).ToString().c_str(),
 				param->update_conn_params.min_int,
 				param->update_conn_params.max_int,
 				param->update_conn_params.latency,
@@ -1345,7 +1345,7 @@ void BLEUtils::dumpGapEvent(
 		// ESP_GAP_BLE_SEC_REQ_EVT
 		//
 		case ESP_GAP_BLE_SEC_REQ_EVT: {
-			ESP_LOGD(tag, "[bd_addr: %s]", BLEAddress(param->ble_security.ble_req.bd_addr).toString().c_str());
+			ESP_LOGD(tag, "[bd_addr: %s]", BLEAddress(param->ble_security.ble_req.bd_addr).ToString().c_str());
 			break;
 		} // ESP_GAP_BLE_SEC_REQ_EVT
 
@@ -1399,7 +1399,7 @@ void BLEUtils::dumpGattClientEvent(
 		case ESP_GATTC_CONNECT_EVT: {
 			ESP_LOGD(tag, "[conn_id: %d, remote_bda: %s]",
 				evtParam->connect.conn_id,
-				BLEAddress(evtParam->connect.remote_bda).toString().c_str()
+				BLEAddress(evtParam->connect.remote_bda).ToString().c_str()
 			);
 			break;
 		}
@@ -1415,7 +1415,7 @@ void BLEUtils::dumpGattClientEvent(
 			ESP_LOGD(tag, "[reason: %s, conn_id: %d, remote_bda: %s]",
 				BLEUtils::gattCloseReasonToString(evtParam->disconnect.reason).c_str(),
 				evtParam->disconnect.conn_id,
-				BLEAddress(evtParam->disconnect.remote_bda).toString().c_str()
+				BLEAddress(evtParam->disconnect.remote_bda).ToString().c_str()
 			);
 			break;
 		} // ESP_GATTC_DISCONNECT_EVT
@@ -1473,7 +1473,7 @@ void BLEUtils::dumpGattClientEvent(
 		case ESP_GATTC_NOTIFY_EVT: {
 			ESP_LOGD(tag, "[conn_id: %d, remote_bda: %s, handle: %d 0x%.2x, value_len: %d, is_notify: %d]",
 				evtParam->notify.conn_id,
-				BLEAddress(evtParam->notify.remote_bda).toString().c_str(),
+				BLEAddress(evtParam->notify.remote_bda).ToString().c_str(),
 				evtParam->notify.handle,
 				evtParam->notify.handle,
 				evtParam->notify.value_len,
@@ -1495,7 +1495,7 @@ void BLEUtils::dumpGattClientEvent(
 			ESP_LOGD(tag, "[status: %s, conn_id: %d, remote_bda: %s, mtu: %d]",
 				BLEUtils::gattStatusToString(evtParam->open.status).c_str(),
 				evtParam->open.conn_id,
-				BLEAddress(evtParam->open.remote_bda).toString().c_str(),
+				BLEAddress(evtParam->open.remote_bda).ToString().c_str(),
 				evtParam->open.mtu);
 			break;
 		} // ESP_GATTC_OPEN_EVT
@@ -1698,7 +1698,7 @@ void BLEUtils::dumpGattServerEvent(
 		case ESP_GATTS_CONNECT_EVT: {
 			ESP_LOGD(tag, "[conn_id: %d, remote_bda: %s]",
 				evtParam->connect.conn_id,
-				BLEAddress(evtParam->connect.remote_bda).toString().c_str());
+				BLEAddress(evtParam->connect.remote_bda).ToString().c_str());
 			break;
 		} // ESP_GATTS_CONNECT_EVT
 
@@ -1714,7 +1714,7 @@ void BLEUtils::dumpGattServerEvent(
 		case ESP_GATTS_DISCONNECT_EVT: {
 			ESP_LOGD(tag, "[conn_id: %d, remote_bda: %s]",
 				evtParam->connect.conn_id,
-				BLEAddress(evtParam->connect.remote_bda).toString().c_str());
+				BLEAddress(evtParam->connect.remote_bda).ToString().c_str());
 			break;
 		} // ESP_GATTS_DISCONNECT_EVT
 
@@ -1747,7 +1747,7 @@ void BLEUtils::dumpGattServerEvent(
 			ESP_LOGD(tag, "[conn_id: %d, trans_id: %d, bda: %s, exec_write_flag: 0x%.2x=%s]",
 				evtParam->exec_write.conn_id,
 				evtParam->exec_write.trans_id,
-				BLEAddress(evtParam->exec_write.bda).toString().c_str(),
+				BLEAddress(evtParam->exec_write.bda).ToString().c_str(),
 				evtParam->exec_write.exec_write_flag,
 				pWriteFlagText);
 			break;
@@ -1765,7 +1765,7 @@ void BLEUtils::dumpGattServerEvent(
 			ESP_LOGD(tag, "[conn_id: %d, trans_id: %d, bda: %s, handle: 0x%.2x, is_long: %d, need_rsp:%d]",
 					evtParam->read.conn_id,
 					evtParam->read.trans_id,
-					BLEAddress(evtParam->read.bda).toString().c_str(),
+					BLEAddress(evtParam->read.bda).ToString().c_str(),
 					evtParam->read.handle,
 					evtParam->read.is_long,
 					evtParam->read.need_rsp);
@@ -1818,7 +1818,7 @@ void BLEUtils::dumpGattServerEvent(
 			ESP_LOGD(tag, "[conn_id: %d, trans_id: %d, bda: %s, handle: 0x%.2x, offset: %d, need_rsp: %d, is_prep: %d, len: %d]",
 					evtParam->write.conn_id,
 					evtParam->write.trans_id,
-					BLEAddress(evtParam->write.bda).toString().c_str(),
+					BLEAddress(evtParam->write.bda).ToString().c_str(),
 					evtParam->write.handle,
 					evtParam->write.offset,
 					evtParam->write.need_rsp,

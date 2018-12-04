@@ -141,10 +141,7 @@ static bool compareGattId(esp_gatt_id_t id1, esp_gatt_id_t id2) {
  * @param [in] evtParam Payload data for the event.
  * @returns N/A
  */
-void BLERemoteCharacteristic::gattClientEventHandler(
-	esp_gattc_cb_event_t      event,
-	esp_gatt_if_t             gattc_if,
-	esp_ble_gattc_cb_param_t* evtParam) {
+void BLERemoteCharacteristic::gattClientEventHandler( esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* evtParam) {
 	switch(event) {
 		//
 		// ESP_GATTC_NOTIFY_EVT
@@ -480,24 +477,22 @@ void BLERemoteCharacteristic::registerForNotify(
 	if (notifyCallback != nullptr) {   // If we have a callback function, then this is a registration.
 		esp_err_t errRc = ::esp_ble_gattc_register_for_notify(
 			m_pRemoteService->getClient()->getGattcIf(),
-			*m_pRemoteService->getClient()->getPeerAddress().getNative(),
+			*m_pRemoteService->getClient()->getPeerAddress().GetNative(),
 			getHandle()
 		);
 
-		if (errRc != ESP_OK) {
+		if (errRc != ESP_OK)
 			ESP_LOGE(LOG_TAG, "esp_ble_gattc_register_for_notify: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-		}
 	} // End Register
 	else {   // If we weren't passed a callback function, then this is an unregistration.
 		esp_err_t errRc = ::esp_ble_gattc_unregister_for_notify(
 			m_pRemoteService->getClient()->getGattcIf(),
-			*m_pRemoteService->getClient()->getPeerAddress().getNative(),
+			*m_pRemoteService->getClient()->getPeerAddress().GetNative(),
 			getHandle()
 		);
 
-		if (errRc != ESP_OK) {
+		if (errRc != ESP_OK)
 			ESP_LOGE(LOG_TAG, "esp_ble_gattc_unregister_for_notify: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-		}
 	} // End Unregister
 
 	m_semaphoreRegForNotifyEvt.Wait("registerForNotify");
@@ -542,7 +537,7 @@ std::string BLERemoteCharacteristic::toString() {
  * @param [in] response Do we expect a response?
  * @return N/A.
  */
-void BLERemoteCharacteristic::writeValue(std::string newValue, bool response) {
+void BLERemoteCharacteristic::WriteValue(std::string newValue, bool response) {
 	ESP_LOGD(LOG_TAG, ">> writeValue(), length: %d", newValue.length());
 
 	// Check to see that we are connected.
@@ -583,8 +578,8 @@ void BLERemoteCharacteristic::writeValue(std::string newValue, bool response) {
  * @param [in] response Whether we require a response from the write.
  * @return N/A.
  */
-void BLERemoteCharacteristic::writeValue(uint8_t newValue, bool response) {
-	writeValue(std::string(reinterpret_cast<char*>(&newValue), 1), response);
+void BLERemoteCharacteristic::WriteValue(uint8_t newValue, bool response) {
+	WriteValue(std::string(reinterpret_cast<char*>(&newValue), 1), response);
 } // writeValue
 
 
@@ -594,8 +589,8 @@ void BLERemoteCharacteristic::writeValue(uint8_t newValue, bool response) {
  * @param [in] length The length of the data in the data buffer.
  * @param [in] response Whether we require a response from the write.
  */
-void BLERemoteCharacteristic::writeValue(uint8_t* data, size_t length, bool response) {
-	writeValue(std::string((char *)data, length), response);
+void BLERemoteCharacteristic::WriteValue(uint8_t* data, size_t length, bool response) {
+	WriteValue(std::string((char *)data, length), response);
 } // writeValue
 
 #endif /* CONFIG_BT_ENABLED */

@@ -29,25 +29,25 @@ public:
 	~BLERemoteCharacteristic();
 
 	// Public member functions
-	bool        canBroadcast();
-	bool        canIndicate();
-	bool        canNotify();
-	bool        canRead();
-	bool        canWrite();
-	bool        canWriteNoResponse();
-	BLERemoteDescriptor* getDescriptor(BLEUUID uuid);
+	bool        			canBroadcast();
+	bool        			canIndicate();
+	bool        			canNotify();
+	bool        			canRead();
+	bool        			canWrite();
+	bool        			canWriteNoResponse();
+	BLERemoteDescriptor* 	getDescriptor(BLEUUID uuid);
 	std::map<std::string, BLERemoteDescriptor *>* getDescriptors();
-	uint16_t    getHandle();
-	BLEUUID     getUUID();
-	std::string readValue(void);
-	uint8_t     readUInt8(void);
-	uint16_t    readUInt16(void);
-	uint32_t    readUInt32(void);
-	void        registerForNotify(void (*notifyCallback)(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify));
-	void        writeValue(uint8_t* data, size_t length, bool response = false);
-	void        writeValue(std::string newValue, bool response = false);
-	void        writeValue(uint8_t newValue, bool response = false);
-	std::string toString(void);
+	uint16_t    			getHandle();
+	BLEUUID     			getUUID();
+	std::string 			readValue(void);
+	uint8_t     			readUInt8(void);
+	uint16_t    			readUInt16(void);
+	uint32_t    			readUInt32(void);
+	void        			registerForNotify(void (*notifyCallback)(BLERemoteCharacteristic* pBLERemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify));
+	void        			WriteValue(uint8_t* data, size_t length, bool response = false);
+	void        			WriteValue(std::string newValue, bool response = false);
+	void        			WriteValue(uint8_t newValue, bool response = false);
+	std::string 			toString(void);
 
 private:
 	BLERemoteCharacteristic(uint16_t handle, BLEUUID uuid, esp_gatt_char_prop_t charProp, BLERemoteService* pRemoteService);
@@ -56,11 +56,7 @@ private:
 	friend class BLERemoteDescriptor;
 
 	// Private member functions
-	void gattClientEventHandler(
-		esp_gattc_cb_event_t      event,
-		esp_gatt_if_t             gattc_if,
-		esp_ble_gattc_cb_param_t* evtParam);
-
+	void gattClientEventHandler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t* evtParam);
 
 	BLERemoteService* getRemoteService();
 	void              removeDescriptors();

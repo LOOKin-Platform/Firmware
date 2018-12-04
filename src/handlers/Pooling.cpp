@@ -7,7 +7,7 @@
 #include "EnergyHandler.cpp"
 
 class Pooling_t: public Task {
-	void run(void *data) override {
+	void Run(void *data) override {
 		while (1) {
 			if (Time::Uptime() % 10 == 0) {
 				ESP_LOGI("Pooling","RAM left %d", esp_get_free_heap_size());
@@ -17,7 +17,6 @@ class Pooling_t: public Task {
 			WiFiUptimeHandler		::Pool();
 			BluetoothPeriodicHandler::Pool();
 			EnergyPeriodicHandler	::Pool();
-
 
 			FreeRTOS::Sleep(Settings.Pooling.Interval);
 		}

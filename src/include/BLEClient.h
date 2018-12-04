@@ -26,14 +26,19 @@
 using namespace std;
 
 class BLEClient_t {
-  public:
-	BLEClient_t();
+	public:
+		BLEClient_t();
 
-    void Scan();
+		void Scan(uint32_t Duration);
+		void ScanStop();
 
-  private:
-	TaskHandle_t BluetoothClientTaskHandle;
-	static void BluetoothClientTask(void *);
+		vector<BLEAddress>	ScanDevicesProcessed = {};
+		uint32_t			ScanStartTime;
+	private:
+		BLEScan*			pBLEScan;
+
+		TaskHandle_t BluetoothClientTaskHandle;
+		static void BluetoothClientTask(void *);
 };
 
 #endif /* BLUETOOTHBCLIENT_H */

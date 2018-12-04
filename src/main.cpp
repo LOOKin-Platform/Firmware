@@ -93,11 +93,15 @@ void app_main(void) {
 
 	Log::Add(Log::Events::System::DeviceStarted);
 
-	//BLEClient.Scan();
 	BLEServer.StartAdvertising("!!");
+	BLEClient.Scan(180);
 
 	static Pooling_t Pooling = Pooling_t();
-	Pooling.start();
+	Pooling.Start();
+
+	while (1) {
+		FreeRTOS::Sleep(1000);
+	}
 
 	/*
 	if (Sleep::GetWakeUpReason() != ESP_SLEEP_WAKEUP_EXT0) {

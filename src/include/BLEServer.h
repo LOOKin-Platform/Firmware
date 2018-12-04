@@ -28,15 +28,15 @@ class ServerCallback		: public BLECharacteristicCallbacks 	{ void onWrite(BLECha
 class BLEServer_t {
 	public:
 		BLEServer_t();
-		void Init();
 
-		void SetScanPayload(string Payload = "");
+		void 				SetScanPayload(string Payload = "");
 
-		void StartAdvertising(string Payload);
-		void StopAdvertising();
+		void 				StartAdvertising(string Payload);
+		void 				StopAdvertising();
 
-		bool IsRunning() { return BLEDevice::IsRunning(); }
+		bool 				IsRunning() { return BLEDevice::IsRunning(); }
 
+		string				SecretCodeString();
 	private:
 		BLEServerGeneric	*pServer;
 		BLEAdvertising		*pAdvertising;
@@ -53,6 +53,9 @@ class BLEServer_t {
 
 		map<uint8_t, BLECharacteristic*> SensorsCharacteristics;
 		map<uint8_t, BLECharacteristic*> CommandsCharacteristics;
+
+		uint32_t			SecretCode = 0;
+
 };
 
 #endif /* Bluetooth enabled */

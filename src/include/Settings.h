@@ -21,7 +21,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "0.97";
+		const	string 						FirmwareVersion = "0.98";
 
 		struct {
 			const string					ServerHost 		= "download.look-in.club";
@@ -65,7 +65,12 @@ class Settings_t {
 		} WiFi;
 
 		struct Bluetooth_t {
-			const string					DeviceNamePrefix= "LOOK.in ";
+			const string					DeviceNamePrefix		= "LOOK.in ";
+			const string					SecretCodeServiceUUID   = "997d2872-b4e2-414d-b4be-985263a70411";
+        	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
+
+        	const int						SecretCodeRSSIMinimun	= -75;
+
 		} Bluetooth;
 
 		struct Wireless_t {

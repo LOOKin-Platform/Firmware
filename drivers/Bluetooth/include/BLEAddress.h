@@ -27,9 +27,14 @@ class BLEAddress {
 	public:
 		BLEAddress		(esp_bd_addr_t address);
 		BLEAddress		(string stringAddress);
-		bool           	equals(BLEAddress otherAddress);
-		esp_bd_addr_t*	getNative();
-		string   		toString();
+		bool           	Equals(BLEAddress otherAddress);
+		esp_bd_addr_t*	GetNative();
+		string   		ToString();
+
+		bool operator == (const BLEAddress& Other)
+		{
+			return (Equals(Other));
+		}
 
 	private:
 		esp_bd_addr_t m_address;

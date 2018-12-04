@@ -133,7 +133,7 @@ uint16_t BLEServerGeneric::GetGattsIf() {
  * @param [in] event
  * @param [in] param
  */
-void BLEServerGeneric::HandleGAPEvent(esp_gap_ble_cb_event_t  event, esp_ble_gap_cb_param_t* param) {
+void BLEServerGeneric::HandleGAPEvent(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param) {
 	ESP_LOGD(LOG_TAG, "BLEServer ... handling GAP event!");
 	switch(event) {
 		case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT: {
@@ -194,7 +194,8 @@ void BLEServerGeneric::HandleGAPEvent(esp_gap_ble_cb_event_t  event, esp_ble_gap
 	        break;
 	    case ESP_GAP_BLE_KEY_EVT:
 	        //shows the ble key info share with peer device to the user.
-	        ESP_LOGI(LOG_TAG, "key type = %s", BLESecurity::esp_key_type_to_str(param->ble_security.ble_key.key_type));
+	        ESP_LOGI(LOG_TAG, "ESP_GAP_BLE_KEY_EVT");
+	    	//ESP_LOGI(LOG_TAG, "key type = %s", BLESecurity::esp_key_type_to_str(param->ble_security.ble_key.key_type));
 	        break;
 	    case ESP_GAP_BLE_AUTH_CMPL_EVT:
 	        if(m_securityCallbacks!=nullptr)

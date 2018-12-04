@@ -25,15 +25,13 @@ BLERemoteService::BLERemoteService(esp_gatt_id_t srvcId, BLEClientGeneric* pClie
 	m_startHandle = startHandle;
 	m_endHandle = endHandle;
 
-	ESP_LOGE(tag, "!!!!!!!!!!!!!");
-	ESP_LOGE(tag, "esp_gatt_id_t.uuid: %s", BLEUUID(srvcId.uuid).toString().c_str());
-	ESP_LOGE(tag, "inst_id %d", srvcId.inst_id);
-	ESP_LOGE(tag, "startHandle %d"	, startHandle);
-	ESP_LOGE(tag, "endHandle %d"	, endHandle);
+	ESP_LOGI(tag, "!!!!!!!!!!!!!");
+	ESP_LOGI(tag, "esp_gatt_id_t.uuid: %s", BLEUUID(srvcId.uuid).toString().c_str());
+	ESP_LOGI(tag, "inst_id %d", srvcId.inst_id);
+	ESP_LOGI(tag, "startHandle %d"	, startHandle);
+	ESP_LOGI(tag, "endHandle %d"	, endHandle);
 
-
-	ESP_LOGE(tag, "!!!!!!!!!!!!!");
-
+	ESP_LOGI(tag, "!!!!!!!!!!!!!");
 
 	ESP_LOGD(tag, "<< BLERemoteService()");
 }
@@ -58,10 +56,7 @@ static bool compareSrvcId(esp_gatt_srvc_id_t id1, esp_gatt_srvc_id_t id2) {
 /**
  * @brief Handle GATT Client events
  */
-void BLERemoteService::gattClientEventHandler(
-	esp_gattc_cb_event_t      event,
-	esp_gatt_if_t             gattc_if,
-	esp_ble_gattc_cb_param_t *evtParam) {
+void BLERemoteService::gattClientEventHandler(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp_ble_gattc_cb_param_t *evtParam) {
 	switch(event) {
 		//
 		// ESP_GATTC_GET_CHAR_EVT
@@ -127,8 +122,8 @@ void BLERemoteService::gattClientEventHandler(
  * @return Reference to the remote characteristic object.
  * @throws BLEUuidNotFoundException
  */
-BLERemoteCharacteristic* BLERemoteService::getCharacteristic(const char* uuid) {
-    return getCharacteristic(BLEUUID(uuid));
+BLERemoteCharacteristic* BLERemoteService::GetCharacteristic(const char* uuid) {
+    return GetCharacteristic(BLEUUID(uuid));
 } // getCharacteristic
 	
 	
@@ -138,7 +133,7 @@ BLERemoteCharacteristic* BLERemoteService::getCharacteristic(const char* uuid) {
  * @return Reference to the characteristic object.
  * @throws BLEUuidNotFoundException
  */
-BLERemoteCharacteristic* BLERemoteService::getCharacteristic(BLEUUID uuid) {
+BLERemoteCharacteristic* BLERemoteService::GetCharacteristic(BLEUUID uuid) {
 	// Design
 	// ------
 	// We wish to retrieve the characteristic given its UUID.  It is possible that we have not yet asked the
@@ -220,7 +215,7 @@ void BLERemoteService::retrieveCharacteristics() {
  * @brief Retrieve a map of all the characteristics of this service.
  * @return A map of all the characteristics of this service.
  */
-std::map<std::string, BLERemoteCharacteristic *> * BLERemoteService::getCharacteristics() {
+std::map<std::string, BLERemoteCharacteristic *> * BLERemoteService::GetCharacteristics() {
 	ESP_LOGD(tag, ">> getCharacteristics() for service: %s", getUUID().toString().c_str());
 	// If is possible that we have not read the characteristics associated with the service so do that
 	// now.  The request to retrieve the characteristics by calling "retrieveCharacteristics" is a blocking
@@ -273,7 +268,7 @@ BLEUUID BLERemoteService::getUUID() {
  */
 std::string BLERemoteService::getValue(BLEUUID characteristicUuid) {
 	ESP_LOGD(tag, ">> readValue: uuid: %s", characteristicUuid.toString().c_str());
-	std::string ret =  getCharacteristic(characteristicUuid)->readValue();
+	std::string ret =  GetCharacteristic(characteristicUuid)->readValue();
 	ESP_LOGD(tag, "<< readValue");
 	return ret;
 } // readValue
@@ -304,7 +299,7 @@ void BLERemoteService::removeCharacteristics() {
  */
 void BLERemoteService::setValue(BLEUUID characteristicUuid, std::string value) {
 	ESP_LOGD(tag, ">> setValue: uuid: %s", characteristicUuid.toString().c_str());
-	getCharacteristic(characteristicUuid)->writeValue(value);
+	GetCharacteristic(characteristicUuid)->WriteValue(value);
 	ESP_LOGD(tag, "<< setValue");
 } // setValue
 

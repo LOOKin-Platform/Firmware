@@ -67,7 +67,7 @@ BLEClientGeneric::~BLEClientGeneric() {
  * @brief Clear any existing services.
  *
  */
-void BLEClientGeneric::clearServices() {
+void BLEClientGeneric::ClearServices() {
 	ESP_LOGD(tag, ">> clearServices");
 	// Delete all the services.
 	for (auto &myPair : m_servicesMap) {
@@ -83,14 +83,14 @@ void BLEClientGeneric::clearServices() {
  * @param [in] address The address of the partner.
  * @return True on success.
  */
-bool BLEClientGeneric::connect(BLEAddress address) {
-	ESP_LOGD(tag, ">> connect(%s)", address.toString().c_str());
+bool BLEClientGeneric::Connect(BLEAddress address) {
+	ESP_LOGD(tag, ">> connect(%s)", address.ToString().c_str());
 
 	// We need the connection handle that we get from registering the application.  We register the app
 	// and then block on its completion.  When the event has arrived, we will have the handle.
 	m_semaphoreRegEvt.Take("connect");
 
-	clearServices(); // Delete any services that may exist.
+	ClearServices(); // Delete any services that may exist.
 
 	esp_err_t errRc = ::esp_ble_gattc_app_register(0);
 	if (errRc != ESP_OK) {
@@ -106,7 +106,7 @@ bool BLEClientGeneric::connect(BLEAddress address) {
 	m_semaphoreOpenEvt.Take("connect");
 	errRc = ::esp_ble_gattc_open(
 		getGattcIf(),
-		*getPeerAddress().getNative(), // address
+		*getPeerAddress().GetNative(), // address
 		BLE_ADDR_TYPE_PUBLIC,
 		1                              // direct connection
 	);
@@ -125,7 +125,7 @@ bool BLEClientGeneric::connect(BLEAddress address) {
  * @brief Disconnect from the peer.
  * @return N/A.
  */
-void BLEClientGeneric::disconnect() {
+void BLEClientGeneric::Disconnect() {
 	ESP_LOGD(tag, ">> disconnect()");
 	esp_err_t errRc = ::esp_ble_gattc_close(getGattcIf(), getConnId());
 	if (errRc != ESP_OK) {
@@ -290,7 +290,7 @@ int BLEClientGeneric::getRssi() {
 	// an ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT to indicate completion.
 	//
 	m_semaphoreRssiCmplEvt.Take("getRssi");
-	esp_err_t rc = ::esp_ble_gap_read_rssi(*getPeerAddress().getNative());
+	esp_err_t rc = ::esp_ble_gap_read_rssi(*getPeerAddress().GetNative());
 	if (rc != ESP_OK) {
 		ESP_LOGE(tag, "<< getRssi: esp_ble_gap_read_rssi: rc=%d %s", rc, GeneralUtils::errorToString(rc));
 		return 0;
@@ -358,7 +358,7 @@ map<std::string, BLERemoteService*>* BLEClientGeneric::getServices(esp_bt_uuid_t
 	 */
 	ESP_LOGD(tag, ">> getServices");
 
-	clearServices(); // Clear any services that may exist.
+	ClearServices(); // Clear any services that may exist.
 
 	esp_err_t errRc = esp_ble_gattc_search_service(getGattcIf(), getConnId(), uuid); // Filter UUID
 	m_semaphoreSearchCmplEvt.Take("getServices");
@@ -381,8 +381,8 @@ map<std::string, BLERemoteService*>* BLEClientGeneric::getServices(esp_bt_uuid_t
  */
 std::string BLEClientGeneric::getValue(BLEUUID serviceUUID, BLEUUID characteristicUUID) {
 	ESP_LOGD(tag, ">> getValue: serviceUUID: %s, characteristicUUID: %s", serviceUUID.toString().c_str(), characteristicUUID.toString().c_str());
-	std::string ret = getService(serviceUUID)->getCharacteristic(characteristicUUID)->readValue();
-	ESP_LOGD(tag, "<<getValue");
+	std::string ret = getService(serviceUUID)->GetCharacteristic(characteristicUUID)->readValue();
+	ESP_LOGD(tag, "<< getValue");
 	return ret;
 } // getValue
 
@@ -437,7 +437,7 @@ void BLEClientGeneric::handleGAPEvent(esp_gap_ble_cb_event_t event, esp_ble_gap_
 	        break;
 	    case ESP_GAP_BLE_KEY_EVT:
 	        //shows the ble key info share with peer device to the user.
-	        ESP_LOGI(tag, "key type = %s", BLESecurity::esp_key_type_to_str(param->ble_security.ble_key.key_type));
+	        //ESP_LOGI(tag, "key type = %s", BLESecurity::esp_key_type_to_str(param->ble_security.ble_key.key_type));
 	        break;
 	    case ESP_GAP_BLE_AUTH_CMPL_EVT:
 	        if(m_securityCallbacks!=nullptr)
@@ -477,7 +477,7 @@ void BLEClientGeneric::setClientCallbacks(BLEClientCallbacks* pClientCallbacks) 
  */
 void BLEClientGeneric::setValue(BLEUUID serviceUUID, BLEUUID characteristicUUID, std::string value) {
 	ESP_LOGD(tag, ">> setValue: serviceUUID: %s, characteristicUUID: %s", serviceUUID.toString().c_str(), characteristicUUID.toString().c_str());
-	getService(serviceUUID)->getCharacteristic(characteristicUUID)->writeValue(value);
+	getService(serviceUUID)->GetCharacteristic(characteristicUUID)->WriteValue(value);
 	ESP_LOGD(tag, "<< setValue");
 } // setValue
 
@@ -495,7 +495,7 @@ void BLEClientGeneric::setSecurityCallbacks(BLESecurityCallbacks* callbacks) {
  */
 std::string BLEClientGeneric::toString() {
 	std::ostringstream ss;
-	ss << "peer address: " << m_peerAddress.toString();
+	ss << "peer address: " << m_peerAddress.ToString();
 	ss << "\nServices:\n";
 	for (auto &myPair : m_servicesMap) {
 		ss << myPair.second->toString() << "\n";

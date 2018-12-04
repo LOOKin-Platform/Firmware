@@ -32,8 +32,8 @@ class BLEClientGeneric {
 		BLEClientGeneric();
 		~BLEClientGeneric();
 
-		bool 							connect(BLEAddress address);   				// Connect to the remote BLE Server
-		void 							disconnect();                  				// Disconnect from the remote BLE Server
+		bool 							Connect(BLEAddress address);   				// Connect to the remote BLE Server
+		void 							Disconnect();                  				// Disconnect from the remote BLE Server
 		BLEAddress 						getPeerAddress();     						// Get the address of the remote BLE Server
 		int 							getRssi();                     				// Get the RSSI of the remote BLE Server
 		map<string, BLERemoteService*>* getServices(esp_bt_uuid_t *uuid = nullptr); // Get a map of the services offered by the remote BLE Server
@@ -52,7 +52,7 @@ class BLEClientGeneric {
 		void 							setSecurityCallbacks(BLESecurityCallbacks* pCallbacks);
 
 		string toString();    // Return a string representation of this client.
-
+		void ClearServices();   // Clear any existing services.
 	private:
 		friend class BLEDevice;
 		friend class BLERemoteService;
@@ -76,7 +76,6 @@ class BLEClientGeneric {
 		FreeRTOS::Semaphore m_semaphoreSearchCmplEvt 	= FreeRTOS::Semaphore("SearchCmplEvt");
 		FreeRTOS::Semaphore m_semaphoreRssiCmplEvt 		= FreeRTOS::Semaphore("RssiCmplEvt");
 		map<string, BLERemoteService*> m_servicesMap;
-		void clearServices();   // Clear any existing services.
 		esp_ble_sec_act_t m_securityLevel = (esp_ble_sec_act_t) 0;
 		BLESecurityCallbacks* m_securityCallbacks = 0;
 };

@@ -482,7 +482,7 @@ void BLEAdvertisedDevice::setTXPower(int8_t txPower) {
  */
 std::string BLEAdvertisedDevice::toString() {
 	std::stringstream ss;
-	ss << "Name: " << getName() << ", Address: " << getAddress().toString();
+	ss << "Name: " << getName() << ", Address: " << getAddress().ToString();
 
 	if (haveAppearance()) {
 		ss << ", appearance: " << getAppearance();

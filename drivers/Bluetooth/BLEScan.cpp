@@ -30,8 +30,9 @@ BLEScan::BLEScan() {
 	m_pAdvertisedDeviceCallbacks     = nullptr;
 	m_stopped                        = true;
 	m_wantDuplicates                 = false;
-	setInterval(100);
-	setWindow(100);
+
+	SetInterval(100);
+	SetWindow(100);
 } // BLEScan
 
 
@@ -40,9 +41,7 @@ BLEScan::BLEScan() {
  * @param [in] event The event type for this event.
  * @param [in] param Parameter data for this event.
  */
-void BLEScan::handleGAPEvent(
-	esp_gap_ble_cb_event_t  event,
-	esp_ble_gap_cb_param_t* param) {
+void BLEScan::HandleGAPEvent(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t* param) {
 
 	switch(event) {
 
@@ -88,19 +87,20 @@ void BLEScan::handleGAPEvent(
 					BLEAddress advertisedAddress(param->scan_rst.bda);
 					bool found = false;
 
-					for (int i=0; i<m_scanResults.getCount(); i++) {
-						if (m_scanResults.getDevice(i).getAddress().equals(advertisedAddress)) {
+					for (int i=0; i<m_scanResults.GetCount(); i++) {
+						if (m_scanResults.GetDevice(i).getAddress().Equals(advertisedAddress)) {
 							found = true;
 							break;
 						}
 					}
 					if (found && !m_wantDuplicates) {  // If we found a previous entry AND we don't want duplicates, then we are done.
-						ESP_LOGD(LOG_TAG, "Ignoring %s, already seen it.", advertisedAddress.toString().c_str());
+						ESP_LOGD(LOG_TAG, "Ignoring %s, already seen it.", advertisedAddress.ToString().c_str());
 						break;
 					}
 
 					// We now construct a model of the advertised device that we have just found for the first
 					// time.
+
 					BLEAdvertisedDevice advertisedDevice;
 					advertisedDevice.setAddress(advertisedAddress);
 					advertisedDevice.setRSSI(param->scan_rst.rssi);
@@ -141,12 +141,11 @@ void BLEScan::handleGAPEvent(
  * @param [in] active If true, we perform an active scan otherwise a passive scan.
  * @return N/A.
  */
-void BLEScan::setActiveScan(bool active) {
-	if (active) {
+void BLEScan::SetActiveScan(bool active) {
+	if (active)
 		m_scan_params.scan_type = BLE_SCAN_TYPE_ACTIVE;
-	} else {
+	else
 		m_scan_params.scan_type = BLE_SCAN_TYPE_PASSIVE;
-	}
 } // setActiveScan
 
 
@@ -155,7 +154,7 @@ void BLEScan::setActiveScan(bool active) {
  * @param [in] pAdvertisedDeviceCallbacks Call backs to be invoked.
  * @param [in] wantDuplicates  True if we wish to be called back with duplicates.  Default is false.
  */
-void BLEScan::setAdvertisedDeviceCallbacks(BLEAdvertisedDeviceCallbacks* pAdvertisedDeviceCallbacks, bool wantDuplicates) {
+void BLEScan::SetAdvertisedDeviceCallbacks(BLEAdvertisedDeviceCallbacks* pAdvertisedDeviceCallbacks, bool wantDuplicates) {
 	m_wantDuplicates = wantDuplicates;
 	m_pAdvertisedDeviceCallbacks = pAdvertisedDeviceCallbacks;
 } // setAdvertisedDeviceCallbacks
@@ -165,7 +164,7 @@ void BLEScan::setAdvertisedDeviceCallbacks(BLEAdvertisedDeviceCallbacks* pAdvert
  * @brief Set the interval to scan.
  * @param [in] The interval in msecs.
  */
-void BLEScan::setInterval(uint16_t intervalMSecs) {
+void BLEScan::SetInterval(uint16_t intervalMSecs) {
 	m_scan_params.scan_interval = intervalMSecs / 0.625;
 } // setInterval
 
@@ -174,7 +173,7 @@ void BLEScan::setInterval(uint16_t intervalMSecs) {
  * @brief Set the window to actively scan.
  * @param [in] windowMSecs How long to actively scan.
  */
-void BLEScan::setWindow(uint16_t windowMSecs) {
+void BLEScan::SetWindow(uint16_t windowMSecs) {
 	m_scan_params.scan_window = windowMSecs / 0.625;
 } // setWindow
 
@@ -184,7 +183,7 @@ void BLEScan::setWindow(uint16_t windowMSecs) {
  * @param [in] duration The duration in seconds for which to scan.
  * @return N/A.
  */
-BLEScanResults BLEScan::start(uint32_t duration) {
+BLEScanResults BLEScan::Start(uint32_t duration) {
 	ESP_LOGD(LOG_TAG, ">> start(duration=%d)", duration);
 
 	m_semaphoreScanEnd.Take(std::string("start"));
@@ -199,6 +198,9 @@ BLEScanResults BLEScan::start(uint32_t duration) {
 		return m_scanResults;
 	}
 
+	ScanDuration = duration;
+
+
 	errRc = ::esp_ble_gap_start_scanning(duration);
 
 	if (errRc != ESP_OK) {
@@ -209,7 +211,7 @@ BLEScanResults BLEScan::start(uint32_t duration) {
 
 	m_stopped = false;
 
-	m_semaphoreScanEnd.Wait("start");   // Wait for the semaphore to release.
+	//m_semaphoreScanEnd.Wait("start");   // Wait for the semaphore to release.
 
 	ESP_LOGD(LOG_TAG, "<< start()");
 	return m_scanResults;
@@ -220,7 +222,7 @@ BLEScanResults BLEScan::start(uint32_t duration) {
  * @brief Stop an in progress scan.
  * @return N/A.
  */
-void BLEScan::stop() {
+void BLEScan::Stop() {
 	ESP_LOGD(LOG_TAG, ">> stop()");
 
 	esp_err_t errRc = ::esp_ble_gap_stop_scanning();
@@ -241,10 +243,10 @@ void BLEScan::stop() {
 /**
  * @brief Dump the scan results to the log.
  */
-void BLEScanResults::dump() {
+void BLEScanResults::Dump() {
 	ESP_LOGD(LOG_TAG, ">> Dump scan results:");
-	for (int i=0; i<getCount(); i++) {
-		ESP_LOGD(LOG_TAG, "- %s", getDevice(i).toString().c_str());
+	for (int i=0; i< GetCount(); i++) {
+		ESP_LOGD(LOG_TAG, "- %s", GetDevice(i).toString().c_str());
 	}
 } // dump
 
@@ -253,7 +255,7 @@ void BLEScanResults::dump() {
  * @brief Return the count of devices found in the last scan.
  * @return The number of devices found in the last scan.
  */
-int BLEScanResults::getCount() {
+int BLEScanResults::GetCount() {
 	return m_vectorAdvertisedDevices.size();
 } // getCount
 
@@ -264,7 +266,7 @@ int BLEScanResults::getCount() {
  * @param [in] i The index of the device.
  * @return The device at the specified index.
  */
-BLEAdvertisedDevice BLEScanResults::getDevice(uint32_t i) {
+BLEAdvertisedDevice BLEScanResults::GetDevice(uint32_t i) {
 	return m_vectorAdvertisedDevices.at(i);
 }
 

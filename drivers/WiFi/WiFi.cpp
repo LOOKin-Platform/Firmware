@@ -240,6 +240,9 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, const uint8_t& Channel, bool WaitForConnection) {
 	ESP_LOGD(tag, ">> connectAP");
 
+	if (GetMode() == WIFI_MODE_AP_STR)
+		::esp_wifi_stop();
+
 	m_apConnectionStatus = UINT8_MAX;
 	Init();
 

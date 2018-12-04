@@ -10,129 +10,114 @@
 
 static char tag[] = "BLEClient";
 
-// The remote service we wish to connect to.
-static BLEUUID	serviceUUID((uint16_t)0x180A);
-// The characteristic of the remote service we are interested in.
-static BLEUUID	charUUID((uint16_t)0x2A29);
-
 BLEClient_t::BLEClient_t() {
 	BluetoothClientTaskHandle = NULL;
 }
 
 class MyClientCallback: public BLEClientCallbacks {
+	uint32_t RemainingTime;
+
 	void onConnect(BLEClientGeneric *pClient) {
-
-		ESP_LOGD(tag, "<< onConnect");
-		//map<string, BLERemoteService*> *Services = pClient->getServices(serviceUUID.getNative());
-
-		//for (auto &item: *Services) {
-		//	ESP_LOGI(tag, "%s", item.first.c_str());
-		//}
-		ESP_LOGD(tag, ">> onConnect");
+		BLEClient.ScanDevicesProcessed.push_back(pClient->getPeerAddress());
+		RemainingTime = BLEDevice::GetScan()->ScanDuration - ((Time::Uptime() - BLEClient.ScanStartTime));
 		return;
 	}
 
 	void onDisconnect(BLEClientGeneric *pClient)  {
+		if (RemainingTime > 0)
+			BLEClient.Scan(RemainingTime);
+
 		return;
 	}
 };
 
-class MyClient: public Task {
-	void run(void* data) {
-		ESP_LOGI(tag, "Service UDID: %s", serviceUUID.toString().c_str());
+class SecretCodeClient: public Task {
+	void Run(void* data) {
+		ESP_LOGI(tag,"!!!!!");
 
-		BLEAddress* pAddress = (BLEAddress*)data;
-		BLEClientGeneric*  pClient  = BLEDevice::CreateClient();
+		BLEAddress* 		pAddress = (BLEAddress*)data;
+		BLEClientGeneric* 	pClient  = BLEDevice::CreateClient();
 
-		MyClientCallback *ttt = new MyClientCallback();
-		pClient->setClientCallbacks(ttt);
-		// Connect to the remove BLE Server.
-		pClient->connect(*pAddress);
+		pClient->setClientCallbacks(new MyClientCallback());
+		pClient->Connect(*pAddress);
 
-		map<string, BLERemoteService*> *Services = pClient->getServices(serviceUUID.getNative());
+		BLERemoteService *SecretCodeService = pClient->getService(BLEUUID(Settings.Bluetooth.SecretCodeServiceUUID));
 
-		for (auto &item: *Services) {
-			ESP_LOGI(tag, "%s", item.first.c_str());
+		if (SecretCodeService == nullptr) {
+			ESP_LOGE(tag, "Failed to find secret code service UUID: %s",Settings.Bluetooth.SecretCodeServiceUUID.c_str());
+		}
+		else {
+			BLERemoteCharacteristic* SecretCodeCharacteristic = SecretCodeService->GetCharacteristic(BLEUUID(Settings.Bluetooth.SecretCodeUUID));
+
+			if (SecretCodeCharacteristic == nullptr)
+				ESP_LOGE(tag, "Failed to find secret code characteristic");
+			else
+				if (SecretCodeCharacteristic->canWrite())
+					SecretCodeCharacteristic->WriteValue(BLEServer.SecretCodeString(), true);
 		}
 
-		// Obtain a reference to the service we are after in the remote BLE server.
-		BLERemoteService* pRemoteService = pClient->getService(serviceUUID);
-		if (pRemoteService == nullptr) {
-			ESP_LOGE(tag, "Failed to find our service UUID: %s", serviceUUID.toString().c_str());
-			return;
-		}
+		delete(pAddress);
 
-		// Obtain a reference to the characteristic in the service of the remote BLE server.
-		BLERemoteCharacteristic* pRemoteCharacteristic = pRemoteService->getCharacteristic(charUUID);
-		if (pRemoteCharacteristic == nullptr) {
-			ESP_LOGE(tag, "Failed to find our characteristic UUID: %s", charUUID.toString().c_str());
-			return;
-		}
+		ESP_LOGD(tag, "Wroted secret code to remote BLE Server %s", BLEServer.SecretCodeString().c_str());
 
-		// Read the value of the characteristic.
-		std::string value = pRemoteCharacteristic->readValue();
-		ESP_LOGI(tag, "The characteristic value was: %s", value.c_str());
-
-		/*
-		while(1) {
-			// Set a new value of the characteristic
-			ESP_LOGI(tag, "Setting the new value");
-			std::ostringstream stringStream;
-			struct timeval tv;
-			gettimeofday(&tv, nullptr);
-			stringStream << "Time since boot: " << tv.tv_sec;
-			pRemoteCharacteristic->writeValue(stringStream.str());
-
-			FreeRTOS::Sleep(1000);
-		}*/
-
-		pClient->disconnect();
-
-		ESP_LOGD(tag, "%s", pClient->toString().c_str());
-		ESP_LOGD(tag, "-- End of task");
+		pClient->Disconnect();
+		pClient->ClearServices();
 	} // run
 }; // MyClient
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 	void onResult(BLEAdvertisedDevice advertisedDevice) {
-		ESP_LOGD(tag, "Advertised Info : %s"		, advertisedDevice.toString().c_str());
-		ESP_LOGD(tag, "Advertised Name : %s"		, advertisedDevice.getName().c_str());
-		ESP_LOGD(tag, "Advertised Address : %s"		, advertisedDevice.getAddress().toString().c_str());
-		ESP_LOGD(tag, "Advertised ManufacturerData: %s"	, advertisedDevice.getManufacturerData().c_str());
-		ESP_LOGD(tag, "-------------------------------");
+	    if (find(BLEClient.ScanDevicesProcessed.begin(),
+	    		BLEClient.ScanDevicesProcessed.end(), advertisedDevice.getAddress()) != BLEClient.ScanDevicesProcessed.end())
+	    	return;
 
-//		if (!advertisedDevice.haveManufacturerData()) return;
+		bool CorrectDevice = false;
 
-//		char *pHex = BLEUtils::buildHexData(nullptr, (uint8_t*)advertisedDevice.getManufacturerData().data(), advertisedDevice.getManufacturerData().length());
-//		if (string(pHex).substr(0,8) == "4c001002") {
+		if (advertisedDevice.getName().find(Settings.Bluetooth.DeviceNamePrefix) == 0)
+			CorrectDevice = true;
 
-		if ((advertisedDevice.getName().size() >= Settings.Bluetooth.DeviceNamePrefix.size()) &&
-			(advertisedDevice.getName().substr(0, Settings.Bluetooth.DeviceNamePrefix.size()) == Settings.Bluetooth.DeviceNamePrefix)) {
-			ESP_LOGD(tag, "Found our device!  address: %s", advertisedDevice.getAddress().toString().c_str());
+		if (advertisedDevice.haveServiceUUID())
+			if (advertisedDevice.getServiceUUID().toString() == BLEUUID(Settings.Bluetooth.SecretCodeServiceUUID).toString())
+				CorrectDevice = true;
 
-			advertisedDevice.getScan()->stop();
+		ESP_LOGD("Founded", "Flag %d: Device: %s", CorrectDevice, advertisedDevice.toString().c_str());
 
-			MyClient* pMyClient = new MyClient();
-			pMyClient->setStackSize(20000);
-			pMyClient->setPriority(255);
-			pMyClient->setCore(1);
-			pMyClient->start(new BLEAddress(*advertisedDevice.getAddress().getNative()));
-			return;
-		} // Found our server
+		if (advertisedDevice.haveRSSI())
+			if (CorrectDevice && advertisedDevice.getRSSI() > Settings.Bluetooth.SecretCodeRSSIMinimun) {
+				advertisedDevice.getScan()->Stop();
+
+				SecretCodeClient *pSecretCodeClient = new SecretCodeClient();
+				pSecretCodeClient->SetStackSize(10000);
+				pSecretCodeClient->SetPriority(255);
+				pSecretCodeClient->SetCore(0);
+
+				pSecretCodeClient->Start(new BLEAddress(*advertisedDevice.getAddress().GetNative()));
+
+				return;
+			}
 	} // onResult
+
 }; // MyAdvertisedDeviceCallbacks
 
-void BLEClient_t::Scan() {
+void BLEClient_t::Scan(uint32_t Duration) {
 	BLEDevice::Init("LOOK.in_" + DeviceType_t::ToString(Settings.eFuse.Type) + "_" + Device.IDToString());
 
-	BLEScan *pBLEScan = BLEDevice::GetScan();
-	pBLEScan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
-	pBLEScan->setActiveScan(true);
-	pBLEScan->start(30);
+	ScanStartTime = Time::Uptime();
 
-	while(1) {
-		FreeRTOS::Sleep(1000);
-	};
+	if (pBLEScan == nullptr)
+		pBLEScan = BLEDevice::GetScan();
+
+	ScanDevicesProcessed.clear();
+
+	pBLEScan->SetAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks(), true);
+	pBLEScan->SetActiveScan(true);
+	pBLEScan->SetWindow(1000);
+	pBLEScan->SetInterval(1000);
+	pBLEScan->Start(Duration);
+}
+
+void BLEClient_t::ScanStop() {
+	pBLEScan->Stop();
 }
 
 #endif /* Bluetooth enabled */
