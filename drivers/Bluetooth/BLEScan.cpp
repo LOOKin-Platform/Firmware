@@ -32,7 +32,7 @@ BLEScan::BLEScan() {
 	m_wantDuplicates                 = false;
 
 	SetInterval(100);
-	SetWindow(100);
+	SetWindow(50);
 } // BLEScan
 
 

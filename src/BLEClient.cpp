@@ -33,8 +33,6 @@ class MyClientCallback: public BLEClientCallbacks {
 
 class SecretCodeClient: public Task {
 	void Run(void* data) {
-		ESP_LOGI(tag,"!!!!!");
-
 		BLEAddress* 		pAddress = (BLEAddress*)data;
 		BLEClientGeneric* 	pClient  = BLEDevice::CreateClient();
 
@@ -52,13 +50,14 @@ class SecretCodeClient: public Task {
 			if (SecretCodeCharacteristic == nullptr)
 				ESP_LOGE(tag, "Failed to find secret code characteristic");
 			else
-				if (SecretCodeCharacteristic->canWrite())
-					SecretCodeCharacteristic->WriteValue(BLEServer.SecretCodeString(), true);
+				if (SecretCodeCharacteristic->canWrite()) {
+					//SecretCodeCharacteristic->WriteValue(BLEServer.SecretCodeString(), true);
+				}
 		}
 
 		delete(pAddress);
 
-		ESP_LOGD(tag, "Wroted secret code to remote BLE Server %s", BLEServer.SecretCodeString().c_str());
+		//ESP_LOGD(tag, "Wroted secret code to remote BLE Server %s", BLEServer.SecretCodeString().c_str());
 
 		pClient->Disconnect();
 		pClient->ClearServices();
@@ -73,6 +72,8 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 
 		bool CorrectDevice = false;
 
+		ESP_LOGI("tag","%s", advertisedDevice.toString().c_str());
+
 		if (advertisedDevice.getName().find(Settings.Bluetooth.DeviceNamePrefix) == 0)
 			CorrectDevice = true;
 
@@ -80,10 +81,9 @@ class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 			if (advertisedDevice.getServiceUUID().toString() == BLEUUID(Settings.Bluetooth.SecretCodeServiceUUID).toString())
 				CorrectDevice = true;
 
-		ESP_LOGD("Founded", "Flag %d: Device: %s", CorrectDevice, advertisedDevice.toString().c_str());
+		if (CorrectDevice) {
+				ESP_LOGI(tag, "Device Founded");
 
-		if (advertisedDevice.haveRSSI())
-			if (CorrectDevice && advertisedDevice.getRSSI() > Settings.Bluetooth.SecretCodeRSSIMinimun) {
 				advertisedDevice.getScan()->Stop();
 
 				SecretCodeClient *pSecretCodeClient = new SecretCodeClient();
@@ -110,9 +110,9 @@ void BLEClient_t::Scan(uint32_t Duration) {
 	ScanDevicesProcessed.clear();
 
 	pBLEScan->SetAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks(), true);
-	pBLEScan->SetActiveScan(true);
+	pBLEScan->SetActiveScan(false);
 	pBLEScan->SetWindow(1000);
-	pBLEScan->SetInterval(1000);
+	pBLEScan->SetInterval(5);
 	pBLEScan->Start(Duration);
 }
 

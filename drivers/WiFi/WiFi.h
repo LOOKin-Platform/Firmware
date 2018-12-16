@@ -12,7 +12,6 @@
 #include <vector>
 #include <sstream>
 #include <iomanip>
-#include <mdns.h>
 #include <string.h>
 
 #include <esp_event.h>
@@ -25,6 +24,9 @@
 #include <lwip/sockets.h>
 #include <nvs.h>
 #include <nvs_flash.h>
+
+#include "_mDNS.h"
+//#include "mDNS.h"
 
 #include "Memory.h"
 #include "Converter.h"

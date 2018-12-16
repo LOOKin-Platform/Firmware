@@ -49,7 +49,7 @@ void OTA::ReadStarted(char IP[]) {
 	}
 	else {
 		memcpy(&OperatePartition, partition, sizeof(esp_partition_t));
-		ESP_LOGI(tag, "esp_ota_begin init OK");
+		ESP_LOGD(tag, "esp_ota_begin init OK");
 		isInitSucceed = true;
 	}
 
@@ -73,7 +73,7 @@ bool OTA::ReadBody(char Data[], int DataLen, char IP[]) {
 	}
 
 	BinaryFileLength += DataLen;
-	ESP_LOGI(tag, "Have written image length %d", BinaryFileLength);
+	ESP_LOGD(tag, "Have written image length %d", BinaryFileLength);
 
 	return true;
 }
@@ -92,7 +92,7 @@ void OTA::ReadFinished(char IP[]) {
 		return;
 	}
 
-	ESP_LOGI(tag, "Prepare to restart system!");
+	ESP_LOGD(tag, "Prepare to restart system!");
 	esp_restart();
 }
 
@@ -130,7 +130,6 @@ void OTA::Rollback() {
 	const esp_partition_t *partition = esp_partition_find_first(find_partition.type, find_partition.subtype, NULL);
 	assert(partition != NULL);
 	memset(&RollbackPartition, 0, sizeof(esp_partition_t));
-
 
 	esp_err_t err = esp_ota_set_boot_partition(&RollbackPartition);
 

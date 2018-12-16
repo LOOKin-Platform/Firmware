@@ -15,6 +15,7 @@
 #include <FreeRTOSWrapper.h>
 #include <esp_err.h>
 #include <nvs.h>
+#include <Memory.h>
 #include <esp_wifi.h>
 #include <esp_heap_caps.h>
 #include <esp_system.h>

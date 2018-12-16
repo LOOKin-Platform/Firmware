@@ -38,6 +38,9 @@ void EnergyPeriodicHandler::Pool() {
 		uint16_t USBValue 		= VOLTAGE_BEFORE_DIVIDER( ADC_TO_VOLTAGE(USBValueSrc), 51, 100 );
 		uint16_t BATValue 		= VOLTAGE_BEFORE_DIVIDER( ADC_TO_VOLTAGE(BATValueSrc), 100, 51 );
 
+		//ESP_LOGI("tag","%d %d", USBValueSrc, BATValueSrc);
+		//ESP_LOGI("tag","%d %d", USBValue, BATValue);
+
 		if (USBValue > 5000)
 			Device.PowerMode = DevicePowerMode::CONST;
 		else

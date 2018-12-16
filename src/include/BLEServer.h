@@ -31,13 +31,17 @@ class BLEServer_t {
 
 		void 				SetScanPayload(string Payload = "");
 
-		void 				StartAdvertising(string Payload);
+		void 				StartAdvertising(string Payload = "", bool ShoulUsePrivateMode = false);
 		void 				StopAdvertising();
 
 		bool 				IsRunning() { return BLEDevice::IsRunning(); }
 
-		string				SecretCodeString();
+		void				SwitchToPublicMode();
+
 	private:
+		bool				IsPrivateMode = false;
+
+
 		BLEServerGeneric	*pServer;
 		BLEAdvertising		*pAdvertising;
 
@@ -53,9 +57,6 @@ class BLEServer_t {
 
 		map<uint8_t, BLECharacteristic*> SensorsCharacteristics;
 		map<uint8_t, BLECharacteristic*> CommandsCharacteristics;
-
-		uint32_t			SecretCode = 0;
-
 };
 
 #endif /* Bluetooth enabled */

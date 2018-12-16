@@ -18,6 +18,8 @@
 
 #include "handlers/Pooling.cpp"
 
+//#include "HomeKit/hap.h"
+
 using namespace std;
 
 extern "C" {
@@ -89,12 +91,12 @@ void app_main(void) {
 	WiFi.AddDNSServer("8.8.4.4");
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
-	Wireless.StartInterfaces();
+	//Wireless.StartInterfaces();
 
 	Log::Add(Log::Events::System::DeviceStarted);
 
-	BLEServer.StartAdvertising("!!");
-	BLEClient.Scan(180);
+	BLEServer.StartAdvertising("", true);
+	//BLEClient.Scan(60);
 
 	static Pooling_t Pooling = Pooling_t();
 	Pooling.Start();

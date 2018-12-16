@@ -6,6 +6,9 @@
 #include <esp_ping.h>
 #include <ping.h>
 
+#include <netdb.h>
+#include <mdns.h>
+
 static FreeRTOS::Timer		*IPDidntGetTimer;
 static FreeRTOS::Semaphore	IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPData");
 static bool 				IsIPCheckSuccess 	= false;
@@ -108,6 +111,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			if (!IsIPCheckSuccess)
 				return ESP_OK;
 
+			BLEServer.SwitchToPublicMode();
+
 			Wireless.IsFirstWiFiStart = false;
 
 			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
@@ -127,6 +132,16 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Time::ServerSync(Settings.TimeSync.ServerHost, Settings.TimeSync.APIUrl);
 			Wireless.IsEventDrivenStart = false;
+
+		    esp_err_t err = mdns_init();
+		    if (err) {
+		        ESP_LOGE("!", "MDNS Init failed: %d", err);
+		        return ESP_OK;
+		    }
+
+		    mdns_hostname_set(Device.IDToString().c_str());
+		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();
+		    mdns_instance_name_set(InstanceName.c_str());
 
 			return ESP_OK;
 		}

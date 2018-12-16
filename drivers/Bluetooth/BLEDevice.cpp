@@ -324,9 +324,9 @@ void BLEDevice::Deinit() {
  * * ESP_PWR_LVL_P7
  * @param [in] powerLevel.
  */
-void BLEDevice::SetPower(esp_power_level_t powerLevel) {
+void BLEDevice::SetPower(esp_power_level_t powerLevel, esp_ble_power_type_t powerType ) {
 	ESP_LOGD(tag, ">> setPower: %d", powerLevel);
-	esp_err_t errRc = ::esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_DEFAULT, powerLevel);
+	esp_err_t errRc = ::esp_ble_tx_power_set(powerType, powerLevel);
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_ble_tx_power_set: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
 	};

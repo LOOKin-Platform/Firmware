@@ -217,10 +217,7 @@ void BLEServerGeneric::HandleGAPEvent(esp_gap_ble_cb_event_t event, esp_ble_gap_
  * @param [in] param
  *
  */
-void BLEServerGeneric::HandleGATTServerEvent(
-		esp_gatts_cb_event_t      event,
-		esp_gatt_if_t             gatts_if,
-		esp_ble_gatts_cb_param_t* param) {
+void BLEServerGeneric::HandleGATTServerEvent(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param) {
 
 	ESP_LOGD(LOG_TAG, ">> handleGATTServerEvent: %s",
 		BLEUtils::gattServerEventTypeToString(event).c_str());

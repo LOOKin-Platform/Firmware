@@ -31,24 +31,19 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	if (Value.length() > 0) {
 		vector<string> Parts = Converter::StringToVector(Value," ");
 
-		if (Parts.size() != 3) {
+		if (Parts.size() != 2) {
 			ESP_LOGE(tag, "WiFi characteristics error input format");
 			return;
 		}
 
-		if (Parts[0] != BLEServer.SecretCodeString()) {
-			ESP_LOGE(tag, "Secret code invalid");
-			return;
-		}
+		ESP_LOGI(tag, "WiFi Data received. SSID: %s, Password: %s", Parts[0].c_str(), Parts[1].c_str());
+		Network.AddWiFiNetwork(Parts[0], Parts[1]);
 
-		ESP_LOGI(tag, "WiFi Data received. SSID: %s, Password: %s", Parts[1].c_str(), Parts[2].c_str());
-		Network.AddWiFiNetwork(Parts[1], Parts[2]);
+		BLEServer.StopAdvertising();
 
 		// If device in AP mode or can't connect as Station - try to connect with new data
 		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() != WIFI_MODE_STA_STR))
-			Network.WiFiConnect(Parts[1], true);
-
-		//BLEClient.ScanStop();
+			Network.WiFiConnect(Parts[0], true);
 	}
 }
 
@@ -82,9 +77,15 @@ void BLEServer_t::SetScanPayload(string Payload) {
 }
 
 
-void BLEServer_t::StartAdvertising(string Payload) {
+void BLEServer_t::StartAdvertising(string Payload, bool ShoulUsePrivateMode) {
 	BLEDevice::Init(Settings.Bluetooth.DeviceNamePrefix + DeviceType_t::ToString(Settings.eFuse.Type) + " " + Device.IDToString());
-	//BLEDevice::SetPower(ESP_PWR_LVL_N12);
+
+	IsPrivateMode = ShoulUsePrivateMode;
+
+	if (ShoulUsePrivateMode)
+		BLEDevice::SetPower(Settings.Bluetooth.PrivateModePower, ESP_BLE_PWR_TYPE_ADV);
+	else
+		BLEDevice::SetPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_ADV);
 
 	pServer  = BLEDevice::CreateServer();
 
@@ -105,9 +106,11 @@ void BLEServer_t::StartAdvertising(string Payload) {
 	pCharacteristicControlFlag = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x3000), BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
 	pCharacteristicControlFlag->setCallbacks(new ControlFlagCallback());
 
-	pCharacteristicWiFiNetworks = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x4000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
-	pCharacteristicWiFiNetworks->setValue(Converter::VectorToString(Network.GetSavedWiFiList(), ","));
-	pCharacteristicWiFiNetworks->setCallbacks(new WiFiNetworksCallback());
+	if (IsPrivateMode) {
+		pCharacteristicWiFiNetworks = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x4000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
+		pCharacteristicWiFiNetworks->setValue(Converter::VectorToString(Network.GetSavedWiFiList(), ","));
+		pCharacteristicWiFiNetworks->setCallbacks(new WiFiNetworksCallback());
+	}
 
 	// FFFF - Sensors and Commands Information
 	//pServiceActuators = pServer->CreateService((uint16_t)0xFFFF);
@@ -163,11 +166,14 @@ void BLEServer_t::StopAdvertising() {
 	ESP_LOGI(tag, "Stop advertising");
 }
 
-string BLEServer_t::SecretCodeString() {
-	if (SecretCode == 0)
-		SecretCode = (uint32_t)esp_random();
+void BLEServer_t::SwitchToPublicMode() {
+	if (IsRunning() && IsPrivateMode) {
+		StopAdvertising();
+		StartAdvertising();
+		return;
+	}
 
-	return Converter::ToHexString(SecretCode, 8);
+	StartAdvertising();
 }
 
 #endif /* Bluetooth enabled */

@@ -11,6 +11,7 @@
 #include "driver/ledc.h"
 #include "driver/adc.h"
 #include "driver/timer.h"
+#include "esp_bt.h"
 
 #include "Converter.h"
 
@@ -21,7 +22,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "0.98";
+		const	string 						FirmwareVersion = "0.99";
 
 		struct {
 			const string					ServerHost 		= "download.look-in.club";
@@ -69,8 +70,8 @@ class Settings_t {
 			const string					SecretCodeServiceUUID   = "997d2872-b4e2-414d-b4be-985263a70411";
         	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
 
-        	const int						SecretCodeRSSIMinimun	= -75;
-
+        	const esp_power_level_t			PublicModePower			= ESP_PWR_LVL_P6;
+        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_N6;
 		} Bluetooth;
 
 		struct Wireless_t {
@@ -248,7 +249,6 @@ class Settings_t {
 				// Device modes indicator
 				Indicator_t	Indicator;
 			};
-
 
 			DeviceInfo_t GetCurrent();
 

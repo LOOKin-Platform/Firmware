@@ -36,7 +36,7 @@ class BLEDevice {
 		static BLEScan*				GetScan();         // Get the scan object
 		static string				GetValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID); // Get the value of a characteristic of a service on a server.
 
-		static void					SetPower(esp_power_level_t powerLevel);  // Set our power level.
+		static void					SetPower(esp_power_level_t powerLevel, esp_ble_power_type_t powerType = ESP_BLE_PWR_TYPE_DEFAULT);  // Set our power level.
 		static void					SetValue(BLEAddress bdAddress, BLEUUID serviceUUID, BLEUUID characteristicUUID, string value);   // Set the value of a characteristic on a service on a server.
 		static string 				toString();        // Return a string representation of our device.
 		static void					WhiteListAdd(BLEAddress address);    // Add an entry to the BLE white list.
