@@ -55,6 +55,15 @@ Settings_t::GPIOData_t::DeviceInfo_t Settings_t::GPIOData_t::GetCurrent() {
 	}
 }
 
+uint32_t Settings_t::eFuse_t::ReverseBytes(uint32_t Value) {
+	uint32_t Result = 0x0;
+	Result += (Value & 0x000000ff)			<< 24;
+	Result += ((Value & 0x0000ff00) >> 8) 	<< 16;
+	Result += ((Value & 0x0000ff00) >> 16) 	<< 8;
+	Result += ((Value & 0xff000000) >> 24);
+
+	return Result;
+}
 
 void Settings_t::eFuse_t::ReadData() {
 	uint32_t eFuseData1, eFuseData2, eFuseData3, eFuseData4 = 0x00;
@@ -71,7 +80,19 @@ void Settings_t::eFuse_t::ReadData() {
 		eFuseData4 = REG_READ(EFUSE_BLK3_RDATA3_REG);
 	}
 
+	//check is valid efuse or not - different SOC versions has different storage schemes
+	uint16_t TestYear = (uint16_t)(eFuseData4 >> 16);
+
+	if (TestYear < 2018 || TestYear > 2100)
+	{
+		eFuseData1 = ReverseBytes(eFuseData1);
+		eFuseData2 = ReverseBytes(eFuseData2);
+		eFuseData3 = ReverseBytes(eFuseData3);
+		eFuseData4 = ReverseBytes(eFuseData4);
+	}
+
 	Type 				= (uint8_t)(eFuseData1 >> 16);
+
 	Revision 			= (uint16_t)((eFuseData1 << 16) >> 16);
 
 	Model 				= (uint8_t)eFuseData2 >> 24;

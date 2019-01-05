@@ -126,6 +126,7 @@ class Settings_t {
 				} Produced;
 
 				void ReadData();
+				uint32_t ReverseBytes(uint32_t);
 		} eFuse;
 
 		struct HTTPClient_t {
