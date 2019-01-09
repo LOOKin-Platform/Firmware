@@ -35,7 +35,10 @@ class SensorIR_t : public Sensor_t {
 			Values.clear();
 
 			if (LastSignal.Protocol == IR_PROTOCOL_RAW && LastSignal.RawData.size() == 0) {
-				SetValue(0);
+				SetValue(0, "Primary"	, SignalDetectionTime);
+				SetValue(0, "Signal"	, SignalDetectionTime);
+				SetValue(0, "Frequency"	, SignalDetectionTime);
+				SetValue(0, "Raw"		, SignalDetectionTime);
 				return;
 			}
 
@@ -53,7 +56,7 @@ class SensorIR_t : public Sensor_t {
 				return Converter::ToHexString(Values[Key].Value, 2);
 
 			if (Key == "Signal" && LastSignal.Protocol == IR_PROTOCOL_RAW)
-				return "";
+				return "0";
 
 			if (Key == "Frequency")
 				return Converter::ToString(LastSignal.Frequency);

@@ -66,14 +66,15 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 
 			JSONObject.SetItems(vector<pair<string,string>> ({
 				make_pair("Type"		, TypeToString()),
-						make_pair("Status"		, StatusToString()),
-						make_pair("ID"			, IDToString()),
-						make_pair("Name"		, NameToString()),
-						make_pair("Time"		, Time::UnixtimeString()),
-						make_pair("Timezone"	, Time::TimezoneStr()),
-						make_pair("PowerMode"	, PowerModeToString()),
-						make_pair("Firmware"	, FirmwareVersionToString()),
-						make_pair("Temperature"	, TemperatureToString())
+						make_pair("Status"			, StatusToString()),
+						make_pair("ID"				, IDToString()),
+						make_pair("Name"			, NameToString()),
+						make_pair("Time"			, Time::UnixtimeString()),
+						make_pair("Timezone"		, Time::TimezoneStr()),
+						make_pair("PowerMode"		, PowerModeToString()),
+						make_pair("CurrentVoltage"	, CurrentVoltageToString()),
+						make_pair("Firmware"		, FirmwareVersionToString()),
+						make_pair("Temperature"		, TemperatureToString())
 			}));
 
 			Result.Body = JSONObject.ToString();
@@ -88,6 +89,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			if (URLParts[0] == "time")			Result.Body = Time::UnixtimeString();
 			if (URLParts[0] == "timezone")		Result.Body = Time::TimezoneStr();
 			if (URLParts[0] == "powermode")		Result.Body = PowerModeToString();
+			if (URLParts[0] == "currentvoltage")Result.Body = CurrentVoltageToString();
 			if (URLParts[0] == "firmware")		Result.Body = FirmwareVersionToString();
 			if (URLParts[0] == "temperature")	Result.Body = TemperatureToString();
 
@@ -288,4 +290,8 @@ string Device_t::FirmwareVersionToString() {
 
 string Device_t::TemperatureToString() {
 	return Converter::ToString(Temperature);
+}
+
+string Device_t::CurrentVoltageToString() {
+	return Converter::ToString(CurrentVoltage);
 }

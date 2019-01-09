@@ -6,8 +6,7 @@
 #include "Globals.h"
 #include "Sensors.h"
 
-Sensor_t::Sensor_t() {
-}
+Sensor_t::Sensor_t() {}
 
 vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 	vector<Sensor_t*> Sensors = {};
@@ -17,7 +16,7 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 			Sensors = { new SensorSwitch_t(), new SensorColor_t() };
 			break;
 		case Settings.Devices.Remote:
-			Sensors = { new SensorIR_t(), new SensorColor_t() };
+			Sensors = { new SensorIR_t() };
 			break;
 		case Settings.Devices.Motion:
 			Sensors = { new SensorMotion_t() };

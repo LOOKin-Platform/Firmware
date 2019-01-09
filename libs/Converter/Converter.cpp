@@ -347,3 +347,17 @@ uint16_t Converter::CRC16(vector<uint8_t> &Data, uint16_t Start, uint16_t Length
 const char* Converter::ErrorToString(esp_err_t errCode) {
 	return esp_err_to_name(errCode);
 }
+
+uint16_t Converter::VoltageFromADC(uint16_t Value, uint8_t R1, uint8_t R2) {
+	uint16_t ADCMax = 4095; // Max value at ADC_WIDTH_BIT_12
+	uint16_t ADCMin	= 0;	// Reference voltage at ADC_ATTEN_11db
+
+	uint16_t VoltageMax = 3900;
+	uint16_t VoltageMin	= 0;
+
+	Value = VoltageMin + (VoltageMax-VoltageMin)*( (Value)-ADCMin )/(ADCMax-ADCMin);
+	Value = Value * ( (R1) + (R2) ) / (R2);
+
+	return Value;
+}
+

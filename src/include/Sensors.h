@@ -51,22 +51,22 @@ class Sensor_t {
 		virtual bool				CheckOperand(uint8_t, uint8_t) { return false; };
 		virtual string				FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
 
-		static void					UpdateSensors();
-		static vector<Sensor_t*>	GetSensorsForDevice();
-		static Sensor_t*			GetSensorByName(string);
-		static Sensor_t*			GetSensorByID(uint8_t);
-		static uint8_t				GetDeviceTypeHex();
-
 		bool						SetValue(uint32_t Value, string Key = "Primary", uint32_t UpdatedTime = 0);
 		SensorValueItem				GetValue(string Key = "Primary");
 
 		virtual string				StorageEncode(map<string,string>) 	{ return ""; };
 		virtual map<string,string>	StorageDecode(string) 				{ return map<string,string> ();};
 
-		static void HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
-
 		bool						GetIsInited() 		{ return IsInited; 	}
 		void						SetIsInited(bool V)	{ IsInited = V; 	};
+
+		static void					UpdateSensors();
+		static vector<Sensor_t*>	GetSensorsForDevice();
+		static Sensor_t*			GetSensorByName(string);
+		static Sensor_t*			GetSensorByID(uint8_t);
+		static uint8_t				GetDeviceTypeHex();
+
+		static void HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 
 	private:
 		bool 						IsInited	= false;

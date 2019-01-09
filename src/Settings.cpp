@@ -11,11 +11,11 @@ map<uint8_t, Settings_t::GPIOData_t::DeviceInfo_t> Settings_t::GPIOData_t::Devic
 
 void FillDevices() {
 	Settings_t::GPIOData_t::DeviceInfo_t Plug;
-	Plug.Switch.GPIO			= GPIO_NUM_23;
+	Plug.Switch.GPIO				= GPIO_NUM_23;
 
-	Plug.Color.Timer			= LEDC_TIMER_0;
-	Plug.Color.Blue.GPIO		= GPIO_NUM_2;
-	Plug.Color.Blue.Channel		= LEDC_CHANNEL_2;
+	Plug.Color.Timer				= LEDC_TIMER_0;
+	Plug.Color.Blue.GPIO			= GPIO_NUM_2;
+	Plug.Color.Blue.Channel			= LEDC_CHANNEL_2;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Remote;
 	Remote.Indicator.Timer			= LEDC_TIMER_0;
@@ -28,13 +28,16 @@ void FillDevices() {
 	Remote.Indicator.ISRTimerGroup	= TIMER_GROUP_0;
 	Remote.Indicator.ISRTimerIndex	= TIMER_0;
 
-	Remote.IR.ReceiverGPIO38	= GPIO_NUM_26;
-	Remote.IR.ReceiverGPIO56	= GPIO_NUM_27;
-	Remote.IR.SenderGPIO		= GPIO_NUM_4;
+	Remote.PowerMeter.ConstPowerChannel		= ADC1_CHANNEL_5;
+	Remote.PowerMeter.BatteryPowerChannel	= ADC1_CHANNEL_4;
+
+	Remote.IR.ReceiverGPIO38		= GPIO_NUM_26;
+	Remote.IR.ReceiverGPIO56		= GPIO_NUM_27;
+	Remote.IR.SenderGPIO			= GPIO_NUM_4;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Motion;
-	Motion.Motion.PoolInterval	= 50;
-	Motion.Motion.ADCChannel	= ADC1_CHANNEL_3;
+	Motion.Motion.PoolInterval		= 50;
+	Motion.Motion.ADCChannel		= ADC1_CHANNEL_3;
 
 	Settings_t::GPIOData_t::Devices =
 	{

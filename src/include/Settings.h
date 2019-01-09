@@ -241,14 +241,22 @@ class Settings_t {
 				timer_idx_t			ISRTimerIndex = TIMER_MAX;
 			};
 
+			struct PowerMeter_t {
+				adc1_channel_t 		ConstPowerChannel 	= ADC1_CHANNEL_MAX;
+				adc1_channel_t 		BatteryPowerChannel = ADC1_CHANNEL_MAX;
+			};
+
 			struct DeviceInfo_t {
-				Switch_t	Switch;
-				Color_t		Color;
-				IR_t		IR;
-				Motion_t	Motion;
+				Switch_t		Switch;
+				Color_t			Color;
+				IR_t			IR;
+				Motion_t		Motion;
 
 				// Device modes indicator
-				Indicator_t	Indicator;
+				Indicator_t		Indicator;
+
+				// Device PowerMeters
+				PowerMeter_t 	PowerMeter;
 			};
 
 			DeviceInfo_t GetCurrent();

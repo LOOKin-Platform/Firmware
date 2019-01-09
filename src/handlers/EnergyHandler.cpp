@@ -1,13 +1,6 @@
 #ifndef ENERGY_HANDLER
 #define ENERGY_HANDLER
 
-#define ADCMAX				4095 //Max value at ADC_WIDTH_BIT_12
-#define ADCMIN				0
-#define VOLTAGEMAX			3900 //Reference voltage at ADC_ATTEN_11db
-#define VOLTAGEMIN  		0
-#define ADC_TO_VOLTAGE( ADCx )  ( VOLTAGEMIN + (VOLTAGEMAX-VOLTAGEMIN)*( (ADCx)-ADCMIN )/(ADCMAX-ADCMIN) )
-#define VOLTAGE_BEFORE_DIVIDER( VOLTAGE, R1, R2 )   ( VOLTAGE ) * ( (R1) + (R2) ) / (R2)
-
 class EnergyPeriodicHandler {
 	public:
 		static void Init();
@@ -32,19 +25,27 @@ void EnergyPeriodicHandler::Pool() {
 		Init();
 
 	if (Time::Uptime() %5 == 0) {
-	    uint16_t USBValueSrc	= (uint16_t)adc1_get_raw(ADC1_CHANNEL_5);
-	    uint16_t BATValueSrc	= (uint16_t)adc1_get_raw(ADC1_CHANNEL_4);
 
-		uint16_t USBValue 		= VOLTAGE_BEFORE_DIVIDER( ADC_TO_VOLTAGE(USBValueSrc), 51, 100 );
-		uint16_t BATValue 		= VOLTAGE_BEFORE_DIVIDER( ADC_TO_VOLTAGE(BATValueSrc), 100, 51 );
+	    uint16_t ConstValueSrc		= 0;
+	    uint16_t BatteryValueSrc	= 0;
 
-		//ESP_LOGI("tag","%d %d", USBValueSrc, BATValueSrc);
-		//ESP_LOGI("tag","%d %d", USBValue, BATValue);
+		if (Settings.GPIOData.GetCurrent().PowerMeter.ConstPowerChannel != ADC1_CHANNEL_MAX)
+			ConstValueSrc	= (uint16_t)adc1_get_raw(Settings.GPIOData.GetCurrent().PowerMeter.ConstPowerChannel);
 
-		if (USBValue > 5000)
+		if (Settings.GPIOData.GetCurrent().PowerMeter.BatteryPowerChannel != ADC1_CHANNEL_MAX)
+			BatteryValueSrc	= (uint16_t)adc1_get_raw(Settings.GPIOData.GetCurrent().PowerMeter.BatteryPowerChannel);
+
+		uint16_t ConstValue 		= Converter::VoltageFromADC(ConstValueSrc, 51, 100 );
+		uint16_t BatteryValue 		= Converter::VoltageFromADC(BatteryValueSrc, 100, 51 );
+
+		ESP_LOGI("tag","%d %d", ConstValue, BatteryValue);
+
+		if (ConstValue > 5000)
 			Device.PowerMode = DevicePowerMode::CONST;
 		else
 			Device.PowerMode = DevicePowerMode::BATTERY;
+
+		Device.CurrentVoltage = (Device.PowerMode == DevicePowerMode::CONST) ? ConstValue : BatteryValue;
 	}
 
 }

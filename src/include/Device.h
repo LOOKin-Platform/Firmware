@@ -65,6 +65,7 @@ class Device_t {
 
 		string          FirmwareVersion = Settings.FirmwareVersion;
 		uint8_t         Temperature = 0;
+		uint16_t		CurrentVoltage = 0;
 
 		Device_t();
 		void    		Init();
@@ -94,6 +95,7 @@ class Device_t {
 		string 			PowerModeToString();
 		string 			FirmwareVersionToString();
 		string 			TemperatureToString();
+		string 			CurrentVoltageToString();
 };
 
 #endif

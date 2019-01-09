@@ -102,6 +102,8 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 			break;
 		}
 
+	ESP_LOGI("SSID", "%s", SSID.c_str());
+
 	if (SSID != "" && Password == "")
 		return false;
 
