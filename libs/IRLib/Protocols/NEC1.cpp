@@ -7,7 +7,9 @@
 class NEC1 : public IRProto {
 	public:
 		NEC1() {
-			ID = 0x01;
+			ID 					= 0x01;
+			Name 				= "NEC";
+			DefinedFrequency	= 38500;
 		};
 
 		bool IsProtocol(vector<int32_t> RawData) override {
@@ -38,7 +40,7 @@ class NEC1 : public IRProto {
 		    Data.erase(Data.begin());
 
 		    if (Data.size() == 16) { // repeat signal
-		    		return 0x00FFFFFF;
+				return 0x00FFFFFF;
 		    }
 
 		    for (uint8_t BlockId = 0; BlockId < 4; BlockId++) {
@@ -114,6 +116,10 @@ class NEC1 : public IRProto {
 			Raw.push_back(+560);
 
 			return Raw;
+		}
+
+		vector<int32_t> ConstructRawForSending(uint32_t data) {
+			return ConstructRaw(data);
 		}
 
 };

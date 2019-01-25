@@ -22,7 +22,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "0.99";
+		const	string 						FirmwareVersion = "1.00";
 
 		struct {
 			const string					ServerHost 		= "download.look-in.club";

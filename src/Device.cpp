@@ -54,7 +54,7 @@ void Device_t::Init() {
 
 	switch (Type.Hex) {
 		case Settings.Devices.Plug	: PowerModeVoltage = +220; break;
-		case Settings.Devices.Remote: PowerModeVoltage = +3; break;
+		case Settings.Devices.Remote: PowerModeVoltage = +5; break;
 	}
 }
 

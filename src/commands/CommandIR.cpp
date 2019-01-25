@@ -18,10 +18,9 @@ class CommandIR_t : public Command_t {
 		ID          = 0x07;
 		Name        = "IR";
 
-		Events["nec36"]  	= 0x01;
-		Events["nec38"]  	= 0x02;
-		Events["nec40"]  	= 0x03;
-		Events["nec56"]  	= 0x04;
+		Events["nec"]  		= 0x01;
+		Events["sirc"]		= 0x02;
+
 		Events["saved"]		= 0xEE;
 		Events["prontohex"]	= 0xF0;
 		Events["raw"]		= 0xFF;
@@ -31,82 +30,83 @@ class CommandIR_t : public Command_t {
 	}
 
     bool Execute(uint8_t EventCode, string StringOperand) override {
-    		uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
+		uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
-    		if (EventCode > 0x0 && EventCode < 0x05) {
-    			IRLib IRSignal;
-    			IRSignal.Protocol 	= 0x01;
-    			IRSignal.Uint32Data = Operand;
-    			IRSignal.FillRawData();
+		ESP_LOGI("EventCode", "%d", EventCode);
 
-    			RMT::TXSetItems(IRSignal.RawData);
+		if (EventCode == 0xFF && Operand == 0)
+			return false;
 
-    			switch (EventCode) {
-					case 0x01: IRSignal.Frequency = 36000; break;
-					case 0x02: IRSignal.Frequency = 38000; break;
-					case 0x03: IRSignal.Frequency = 40000; break;
-					case 0x04: IRSignal.Frequency = 56000; break;
-    			}
+		if (EventCode == 0x01 || EventCode == 0x02) { // /commands/ir/nec || /commands/ir/sirc/
+			IRLib IRSignal;
+			IRSignal.Protocol 	= EventCode;
+			IRSignal.Uint32Data = Operand;
+			IRSignal.FillRawData();
 
-    			TXSend(IRSignal.Frequency);
-    		}
+			RMT::TXSetItems(IRSignal.GetRawDataForSending());
 
-    		if (EventCode == 0xEE) {
-    			uint16_t StorageItemID = Converter::ToUint16(StringOperand);
+			TXSend(IRSignal.GetProtocolFrequency());
+			return true;
+		}
 
-    			if (StorageItemID <= Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) {
-        			Storage_t::Item Item = Storage.Read(StorageItemID);
+		if (EventCode == 0xEE) {
+			uint16_t StorageItemID = Converter::ToUint16(StringOperand);
 
-        			Sensor_t* SensorIR = Sensor_t::GetSensorByID(ID + 0x80);
-        			if (SensorIR == nullptr) {
-        				ESP_LOGE("CommandIR","Can't get IR sensor to decode message from memory");
-        				return false;
-        			}
+			if (StorageItemID <= Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) {
+				Storage_t::Item Item = Storage.Read(StorageItemID);
 
-        			map<string,string> DecodedValue = SensorIR->StorageDecode(Item.DataToString());
-        			if (DecodedValue.count("Signal") > 0) {
-        				IRLib IRSignal(DecodedValue["Signal"]);
+				Sensor_t* SensorIR = Sensor_t::GetSensorByID(ID + 0x80);
+				if (SensorIR == nullptr) {
+					ESP_LOGE("CommandIR","Can't get IR sensor to decode message from memory");
+					return false;
+				}
 
-        				if (DecodedValue.count("Protocol") > 0) {
-            				IRSignal.Protocol = (uint8_t)Converter::ToUint16(DecodedValue["Protocol"]);
-        				}
+				map<string,string> DecodedValue = SensorIR->StorageDecode(Item.DataToString());
+				if (DecodedValue.count("Signal") > 0) {
+					IRLib IRSignal(DecodedValue["Signal"]);
 
-            			RMT::TXSetItems(IRSignal.RawData);
-            			TXSend(IRSignal.Frequency);
-        			}
-        			else {
-        				ESP_LOGE("CommandIR","Can't find Data in memory");
-        				return false;
-        			}
-    			}
-    		}
+					if (DecodedValue.count("Protocol") > 0)
+						IRSignal.Protocol = (uint8_t)Converter::ToUint16(DecodedValue["Protocol"]);
 
-    		if (EventCode == 0xF0) {
-    			IRLib IRSignal(StringOperand);
-    			RMT::TXSetItems(IRSignal.RawData);
-    			TXSend(IRSignal.Frequency);
-    		}
+					RMT::TXSetItems(IRSignal.RawData);
+					TXSend(IRSignal.Frequency);
+				}
+				else {
+					ESP_LOGE("CommandIR","Can't find Data in memory");
+					return false;
+				}
+			}
+		}
 
-    		if (EventCode == 0xFF) {
-    			uint16_t	Frequency = 38000;
-    			size_t 		FrequencyDelimeterPos = StringOperand.find(";");
+		if (EventCode == 0xF0) {
+			IRLib IRSignal(StringOperand);
+			RMT::TXSetItems(IRSignal.RawData);
+			TXSend(IRSignal.Frequency);
+			return true;
+		}
 
-    			if (FrequencyDelimeterPos != std::string::npos) {
-    				Frequency = Converter::ToUint16(StringOperand.substr(0,FrequencyDelimeterPos));
-    				StringOperand = StringOperand.substr(FrequencyDelimeterPos+1);
-    			}
+		if (EventCode == 0xFF) {
+			uint16_t	Frequency = 38000;
+			size_t 		FrequencyDelimeterPos = StringOperand.find(";");
 
-    			vector<string> Values = Converter::StringToVector(StringOperand, " ");
+			if (FrequencyDelimeterPos != std::string::npos) {
+				Frequency = Converter::ToUint16(StringOperand.substr(0,FrequencyDelimeterPos));
+				StringOperand = StringOperand.substr(FrequencyDelimeterPos+1);
+			}
 
-    			RMT::TXClear();
+			IRLib IRSignal(Converter::StringToVector(StringOperand, " "));
 
-    			for (string Item : Values)
-    				RMT::TXAddItem(Converter::ToInt32(Item));
+			RMT::TXClear();
 
-    			TXSend(Frequency);
-    		}
+			for (int32_t Item : IRSignal.GetRawDataForSending())
+				RMT::TXAddItem(Item);
 
-    		return true;
+			TXSend(Frequency);
+
+			return true;
+		}
+
+		return false;
     }
 
     void TXSend(uint16_t Frequency) {

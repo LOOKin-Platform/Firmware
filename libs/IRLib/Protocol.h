@@ -11,12 +11,17 @@
 
 class IRProto {
 	public:
-		uint8_t					ID = 0x00;
-		virtual bool			IsProtocol(vector<int32_t>) { return false; }
-		virtual uint32_t		GetData(vector<int32_t>)	{ return 0x00; 	}
-		virtual vector<int32_t> ConstructRaw(uint32_t Data) { return vector<int32_t>(); }
+		uint8_t					ID 					= 0x00;
+		uint16_t				DefinedFrequency 	= 38500;
+		string 					Name 				= "";
+		virtual bool			IsProtocol(vector<int32_t>) 				{ return false; }
+		virtual uint32_t		GetData(vector<int32_t>)					{ return 0x00; 	}
+		virtual vector<int32_t> ConstructRaw(uint32_t Data) 				{ return vector<int32_t>(); }
+
+		virtual vector<int32_t> ConstructRawForSending(uint32_t Data)		{ return vector<int32_t>(); }
 };
 
 #include "protocols/NEC1.cpp"
+#include "protocols/SONY_SIRC.cpp"
 
 #endif

@@ -62,7 +62,7 @@ uint32_t Settings_t::eFuse_t::ReverseBytes(uint32_t Value) {
 	uint32_t Result = 0x0;
 	Result += (Value & 0x000000ff)			<< 24;
 	Result += ((Value & 0x0000ff00) >> 8) 	<< 16;
-	Result += ((Value & 0x0000ff00) >> 16) 	<< 8;
+	Result += ((Value & 0x00ff0000) >> 16) 	<< 8;
 	Result += ((Value & 0xff000000) >> 24);
 
 	return Result;
@@ -100,8 +100,9 @@ void Settings_t::eFuse_t::ReadData() {
 
 	Model 				= (uint8_t)eFuseData2 >> 24;
 	DeviceID 			= (uint32_t)((eFuseData2 << 8) >> 8);
-
 	DeviceID 			= (DeviceID << 8) + (uint8_t)(eFuseData3 >> 24);
+
+
 	Misc				= (uint8_t)((eFuseData3 << 8) >> 24);
 	Produced.Month		= Converter::InterpretHexAsDec((uint8_t)((eFuseData3 << 16) >> 24));
 	Produced.Day		= Converter::InterpretHexAsDec((uint8_t)((eFuseData3 << 24) >> 24));

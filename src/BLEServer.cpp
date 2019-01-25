@@ -39,11 +39,11 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 		ESP_LOGI(tag, "WiFi Data received. SSID: %s, Password: %s", Parts[0].c_str(), Parts[1].c_str());
 		Network.AddWiFiNetwork(Parts[0], Parts[1]);
 
-		BLEServer.StopAdvertising();
-
-		// If device in AP mode or can't connect as Station - try to connect with new data
+		//If device in AP mode or can't connect as Station - try to connect with new data
 		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() != WIFI_MODE_STA_STR))
 			Network.WiFiConnect(Parts[0], true);
+
+		//BLEServer.StopAdvertising();
 	}
 }
 

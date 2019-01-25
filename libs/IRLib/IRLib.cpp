@@ -10,19 +10,36 @@ static char tag[] = "IRLib";
 
 vector<IRProto *> IRLib::Protocols = vector<IRProto *>();
 
+IRLib::IRLib(vector<string> Raw) {
+
+	for (string Item : Raw)
+		RawData.push_back(Converter::ToInt32(Item));
+
+	FillProtocols();
+	LoadDataFromRaw();
+}
+
 IRLib::IRLib(vector<int32_t> Raw) {
 	RawData = Raw;
 
-	if (IRLib::Protocols.size() == 0)
-		Protocols = { new NEC1() };
-
+	FillProtocols();
 	LoadDataFromRaw();
 }
 
 IRLib::IRLib(string ProntoHex) {
 	Converter::FindAndRemove(ProntoHex, " ");
+
+	FillProtocols();
 	FillFromProntoHex(ProntoHex);
 	LoadDataFromRaw();
+}
+
+void IRLib::FillProtocols() {
+	if (IRLib::Protocols.size() == 0)
+		Protocols = {
+				new NEC1(),
+				new SONY_SIRC()
+		};
 }
 
 void IRLib::LoadDataFromRaw() {
@@ -31,7 +48,7 @@ void IRLib::LoadDataFromRaw() {
 	this->Protocol 		= 0xFF;
 	this->Uint32Data 	= 0x0;
 
-	if (Protocol!=nullptr) {
+	if (Protocol != nullptr) {
 		this->Protocol 	= Protocol->ID;
 		this->Uint32Data= Protocol->GetData(RawData);
 	}
@@ -57,6 +74,28 @@ string IRLib::GetRawSignal() {
 		SignalOutput += Converter::ToString(RawData[i]) + ((i != RawData.size() - 1) ? " " : "");
 
 	return SignalOutput;
+}
+
+vector<int32_t> IRLib::GetRawDataForSending() {
+	IRProto *Proto = GetProtocolByID(this->Protocol);
+
+	vector<int32_t> Result = vector<int32_t>();
+
+	if (Proto != nullptr)
+		Result = Proto->ConstructRawForSending(this->Uint32Data);
+
+	return (Result.size() > 0) ? Result : this->RawData;
+}
+
+uint16_t IRLib::GetProtocolFrequency() {
+	IRProto *Proto = GetProtocolByID(this->Protocol);
+
+	uint16_t Result = 0;
+
+	if (Proto != nullptr)
+		Result = Proto->DefinedFrequency;
+
+	return (Result > 0) ? Result : 38000;
 }
 
 void IRLib::SetFrequency(uint16_t Freq) {

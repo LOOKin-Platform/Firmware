@@ -113,8 +113,6 @@ class SensorIR_t : public Sensor_t {
 			LastSignal = IRLib(SensorIRCurrentMessage);
 			//LastSignal.SetFrequency(FrequencyDetectCalculate());
 
-			ESP_LOGI("SensorIR", "Last signal %s", LastSignal.GetProntoHex().c_str());
-
 			SensorIRCurrentMessage.empty();
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));

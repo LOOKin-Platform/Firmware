@@ -24,12 +24,16 @@ class IRLib {
 		vector<int32_t> RawData 	= vector<int32_t>();
 
 		IRLib(string ProntoHex);
-		IRLib(vector<int32_t> Raw	= vector<int32_t>());
+		IRLib(vector<string> 	Raw);
+		IRLib(vector<int32_t> 	Raw	= vector<int32_t>());
 
 		void 			LoadDataFromRaw();
 		void 			FillRawData();
 		string 			GetProntoHex();
 		string			GetRawSignal();
+
+		vector<int32_t>	GetRawDataForSending();
+		uint16_t 		GetProtocolFrequency();
 
 		void 			SetFrequency(uint16_t);
 
@@ -38,6 +42,8 @@ class IRLib {
 	private:
 		uint8_t		 	ProntoOneTimeBurst = 0;
 		uint8_t 		ProntoRepeatBurst = 0;
+
+		void 			FillProtocols();
 
 		IRProto*		GetProtocol();
 		IRProto*		GetProtocolByID(uint8_t);

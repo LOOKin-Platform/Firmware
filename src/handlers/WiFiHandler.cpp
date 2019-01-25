@@ -111,8 +111,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			if (!IsIPCheckSuccess)
 				return ESP_OK;
 
-			BLEServer.SwitchToPublicMode();
-
 			Wireless.IsFirstWiFiStart = false;
 
 			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
@@ -142,6 +140,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		    mdns_hostname_set(Device.IDToString().c_str());
 		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();
 		    mdns_instance_name_set(InstanceName.c_str());
+
+			BLEServer.SwitchToPublicMode();
 
 			return ESP_OK;
 		}
