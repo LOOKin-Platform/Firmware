@@ -102,13 +102,13 @@ class SONY_SIRC : public IRProto {
 			uint8_t		Extended 	= 0x00;
 
 			if (Data <= 0xFFFF) {
-				Command = (uint8_t)(Data & 0x0000FF00) >> 8;
+				Command = (uint8_t)((Data & 0x0000FF00) >> 8);
 				Device 	= (uint8_t)(Data & 0x000000FF);
 			}
 			else
 			{
-				Command = (uint8_t)(Data & 0x00FF0000) >> 16;
-				Device 	= (uint8_t)(Data & 0x0000FF00) >> 8;
+				Command = (uint8_t)((Data & 0x00FF0000) >> 16);
+				Device 	= (uint8_t)((Data & 0x0000FF00) >> 8);
 				Extended= (uint8_t)(Data & 0x000000FF);
 			}
 
