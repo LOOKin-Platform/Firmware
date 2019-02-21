@@ -118,7 +118,7 @@ void Settings_t::eFuse_t::ReadData() {
 		Type = Device.GetTypeFromNVS();
 
 		if (Type == 0x0 || Type == 0xFF) {
-			Type = 0x03;
+			Type = 0x81;
 			Device.SetTypeToNVS(Type);
 		}
 	}

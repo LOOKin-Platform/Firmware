@@ -144,6 +144,9 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShoulUsePrivateMode) {
 }
 
 void BLEServer_t::StopAdvertising() {
+	if (!IsRunning())
+		return;
+
 	pAdvertising->Stop();
 	//pServiceDevice->Stop();
 	//pServiceActuators->Stop();
@@ -155,7 +158,10 @@ void BLEServer_t::StopAdvertising() {
 	delete(pCharacteristicID);
 	delete(pCharacteristicFirmware);
 	delete(pCharacteristicControlFlag);
-	delete(pCharacteristicWiFiNetworks);
+
+	if (IsPrivateMode)
+		delete(pCharacteristicWiFiNetworks);
+
 	delete(pServiceDevice);
 	//delete(pServiceActuators);
 

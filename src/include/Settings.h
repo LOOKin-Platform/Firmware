@@ -22,17 +22,15 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.00";
+		const	string 						FirmwareVersion = "1.01";
 
 		struct {
-			const string					ServerHost 		= "download.look-in.club";
+			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
 			const uint16_t					ServerPort		= 80;
-			const string					UrlPrefix		= "/firmwares/";
 		} OTA;
 
 		struct {
-			const string 					ServerHost 		= "api.look-in.club";
-			const string					APIUrl			= "/v1/time";
+			const string 					APIUrl 			= "http://api.look-in.club/v1/time";
 		} TimeSync;
 
 		struct WiFi_t {
@@ -117,7 +115,7 @@ class Settings_t {
 				uint32_t		DeviceID	= 0x00;
 				uint8_t			Misc		= 0x00;
 
-				struct 		Prodiced_t {
+				struct Produced_t {
 					uint8_t 	Month 		= 0x00;
 					uint8_t 	Day 		= 0x00;
 					uint16_t	Year 		= 0x00;
@@ -208,16 +206,16 @@ class Settings_t {
 
 		struct GPIOData_t {
 			struct Switch_t {
-				gpio_num_t			GPIO 	= GPIO_NUM_0;
+				gpio_num_t			GPIO 			= GPIO_NUM_0;
 			};
 
 			struct Color_t {
 				struct Item_t {
-					gpio_num_t		GPIO 	= GPIO_NUM_0;
-					ledc_channel_t	Channel = LEDC_CHANNEL_MAX;
+					gpio_num_t		GPIO 			= GPIO_NUM_0;
+					ledc_channel_t	Channel 		= LEDC_CHANNEL_MAX;
 				};
 
-				ledc_timer_t		Timer	= LEDC_TIMER_MAX;
+				ledc_timer_t		Timer			= LEDC_TIMER_MAX;
 				Item_t				Red, Green, Blue, White;
 			};
 

@@ -95,11 +95,15 @@ class Log {
 					DeviceOn 		= 0x0001,
 					DeviceStarted 	= 0x0002,
 					DeviceRollback	= 0x00f0,
+					OTASucced		= 0x0040,
+					OTAVerifyFailed	= 0x0041,
+					OTAFailed		= 0x1142,
 
 					// Неинвазивные системные события 0xX100...0xX1FF
 					DeviceOverheat	= 0x1105,
 					DeviceCooled	= 0x1106,
-					TimeSynced		= 0x1130
+					TimeSynced		= 0x1130,
+					OTAStarted		= 0x1140
 				};
 
 				enum WiFi {
@@ -127,9 +131,9 @@ class Log {
 				};
 
 				// События автоматизации 0xX600...0xX6FF
-				// События Storage 0xX700...0xX7FF
 
-		} ;
+				// События Storage 0xX700...0xX7FF
+			} ;
 };
 
 #define TIMER_ALARM					100000 // 1/10 секунды

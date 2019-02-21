@@ -56,11 +56,11 @@ DateTime_t Time::DateTime() {
 	DateTime.DayOfWeek= (AllDays + 4) % 7;
 
 	int Z = AllDays + 719468;
-	const int Era = (Z >= 0 ? Z : Z - 146096) / 146097;
-	const unsigned Doe = static_cast<unsigned>(Z - Era * 146097);           // [0, 146096]
-	const unsigned Yoe = (Doe - Doe/1460 + Doe/36524 - Doe/146096) / 365;   // [0, 399]
-	const unsigned Doy = Doe - (365*Yoe +Yoe/4 - Yoe/100);                  // [0, 365]
-	const unsigned Mp = (5*Doy + 2)/153;                                    // [0, 11]
+	const int Era 		= (Z >= 0 ? Z : Z - 146096) / 146097;
+	const unsigned Doe 	= static_cast<unsigned>(Z - Era * 146097);           // [0, 146096]
+	const unsigned Yoe 	= (Doe - Doe/1460 + Doe/36524 - Doe/146096) / 365;   // [0, 399]
+	const unsigned Doy 	= Doe - (365*Yoe +Yoe/4 - Yoe/100);                  // [0, 365]
+	const unsigned Mp 	= (5*Doy + 2)/153;                                    // [0, 11]
 
 	DateTime.Day   = Doy - (153*Mp+2)/5 + 1;
 	DateTime.Month = Mp + (Mp < 10 ? 3 : -9);
@@ -105,12 +105,12 @@ bool Time::IsUptime(uint32_t Time) {
 	return (Time < 31536000) ? true : false;
 }
 
-void Time::ServerSync(string Host, string Path) {
+void Time::ServerSync(string URL) {
 	if (Offset != 0)
 		return;
 
 	ESP_LOGI(tag, "Time sync started");
-	HTTPClient::Query(Host, 80, Path, QueryType::GET, "", true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
+	HTTPClient::Query(URL, 80, QueryType::GET, true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
 }
 
 void Time::ReadStarted(char IP[]) {

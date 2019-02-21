@@ -21,8 +21,10 @@ OTA::OTA() {
 void OTA::Update(string URL) {
 	ESP_LOGI(tag, "Starting OTA...");
 
-	HTTPClient::Query(Settings.OTA.ServerHost, Settings.OTA.ServerPort, URL, QueryType::GET, "",
+	HTTPClient::Query(URL, Settings.OTA.ServerPort, QueryType::GET,
                         true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
+
+	Log::Add(Log::Events::System::OTAStarted);
 }
 
 void OTA::ReadStarted(char IP[]) {
@@ -81,16 +83,27 @@ bool OTA::ReadBody(char Data[], int DataLen, char IP[]) {
 void OTA::ReadFinished(char IP[]) {
 	ESP_LOGI(tag, "Total Write binary data length : %d", BinaryFileLength);
 
-	if (esp_ota_end(OutHandle) != ESP_OK) {
+	esp_err_t err;
+	err = esp_ota_end(OutHandle);
+
+	if (err != ESP_OK) {
+		if (err == ESP_ERR_OTA_VALIDATE_FAILED)
+			Log::Add(Log::Events::System::OTAVerifyFailed);
+		else
+			Log::Add(Log::Events::System::OTAFailed);
+
 		ESP_LOGE(tag, "esp_ota_end failed!");
+		Device.Status = DeviceStatus::RUNNING;
 		return;
 	}
 
-	esp_err_t err = esp_ota_set_boot_partition(&OperatePartition);
+	err = esp_ota_set_boot_partition(&OperatePartition);
 	if (err != ESP_OK) {
 		ESP_LOGE(tag, "esp_ota_set_boot_partition failed! err=0x%x", err);
 		return;
 	}
+
+	Log::Add(Log::Events::System::OTASucced);
 
 	ESP_LOGD(tag, "Prepare to restart system!");
 	esp_restart();

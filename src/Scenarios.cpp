@@ -102,7 +102,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 								"&action=" + Converter::ToHexString(Command.EventCode,2) +
 								"&operand=" + Converter::ToHexString(Command.Operand, 8);
 
-							HTTPClient::Query("", 80, URL, QueryType::GET, NetworkDevice.IP, false, NULL, NULL, &ReadFinished, &Aborted);
+							HTTPClient::Query("http://" + NetworkDevice.IP + URL, 80, QueryType::GET, false, NULL, NULL, &ReadFinished, &Aborted);
 						}
 					}
 				}

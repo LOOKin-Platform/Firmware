@@ -225,11 +225,12 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 	if (Params.count("firmware") == 0)
 		return false;
 
-	if (Converter::ToFloat(Settings.FirmwareVersion) > Converter::ToFloat(Params["firmware"])) {
-		Response.ResponseCode = WebServer_t::Response::CODE::OK;
-		Response.Body = "{\"success\" : \"false\" , \"Message\": \"Attempt to update to the old version\"}";
-		return false;
-	}
+	if (Converter::ToLower(Params["firmware"]).find("http") != 0)
+		if (Converter::ToFloat(Settings.FirmwareVersion) > Converter::ToFloat(Params["firmware"])) {
+			Response.ResponseCode = WebServer_t::Response::CODE::OK;
+			Response.Body = "{\"success\" : \"false\" , \"Message\": \"Attempt to update to the old version\"}";
+			return false;
+		}
 
 	if (Status == DeviceStatus::UPDATING) {
 		Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
@@ -243,12 +244,19 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 		return false;
 	}
 
-	string UpdateFilename = "firmware.bin";
+	if (Converter::ToLower(Params["firmware"]).find("http") == 0) {
+		OTA::Update(Params["firmware"]);
+	}
+	else
+	{
+		string UpdateFilename = "firmware.bin";
 
-	if (Params.count("filename") > 0)
-		UpdateFilename = Params["filename"];
+		if (Params["filename"].size() > 0)
+			UpdateFilename = Params["filename"];
 
-	OTA::Update(Settings.OTA.UrlPrefix + Params["firmware"] + "/" + UpdateFilename);
+		OTA::Update(Settings.OTA.APIUrl + Params["firmware"] + "/" + UpdateFilename);
+	}
+
 	Device.Status = DeviceStatus::UPDATING;
 
 	Response.ResponseCode = WebServer_t::Response::CODE::OK;

@@ -23,11 +23,13 @@ using namespace std;
 #include "Converter.h"
 #include "Settings.h"
 
+#include "esp_http_client.h"
+
 enum QueryType { NONE, POST, GET, DELETE };
 
 typedef void (*ReadStarted)	(char[]);
 typedef bool (*ReadBody)	(char[], int, char[]);
-typedef void (*ReadFinished)(char []);
+typedef void (*ReadFinished)(char[]);
 typedef void (*Aborted)		(char[]);
 
 /**
@@ -40,35 +42,33 @@ class HTTPClient {
 	 * @brief Struct to hold HTTP query data
 	 */
 		struct HTTPClientData_t {
-			char      IP[15]        = "\0";               /*!< Server IP string, e. g. 192.168.1.1 */
-			uint16_t  Port          = 80;                 /*!< Server port, e. g. 80 */
-			char      Hostname[32]  = "\0";               /*!< Hostname string, e. g. look-in.club */
-			char      ContentURI[32]= "\0";               /*!< Path to the content in the server, e. g. /api/v1/time */
-			QueryType Method        = GET;                /*!< Query method, e. g. QueryType::POST */
+			uint16_t  					Port		= 80;                 							/*!< Server port, e. g. 80 */
+			char      					URL[64]		= "\0";               							/*!< Hostname string, e. g. look-in.club */
+			QueryType					Method		= QueryType::GET;								/*!< Query method, e. g. QueryType::POST */
 
-			int       SocketID      = -1;                 /*!< Socket identifier */
+			esp_http_client_handle_t	Handle;                 									/*!< Client handle */
 
-			ReadStarted   ReadStartedCallback   = NULL;   /*!< Callback function invoked while started to read query data from server */
-			ReadBody      ReadBodyCallback      = NULL;   /*!< Callback function invoked while query data reading process */
-			ReadFinished  ReadFinishedCallback  = NULL;   /*!< Callback function invoked when query reading process is over */
-			Aborted       AbortedCallback       = NULL;   /*!< Callback function invoked when reading data from server failed */
+			ReadStarted   ReadStartedCallback   	= NULL;   /*!< Callback function invoked while started to read query data from server */
+			ReadBody      ReadBodyCallback      	= NULL;   /*!< Callback function invoked while query data reading process */
+			ReadFinished  ReadFinishedCallback  	= NULL;   /*!< Callback function invoked when query reading process is over */
+			Aborted       AbortedCallback       	= NULL;   /*!< Callback function invoked when reading data from server failed */
 		};
 
 		static void Query(HTTPClientData_t, bool = false);
-		static void Query(string Hostname, uint16_t Port, string ContentURI, QueryType Type = GET, string IP="", bool ToFront = false,
+		static void Query(string URL, uint16_t Port = 80, QueryType Type = GET, bool ToFront = false,
             ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL);
 
+		static esp_err_t QueryHandler(esp_http_client_event_t *event);
 		static void HTTPClientTask(void *);
 
-		static bool     Connect             (HTTPClientData_t &);
 		static char*    ResolveIP           (const char *Hostname, uint16_t Port);
-		static int      ReadUntil           (char *buffer, char delim, int len);
-		static bool     ReadPastHttpHeader  (HTTPClientData_t &, char text[], int total_len);
 		static void     Failed              (HTTPClientData_t &);
 
+		static void		CheckUserAgent		();
 	private:
-		static QueueHandle_t  Queue;
-		static uint8_t        ThreadsCounter;
+		static string			UserAgent;
+		static QueueHandle_t  	Queue;
+		static uint8_t        	ThreadsCounter;
 };
 
 #endif /* DRIVERS_HTTPCLIENT_H_ */

@@ -49,7 +49,7 @@ class Time {
     static string     TimezoneStr();
     static bool       IsUptime(uint32_t Time);
 
-    static void       ServerSync(string Host, string Path);
+    static void       ServerSync(string URL);
 
     // HTTP Callbacks
     static void ReadStarted (char IP[]);

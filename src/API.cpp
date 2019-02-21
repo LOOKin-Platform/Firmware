@@ -50,11 +50,23 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 
 			if (APISection == "status")
 				switch (Device.Type.Hex) {
-				case Settings.Devices.Plug:
-					Sensor_t::HandleHTTPRequest(Response, Type, { "switch" }, map<string,string>());
-					break;
+					case Settings.Devices.Plug:
+						Sensor_t::HandleHTTPRequest(Response, Type, { "switch" }, map<string,string>());
+						break;
+					case Settings.Devices.Remote:
+						Sensor_t::HandleHTTPRequest(Response, Type, { "ir" }, map<string,string>());
+						break;
 				}
 		}
+
+		// Fixes null string at some APIs
+		if (APISection == "device" && URLParts[0] == "name" && URLParts.size() == 1)
+			return;
+
+		if (APISection == "network" && URLParts[0] == "currentssid" && URLParts.size() == 1)
+			return;
+
+
 	}
 
 	if (Response.Body == "" && Response.ResponseCode == WebServer_t::Response::CODE::OK) {

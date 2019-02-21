@@ -339,6 +339,32 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
 
+			if (URLParts[0] == "savedssid") {
+				vector<string> WiFiSettingsVector = vector<string>();
+				for (auto &Item : WiFiSettings)
+					WiFiSettingsVector.push_back(Item.SSID);
+
+				Result.Body = JSON::CreateStringFromVector(WiFiSettingsVector);
+				Result.ContentType = WebServer_t::Response::TYPE::JSON;
+			}
+
+			if (URLParts[0] == "map") {
+				vector<map<string,string>> NetworkMap = vector<map<string,string>>();
+				for (auto& NetworkDevice: Devices)
+					NetworkMap.push_back({
+					{"Type"     , DeviceType_t::ToString(NetworkDevice.TypeHex)},
+					{"ID"       , Converter::ToHexString(NetworkDevice.ID,8)},
+					{"IP"       , NetworkDevice.IP},
+					{"IsActive" , (NetworkDevice.IsActive == true) ? "1" : "0" }
+				});
+
+				JSON JSONObject;
+				JSONObject.SetObjectsArray("", NetworkMap);
+
+				Result.Body = JSONObject.ToString();
+				Result.ContentType = WebServer_t::Response::TYPE::JSON;
+			}
+
 			if (URLParts[0] == "keepwifi") {
 				KeepWiFiTimer = Settings.WiFi.KeepWiFiTime;
 

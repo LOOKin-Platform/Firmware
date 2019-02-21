@@ -38,12 +38,12 @@ void EnergyPeriodicHandler::Pool() {
 		uint16_t ConstValue 		= Converter::VoltageFromADC(ConstValueSrc, 51, 100 );
 		uint16_t BatteryValue 		= Converter::VoltageFromADC(BatteryValueSrc, 100, 51 );
 
-		ESP_LOGI("tag","%d %d", ConstValue, BatteryValue);
-
 		if (ConstValue > 5000)
 			Device.PowerMode = DevicePowerMode::CONST;
 		else
 			Device.PowerMode = DevicePowerMode::BATTERY;
+
+		//Device.PowerMode = DevicePowerMode::BATTERY;
 
 		Device.CurrentVoltage = (Device.PowerMode == DevicePowerMode::CONST) ? ConstValue : BatteryValue;
 	}

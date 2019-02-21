@@ -62,9 +62,9 @@ template string Converter::ToString<float>		(float);
 template string Converter::ToString<double>		(double);
 
 string Converter::ToHexString(uint64_t Number, size_t Length) {
-  stringstream sstream;
-  sstream << std::uppercase << std::setfill('0') << std::setw(Length) << std::hex << (uint64_t)Number;
-  return (sstream.str());
+	stringstream sstream;
+	sstream << std::uppercase << std::setfill('0') << std::setw(Length) << std::hex << (uint64_t)Number;
+	return (sstream.str());
 }
 
 string Converter::ToASCII(string HexString) {

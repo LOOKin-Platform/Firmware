@@ -5,12 +5,13 @@
 */
 
 #include "HTTPClient.h"
+#include "Globals.h"
 
 static char tag[] = "HTTPClient";
 
 QueueHandle_t HTTPClient::Queue = FreeRTOS::Queue::Create(Settings.HTTPClient.QueueSize, sizeof( struct HTTPClientData_t ));
 uint8_t HTTPClient::ThreadsCounter = 0;
-
+string HTTPClient::UserAgent = "";
 /**
  * @brief Add query to the request queue.
  *
@@ -25,25 +26,22 @@ uint8_t HTTPClient::ThreadsCounter = 0;
  * @param [in] ReadFinishedCallback Callback function invoked when reading process is over
  * @param [in] AbortedCallback Callback function invoked when reading failed
  */
-void HTTPClient::Query(string Hostname, uint16_t Port, string ContentURI, QueryType Type, string IP, bool ToFront,
+void HTTPClient::Query(string URL, uint16_t Port, QueryType Type, bool ToFront,
         ReadStarted ReadStartedCallback, ReadBody ReadBodyCallback, ReadFinished ReadFinishedCallback, Aborted AbortedCallback) {
 
-  HTTPClientData_t QueryData;
+	HTTPClientData_t QueryData;
 
-  strncpy(QueryData.Hostname   , Hostname.c_str(), 32);
-  strncpy(QueryData.ContentURI , ContentURI.c_str(), 32);
+	strncpy(QueryData.URL   , URL.c_str(), 64);
 
-  QueryData.Port    = Port;
-  QueryData.Method  = Type;
+	QueryData.Port    = Port;
+	QueryData.Method  = Type;
 
-  if (!IP.empty()) strncpy(QueryData.IP , IP.c_str(), 15);
+	QueryData.ReadStartedCallback   = ReadStartedCallback;
+	QueryData.ReadBodyCallback      = ReadBodyCallback;
+	QueryData.ReadFinishedCallback  = ReadFinishedCallback;
+	QueryData.AbortedCallback       = AbortedCallback;
 
-  QueryData.ReadStartedCallback   = ReadStartedCallback;
-  QueryData.ReadBodyCallback      = ReadBodyCallback;
-  QueryData.ReadFinishedCallback  = ReadFinishedCallback;
-  QueryData.AbortedCallback       = AbortedCallback;
-
-  Query(QueryData, ToFront);
+	Query(QueryData, ToFront);
 }
 
 /**
@@ -58,6 +56,8 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
 		ESP_LOGE(tag, "Failed to create queue");
 		return;
 	}
+
+	CheckUserAgent();
 
 	if (ToFront)
 		FreeRTOS::Queue::SendToFront(Queue, &Query, (TickType_t) Settings.HTTPClient.BlockTicks );
@@ -74,6 +74,41 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
 	}
 }
 
+esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
+{
+	HTTPClientData_t ClientData = *(HTTPClientData_t*)event->user_data;
+
+    switch(event->event_id) {
+        case HTTP_EVENT_ERROR:
+        	Failed(ClientData);
+            break;
+        case HTTP_EVENT_ON_CONNECTED:
+            //ESP_LOGI(tag, "HTTP_EVENT_ON_CONNECTED");
+			if (ClientData.ReadStartedCallback != NULL)
+				ClientData.ReadStartedCallback(ClientData.URL);
+            break;
+        case HTTP_EVENT_HEADER_SENT:
+            //ESP_LOGI(tag, "HTTP_EVENT_HEADER_SENT");
+            break;
+        case HTTP_EVENT_ON_HEADER:
+            //ESP_LOGI(tag, "HTTP_EVENT_ON_HEADER");
+            break;
+        case HTTP_EVENT_ON_DATA:
+			if (ClientData.ReadBodyCallback != NULL)
+				if (!ClientData.ReadBodyCallback((char*)event->data, event->data_len, ClientData.URL))
+					HTTPClient::Failed(ClientData);
+            break;
+        case HTTP_EVENT_ON_FINISH:
+			if (ClientData.ReadFinishedCallback != NULL)
+				ClientData.ReadFinishedCallback(ClientData.URL);
+			break;
+
+        case HTTP_EVENT_DISCONNECTED:
+            break;
+    }
+    return ESP_OK;
+}
+
 /**
  * @brief The task of processing the HTTP requests in queue
  *
@@ -87,130 +122,40 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 	if (Queue != 0)
 		while (FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks)) {
-			if (HTTPClient::Connect(ClientData)) {
-				ESP_LOGI(tag, "Connected to http server");
-			}
-			else {
-				ESP_LOGE(tag, "Connect to http server failed!");
-				HTTPClient::Failed(ClientData);
-				continue;
-			}
+			esp_http_client_config_t config;
+			config.url 		= ClientData.URL;
+			config.port 	= ClientData.Port;
+			//config.is_async = true;
 
-			int res = -1;
-
-			// send request to http server
-			string Method = "";
 			switch (ClientData.Method) {
-				case POST   : Method = "GET"    ; break;
-				case DELETE : Method = "DELETE" ; break;
+				case POST   : config.method = esp_http_client_method_t::HTTP_METHOD_POST; break;
+				case DELETE : config.method = esp_http_client_method_t::HTTP_METHOD_DELETE; break;
 				case GET    :
-				default     : Method = "GET"    ; break;
+				default     : config.method = esp_http_client_method_t::HTTP_METHOD_GET; break;
 			}
 
-			char Request[128];
-			sprintf (Request, "%s %s HTTP/1.1\r\nHost:%s:%u \r\n\r\n", Method.c_str(), ClientData.ContentURI, ClientData.Hostname, ClientData.Port);
+			config.user_data = (void*)&ClientData;
+			config.event_handler = QueryHandler;
 
-			res = send(ClientData.SocketID, Request, sizeof(Request), 0);
-			if (res == -1) {
-				ESP_LOGE(tag, "Send request to server failed");
+			esp_http_client_handle_t Handle = esp_http_client_init(&config);
+			esp_http_client_set_header(Handle, "User-Agent", UserAgent.c_str());
+			esp_err_t err = esp_http_client_perform(Handle);
+
+			if (err == ESP_OK) {
+				ESP_LOGI(tag, "Performing HTTP request success");
+			}
+			if (err != ESP_OK) {
+				ESP_LOGE(tag, "Connect to http server failed");
 				HTTPClient::Failed(ClientData);
 				continue;
 			}
-			else
-				ESP_LOGI(tag, "Send request to server succeeded");
 
-			bool resp_body_start = false, flag = true;
-			char ReadData[Settings.HTTPClient.NetbuffLen + 1] = { 0 };
-			char Text[Settings.HTTPClient.NetbuffLen + 1]     = { 0 };
-
-			if (ClientData.ReadStartedCallback != NULL)
-				ClientData.ReadStartedCallback(ClientData.IP);
-
-			while (flag) {
-				memset(Text, 0, Settings.HTTPClient.NetbuffLen);
-				memset(ReadData, 0, Settings.HTTPClient.NetbuffLen);
-
-				int BuffLen = recv(ClientData.SocketID, Text, Settings.HTTPClient.NetbuffLen, 0);
-
-				if (BuffLen < 0) {
-					ESP_LOGE(tag, "Error: receive data error! errno=%d", errno);
-					HTTPClient::Failed(ClientData);
-					break;
-				}
-				else if (BuffLen > 0 && !resp_body_start) { // skip header
-					memcpy(ReadData, Text, BuffLen);
-					resp_body_start = HTTPClient::ReadPastHttpHeader(ClientData, Text, BuffLen);
-				}
-				else if (BuffLen > 0 && resp_body_start) {
-					memcpy(ReadData, Text, BuffLen);
-
-					if (ClientData.ReadBodyCallback != NULL)
-						if (!ClientData.ReadBodyCallback(ReadData, BuffLen, ClientData.IP)) {
-							HTTPClient::Failed(ClientData);
-							break;
-						}
-				}
-				else if (BuffLen == 0) {
-					flag = false;
-					ESP_LOGI(tag, "Connection closed, all packets received");
-					close(ClientData.SocketID);
-				}
-				else
-					ESP_LOGE(tag, "Unexpected recv result");
-			}
-
-			if (ClientData.ReadFinishedCallback != NULL)
-				ClientData.ReadFinishedCallback(ClientData.IP);
+			esp_http_client_cleanup(Handle);
 		}
 
 	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
     HTTPClient::ThreadsCounter--;
     FreeRTOS::DeleteTask();
-}
-
-/**
- * @brief Attempt to connect to HTTP server.
- *
- * @param [in] ClientData HTTPClientData_t struct with query info.
- * @result Is connect to HTTP server succes or not
- */
-bool HTTPClient::Connect(HTTPClientData_t &ClientData) {
-	if (strlen(ClientData.IP) == 0) {
-		char *IP = ResolveIP(ClientData.Hostname, ClientData.Port);
-		strcpy(ClientData.IP, IP);
-
-		if (strlen(ClientData.IP) == 0)
-			return false;
-	}
-
-	ClientData.SocketID = socket(PF_INET, SOCK_STREAM, 0);
-
-	if (ClientData.SocketID == -1) {
-		ESP_LOGE(tag, "Create socket failed!");
-		return false;
-	}
-
-	struct sockaddr_in sock_info;
-	// set connect info
-	memset(&sock_info, 0, sizeof(struct sockaddr_in));
-	sock_info.sin_family = AF_INET;
-	sock_info.sin_addr.s_addr = inet_addr(ClientData.IP);
-	sock_info.sin_port = htons(ClientData.Port);
-
-	ESP_LOGI("IP"	,"%s",ClientData.IP);
-	ESP_LOGI("Port"	,"%i",ClientData.Port);
-
-	// connect to http server
-	if (connect(ClientData.SocketID, (struct sockaddr *)&sock_info, sizeof(sock_info)) == -1) {
-		ESP_LOGE(tag, "Connect to server failed! errno=%d", errno);
-		close(ClientData.SocketID);
-
-		return false;
-	}
-	else
-		return true;
-
-	return false;
 }
 
 /**
@@ -240,68 +185,18 @@ char* HTTPClient::ResolveIP(const char *Hostname, uint16_t Port) {
 }
 
 /**
- * @brief Read buffer by byte still delimeter
- *
- * @param [in] buffer Buffer
- * @param [in] delim Delimeter
- * @param [in] len Buffer lenght
- * @return Read bytes counts
- */
-int HTTPClient::ReadUntil(char *buffer, char delim, int len) {
-	int i = 0;
-	while (buffer[i] != delim && i < len) {
-      ++i;
-	}
-
-	return i + 1;
-}
-
- /**
-  * @brief Resolve a packet from http socket
-  *
-  * @param [in] ClientData HTTPClientData_t struct with query info.
-  * @param [in] text Buffer
-  * @param [in] total_len Buffer length
-  * @return Return true if packet including \\r\\n\\r\\n that means http packet header finished, otherwise return false
-  */
-bool HTTPClient::ReadPastHttpHeader(HTTPClientData_t &ClientData, char text[], int total_len) {
-	/* i means current position */
-	int i = 0, i_read_len = 0;
-	char ReadData[Settings.HTTPClient.NetbuffLen + 1] = { 0 };
-
-	while (text[i] != 0 && i < total_len) {
-		i_read_len = ReadUntil(&text[i], '\n', total_len);
-		// if we resolve \r\n line,we think packet header is finished
-
-		if (i_read_len == 2) {
-			int i_write_len = total_len - (i + 2);
-
-			memset(ReadData, 0, Settings.HTTPClient.NetbuffLen);
-			memcpy(ReadData, &(text[i + 2]), i_write_len);
-
-			if (ClientData.ReadBodyCallback != NULL) {
-				if (!ClientData.ReadBodyCallback(ReadData,i_write_len, ClientData.IP))
-					return false;
-			}
-
-			return true;
-		}
-
-		i += i_read_len;
-	}
-
-	return false;
-}
-
-/**
  * @brief Critical HTTP-query error handling
  *
  * @param [in] &ClientData HTTPClientData_t struct with query info.
  */
 void HTTPClient::Failed(HTTPClientData_t &ClientData) {
 	ESP_LOGE(tag, "Exiting HTTPClient task due to fatal error...");
-	close(ClientData.SocketID);
 
 	if (ClientData.AbortedCallback != NULL)
-		ClientData.AbortedCallback(ClientData.IP);
+		ClientData.AbortedCallback(ClientData.URL);
+}
+
+void HTTPClient::CheckUserAgent() {
+	if (UserAgent == "" && Settings.eFuse.DeviceID > 0)
+		UserAgent = "LOOK.in\\" + Settings.FirmwareVersion + " " + Converter::ToHexString(Settings.eFuse.DeviceID,8);
 }
