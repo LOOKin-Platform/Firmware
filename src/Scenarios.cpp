@@ -368,7 +368,6 @@ string EventData_t::ToString() {
 	return Converter::ToHexString(this->ToUint64(), Settings.Scenarios.OperandBitLength/4);
 }
 
-
 bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
 	if (SensorIdentifier == SensorID)
 		if (Sensor_t::GetSensorByID(SensorID) != nullptr)
@@ -463,7 +462,7 @@ void CalendarData_t::SetData(bitset<Settings.Scenarios.OperandBitLength> Operand
 	DateTime.Minutes  = (uint8_t)Scenario_t::Range<8>(Operand, 8, 8).to_ulong();
 	DateTime.Seconds  = (uint8_t)Scenario_t::Range<8>(Operand,16, 8).to_ulong();
 
-	IsScheduled = Operand[24];
+	IsScheduled = (bool)Scenario_t::Range<1>(Operand,24,1).to_ulong();
 
 	if (!IsScheduled) {
 		DateTime.Day    = (uint8_t)Scenario_t::Range<8>(Operand, 25, 8).to_ulong();
@@ -497,7 +496,7 @@ uint64_t CalendarData_t::ToUint64() {
 		bitset<8> bMonth(DateTime.Month);
 		Scenario_t::AddRangeTo(Result, bMonth, 33);
 
-		bitset<8> bYear(DateTime.Year);
+		bitset<8> bYear(DateTime.Year - 1970);
 		Scenario_t::AddRangeTo(Result, bYear, 41);
 	}
 	else {
@@ -520,22 +519,18 @@ void CalendarData_t::ExecuteCommands(uint32_t ScenarioID) {
 	Scenario_t::ExecuteScenario(ScenarioID);
 };
 
-bool CalendarData_t:: TimeUpdatedIsTriggered() {
+bool CalendarData_t::TimeUpdatedIsTriggered() {
 	DateTime_t CurrentDateTime = Time::DateTime();
 
-	DateTime.Hours    = CurrentDateTime.Hours;
-	DateTime.Minutes  = CurrentDateTime.Minutes;
-	DateTime.Seconds  = CurrentDateTime.Seconds;
-
-	if (CurrentDateTime.Hours == DateTime.Hours &&
-      CurrentDateTime.Minutes == DateTime.Minutes &&
-      CurrentDateTime.Seconds == DateTime.Seconds) {
+	if (	CurrentDateTime.Hours 	== DateTime.Hours 	&&
+			CurrentDateTime.Minutes == DateTime.Minutes &&
+			CurrentDateTime.Seconds == DateTime.Seconds) {
 		if (IsScheduled) {
 			return (bool)ScheduledDays[7-CurrentDateTime.DayOfWeek];
         }
-        else if (CurrentDateTime.Day  == DateTime.Day &&
-                CurrentDateTime.Month == DateTime.Month &&
-                CurrentDateTime.Year  == DateTime.Year)
+        else if (	CurrentDateTime.Day  	== DateTime.Day 	&&
+                	CurrentDateTime.Month 	== DateTime.Month 	&&
+					CurrentDateTime.Year  	== DateTime.Year)
         	return true;
 	}
 

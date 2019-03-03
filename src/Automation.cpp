@@ -57,7 +57,7 @@ void Automation_t::TimeChangedTask(void *) {
 			FreeRTOS::Sleep(1000);
 
 		for (auto& ScenarioCacheItem : Automation.ScenariosCache)
-			if (ScenarioCacheItem.IsLinked == true && ScenarioCacheItem.ScenarioType == 0x2) {
+			if (ScenarioCacheItem.IsLinked == true && ScenarioCacheItem.ScenarioType == 0x02) {
 				Scenario_t *Scenario = new Scenario_t(ScenarioCacheItem.ScenarioType);
 				Scenario->SetData(ScenarioCacheItem.Operand);
 
