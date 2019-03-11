@@ -92,6 +92,7 @@ class WiFiEventHandler {
 		virtual esp_err_t staStart();
 		virtual esp_err_t staStop();
 		virtual esp_err_t wifiReady();
+		virtual esp_err_t ConnectionTimeout();
 
 		/**
 		 * Get the next WiFi event handler in the chain, if there is one.

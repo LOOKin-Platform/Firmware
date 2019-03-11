@@ -42,7 +42,19 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 	// If the event we received indicates that we now have an IP address or that a connection was disconnected then unlock the mutex that
 	// indicates we are waiting for a connection complete.
 
+	if (event->event_id == SYSTEM_EVENT_STA_START) {
+		ESP_LOGI(tag, "SYSTEM_EVENT_STA_START");
+		pWiFi->m_WiFiRunning = true;
+		pWiFi->m_connectFinished.Give();
+	}
+
+	if (event->event_id == SYSTEM_EVENT_STA_STOP) {
+		ESP_LOGI(tag, "SYSTEM_EVENT_STA_STOP");
+		pWiFi->m_WiFiRunning = false;
+	}
+
 	if (event->event_id == SYSTEM_EVENT_STA_CONNECTED) {
+		ESP_LOGI(tag, "SYSTEM_EVENT_STA_CONNECTED");
 		pWiFi->m_apConnectionStatus = ESP_OK;
 		pWiFi->m_WiFiRunning = true;
 
@@ -50,11 +62,16 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 	}
 
 	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+
 		if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) { // If we connected and have an IP, change the status to ESP_OK.  Otherwise, change it to the reason code.
+			ESP_LOGI(tag, "SYSTEM_EVENT_STA_GOT_IP");
 			pWiFi->m_apConnectionStatus = ESP_OK;
 			pWiFi->m_WiFiRunning = true;
 		}
-		else {
+		else
+		{
+			ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED, Reason: %d", event->event_info.disconnected.reason);
+
 			pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
 			pWiFi->m_WiFiRunning = false;
 		}
@@ -62,11 +79,28 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 		pWiFi->m_connectFinished.Give();
 	}
 
-	if (event->event_id == SYSTEM_EVENT_AP_START || event->event_id == SYSTEM_EVENT_STA_GOT_IP)
+	if (event->event_id == SYSTEM_EVENT_AP_START) {
+		ESP_LOGI(tag, "SYSTEM_EVENT_AP_START");
 		pWiFi->m_WiFiRunning = true;
+	}
 
-	if (event->event_id == SYSTEM_EVENT_AP_STOP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED)
+	if (event->event_id == SYSTEM_EVENT_AP_STOP) {
+		ESP_LOGI(tag, "SYSTEM_EVENT_AP_STOP");
 		pWiFi->m_WiFiRunning = false;
+	}
+
+
+	if (event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+		ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED");
+		pWiFi->m_WiFiRunning = false;
+	}
+
+	if (event->event_id == SYSTEM_EVENT_SCAN_DONE)
+	{
+		ESP_LOGI(tag, "SYSTEM_EVENT_SCAN_DONE");
+		::esp_wifi_disconnect();
+		pWiFi->m_scanFinished.Give();
+	}
 
 	// Invoke the event handler.
 	esp_err_t rc;
@@ -165,6 +199,8 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	ESP_LOGD(tag, ">> scan");
 	std::vector<WiFiAPRecord> apRecords;
 
+	m_WiFiRunning = true;
+
 	Init();
 
 	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
@@ -182,14 +218,20 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
 	conf.show_hidden = true;
-	conf.scan_time.active.min = 0;
-	conf.scan_time.active.max = 70;
+	conf.scan_type = WIFI_SCAN_TYPE_ACTIVE;
+	conf.scan_time.active.min = 120;
+	conf.scan_time.active.max = 250;
+	conf.channel = 0;
+
+	m_scanFinished.Take("ScanFinished");
 
 	esp_err_t rc = ::esp_wifi_scan_start(&conf, true);
 	if (rc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_scan_start: %d", rc);
 		return apRecords;
 	}
+
+	m_scanFinished.Wait();
 
 	uint16_t apCount;  // Number of access points available.
 	rc = ::esp_wifi_scan_get_ap_num(&apCount);
@@ -215,10 +257,32 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		wifiAPRecord.m_authMode = list[i].authmode;
 		wifiAPRecord.m_rssi     = list[i].rssi;
 		wifiAPRecord.m_channel	= list[i].primary;
-		apRecords.push_back(wifiAPRecord);
+
+		if (wifiAPRecord.m_ssid == "")
+			continue;
+
+		bool IsExist = false;
+		for (int i=0; i < apRecords.size(); i++) {
+			if (apRecords[i].m_ssid == wifiAPRecord.m_ssid) {
+				IsExist = true;
+
+				if (apRecords[i].m_rssi <= wifiAPRecord.m_rssi)
+					apRecords[i] = wifiAPRecord;
+				else
+					continue;
+			}
+		}
+
+		if (!IsExist)
+			apRecords.push_back(wifiAPRecord);
 	}
 
 	free(list);   // Release the storage allocated to hold the records.
+
+	::esp_wifi_disconnect();
+	::esp_wifi_stop();
+
+	m_WiFiRunning = false;
 
 	std::sort(apRecords.begin(),
 		apRecords.end(),
@@ -238,10 +302,22 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
  * @returns ESP_OK if successfully receives a SYSTEM_EVENT_STA_GOT_IP event.  Otherwise returns wifi_err_reason_t - use GeneralUtils::wifiErrorToString(uint8_t errCode) to print the error.
  */
 uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, const uint8_t& Channel, bool WaitForConnection) {
-	ESP_LOGD(tag, ">> connectAP");
+	ESP_LOGD(tag, ">> connectAP: %s %s", SSID.c_str(), Password.c_str());
 
-	if (GetMode() == WIFI_MODE_AP_STR)
-		::esp_wifi_stop();
+	ESP_LOGD(tag, "%s %d", GetMode().c_str(), m_apConnectionStatus);
+
+	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
+		::esp_wifi_disconnect();
+	}
+
+	esp_err_t errRc = ::esp_wifi_stop();
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+	}
+
+	FreeRTOS::Sleep(1000);
+
+	m_WiFiRunning = true;
 
 	m_apConnectionStatus = UINT8_MAX;
 	Init();
@@ -257,11 +333,12 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		::tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
 	}
 
-	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
+	errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
 	}
+
 	wifi_config_t sta_config;
 	::memset(&sta_config, 0, sizeof(sta_config));
 	::memcpy(sta_config.sta.ssid, SSID.data(), SSID.size());
@@ -278,16 +355,26 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		abort();
 	}
 
+	//ESP_ERROR_CHECK(::esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N));
+
 	errRc = ::esp_wifi_start();
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
 	}
 
-	m_connectFinished.Take("connectAP");   // Take the semaphore to wait for a connection.
+	uint8_t ConnectionTries = 3;
+
+	m_connectFinished.Give();
+	m_connectFinished.Take("connectAP"); // Take the semaphore to wait for a connection.
     do {
         ESP_LOGD(tag, "esp_wifi_connect");
-        errRc = ::esp_wifi_connect();
+        esp_err_t errRc = ::esp_wifi_connect();
+
+        ConnectionTries--;
+        if (ConnectionTries == 0)
+        	break;
+
         if (errRc != ESP_OK) {
             ESP_LOGE(tag, "esp_wifi_connect: rc=%d %s", errRc, Converter::ErrorToString(errRc));
             m_connectFinished.Give();
@@ -296,6 +383,13 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
     }
     while (!m_connectFinished.Take(5000, "connectAP")); // retry if not connected within 5s
     m_connectFinished.Give();
+
+    if (ConnectionTries == 0) {
+    	m_pWifiEventHandler->ConnectionTimeout();
+    }
+    else {
+    	m_connectFinished.Wait("connectAP");
+    }
 
 	ESP_LOGD(tag, "<< connectAP");
 	return m_apConnectionStatus;  // Return ESP_OK if we are now connected and wifi_err_reason_t if not.
@@ -322,6 +416,11 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_auth_mode_t Auth, uint8_t Channel, bool SSIDIsHidden, uint8_t MaxConnections) {
 	ESP_LOGD(tag, ">> startAP: ssid: %s", SSID.c_str());
+
+
+    m_connectFinished.Give();
+	if (GetMode() == WIFI_MODE_STA_STR)
+		::esp_wifi_disconnect();
 
 	Init();
 

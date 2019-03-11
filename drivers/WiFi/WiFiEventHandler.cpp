@@ -33,7 +33,6 @@ esp_err_t WiFiEventHandler::eventHandler(void *ctx, system_event_t *event) {
 	}
 	esp_err_t rc = ESP_OK;
 	switch(event->event_id) {
-
 		case SYSTEM_EVENT_AP_START:
 			rc =  pWiFiEventHandler->apStart();
 			break;
@@ -147,6 +146,11 @@ esp_err_t WiFiEventHandler::apStaConnected() {
 
 esp_err_t WiFiEventHandler::apStaDisconnected() {
 	ESP_LOGD(tag, "default apStaDisconnected");
+	return ESP_OK;
+} // apStaDisconnected
+
+esp_err_t WiFiEventHandler::ConnectionTimeout() {
+	ESP_LOGD(tag, "default ConnectionTimeout");
 	return ESP_OK;
 } // apStaDisconnected
 

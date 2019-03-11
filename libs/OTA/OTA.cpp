@@ -19,7 +19,7 @@ OTA::OTA() {
 };
 
 void OTA::Update(string URL) {
-	ESP_LOGI(tag, "Starting OTA...");
+	ESP_LOGI(tag, "Starting OTA from URL %s...", URL.c_str());
 
 	HTTPClient::Query(URL, Settings.OTA.ServerPort, QueryType::GET,
                         true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);

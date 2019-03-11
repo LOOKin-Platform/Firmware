@@ -22,7 +22,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.01";
+		const	string 						FirmwareVersion = "1.02";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -57,7 +57,7 @@ class Settings_t {
 
 			struct {
 				uint32_t Count		= 3;
-				uint32_t Timeout	= 100;
+				uint32_t Timeout	= 200;
 				uint32_t Delay		= 10;
 			} PingAfterConnect;
 
@@ -69,7 +69,7 @@ class Settings_t {
         	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
 
         	const esp_power_level_t			PublicModePower			= ESP_PWR_LVL_P6;
-        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_N6;
+        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_N3;
 		} Bluetooth;
 
 		struct Wireless_t {

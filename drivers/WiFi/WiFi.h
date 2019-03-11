@@ -111,7 +111,8 @@ class WiFi_t {
 		bool				m_WiFiRunning;
 		uint8_t             m_apConnectionStatus;   // ESP_OK = we are connected to an access point.  Otherwise receives wifi_err_reason_t.
 
-		FreeRTOS::Semaphore m_connectFinished = FreeRTOS::Semaphore("ConnectFinished");
+		FreeRTOS::Semaphore m_connectFinished 	= FreeRTOS::Semaphore("ConnectFinished");
+		FreeRTOS::Semaphore m_scanFinished 		= FreeRTOS::Semaphore("ScanFinished");
 
 		static esp_err_t    eventHandler(void* ctx, system_event_t* event);
 

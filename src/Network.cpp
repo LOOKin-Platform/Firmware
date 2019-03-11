@@ -107,6 +107,9 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 	if (SSID != "" && Password == "")
 		return false;
 
+	if (SSID != "" && SSID == WiFi.GetSSID())
+		return false;
+
 	if (SSID != "") // connect to specific WiFi SSID
 		for (auto &WiFiScannedItem : WiFiScannedList) {
 			if (!DontUseCache) {
@@ -137,7 +140,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 
 	if (SSID == "")
 		for (auto &WiFiScannedItem : WiFiScannedList) {
-			ESP_LOGI("tag", "WiFiScannedItem %s", WiFiScannedItem.getSSID().c_str());
+			ESP_LOGI(tag, "WiFiScannedItem %s", WiFiScannedItem.getSSID().c_str());
 				for (auto &item : WiFiSettings)
 					if (item.SSID == WiFiScannedItem.getSSID()) {
 						if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {

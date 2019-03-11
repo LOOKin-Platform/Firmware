@@ -60,10 +60,21 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			return ESP_OK;
 		}
 
+		esp_err_t staStart() {
+			Log::Add(Log::Events::WiFi::STAStarted);
+			Wireless.IsFirstWiFiStart = false;
+			return ESP_OK;
+		}
+
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
 			IPDidntGetTimer->Start();
 
+			return ESP_OK;
+		}
+
+		esp_err_t ConnectionTimeout() {
+			WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 			return ESP_OK;
 		}
 
@@ -72,18 +83,19 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			//WebServer.Stop();
 
 			// Повторно подключится к Wi-Fi, если подключение оборвалось
-			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE) {
+			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE 		||
+				DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT 	||
+				DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE) {
 				Wireless.StartInterfaces();
 			}
 
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось
-			if (DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT	||
-				DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
+			if (DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
 			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL 		||
-				DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE		||
-				DisconnectedInfo.reason == WIFI_REASON_HANDSHAKE_TIMEOUT)
+				DisconnectedInfo.reason == WIFI_REASON_HANDSHAKE_TIMEOUT||
+				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT)
 				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 
 			return ESP_OK;

@@ -115,6 +115,7 @@ class Log {
 					STADisconnected	= 0x1205,
 					STAUndefinedIP	= 0x0206,
 					STAGotIP		= 0x1206,
+					STAStarted		= 0x1207
 				};
 
 				// Bluetooth события 0xX300...0xX3FF
