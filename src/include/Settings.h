@@ -42,8 +42,11 @@ class Settings_t {
 			static constexpr uint8_t		UDPHoldPortsMax	= 8;
 			const string					UDPPacketPrefix	= "LOOK.in:";
 
-			uint32_t						BatteryUptime	= 120*1000; // first time WiFi time to work, ms
-			uint32_t						KeepWiFiTime	= 60*1000; 	// Keep wifi after /network/KeepWiFi command executing, ms
+			uint32_t						BatteryUptime	= 120* 1000; 	// first time WiFi time to work, ms
+			uint32_t						KeepWiFiTime	= 60 * 1000;	// Keep wifi after /network/KeepWiFi command executing, ms
+
+			uint32_t						STAModeInterval = 300* 1000;	// Interval to check if any existed clients nearby
+			uint32_t						STAModeReconnect= 60 * 1000;	// Interval to check if any existed clients nearby after loosing connection
 
 			struct UDPBroadcastQueue_t {
 				static constexpr uint8_t	Size			= 10;
@@ -69,7 +72,7 @@ class Settings_t {
         	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
 
         	const esp_power_level_t			PublicModePower			= ESP_PWR_LVL_P6;
-        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_N3;
+        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_N0;//ESP_PWR_LVL_N3;
 		} Bluetooth;
 
 		struct Wireless_t {

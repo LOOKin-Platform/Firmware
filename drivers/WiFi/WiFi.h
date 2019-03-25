@@ -123,8 +123,11 @@ class WiFi_t {
 		WiFi_t();
 		void 				AddDNSServer(string ip);
 		void 				Dump();
+
 		static string 		GetApMac();
 		static string 		GetApSSID();
+		static uint8_t		GetAPClientsCount();
+
 		static string 		GetMode();
 		static string 		GetStaMac();
 		static string 		GetStaSSID();

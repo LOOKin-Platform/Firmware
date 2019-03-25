@@ -9,14 +9,13 @@
 #include <RMT.h>
 #include "Sensors.h"
 
-
 static rmt_channel_t TXChannel = RMT_CHANNEL_4;
 
 class CommandIR_t : public Command_t {
   public:
 	CommandIR_t() {
-		ID          = 0x07;
-		Name        = "IR";
+		ID          		= 0x07;
+		Name        		= "IR";
 
 		Events["nec"]  		= 0x01;
 		Events["sirc"]		= 0x02;
@@ -70,11 +69,16 @@ class CommandIR_t : public Command_t {
 
 					RMT::TXSetItems(IRSignal.RawData);
 					TXSend(IRSignal.Frequency);
+
+					return true;
 				}
 				else {
 					ESP_LOGE("CommandIR","Can't find Data in memory");
 					return false;
 				}
+			}
+			else {
+				return false;
 			}
 		}
 

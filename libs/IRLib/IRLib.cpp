@@ -198,7 +198,6 @@ string IRLib::ProntoHexConstruct() {
 		Result += " " + Converter::ToHexString(ProntoRepeatBurst, 4);
 	}
 
-
 	for (auto &Bit : RawData)
 		Result += " " + Converter::ToHexString(round(abs(Bit) / USec) , 4);
 

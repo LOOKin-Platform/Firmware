@@ -2,7 +2,7 @@
 #define WIFI_HANDLER
 
 #include <esp_log.h>
-
+#include <DateTime.h>
 #include <esp_ping.h>
 #include <ping.h>
 
@@ -13,6 +13,84 @@ static FreeRTOS::Timer		*IPDidntGetTimer;
 static FreeRTOS::Semaphore	IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPData");
 static bool 				IsIPCheckSuccess 	= false;
 static bool					IsEventDrivenStart	= false;
+
+class WiFiUptimeHandler {
+	public:
+		static void Pool();
+		static void SetClientModeNextTime(uint32_t);
+	private:
+		static uint64_t WiFiStartedTime;
+		static uint32_t BatteryUptime;
+		static uint32_t ClientModeNextTime;
+};
+
+uint64_t WiFiUptimeHandler::WiFiStartedTime 	= 0;
+uint32_t WiFiUptimeHandler::BatteryUptime 		= 0;
+uint32_t WiFiUptimeHandler::ClientModeNextTime	= 0;
+
+void WiFiUptimeHandler::SetClientModeNextTime(uint32_t Value) {
+	ClientModeNextTime = Time::Unixtime() + Value;
+}
+
+void WiFiUptimeHandler::Pool() {
+	if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
+		WiFiStartedTime = 0;
+		Network.KeepWiFiTimer = 0;
+		BatteryUptime = Settings.WiFi.BatteryUptime;
+		Wireless.StartInterfaces();
+		return;
+	}
+
+	if (Device.PowerMode == DevicePowerMode::CONST) {
+		BatteryUptime = Settings.WiFi.BatteryUptime;
+		return;
+	}
+
+	if (WiFi.IsRunning()) {
+
+		if (ClientModeNextTime > Time::Unixtime() && WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+		{
+			if (WiFi_t::GetAPClientsCount() == 0) {
+				Wireless.StopWiFi();
+				Wireless.StartInterfaces();
+			}
+			else
+				SetClientModeNextTime(Settings.WiFi.STAModeReconnect);
+		}
+
+
+		if (WiFiStartedTime == 0)
+			WiFiStartedTime = Time::UptimeU();
+
+		if (Network.KeepWiFiTimer > 0) 	{
+			Network.KeepWiFiTimer -= Settings.Pooling.Interval;
+			if (Network.KeepWiFiTimer < Settings.Pooling.Interval)
+				Network.KeepWiFiTimer = Settings.Pooling.Interval;
+		}
+
+		if (BatteryUptime > 0) {
+			if (Time::UptimeU() >= WiFiStartedTime + BatteryUptime * 1000 && Network.KeepWiFiTimer <= 0) {
+				WiFiStartedTime = 0;
+				BatteryUptime = 0;
+				WiFi.Stop();
+			}
+		}
+		else {
+			if (Time::UptimeU() >= WiFiStartedTime + Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second * 1000000
+					&& Network.KeepWiFiTimer <= 0) {
+				ESP_LOGI("WiFiHandler", "WiFi uptime for battery device expired. Stopping wifi");
+				WiFiStartedTime = 0;
+				WiFi.Stop();
+			}
+		}
+	}
+	else {
+		if (Wireless.IsPeriodicPool()) {
+			IsEventDrivenStart = false;
+			Wireless.StartInterfaces();
+		}
+	}
+}
 
 esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 	ESP_LOGI("tag","ping. Received %d, Sended %d", pf->recv_count, pf->send_count);
@@ -46,10 +124,19 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 	private:
+		bool IsConnectedBefore = false;
+
 		esp_err_t apStart() {
 			Log::Add(Log::Events::WiFi::APStart);
 			WebServer.Start();
 			Wireless.IsFirstWiFiStart = false;
+
+			if (IsConnectedBefore)
+				WiFiUptimeHandler::SetClientModeNextTime(Settings.WiFi.STAModeReconnect);
+			else
+				WiFiUptimeHandler::SetClientModeNextTime(Settings.WiFi.STAModeInterval);
+
+			IsConnectedBefore = false;
 
 			return ESP_OK;
 		}
@@ -80,7 +167,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected);
-			//WebServer.Stop();
 
 			// Повторно подключится к Wi-Fi, если подключение оборвалось
 			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE 		||
@@ -95,8 +181,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_HANDSHAKE_TIMEOUT||
-				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT)
+				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
 				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+			}
 
 			return ESP_OK;
 		}
@@ -153,68 +240,10 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		    mdns_instance_name_set(InstanceName.c_str());
 
 			BLEServer.SwitchToPublicMode();
+			IsConnectedBefore = true;
 
 			return ESP_OK;
 		}
 };
-
-class WiFiUptimeHandler {
-	public:
-		static void Pool();
-	private:
-		static uint64_t WiFiStartedTime;
-		static uint32_t BatteryUptime;
-};
-
-uint64_t WiFiUptimeHandler::WiFiStartedTime = 0;
-uint32_t WiFiUptimeHandler::BatteryUptime 	= 0;
-
-void WiFiUptimeHandler::Pool() {
-	if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
-		WiFiStartedTime = 0;
-		Network.KeepWiFiTimer = 0;
-		BatteryUptime = Settings.WiFi.BatteryUptime;
-		Wireless.StartInterfaces();
-		return;
-	}
-
-	if (Device.PowerMode == DevicePowerMode::CONST) {
-		BatteryUptime = Settings.WiFi.BatteryUptime;
-		return;
-	}
-
-	if (WiFi.IsRunning()) {
-		if (WiFiStartedTime == 0)
-			WiFiStartedTime = Time::UptimeU();
-
-		if (Network.KeepWiFiTimer > 0) 	{
-			Network.KeepWiFiTimer -= Settings.Pooling.Interval;
-			if (Network.KeepWiFiTimer < Settings.Pooling.Interval)
-				Network.KeepWiFiTimer = Settings.Pooling.Interval;
-		}
-
-		if (BatteryUptime > 0) {
-			if (Time::UptimeU() >= WiFiStartedTime + BatteryUptime * 1000 && Network.KeepWiFiTimer <= 0) {
-				WiFiStartedTime = 0;
-				BatteryUptime = 0;
-				WiFi.Stop();
-			}
-		}
-		else {
-			if (Time::UptimeU() >= WiFiStartedTime + Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second * 1000000
-					&& Network.KeepWiFiTimer <= 0) {
-				ESP_LOGI("WiFiHandler", "WiFi uptime for battery device expired. Stopping wifi");
-				WiFiStartedTime = 0;
-				WiFi.Stop();
-			}
-		}
-	}
-	else {
-		if (Wireless.IsPeriodicPool()) {
-			IsEventDrivenStart = false;
-			Wireless.StartInterfaces();
-		}
-	}
-}
 
 #endif

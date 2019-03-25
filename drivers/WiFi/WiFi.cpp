@@ -304,8 +304,6 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, const uint8_t& Channel, bool WaitForConnection) {
 	ESP_LOGD(tag, ">> connectAP: %s %s", SSID.c_str(), Password.c_str());
 
-	ESP_LOGD(tag, "%s %d", GetMode().c_str(), m_apConnectionStatus);
-
 	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
 		::esp_wifi_disconnect();
 	}
@@ -315,7 +313,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 	}
 
-	FreeRTOS::Sleep(1000);
+	//FreeRTOS::Sleep(1000);
 
 	m_WiFiRunning = true;
 
@@ -507,6 +505,20 @@ string WiFi_t::GetApSSID() {
 	esp_wifi_get_config(WIFI_IF_AP, &conf);
 	return string((char *)conf.sta.ssid);
 } // getApSSID
+
+/**
+ * @brief Get number of clients connected to AP
+ * @return The number of clients connected to AP.
+ */
+uint8_t	WiFi_t::GetAPClientsCount() {
+	wifi_sta_list_t Stations;
+	esp_err_t Err = esp_wifi_ap_get_sta_list(&Stations);
+
+	if (Err != ESP_OK)
+		return 0;
+
+	return Stations.num;
+}
 
 /**
  * @brief Get the WiFi Mode.

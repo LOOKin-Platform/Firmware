@@ -19,6 +19,10 @@ void Wireless_t::StartInterfaces() {
 	}
 }
 
+void Wireless_t::StopWiFi() {
+	WiFi.Stop();
+}
+
 void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string Value, string AdditionalData) {
 	#if !defined(CONFIG_BT_ENABLED)
 

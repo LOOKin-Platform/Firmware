@@ -14,6 +14,7 @@ using namespace std;
 class Wireless_t {
 	public:
 		void StartInterfaces();
+		void StopWiFi();
 		void SendBroadcastUpdated(uint8_t SensorID, string Value, string AdditionalData = "");
 		bool IsPeriodicPool();
 

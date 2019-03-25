@@ -77,12 +77,14 @@ void BLEServer_t::SetScanPayload(string Payload) {
 }
 
 
-void BLEServer_t::StartAdvertising(string Payload, bool ShoulUsePrivateMode) {
+void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
+	ESP_LOGI(tag, ">> StartAdvertising");
+
 	BLEDevice::Init(Settings.Bluetooth.DeviceNamePrefix + DeviceType_t::ToString(Settings.eFuse.Type) + " " + Device.IDToString());
 
-	IsPrivateMode = ShoulUsePrivateMode;
+	IsPrivateMode = ShouldUsePrivateMode;
 
-	if (ShoulUsePrivateMode)
+	if (ShouldUsePrivateMode)
 		BLEDevice::SetPower(Settings.Bluetooth.PrivateModePower, ESP_BLE_PWR_TYPE_ADV);
 	else
 		BLEDevice::SetPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_ADV);
