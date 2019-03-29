@@ -415,11 +415,11 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_auth_mode_t Auth, uint8_t Channel, bool SSIDIsHidden, uint8_t MaxConnections) {
 	ESP_LOGD(tag, ">> startAP: ssid: %s", SSID.c_str());
 
-
     m_connectFinished.Give();
 	if (GetMode() == WIFI_MODE_STA_STR)
 		::esp_wifi_disconnect();
 
+	m_WiFiRunning = true;
 	Init();
 
 	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_AP);
@@ -432,7 +432,7 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 	wifi_config_t apConfig;
 	::memset(&apConfig, 0, sizeof(apConfig));
 	::memcpy(apConfig.ap.ssid, SSID.data(), SSID.size());
-	apConfig.ap.ssid_len = SSID.size();
+	apConfig.ap.ssid_len 		= SSID.size();
 	::memcpy(apConfig.ap.password, Password.data(), Password.size());
 	apConfig.ap.channel         = Channel;
 	apConfig.ap.authmode        = Auth;

@@ -52,8 +52,6 @@ bool Wireless_t::IsPeriodicPool() {
 
 	uint8_t	IntervalsPassed = (uint8_t)floor((float)SecondsInHour / (SleepInterval + WakeupInterval));
 
-	//ESP_LOGI(tag, "Seconds: %d, SleepInterval:%d, WakeupInterval:%d, FindedTime:%d", SecondsInHour, SleepInterval, WakeupInterval,IntervalsPassed*(SleepInterval + WakeupInterval) + SleepInterval);
-
 	if (SecondsInHour == IntervalsPassed*(SleepInterval + WakeupInterval) + SleepInterval)
 		return true;
 	else

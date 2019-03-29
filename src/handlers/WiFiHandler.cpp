@@ -13,6 +13,7 @@ static FreeRTOS::Timer		*IPDidntGetTimer;
 static FreeRTOS::Semaphore	IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPData");
 static bool 				IsIPCheckSuccess 	= false;
 static bool					IsEventDrivenStart	= false;
+static bool					IsConnectedBefore 	= false;
 
 class WiFiUptimeHandler {
 	public:
@@ -43,13 +44,13 @@ void WiFiUptimeHandler::Pool() {
 
 	if (Device.PowerMode == DevicePowerMode::CONST) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
-		return;
-	}
 
-	if (WiFi.IsRunning()) {
-
-		if (ClientModeNextTime > Time::Unixtime() && WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+		//ESP_LOGI("tag", "%d %d %s %d", ClientModeNextTime, Time::Unixtime(), WiFi_t::GetMode().c_str(), WiFi_t::GetAPClientsCount());
+		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_AP_STR && ClientModeNextTime > 0)
 		{
+			IsConnectedBefore = false;
+			ClientModeNextTime = 0;
+
 			if (WiFi_t::GetAPClientsCount() == 0) {
 				Wireless.StopWiFi();
 				Wireless.StartInterfaces();
@@ -58,7 +59,10 @@ void WiFiUptimeHandler::Pool() {
 				SetClientModeNextTime(Settings.WiFi.STAModeReconnect);
 		}
 
+		return;
+	}
 
+	if (WiFi.IsRunning()) {
 		if (WiFiStartedTime == 0)
 			WiFiStartedTime = Time::UptimeU();
 
@@ -124,8 +128,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 	private:
-		bool IsConnectedBefore = false;
-
 		esp_err_t apStart() {
 			Log::Add(Log::Events::WiFi::APStart);
 			WebServer.Start();
@@ -135,8 +137,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 				WiFiUptimeHandler::SetClientModeNextTime(Settings.WiFi.STAModeReconnect);
 			else
 				WiFiUptimeHandler::SetClientModeNextTime(Settings.WiFi.STAModeInterval);
-
-			IsConnectedBefore = false;
 
 			return ESP_OK;
 		}

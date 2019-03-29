@@ -22,7 +22,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.02";
+		const	string 						FirmwareVersion = "1.03";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -45,8 +45,8 @@ class Settings_t {
 			uint32_t						BatteryUptime	= 120* 1000; 	// first time WiFi time to work, ms
 			uint32_t						KeepWiFiTime	= 60 * 1000;	// Keep wifi after /network/KeepWiFi command executing, ms
 
-			uint32_t						STAModeInterval = 300* 1000;	// Interval to check if any existed clients nearby
-			uint32_t						STAModeReconnect= 60 * 1000;	// Interval to check if any existed clients nearby after loosing connection
+			uint32_t						STAModeInterval = 300;	// Interval to check if any existed clients nearby, sec
+			uint32_t						STAModeReconnect= 60;	// Interval to check if any existed clients nearby after loosing connection, sec
 
 			struct UDPBroadcastQueue_t {
 				static constexpr uint8_t	Size			= 10;
