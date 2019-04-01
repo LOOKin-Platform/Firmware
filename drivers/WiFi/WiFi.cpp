@@ -144,6 +144,8 @@ void WiFi_t::Init() {
 			abort();
 		}
 
+		::esp_wifi_set_ps(WIFI_PS_NONE);
+
 		errRc = ::esp_wifi_set_storage(WIFI_STORAGE_RAM);
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_wifi_set_storage: rc=%d %s", errRc, Converter::ErrorToString(errRc));
