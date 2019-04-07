@@ -35,6 +35,9 @@ void FillDevices() {
 	Remote.IR.ReceiverGPIO56		= GPIO_NUM_27;
 	Remote.IR.SenderGPIO			= GPIO_NUM_4;
 
+	if (Settings.eFuse.Revision == 0x01)
+		Remote.Temperature.I2CAddress = 0x48;
+
 	Settings_t::GPIOData_t::DeviceInfo_t Motion;
 	Motion.Motion.PoolInterval		= 50;
 	Motion.Motion.ADCChannel		= ADC1_CHANNEL_3;
@@ -102,7 +105,6 @@ void Settings_t::eFuse_t::ReadData() {
 	DeviceID 			= (uint32_t)((eFuseData2 << 8) >> 8);
 	DeviceID 			= (DeviceID << 8) + (uint8_t)(eFuseData3 >> 24);
 
-
 	Misc				= (uint8_t)((eFuseData3 << 8) >> 24);
 	Produced.Month		= Converter::InterpretHexAsDec((uint8_t)((eFuseData3 << 16) >> 24));
 	Produced.Day		= Converter::InterpretHexAsDec((uint8_t)((eFuseData3 << 24) >> 24));
@@ -136,6 +138,9 @@ void Settings_t::eFuse_t::ReadData() {
 	}
 	else
 		Device.SetIDToNVS(DeviceID);
+
+	if (DeviceID == 0x00000002)
+		Revision = 0x1;
 
 	FillDevices();
 }

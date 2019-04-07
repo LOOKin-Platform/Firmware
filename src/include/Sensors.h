@@ -47,8 +47,8 @@ class Sensor_t {
 		virtual ~Sensor_t() = default;
 
 		virtual void				Update() {};
-		virtual uint32_t			ReceiveValue(string = "") { return 0; };
-		virtual bool				CheckOperand(uint8_t, uint8_t) { return false; };
+		virtual uint32_t			ReceiveValue(string = "") 			{ return 0; };
+		virtual bool				CheckOperand(uint8_t, uint8_t) 		{ return false; };
 		virtual string				FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
 
 		bool						SetValue(uint32_t Value, string Key = "Primary", uint32_t UpdatedTime = 0);
@@ -57,8 +57,10 @@ class Sensor_t {
 		virtual string				StorageEncode(map<string,string>) 	{ return ""; };
 		virtual map<string,string>	StorageDecode(string) 				{ return map<string,string> ();};
 
-		bool						GetIsInited() 		{ return IsInited; 	}
-		void						SetIsInited(bool V)	{ IsInited = V; 	};
+		bool						GetIsInited() 						{ return IsInited; 	}
+		void						SetIsInited(bool V)					{ IsInited = V; 	};
+
+		virtual void				Pool()								{ }
 
 		static void					UpdateSensors();
 		static vector<Sensor_t*>	GetSensorsForDevice();
@@ -81,5 +83,6 @@ extern Storage_t	Storage;
 #include "../sensors/SensorRGBW.cpp"
 #include "../sensors/SensorIR.cpp"
 #include "../sensors/SensorMotion.cpp"
+#include "../sensors/SensorTemperature.cpp"
 
 #endif
