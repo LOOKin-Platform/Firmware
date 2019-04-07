@@ -142,8 +142,7 @@ void RMT::RXTask(void *TaskData) {
 
     while(rb) {
 		size_t rx_size = 0;
-		rmt_item16_t* item = (rmt_item16_t*) xRingbufferReceive(rb, &rx_size, 1000);
-		//rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 1000);
+		rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 1000);
 
 		if(item)
 		{
@@ -157,8 +156,8 @@ void RMT::RXTask(void *TaskData) {
 			while (offset < SignalSize)
 			{
 				if (ChannelsMap[Channel].CallbackBody != nullptr) {
-					ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level, (item+offset)->duration));
-					//ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level1, (item+offset)->duration1));
+					ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level0, (item+offset)->duration0));
+					ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level1, (item+offset)->duration1));
 				}
 				offset++;
 			}
@@ -234,7 +233,8 @@ void RMT::TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency) {
  * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
  */
 void RMT::TXAddItem(int32_t Bit) {
-	if (OutputItems.size() == 0 || (OutputItems.back()).duration1 != 0) {
+	if (OutputItems.size() == 0 || (OutputItems.back()).duration1 != 0)
+	{
 		rmt_item32_t Item;
 		Item.level0 	= (Bit > 0 ) ? 1 : 0 ;
 		Item.duration0 	= abs(Bit);
@@ -243,7 +243,8 @@ void RMT::TXAddItem(int32_t Bit) {
 
 		OutputItems.push_back(Item);
 	}
-	else {
+	else
+	{
 		OutputItems.back().level1	= (Bit > 0 ) ? 1 : 0 ;
 		OutputItems.back().duration1= abs(Bit);
 	}

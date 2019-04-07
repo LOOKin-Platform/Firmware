@@ -87,6 +87,7 @@ void app_main(void) {
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();
 
+	WiFi.SetSTAHostname(WIFI_AP_NAME);
 	WiFi.AddDNSServer("8.8.8.8");
 	WiFi.AddDNSServer("8.8.4.4");
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());

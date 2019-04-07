@@ -59,9 +59,9 @@ class Settings_t {
 			static constexpr uint16_t		HTTPMaxQueryLen	= 6144;
 
 			struct {
-				uint32_t Count		= 3;
-				uint32_t Timeout	= 200;
-				uint32_t Delay		= 10;
+				uint32_t Count		= 4;
+				uint32_t Timeout	= 300;
+				uint32_t Delay		= 30;
 			} PingAfterConnect;
 
 		} WiFi;
@@ -228,6 +228,10 @@ class Settings_t {
 				gpio_num_t			SenderGPIO		= GPIO_NUM_0;
 			};
 
+			struct Temperature_t {
+				uint8_t				I2CAddress		= 0x00;
+			};
+
 			struct Motion_t {
 				uint32_t			PoolInterval	= 50;
 				adc1_channel_t		ADCChannel		= ADC1_CHANNEL_MAX;
@@ -252,6 +256,7 @@ class Settings_t {
 				Color_t			Color;
 				IR_t			IR;
 				Motion_t		Motion;
+				Temperature_t	Temperature;
 
 				// Device modes indicator
 				Indicator_t		Indicator;

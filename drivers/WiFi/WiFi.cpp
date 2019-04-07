@@ -8,7 +8,9 @@
 
 #include <esp_heap_trace.h>
 
-static char tag[]= "WiFi";
+static char 	tag[]				= "WiFi";
+
+string WiFi_t::STAHostName = "LOOK.in Device";
 
 /*
 static void setDNSServer(char *ip) {
@@ -44,8 +46,8 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 
 	if (event->event_id == SYSTEM_EVENT_STA_START) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_STA_START");
+		::tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, STAHostName.c_str());
 		pWiFi->m_WiFiRunning = true;
-		pWiFi->m_connectFinished.Give();
 	}
 
 	if (event->event_id == SYSTEM_EVENT_STA_STOP) {
@@ -67,6 +69,8 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 			ESP_LOGI(tag, "SYSTEM_EVENT_STA_GOT_IP");
 			pWiFi->m_apConnectionStatus = ESP_OK;
 			pWiFi->m_WiFiRunning = true;
+
+			pWiFi->m_connectFinished.Give();
 		}
 		else
 		{
@@ -75,8 +79,6 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 			pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
 			pWiFi->m_WiFiRunning = false;
 		}
-
-		pWiFi->m_connectFinished.Give();
 	}
 
 	if (event->event_id == SYSTEM_EVENT_AP_START) {
@@ -111,8 +113,6 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 
 	return rc;
 } // eventHandler
-
-
 
 /**
  * @brief Initialize WiFi.
@@ -159,7 +159,6 @@ void WiFi_t::Stop() {
 	::esp_wifi_stop();
 	m_WiFiRunning = false;
 }
-
 
 /**
  * @brief Add a reference to a DNS server.
@@ -371,6 +370,8 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
         ESP_LOGD(tag, "esp_wifi_connect");
         esp_err_t errRc = ::esp_wifi_connect();
 
+        ESP_LOGE("tag", "ConnectionTries %d", ConnectionTries);
+
         ConnectionTries--;
         if (ConnectionTries == 0)
         	break;
@@ -475,6 +476,12 @@ void WiFi_t::Dump() {
 	ESP_LOGD(tag, "DNS Server[0]: %s", ipAddrStr);
 } // dump
 
+/**
+ * @brief Set STA hostname
+ */
+void WiFi_t::SetSTAHostname(string HostName) {
+	STAHostName = HostName;
+}
 /**
  * @brief Get the AP IP Info.
  * @return The AP IP Info.

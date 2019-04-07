@@ -4,7 +4,7 @@
 #include <esp_log.h>
 #include <DateTime.h>
 #include <esp_ping.h>
-#include <ping.h>
+#include <ping/ping.h>
 
 #include <netdb.h>
 #include <mdns.h>
@@ -17,6 +17,7 @@ static bool					IsConnectedBefore 	= false;
 
 class WiFiUptimeHandler {
 	public:
+		static void Start();
 		static void Pool();
 		static void SetClientModeNextTime(uint32_t);
 	private:
@@ -33,7 +34,7 @@ void WiFiUptimeHandler::SetClientModeNextTime(uint32_t Value) {
 	ClientModeNextTime = Time::Unixtime() + Value;
 }
 
-void WiFiUptimeHandler::Pool() {
+void WiFiUptimeHandler::Start() {
 	if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
 		WiFiStartedTime = 0;
 		Network.KeepWiFiTimer = 0;
@@ -41,7 +42,9 @@ void WiFiUptimeHandler::Pool() {
 		Wireless.StartInterfaces();
 		return;
 	}
+}
 
+void WiFiUptimeHandler::Pool() {
 	if (Device.PowerMode == DevicePowerMode::CONST) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
 
@@ -168,10 +171,16 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected);
 
+			if (DisconnectedInfo.reason == WIFI_REASON_HANDSHAKE_TIMEOUT) {
+				return ESP_OK;
+			}
+
 			// Повторно подключится к Wi-Fi, если подключение оборвалось
 			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE 		||
 				DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT 	||
-				DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE) {
+				DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE		||
+				DisconnectedInfo.reason == WIFI_REASON_ASSOC_LEAVE		||
+				DisconnectedInfo.reason == WIFI_REASON_NOT_ASSOCED) {
 				Wireless.StartInterfaces();
 			}
 
@@ -180,7 +189,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			if (DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
 			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL 		||
-				DisconnectedInfo.reason == WIFI_REASON_HANDSHAKE_TIMEOUT||
 				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
 				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 			}

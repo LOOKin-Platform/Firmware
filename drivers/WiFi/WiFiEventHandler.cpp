@@ -25,7 +25,6 @@ static char tag[] = "WiFiEventHandler";
  */
 
 esp_err_t WiFiEventHandler::eventHandler(void *ctx, system_event_t *event) {
-	ESP_LOGD(tag, "eventHandler called");
 	WiFiEventHandler *pWiFiEventHandler = (WiFiEventHandler *)ctx;
 	if (ctx == nullptr) {
 		ESP_LOGD(tag, "No context");

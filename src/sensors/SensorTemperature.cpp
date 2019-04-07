@@ -66,7 +66,6 @@ class SensorTemperature_t : public Sensor_t {
 		}
 
 		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-
 			float Previous 	= ConvertToFloat(PreviousValue);
 			float Current 	= ConvertToFloat(GetValue().Value);
 			float Operand	= ConvertToFloat(SceneEventOperand);

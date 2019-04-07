@@ -105,7 +105,7 @@ class WiFi_t {
 		uint32_t      		gw;
 		uint32_t            Netmask;
 		WiFiEventHandler*	m_pWifiEventHandler;
-		uint8_t             m_dnsCount=0;
+		uint8_t             m_dnsCount = 0;
 		bool                m_eventLoopStarted;
 		bool                m_initCalled;
 		bool				m_WiFiRunning;
@@ -115,6 +115,7 @@ class WiFi_t {
 		FreeRTOS::Semaphore m_scanFinished 		= FreeRTOS::Semaphore("ScanFinished");
 
 		static esp_err_t    eventHandler(void* ctx, system_event_t* event);
+		static string		STAHostName;
 
 	public:
 		void                Init();
@@ -133,6 +134,7 @@ class WiFi_t {
 		static string 		GetStaSSID();
 		static string 		GetSSID();
 
+		static void			SetSTAHostname(string);
 		static tcpip_adapter_ip_info_t getApIpInfo();
 		static tcpip_adapter_ip_info_t getStaIpInfo();
 
