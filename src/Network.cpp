@@ -203,6 +203,17 @@ void Network_t::AddWiFiNetwork(string SSID, string Password) {
 	SaveAccessPointsList();
 }
 
+void Network_t::RemoveWiFiNetwork(string SSID) {
+	if (SSID == "")
+		return;
+
+	for (auto it = WiFiSettings.begin(); it != WiFiSettings.end(); it++)
+		if (Converter::ToLower((*it).SSID) == Converter::ToLower(SSID))
+			WiFiSettings.erase(it--);
+
+	SaveAccessPointsList();
+}
+
 void Network_t::LoadAccessPointsList() {
 	NVS Memory(NVSNetworkArea);
 
@@ -397,6 +408,22 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 			AddWiFiNetwork(Params["wifissid"], Params["wifipassword"]);
 			Result.SetSuccess();
+		}
+	}
+
+	// DELETE запрос - удаление данных
+	if (Type == QueryType::DELETE) {
+		if (URLParts.size() == 2 && URLParts[0] == "savedssid")
+		{
+			vector<string> SSIDToDelete = Converter::StringToVector(URLParts[1], ",");
+
+			for (auto& SSIDItemToDelete : SSIDToDelete)
+				Network.RemoveWiFiNetwork(SSIDItemToDelete);
+
+			if (SSIDToDelete.size() > 0)
+				Result.SetSuccess();
+			else
+				Result.SetInvalid();
 		}
 	}
 }
