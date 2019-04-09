@@ -14,9 +14,18 @@ void API::Handle(WebServer_t::Response &Response, Query_t Query) {
 
 void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
 	if (URLParts.size() == 0) {
-		Response.ResponseCode  = WebServer_t::Response::CODE::OK;
-		Response.ContentType   = WebServer_t::Response::TYPE::PLAIN;
-		Response.Body          = "OK";
+
+		if (WiFi.GetMode() == WIFI_MODE_STA_STR) {
+			Response.ResponseCode	= WebServer_t::Response::CODE::OK;
+			Response.ContentType   = WebServer_t::Response::TYPE::PLAIN;
+			Response.Body			= "OK";
+		}
+		else {
+			Response.ResponseCode	= WebServer_t::Response::CODE::OK;
+			Response.ContentType	= WebServer_t::Response::TYPE::HTML;
+			Response.Body			= WebServer.GetSetupPage();
+		}
+
 		return;
 	}
 

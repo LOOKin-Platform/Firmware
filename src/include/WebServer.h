@@ -27,7 +27,7 @@ class WebServer_t {
 		class Response {
 			public:
 				enum CODE	{ OK, INVALID, ERROR };
-				enum TYPE 	{ PLAIN, JSON };
+				enum TYPE 	{ PLAIN, JSON, HTML };
 
 				string 		Body;
 				CODE 		ResponseCode;
@@ -58,21 +58,24 @@ class WebServer_t {
 		void UDPSendBroacastFromQueue();
 		void UDPSendBroadcastQueueAdd(string Message);
 
+		static string 	SetupPage;
+		string GetSetupPage();
+
 	private:
 	    static QueueHandle_t UDPBroadcastQueue;
 
-		TaskHandle_t HTTPListenerTaskHandle;
-		TaskHandle_t UDPListenerTaskHandle;
+		TaskHandle_t	HTTPListenerTaskHandle;
+		TaskHandle_t	UDPListenerTaskHandle;
 
-		static string UDPAliveBody();
-		static string UDPDiscoverBody(string ID = "");
-		static string UDPUpdatedBody(uint8_t SensorID, string Value);
+		static string	UDPAliveBody();
+		static string	UDPDiscoverBody(string ID = "");
+		static string	UDPUpdatedBody(uint8_t SensorID, string Value);
 
-		static void UDPListenerTask(void *);
+		static void		UDPListenerTask(void *);
 
-		static void HTTPListenerTask(void *);
-		static void HandleHTTP(struct netconn *);
-		static void Write(struct netconn *conn, string Data);
+		static void		HTTPListenerTask(void *);
+		static void 	HandleHTTP(struct netconn *);
+		static void 	Write(struct netconn *conn, string Data);
 };
 
 #endif
