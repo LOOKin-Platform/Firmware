@@ -113,6 +113,12 @@
 			  ['en', 'Connect']
 			]);   
 			
+			var ConnectProcess = new Map([
+			  ['ru', 'Идет подключение...'],
+			  ['en', 'Connecting...']
+			]);   
+
+			
 			var PasswordHint = new Map([
 			  ['ru', 'Пароль от Wi-Fi'],
 			  ['en', 'Wi-Fi password']
@@ -158,6 +164,9 @@
 					+ '"WiFiSSID":"' + encodeURIComponent(SSID) + '", '
 					+ '"WiFiPassword": "' + encodeURIComponent(Password) + 
 					'"}';
+
+				document.getElementById('connect').innerHTML = ConnectProcess.get(Language);
+				document.getElementById('connect').disabled = true;
 				
 				xhr.open('POST', '/network', true);
 				xhr.setRequestHeader('Content-Type', 'text-plain');
@@ -165,19 +174,14 @@
 				xhr.onreadystatechange = function() {
 					if (this.readyState != 4)
 						return;
-					
-					alert(this.status);
-										
+															
 					if(this.status === 200) {
+						document.getElementById('StartScreen').classList.add('hide');
+						document.getElementById('Success').classList.remove('hide');
+						
 						var xhrConnect = new XMLHttpRequest();
 
-						xhrConnect.open('GET', '/network/connect', true);
-						
-						xhrConnect.onreadystatechange = function() {
-							document.getElementById('StartScreen').classList.add('hide');
-							document.getElementById('Success').classList.remove('hide');
-						};
-						
+						xhrConnect.open('GET', '/network/connect', true);						
 						xhrConnect.send(null);
 					}
 					else
