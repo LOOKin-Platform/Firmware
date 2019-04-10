@@ -113,6 +113,10 @@ float Converter::ToFloat(string Str) {
 	return atof(Str.c_str());
 }
 
+uint8_t Converter::ToUint8(string Str) {
+	return atoi(Str.c_str());
+}
+
 uint16_t Converter::ToUint16(string Str) {
 	return atoi(Str.c_str());
 }

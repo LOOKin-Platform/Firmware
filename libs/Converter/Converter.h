@@ -53,6 +53,7 @@ class Converter {
 
 
 		static float			ToFloat (string);
+		static uint8_t			ToUint8 (string);
 		static uint16_t			ToUint16(string);
 		static uint32_t			ToUint32(string);
 		static int32_t 			ToInt32	(string);

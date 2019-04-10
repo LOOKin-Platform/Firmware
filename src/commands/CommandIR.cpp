@@ -12,106 +12,142 @@
 static rmt_channel_t TXChannel = RMT_CHANNEL_4;
 
 class CommandIR_t : public Command_t {
-  public:
-	CommandIR_t() {
-		ID          		= 0x07;
-		Name        		= "IR";
+	public:
+		CommandIR_t() {
+			ID          		= 0x07;
+			Name        		= "IR";
 
-		Events["nec"]  		= 0x01;
-		Events["sirc"]		= 0x02;
+			Events["nec1"]		= 0x01;
+			Events["sirc"]		= 0x03;
+			Events["samsung"]	= 0x04;
 
-		Events["saved"]		= 0xEE;
-		Events["prontohex"]	= 0xF0;
-		Events["raw"]		= 0xFF;
+			Events["repeat"]	= 0xED;
 
-		if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
-			RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
-	}
+			Events["saved"]		= 0xEE;
+			Events["prontohex"]	= 0xF0;
+			Events["raw"]		= 0xFF;
 
-    bool Execute(uint8_t EventCode, string StringOperand) override {
-		uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
-
-		ESP_LOGI("EventCode", "%d", EventCode);
-
-		if (EventCode == 0xFF && Operand == 0)
-			return false;
-
-		if (EventCode == 0x01 || EventCode == 0x02) { // /commands/ir/nec || /commands/ir/sirc/
-			IRLib IRSignal;
-			IRSignal.Protocol 	= EventCode;
-			IRSignal.Uint32Data = Operand;
-			IRSignal.FillRawData();
-
-			RMT::TXSetItems(IRSignal.GetRawDataForSending());
-
-			TXSend(IRSignal.GetProtocolFrequency());
-			return true;
+			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
+				RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
 		}
 
-		if (EventCode == 0xEE) {
-			uint16_t StorageItemID = Converter::ToUint16(StringOperand);
+		pair<uint8_t, uint32_t> LastSignal = make_pair(0x0,0x0);
 
-			if (StorageItemID <= Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) {
-				Storage_t::Item Item = Storage.Read(StorageItemID);
+		bool Execute(uint8_t EventCode, string StringOperand) override {
+			uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
-				Sensor_t* SensorIR = Sensor_t::GetSensorByID(ID + 0x80);
-				if (SensorIR == nullptr) {
-					ESP_LOGE("CommandIR","Can't get IR sensor to decode message from memory");
+			ESP_LOGI("EventCode", "%d", EventCode);
+
+			if (EventCode == 0xFF && Operand == 0)
+				return false;
+
+			if (EventCode > 0x0 && EventCode < 0xED) { // /commands/ir/nec || /commands/ir/nec2 || /commands/ir/sirc/
+				IRLib IRSignal;
+				IRSignal.Protocol 	= EventCode;
+				IRSignal.Uint32Data = Operand;
+
+				LastSignal.first 	= EventCode;
+				LastSignal.second 	= Operand;
+
+				RMT::TXSetItems(IRSignal.GetRawDataForSending());
+
+				TXSend(IRSignal.GetProtocolFrequency());
+				return true;
+			}
+
+			if (EventCode == 0xED) {
+				uint8_t ProtocolID = Converter::ToUint8(StringOperand);
+
+				if (ProtocolID == 0)
+					ProtocolID = LastSignal.first;
+
+				IRLib IRSignal;
+				IRSignal.Protocol 	= ProtocolID;
+				IRSignal.Uint32Data = LastSignal.second;
+
+				vector<int32_t> RepeatedSignal = IRSignal.GetRawRepeatSignal();
+				if (RepeatedSignal.size() == 0)
 					return false;
-				}
 
-				map<string,string> DecodedValue = SensorIR->StorageDecode(Item.DataToString());
-				if (DecodedValue.count("Signal") > 0) {
-					IRLib IRSignal(DecodedValue["Signal"]);
+				RMT::TXSetItems(RepeatedSignal);
+				TXSend(IRSignal.GetProtocolFrequency());
+				return true;
+			}
 
-					if (DecodedValue.count("Protocol") > 0)
-						IRSignal.Protocol = (uint8_t)Converter::ToUint16(DecodedValue["Protocol"]);
+			if (EventCode == 0xEE) {
+				uint16_t StorageItemID = Converter::ToUint16(StringOperand);
 
-					RMT::TXSetItems(IRSignal.RawData);
-					TXSend(IRSignal.Frequency);
+				if (StorageItemID <= Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) {
+					Storage_t::Item Item = Storage.Read(StorageItemID);
 
-					return true;
+					Sensor_t* SensorIR = Sensor_t::GetSensorByID(ID + 0x80);
+					if (SensorIR == nullptr) {
+						ESP_LOGE("CommandIR","Can't get IR sensor to decode message from memory");
+						return false;
+					}
+
+					map<string,string> DecodedValue = SensorIR->StorageDecode(Item.DataToString());
+					if (DecodedValue.count("Signal") > 0) {
+						IRLib IRSignal(DecodedValue["Signal"]);
+
+						if (DecodedValue.count("Protocol") > 0)
+							IRSignal.Protocol = (uint8_t)Converter::ToUint16(DecodedValue["Protocol"]);
+
+						LastSignal.first = IRSignal.Protocol;
+						LastSignal.second = IRSignal.Uint32Data;
+
+						RMT::TXSetItems(IRSignal.GetRawDataForSending());
+						TXSend(IRSignal.Frequency);
+
+						return true;
+					}
+					else {
+						ESP_LOGE("CommandIR","Can't find Data in memory");
+						return false;
+					}
 				}
 				else {
-					ESP_LOGE("CommandIR","Can't find Data in memory");
 					return false;
 				}
 			}
-			else {
-				return false;
-			}
-		}
 
-		if (EventCode == 0xF0) {
-			IRLib IRSignal(StringOperand);
-			RMT::TXSetItems(IRSignal.RawData);
-			TXSend(IRSignal.Frequency);
-			return true;
-		}
+			if (EventCode == 0xF0) {
+				IRLib IRSignal(StringOperand);
 
-		if (EventCode == 0xFF) {
-			uint16_t	Frequency = 38000;
-			size_t 		FrequencyDelimeterPos = StringOperand.find(";");
+				LastSignal.first 	= IRSignal.Protocol;
+				LastSignal.second 	= IRSignal.Uint32Data;
 
-			if (FrequencyDelimeterPos != std::string::npos) {
-				Frequency = Converter::ToUint16(StringOperand.substr(0,FrequencyDelimeterPos));
-				StringOperand = StringOperand.substr(FrequencyDelimeterPos+1);
+				RMT::TXSetItems(IRSignal.GetRawDataForSending());
+				TXSend(IRSignal.Frequency);
+				return true;
 			}
 
-			IRLib IRSignal(Converter::StringToVector(StringOperand, " "));
+			if (EventCode == 0xFF) {
+				uint16_t	Frequency = 38000;
+				size_t 		FrequencyDelimeterPos = StringOperand.find(";");
 
-			RMT::TXClear();
+				if (FrequencyDelimeterPos != std::string::npos) {
+					Frequency = Converter::ToUint16(StringOperand.substr(0,FrequencyDelimeterPos));
+					StringOperand = StringOperand.substr(FrequencyDelimeterPos+1);
+				}
 
-			for (int32_t Item : IRSignal.GetRawDataForSending())
-				RMT::TXAddItem(Item);
+				IRLib IRSignal(Converter::StringToVector(StringOperand, " "));
 
-			TXSend(Frequency);
+				LastSignal.first 	= IRSignal.Protocol;
+				LastSignal.second 	= IRSignal.Uint32Data;
 
-			return true;
+				RMT::TXClear();
+
+				for (int32_t Item : IRSignal.GetRawDataForSending())
+					RMT::TXAddItem(Item);
+
+				TXSend(Frequency);
+
+				return true;
+			}
+
+			return false;
 		}
-
-		return false;
-    }
 
     void TXSend(uint16_t Frequency) {
     	InOperation = true;

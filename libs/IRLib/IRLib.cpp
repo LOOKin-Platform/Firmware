@@ -38,7 +38,8 @@ void IRLib::FillProtocols() {
 	if (IRLib::Protocols.size() == 0)
 		Protocols = {
 				new NEC1(),
-				new SONY_SIRC()
+				new SONY_SIRC(),
+				new Samsung()
 		};
 }
 
@@ -85,6 +86,17 @@ vector<int32_t> IRLib::GetRawDataForSending() {
 		Result = Proto->ConstructRawForSending(this->Uint32Data);
 
 	return (Result.size() > 0) ? Result : this->RawData;
+}
+
+vector<int32_t> IRLib::GetRawRepeatSignal() {
+	IRProto *Proto = GetProtocolByID(this->Protocol);
+
+	vector<int32_t> Result = vector<int32_t>();
+
+	if (Proto != nullptr)
+		Result = Proto->ConstructRawRepeatSignal(this->Uint32Data);
+
+	return (Result.size() > 0) ? Result : vector<int32_t>();
 }
 
 uint16_t IRLib::GetProtocolFrequency() {

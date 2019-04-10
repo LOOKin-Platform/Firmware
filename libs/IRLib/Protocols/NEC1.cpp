@@ -8,7 +8,7 @@ class NEC1 : public IRProto {
 	public:
 		NEC1() {
 			ID 					= 0x01;
-			Name 				= "NEC";
+			Name 				= "NEC1";
 			DefinedFrequency	= 38500;
 		};
 
@@ -40,7 +40,7 @@ class NEC1 : public IRProto {
 		    Data.erase(Data.begin());
 
 		    if (Data.size() == 16) { // repeat signal
-				return 0x00FFFFFF;
+				return 0xFFFFFFFF;
 		    }
 
 		    for (uint8_t BlockId = 0; BlockId < 4; BlockId++) {
@@ -116,6 +116,17 @@ class NEC1 : public IRProto {
 			Raw.push_back(+560);
 
 			return Raw;
+		}
+
+		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data) override {
+			vector<int32_t> Result = vector<int32_t>();
+
+			Result.push_back(+9000);
+			Result.push_back(-2250);
+			Result.push_back(+560);
+			Result.push_back(-45000);
+
+			return Result;
 		}
 
 		vector<int32_t> ConstructRawForSending(uint32_t data) {

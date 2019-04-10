@@ -7,7 +7,7 @@
 class SONY_SIRC : public IRProto {
 	public:
 		SONY_SIRC() {
-			ID 					= 0x02;
+			ID 					= 0x03;
 			Name 				= "SIRC";
 			DefinedFrequency	= 40000;
 		};
