@@ -24,20 +24,20 @@ using namespace std;
 #define  NVSNetworkDevicesArray "Devices"
 
 struct NetworkDevice_t {
-	uint8_t   TypeHex   = 0x00;
-	bool      IsActive  = false;
-	uint32_t  ID        = 0;
-	string    IP        = "";
+	uint8_t		TypeHex		= 0x00;
+	bool		IsActive	= false;
+	uint32_t	ID			= 0;
+	string		IP			= "";
 };
 
 struct WiFiSettingsItem {
-	string		SSID 			= "";
-	string		Password 		= "";
+	string		SSID 		= "";
+	string		Password	= "";
 
-	uint8_t		Channel 		= 255;
-	uint32_t	IP				= 0;
-	uint32_t	Gateway			= 0;
-	uint32_t	Netmask			= 0;
+	uint8_t		Channel 	= 255;
+	uint32_t	IP			= 0;
+	uint32_t	Gateway		= 0;
+	uint32_t	Netmask		= 0;
 };
 
 class Network_t {

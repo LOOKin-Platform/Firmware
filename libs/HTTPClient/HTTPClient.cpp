@@ -134,8 +134,9 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 				default     : config.method = esp_http_client_method_t::HTTP_METHOD_GET; break;
 			}
 
-			config.user_data = (void*)&ClientData;
-			config.event_handler = QueryHandler;
+			config.user_data 	= (void*)&ClientData;
+			config.event_handler= QueryHandler;
+			config.is_async		= true;
 
 			esp_http_client_handle_t Handle = esp_http_client_init(&config);
 			esp_http_client_set_header(Handle, "User-Agent", UserAgent.c_str());

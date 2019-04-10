@@ -131,7 +131,6 @@ void WiFi_t::Init() {
 		}
 		m_eventLoopStarted = true;
 	}
-	// Now, one way or another, the event handler is WiFi::eventHandler.
 
 	if (!m_initCalled) {
 		NVS::Init();

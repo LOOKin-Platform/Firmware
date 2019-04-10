@@ -6,8 +6,6 @@
 #include "Globals.h"
 #include "Commands.h"
 
-static char tag[] = "Commands";
-
 uint8_t Command_t::GetEventCode(string Action) {
 	if (Events.count(Action) > 0)
 		return Events[Action];
