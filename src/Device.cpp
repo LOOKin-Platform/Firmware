@@ -6,8 +6,6 @@
 #include "Globals.h"
 #include "Device.h"
 
-static char tag[] = "Device_t";
-
 DeviceType_t::DeviceType_t(string TypeStr) {
 	for(auto const &TypeItem : Settings.Devices.Literaly) {
 		if (Converter::ToLower(TypeItem.second) == Converter::ToLower(TypeStr))

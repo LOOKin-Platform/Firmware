@@ -125,7 +125,6 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			esp_http_client_config_t config;
 			config.url 		= ClientData.URL;
 			config.port 	= ClientData.Port;
-			//config.is_async = true;
 
 			switch (ClientData.Method) {
 				case POST   : config.method = esp_http_client_method_t::HTTP_METHOD_POST; break;
@@ -136,7 +135,6 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 			config.user_data 	= (void*)&ClientData;
 			config.event_handler= QueryHandler;
-			config.is_async		= true;
 
 			esp_http_client_handle_t Handle = esp_http_client_init(&config);
 			esp_http_client_set_header(Handle, "User-Agent", UserAgent.c_str());
