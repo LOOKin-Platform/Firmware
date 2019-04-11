@@ -163,4 +163,8 @@ class SONY_SIRC : public IRProto {
 
 			return Result;
 		}
+
+		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data) override {
+			return ConstructRaw(Data);
+		}
 };
