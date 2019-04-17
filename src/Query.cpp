@@ -70,6 +70,8 @@ void Query_t::FillParams(string &Query) {
 
 				if (Param.size() == 2)
 					Params[Converter::ToLower(Param[0])] = Converter::StringURLDecode(Param[1]);
+				else
+					Params[Converter::ToLower(Param[0])] = "";
 			}
 		}
 	}

@@ -14,15 +14,55 @@ void API::Handle(WebServer_t::Response &Response, Query_t Query) {
 
 void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
 	if (URLParts.size() == 0) {
-		if (WiFi.GetMode() == WIFI_MODE_STA_STR) {
-			Response.ResponseCode	= WebServer_t::Response::CODE::OK;
-			Response.ContentType	= WebServer_t::Response::TYPE::PLAIN;
-			Response.Body			= "OK";
+		if (!Params.count("summary")) {
+			if (WiFi.GetMode() == WIFI_MODE_STA_STR) {
+				Response.ResponseCode	= WebServer_t::Response::CODE::OK;
+				Response.ContentType	= WebServer_t::Response::TYPE::PLAIN;
+				Response.Body			= "OK";
+			}
+			else {
+				Response.ResponseCode	= WebServer_t::Response::CODE::OK;
+				Response.ContentType	= WebServer_t::Response::TYPE::HTML;
+				Response.Body			= GetSetupPage();
+			}
 		}
 		else {
+			string Result = "{ \"Device\":";
+			Device.HandleHTTPRequest(Response, Type, URLParts, Params);
+			Result += Response.Body + ",";
+
+			Result += "\"Network\" : ";
+			Network.HandleHTTPRequest(Response, Type, URLParts, Params);
+			Result += Response.Body + ",";
+
+			Result += "\"Automation\" : ";
+			Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
+			Result += Response.Body;
+
+			Result += ", \"Sensors\" : [";
+			for (int i = 0; i < Sensors.size(); i++) {
+				Sensor_t::HandleHTTPRequest	(Response, Type, { Sensors[i]->Name }, Params);
+				Result += " { \"" + Sensors[i]->Name + "\":" + Response.Body + "}";
+				if (i < Sensors.size() - 1)
+					Result += ",";
+			}
+			Result += "], ";
+
+			Result += "\"Commands\" : ";
+			for (int i = 0; i < Commands.size(); i++)
+				Command_t::HandleHTTPRequest(Response, Type, { }, Params);
+			Result += Response.Body + ",";
+
+			Result += "\"Log\" : ";
+			Log::HandleHTTPRequest(Response, Type, { }, Params);
+			Result += Response.Body + "";
+
+			Result += "}";
+
 			Response.ResponseCode	= WebServer_t::Response::CODE::OK;
-			Response.ContentType	= WebServer_t::Response::TYPE::HTML;
-			Response.Body			= GetSetupPage();
+			Response.ContentType	= WebServer_t::Response::TYPE::JSON;
+			Response.Body			= Result;
+			return;
 		}
 
 		return;
@@ -32,13 +72,13 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 		string APISection = URLParts[0];
 		URLParts.erase(URLParts.begin(), URLParts.begin() + 1);
 
-		if (APISection == "device")		Device.HandleHTTPRequest(Response, Type, URLParts, Params);
-		if (APISection == "network")	Network.HandleHTTPRequest(Response, Type, URLParts, Params);
+		if (APISection == "device")		Device.HandleHTTPRequest	(Response, Type, URLParts, Params);
+		if (APISection == "network")	Network.HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "automation")	Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-		if (APISection == "storage")	Storage.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-		if (APISection == "sensors")	Sensor_t::HandleHTTPRequest(Response, Type, URLParts, Params);
+		if (APISection == "storage")	Storage.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody);
+		if (APISection == "sensors")	Sensor_t::HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "commands")	Command_t::HandleHTTPRequest(Response, Type, URLParts, Params);
-		if (APISection == "log")		Log::HandleHTTPRequest(Response, Type, URLParts, Params);
+		if (APISection == "log")		Log::HandleHTTPRequest		(Response, Type, URLParts, Params);
 
 		// обработка алиасов комманд
 		if (URLParts.size() == 0 && Params.size() == 0) {
