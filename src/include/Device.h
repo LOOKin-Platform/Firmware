@@ -37,6 +37,7 @@ using namespace std;
 #define NVSDeviceName				"Name"
 #define NVSDevicePowerMode			"PowerMode"
 #define	NVSDevicePowerModeVoltage	"PowerModeVoltage"
+#define	NVSDeviceSensorMode			"SensorMode"
 
 class DeviceType_t {
 	public:
@@ -67,6 +68,8 @@ class Device_t {
 		uint8_t         Temperature = 0;
 		uint16_t		CurrentVoltage = 0;
 
+		bool			SensorMode = false;
+
 		Device_t();
 		void    		Init();
 		void    		HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params);
@@ -80,6 +83,9 @@ class Device_t {
 		static uint32_t	GetIDFromNVS();
 		static void		SetIDToNVS(uint32_t);
 
+		static bool		GetSensorModeFromNVS();
+		static void		SetSensorModeToNVS(bool);
+
 		string			IDToString();
 		string			TypeToString();
 		static uint32_t GenerateID();
@@ -89,6 +95,7 @@ class Device_t {
 		bool 			POSTTime(map<string,string>);
 		bool 			POSTTimezone(map<string,string>);
 		bool 			POSTFirmwareVersion(map<string,string>, WebServer_t::Response &);
+		bool 			POSTSensorMode(map<string,string>, WebServer_t::Response &);
 
 		string 			StatusToString();
 		string 			NameToString();
@@ -96,6 +103,7 @@ class Device_t {
 		string 			FirmwareVersionToString();
 		string 			TemperatureToString();
 		string 			CurrentVoltageToString();
+		string			SensorModeToString();
 };
 
 #endif

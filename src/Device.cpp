@@ -51,8 +51,14 @@ void Device_t::Init() {
 	PowerMode = (Type.IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
 	switch (Type.Hex) {
-		case Settings.Devices.Plug	: PowerModeVoltage = +220; break;
-		case Settings.Devices.Remote: PowerModeVoltage = +5; break;
+		case Settings.Devices.Plug:
+			PowerModeVoltage = +220;
+			break;
+
+		case Settings.Devices.Remote:
+			PowerModeVoltage 	= +5;
+			SensorMode 			= GetSensorModeFromNVS();
+			break;
 	}
 }
 
@@ -75,6 +81,9 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 						make_pair("Temperature"		, TemperatureToString())
 			}));
 
+			if (Device.Type.Hex == Settings.Devices.Remote)
+				JSONObject.SetItem("SensorMode", SensorModeToString());
+
 			Result.Body = JSONObject.ToString();
 		}
 
@@ -91,6 +100,9 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			if (URLParts[0] == "firmware")		Result.Body = FirmwareVersionToString();
 			if (URLParts[0] == "temperature")	Result.Body = TemperatureToString();
 
+			if (URLParts[0] == "sensormode" && Device.Type.Hex == Settings.Devices.Remote)
+				Result.Body = SensorModeToString();
+
 			Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 		}
 	}
@@ -98,12 +110,13 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 	// обработка POST запроса - сохранение и изменение данных
 	if (Type == QueryType::POST) {
 		if (URLParts.size() == 0) {
-			bool isNameSet            = POSTName(Params);
-			bool isTimeSet            = POSTTime(Params);
-			bool isTimezoneSet        = POSTTimezone(Params);
-			bool isFirmwareVersionSet = POSTFirmwareVersion(Params, Result);
+			bool isNameSet            	= POSTName(Params);
+			bool isTimeSet            	= POSTTime(Params);
+			bool isTimezoneSet        	= POSTTimezone(Params);
+			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result);
+			bool isSensorModeSet		= POSTSensorMode(Params, Result);
 
-			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet) && Result.Body == "")
+			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet) && Result.Body == "")
 				Result.Body = "{\"success\" : \"true\"}";
 		}
 
@@ -172,6 +185,17 @@ uint32_t Device_t::GetIDFromNVS() {
 void Device_t::SetIDToNVS(uint32_t ID) {
 	NVS Memory(NVSDeviceArea);
 	Memory.SetUInt32Bit(NVSDeviceID, ID);
+	Memory.Commit();
+}
+
+bool Device_t::GetSensorModeFromNVS() {
+	NVS Memory(NVSDeviceArea);
+	return (Memory.GetString(NVSDeviceSensorMode) == "1") ? true : false;
+}
+
+void Device_t::SetSensorModeToNVS(bool SensorMode) {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetString(NVSDeviceSensorMode, (SensorMode) ? "1" : "0");
 	Memory.Commit();
 }
 
@@ -263,6 +287,24 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 	return true;
 }
 
+bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& Response)
+{
+	if (Params.count("sensormode") > 0) {
+		if (Params["sensormode"] == "1" || Converter::ToLower(Params["sensormode"]) == "true")
+			SensorMode = true;
+
+		if (Params["sensormode"] == "0" || Converter::ToLower(Params["sensormode"]) == "false")
+			SensorMode = false;
+
+		SetSensorModeToNVS(SensorMode);
+
+		return true;
+	}
+
+	return false;
+
+}
+
 string Device_t::TypeToString() {
 	return Type.ToString();
 }
@@ -300,4 +342,8 @@ string Device_t::TemperatureToString() {
 
 string Device_t::CurrentVoltageToString() {
 	return Converter::ToString(CurrentVoltage);
+}
+
+string Device_t::SensorModeToString() {
+	return (SensorMode) ? "1" : "0";
 }
