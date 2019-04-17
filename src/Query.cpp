@@ -68,7 +68,8 @@ void Query_t::FillParams(string &Query) {
 			for (string& ParamPair : Converter::StringToVector(ParamStr, "&")) {
 				Param = Converter::StringToVector(ParamPair, "=");
 
-				if (Param.size() == 2) Params[Converter::ToLower(Param[0])] = Query_t::UrlDecode(Param[1]);
+				if (Param.size() == 2)
+					Params[Converter::ToLower(Param[0])] = Converter::StringURLDecode(Param[1]);
 			}
 		}
 	}
@@ -89,13 +90,4 @@ void Query_t::FillParams(string &Query) {
 		else
 			Params = map<string,string>();
 	}
-}
-
-string Query_t::UrlDecode(string srcString) {
-	string Result = srcString;
-
-	Converter::FindAndReplace(Result, "+", " ");
-	Converter::FindAndReplace(Result, "%20", " ");
-
-	return Result;
 }

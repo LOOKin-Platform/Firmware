@@ -59,7 +59,7 @@ class Network_t {
 		void					UpdateWiFiIPInfo(string SSID, tcpip_adapter_ip_info_t Data);
 
 		void					AddWiFiNetwork(string SSID, string Password);
-		void 					RemoveWiFiNetwork(string SSID);
+		bool 					RemoveWiFiNetwork(string SSID);
 
 		void					LoadAccessPointsList();
 		void					SaveAccessPointsList();

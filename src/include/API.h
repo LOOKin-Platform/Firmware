@@ -27,6 +27,11 @@ class API {
 	public:
 		static void Handle(WebServer_t::Response &, Query_t Query);
 		static void Handle(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody = "");
+
+		static string SetupPage;
+
+	private:
+		static string GetSetupPage();
 };
 
 #endif

@@ -203,15 +203,21 @@ void Network_t::AddWiFiNetwork(string SSID, string Password) {
 	SaveAccessPointsList();
 }
 
-void Network_t::RemoveWiFiNetwork(string SSID) {
+bool Network_t::RemoveWiFiNetwork(string SSID) {
 	if (SSID == "")
-		return;
+		return false;
+
+	bool IsSuccess = false;
 
 	for (auto it = WiFiSettings.begin(); it != WiFiSettings.end(); it++)
-		if (Converter::ToLower((*it).SSID) == Converter::ToLower(SSID))
+		if (Converter::ToLower((*it).SSID) == Converter::ToLower(SSID)) {
 			WiFiSettings.erase(it--);
+			IsSuccess = true;
+		}
 
 	SaveAccessPointsList();
+
+	return IsSuccess;
 }
 
 void Network_t::LoadAccessPointsList() {
@@ -406,7 +412,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				return;
 			}
 
-			AddWiFiNetwork(Params["wifissid"], Params["wifipassword"]);
+			AddWiFiNetwork(Converter::StringURLDecode(Params["wifissid"]), Converter::StringURLDecode(Params["wifipassword"]));
 			Result.SetSuccess();
 		}
 	}
@@ -417,10 +423,13 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		{
 			vector<string> SSIDToDelete = Converter::StringToVector(URLParts[1], ",");
 
-			for (auto& SSIDItemToDelete : SSIDToDelete)
-				Network.RemoveWiFiNetwork(SSIDItemToDelete);
+			bool IsSuccess = false;
 
-			if (SSIDToDelete.size() > 0)
+			for (auto& SSIDItemToDelete : SSIDToDelete)
+				if (Network.RemoveWiFiNetwork(SSIDItemToDelete))
+					IsSuccess = true;
+
+			if (SSIDToDelete.size() > 0 && IsSuccess)
 				Result.SetSuccess();
 			else
 				Result.SetInvalid();

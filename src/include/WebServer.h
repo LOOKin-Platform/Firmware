@@ -58,9 +58,6 @@ class WebServer_t {
 		void UDPSendBroacastFromQueue();
 		void UDPSendBroadcastQueueAdd(string Message);
 
-		static string 	SetupPage;
-		string GetSetupPage();
-
 	private:
 	    static QueueHandle_t UDPBroadcastQueue;
 
