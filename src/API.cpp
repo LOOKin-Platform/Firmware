@@ -39,6 +39,10 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
 			Result += Response.Body;
 
+			Storage.HandleHTTPRequest(Response, Type, { "version" }, Params, RequestBody);
+			Result += ", \"Storage\" : { \"Version\" : \"" + Response.Body  + "\"";
+			Result += "}";
+
 			Result += ", \"Sensors\" : [";
 			for (int i = 0; i < Sensors.size(); i++) {
 				Sensor_t::HandleHTTPRequest	(Response, Type, { Sensors[i]->Name }, Params);
