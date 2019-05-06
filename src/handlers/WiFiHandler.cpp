@@ -100,20 +100,23 @@ void WiFiUptimeHandler::Pool() {
 }
 
 esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
-	ESP_LOGI("tag","ping. Received %d, Sended %d", pf->recv_count, pf->send_count);
-
 	if (pf->recv_count > 0) {
 		IsIPCheckSuccess = true;
 		IsCorrectIPData.Give();
 	}
 
+	tcpip_adapter_ip_info_t GatewayIP = WiFi.getStaIpInfo();
+	ESP_LOGI("tag","ping to %s. Received %d, Sended %d", inet_ntoa(GatewayIP) ,pf->recv_count, pf->send_count);
+
 	if (pf->send_count == Settings.WiFi.PingAfterConnect.Count && pf->recv_count == 0) {
 		IsIPCheckSuccess = false;
+		IsCorrectIPData.Give();
+
+		FreeRTOS::Sleep(5000);
 
 		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
 		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
 
-		IsCorrectIPData.Give();
 	}
 
 	return ESP_OK;
@@ -171,19 +174,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected);
 
-			if (DisconnectedInfo.reason == WIFI_REASON_HANDSHAKE_TIMEOUT) {
-				return ESP_OK;
-			}
-
-			// Повторно подключится к Wi-Fi, если подключение оборвалось
-			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE 		||
-				DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT 	||
-				DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE		||
-				DisconnectedInfo.reason == WIFI_REASON_ASSOC_LEAVE		||
-				DisconnectedInfo.reason == WIFI_REASON_NOT_ASSOCED) {
-				Wireless.StartInterfaces();
-			}
-
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось
 			if (DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
@@ -191,6 +181,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
 				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+			}
+			else { // Повторно подключится к Wi-Fi, если подключение оборвалось
+				Wireless.StartInterfaces();
 			}
 
 			return ESP_OK;

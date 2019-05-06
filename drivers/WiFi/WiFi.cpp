@@ -341,6 +341,8 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	::memset(&sta_config, 0, sizeof(sta_config));
 	::memcpy(sta_config.sta.ssid, SSID.data(), SSID.size());
 	::memcpy(sta_config.sta.password, Password.data(), Password.size());
+
+	sta_config.sta.scan_method = WIFI_FAST_SCAN;
 	sta_config.sta.bssid_set = 0;
 
 	if (Channel > 0)
@@ -360,36 +362,6 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
 	}
-
-	uint8_t ConnectionTries = 3;
-
-	m_connectFinished.Give();
-	m_connectFinished.Take("connectAP"); // Take the semaphore to wait for a connection.
-    do {
-        ESP_LOGD(tag, "esp_wifi_connect");
-        esp_err_t errRc = ::esp_wifi_connect();
-
-        ESP_LOGE("tag", "ConnectionTries %d", ConnectionTries);
-
-        ConnectionTries--;
-        if (ConnectionTries == 0)
-        	break;
-
-        if (errRc != ESP_OK) {
-            ESP_LOGE(tag, "esp_wifi_connect: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-            m_connectFinished.Give();
-            return m_apConnectionStatus;
-        }
-    }
-    while (!m_connectFinished.Take(5000, "connectAP")); // retry if not connected within 5s
-    m_connectFinished.Give();
-
-    if (ConnectionTries == 0) {
-    	m_pWifiEventHandler->ConnectionTimeout();
-    }
-    else {
-    	m_connectFinished.Wait("connectAP");
-    }
 
 	ESP_LOGD(tag, "<< connectAP");
 	return m_apConnectionStatus;  // Return ESP_OK if we are now connected and wifi_err_reason_t if not.

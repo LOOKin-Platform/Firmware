@@ -48,6 +48,7 @@ esp_err_t WiFiEventHandler::eventHandler(void *ctx, system_event_t *event) {
 			rc = pWiFiEventHandler->staGotIp(event->event_info.got_ip);
 			break;
 		case SYSTEM_EVENT_STA_START:
+			::esp_wifi_connect();
 			rc =  pWiFiEventHandler->staStart();
 			break;
 		case SYSTEM_EVENT_STA_STOP:
