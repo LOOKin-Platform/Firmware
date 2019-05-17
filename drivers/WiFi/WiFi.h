@@ -114,6 +114,7 @@ class WiFi_t {
 		FreeRTOS::Semaphore m_connectFinished 	= FreeRTOS::Semaphore("ConnectFinished");
 		FreeRTOS::Semaphore m_scanFinished 		= FreeRTOS::Semaphore("ScanFinished");
 
+		static bool			m_WiFiNetworkSwitch;
 		static esp_err_t    eventHandler(void* ctx, system_event_t* event);
 		static string		STAHostName;
 
@@ -138,6 +139,8 @@ class WiFi_t {
 		static tcpip_adapter_ip_info_t getApIpInfo();
 		static tcpip_adapter_ip_info_t getStaIpInfo();
 
+		static bool 		GetWiFiNetworkSwitch();
+
 		vector<WiFiAPRecord> Scan();
 		uint8_t ConnectAP(const string& SSID, const string& Password, const uint8_t& Channel = 0, bool WaitForConnection = true);
 	    void 	StartAP	 (const string& SSID, const string& Password, wifi_auth_mode_t Auth = WIFI_AUTH_WPA2_PSK, uint8_t Channel = 0, bool SSIDIsHidden = false, uint8_t MaxConnections = 16);
@@ -150,6 +153,7 @@ class WiFi_t {
 
 	    uint8_t	GetConnectionStatus() 	{ return m_apConnectionStatus; }
 	    bool	IsRunning() 			{ return m_WiFiRunning; }
+	    bool	IsIPCheckSuccess = false;
 };
 
 #endif /* DRIVERS_WIFI_H_ */

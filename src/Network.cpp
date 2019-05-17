@@ -97,29 +97,32 @@ void Network_t::DeviceInfoReceived(string ID, string Type, string PowerMode, str
 bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 	string Password = "";
 	for (auto &item : WiFiSettings)
-		if (item.SSID == SSID) {
+		if (Converter::ToLower(item.SSID) == Converter::ToLower(SSID)) {
 			Password = item.Password;
 			break;
 		}
 
-	ESP_LOGI("SSID", "%s", SSID.c_str());
+	ESP_LOGI("WiFiConnect", "SSID %s", SSID.c_str());
 
 	if (SSID != "" && Password == "")
 		return false;
 
-	if (SSID != "" && SSID == WiFi.GetSSID())
+	if (SSID != "" && Converter::ToLower(SSID) == Converter::ToLower(WiFi.GetSSID()))
 		return false;
 
 	if (SSID != "") // connect to specific WiFi SSID
 		for (auto &WiFiScannedItem : WiFiScannedList) {
-			if (!DontUseCache) {
-				if (WiFiScannedItem.getSSID() == SSID) {
+			if (Converter::ToLower(WiFiScannedItem.getSSID()) == Converter::ToLower(SSID)) {
+				Log::Add(Log::Events::WiFi::STAConnecting);
+				WiFi.ConnectAP(WiFiScannedItem.getSSID(), Password, WiFiScannedItem.getChannel());
+
+				if (!DontUseCache) {
 					uint32_t IP			= 0;
 					uint32_t Gateway	= 0;
 					uint32_t Netmask	= 0;
 
 					for (auto &item : WiFiSettings)
-						if (item.SSID == SSID) {
+						if (Converter::ToLower(item.SSID) == Converter::ToLower(SSID)) {
 							IP 		= item.IP;
 							Gateway	= item.Gateway;
 							Netmask = item.Netmask;
@@ -131,11 +134,9 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 						WiFi.AddDNSServer(inet_ntoa(Gateway));
 					}
 				}
-			}
 
-			Log::Add(Log::Events::WiFi::STAConnecting);
-			WiFi.ConnectAP(SSID, Password, WiFiScannedItem.getChannel());
-			return true;
+				return true;
+			}
 		}
 
 	if (SSID == "")
@@ -143,6 +144,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 			ESP_LOGI(tag, "WiFiScannedItem %s", WiFiScannedItem.getSSID().c_str());
 				for (auto &item : WiFiSettings)
 					if (item.SSID == WiFiScannedItem.getSSID()) {
+
 						if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
 							ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
 							WiFi.SetIPInfo(item.IP, item.Gateway, item.Netmask);
@@ -282,6 +284,7 @@ NetworkDevice_t Network_t::DeserializeNetworkDevice(string Data) {
 
 void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
 	// обработка GET запроса - получение данных
+
 	if (Type == QueryType::GET) {
 		// Запрос JSON со всеми параметрами
 		if (URLParts.size() == 0) {

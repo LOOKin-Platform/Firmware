@@ -15,6 +15,8 @@ using namespace std;
 #include "lwip/api.h"
 #include "lwip/err.h"
 
+#include "esp_http_server.h"
+
 #include "FreeRTOSWrapper.h"
 
 struct UDPBroacastQueueItem {
@@ -50,6 +52,8 @@ class WebServer_t {
 		void Start();
 		void Stop();
 
+	    static esp_err_t GetHandler(httpd_req_t *);
+
 		void UDPSendBroadcastAlive();
 		void UDPSendBroadcastDiscover();
 		void UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1);
@@ -61,11 +65,17 @@ class WebServer_t {
 		static string 	SetupPage;
 		string GetSetupPage();
 
-	private:
-	    static QueueHandle_t UDPBroadcastQueue;
+		static bool HTTPServerStopFlag;
+		static bool UDPServerStopFlag;
 
-		TaskHandle_t	HTTPListenerTaskHandle;
-		TaskHandle_t	UDPListenerTaskHandle;
+		static TaskHandle_t	HTTPListenerTaskHandle;
+		static TaskHandle_t	UDPListenerTaskHandle;
+
+	private:
+
+	    static QueueHandle_t UDPBroadcastQueue;
+	    static httpd_handle_t HTTPServerHandle;
+
 
 		static string	UDPAliveBody();
 		static string	UDPDiscoverBody(string ID = "");

@@ -95,12 +95,14 @@ class SensorIR_t : public Sensor_t {
 			if (SensorIRCurrentMessage.size() > 0 && SensorIRCurrentMessage.back() < -40000)
 				return;
 
-			if (Bit == 0) SensorIRCurrentMessage.push_back(-45000);
-				else SensorIRCurrentMessage.push_back(Bit);
+			if (Bit == 0)
+				SensorIRCurrentMessage.push_back(-45000);
+			else
+				SensorIRCurrentMessage.push_back(Bit);
 		};
 
 		static void MessageEnd() {
-			if (SensorIRCurrentMessage.size() <= 8)
+			if (SensorIRCurrentMessage.size() <= 14)
 				return;
 
 			if (Command_t::GetCommandByID(SensorIRID - 0x80) != nullptr)

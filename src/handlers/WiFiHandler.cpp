@@ -20,6 +20,8 @@ class WiFiUptimeHandler {
 		static void Start();
 		static void Pool();
 		static void SetClientModeNextTime(uint32_t);
+
+		static bool GetIsIPCheckSuccess();
 	private:
 		static uint64_t WiFiStartedTime;
 		static uint32_t BatteryUptime;
@@ -106,7 +108,7 @@ esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 	}
 
 	tcpip_adapter_ip_info_t GatewayIP = WiFi.getStaIpInfo();
-	ESP_LOGI("tag","ping to %s. Received %d, Sended %d", inet_ntoa(GatewayIP) ,pf->recv_count, pf->send_count);
+	ESP_LOGI("tag","ping to %s. Received %d, Sended %d", inet_ntoa(GatewayIP.gw) ,pf->recv_count, pf->send_count);
 
 	if (pf->send_count == Settings.WiFi.PingAfterConnect.Count && pf->recv_count == 0) {
 		IsIPCheckSuccess = false;
@@ -116,7 +118,6 @@ esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 
 		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
 		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
-
 	}
 
 	return ESP_OK;
@@ -149,6 +150,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t apStop() {
 			Log::Add(Log::Events::WiFi::APStop);
+
+			WebServer.Stop();
+
 			Wireless.IsEventDrivenStart = false;
 			return ESP_OK;
 		}
@@ -174,6 +178,14 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected);
 
+			WebServer.Stop();
+
+			if (Device.Status == UPDATING)
+				Device.Status = RUNNING;
+
+			if (WiFi_t::GetWiFiNetworkSwitch())
+				return ESP_OK;
+
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось
 			if (DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
@@ -183,6 +195,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 			}
 			else { // Повторно подключится к Wi-Fi, если подключение оборвалось
+				Wireless.IsFirstWiFiStart = true;
 				Wireless.StartInterfaces();
 			}
 
@@ -193,13 +206,15 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			tcpip_adapter_ip_info_t StaIPInfo = WiFi.getStaIpInfo();
 
 			IsIPCheckSuccess = false;
+			WiFi.IsIPCheckSuccess = false;
+
 			IsCorrectIPData.Take("CorrectTCPIP");
 
-			esp_ping_set_target(PING_TARGET_IP_ADDRESS, &StaIPInfo.gw.addr, sizeof(uint32_t));
+			esp_ping_set_target(PING_TARGET_IP_ADDRESS		, &StaIPInfo.gw.addr, sizeof(uint32_t));
 			esp_ping_set_target(PING_TARGET_IP_ADDRESS_COUNT, &Settings.WiFi.PingAfterConnect.Count, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_RCV_TIMEO, &Settings.WiFi.PingAfterConnect.Timeout, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_DELAY_TIME, &Settings.WiFi.PingAfterConnect.Delay, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_RES_FN, (void *)pingResults, 0);
+			esp_ping_set_target(PING_TARGET_RCV_TIMEO		, &Settings.WiFi.PingAfterConnect.Timeout, sizeof(uint32_t));
+			esp_ping_set_target(PING_TARGET_DELAY_TIME		, &Settings.WiFi.PingAfterConnect.Delay, sizeof(uint32_t));
+			esp_ping_set_target(PING_TARGET_RES_FN			, (void *)pingResults, 0);
 			ping_init();
 
 			IsCorrectIPData.Wait("CorrectTCPIP");
@@ -210,7 +225,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			if (!IsIPCheckSuccess)
 				return ESP_OK;
 
-			Wireless.IsFirstWiFiStart = false;
+			WiFi.IsIPCheckSuccess 		= true;
+			Wireless.IsFirstWiFiStart 	= false;
 
 			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
 
@@ -227,7 +243,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Log::Add(Log::Events::WiFi::STAGotIP, Converter::IPToUint32(event_sta_got_ip.ip_info));
 
-			Time::ServerSync(Settings.TimeSync.APIUrl);
 			Wireless.IsEventDrivenStart = false;
 
 		    esp_err_t err = mdns_init();
@@ -242,6 +257,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			BLEServer.SwitchToPublicMode();
 			IsConnectedBefore = true;
+
+			Time::ServerSync(Settings.TimeSync.APIUrl);
 
 			return ESP_OK;
 		}

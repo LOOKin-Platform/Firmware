@@ -6,6 +6,7 @@
 
 #include "OTA.h"
 #include "Globals.h"
+#include "HTTPClient.h"
 
 static char tag[] = "OTA";
 
@@ -21,8 +22,20 @@ OTA::OTA() {
 void OTA::Update(string URL) {
 	ESP_LOGI(tag, "Starting OTA from URL %s...", URL.c_str());
 
-	HTTPClient::Query(URL, Settings.OTA.ServerPort, QueryType::GET,
-                        true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
+	HTTPClient::HTTPClientData_t QueryData;
+
+	strncpy(QueryData.URL   , URL.c_str(), 64);
+
+	QueryData.Port    				= Settings.OTA.ServerPort;
+	QueryData.Method  				= QueryType::GET;
+	QueryData.BufferSize			= 10240;
+
+	QueryData.ReadStartedCallback   = &ReadStarted;
+	QueryData.ReadBodyCallback      = &ReadBody;
+	QueryData.ReadFinishedCallback  = &ReadFinished;
+	QueryData.AbortedCallback       = &Aborted;
+
+	HTTPClient::Query(QueryData, true);
 
 	Log::Add(Log::Events::System::OTAStarted);
 }
@@ -49,7 +62,8 @@ void OTA::ReadStarted(char IP[]) {
 	if (err != ESP_OK) {
 		ESP_LOGE(tag, "esp_ota_begin failed err=0x%x!", err);
 	}
-	else {
+	else
+	{
 		memcpy(&OperatePartition, partition, sizeof(esp_partition_t));
 		ESP_LOGD(tag, "esp_ota_begin init OK");
 		isInitSucceed = true;
@@ -59,7 +73,7 @@ void OTA::ReadStarted(char IP[]) {
 		ESP_LOGI(tag, "OTA Init succeeded");
 		Device.Status = DeviceStatus::UPDATING;
 	}
-	else 				{
+	else {
 		ESP_LOGE(tag, "OTA Init failed");
 		Device.Status = DeviceStatus::RUNNING;
 	}

@@ -33,7 +33,7 @@ class OTA {
     static void ReadStarted(char [] = '\0');
     static bool ReadBody(char Data[], int DataLen, char[] = '\0');
     static void ReadFinished(char [] = '\0');
-    static void Aborted(char []);
+    static void Aborted(char [] = '\0');
 
     static void Rollback();
 

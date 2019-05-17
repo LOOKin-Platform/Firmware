@@ -6,18 +6,15 @@
 
 #include "API.h"
 
-void ADCHandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
-
 void API::Handle(WebServer_t::Response &Response, Query_t Query) {
-  return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody);
+	return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody);
 }
 
 void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
 	if (URLParts.size() == 0) {
-
 		if (WiFi.GetMode() == WIFI_MODE_STA_STR) {
 			Response.ResponseCode	= WebServer_t::Response::CODE::OK;
-			Response.ContentType   = WebServer_t::Response::TYPE::PLAIN;
+			Response.ContentType	= WebServer_t::Response::TYPE::PLAIN;
 			Response.Body			= "OK";
 		}
 		else {
@@ -74,8 +71,6 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 
 		if (APISection == "network" && URLParts[0] == "currentssid" && URLParts.size() == 1)
 			return;
-
-
 	}
 
 	if (Response.Body == "" && Response.ResponseCode == WebServer_t::Response::CODE::OK) {

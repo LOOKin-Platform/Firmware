@@ -62,6 +62,8 @@ void Query_t::FillParams(string &Query) {
 		ParamStr = QueryParts[1];
 		Converter::Trim(ParamStr);
 
+		ESP_LOGI("Query", "ParamStr: %s", ParamStr.c_str());
+
 		if (!ParamStr.empty()) {
 			vector<string> Param;
 
@@ -80,7 +82,7 @@ void Query_t::FillParams(string &Query) {
 			Converter::StringMove(RequestBody, Query);
 		}
 
-		if (RequestBody != "") {
+		if (RequestBody.size() > 2) {
 			JSON JSONItem(RequestBody);
 
 			if (JSONItem.GetType() == JSON::RootType::Object)

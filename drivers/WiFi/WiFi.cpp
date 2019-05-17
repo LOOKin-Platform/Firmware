@@ -10,7 +10,8 @@
 
 static char 	tag[]				= "WiFi";
 
-string WiFi_t::STAHostName = "LOOK.in Device";
+string	WiFi_t::STAHostName 		= "LOOK.in Device";
+bool	WiFi_t::m_WiFiNetworkSwitch = false;
 
 /*
 static void setDNSServer(char *ip) {
@@ -63,22 +64,20 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 		pWiFi->m_connectFinished.Give();
 	}
 
-	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP || event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP)
+	{
+		ESP_LOGI(tag, "SYSTEM_EVENT_STA_GOT_IP");
+		pWiFi->m_apConnectionStatus = ESP_OK;
+		pWiFi->m_WiFiRunning = true;
 
-		if (event->event_id == SYSTEM_EVENT_STA_GOT_IP) { // If we connected and have an IP, change the status to ESP_OK.  Otherwise, change it to the reason code.
-			ESP_LOGI(tag, "SYSTEM_EVENT_STA_GOT_IP");
-			pWiFi->m_apConnectionStatus = ESP_OK;
-			pWiFi->m_WiFiRunning = true;
+		pWiFi->m_connectFinished.Give();
+	}
 
-			pWiFi->m_connectFinished.Give();
-		}
-		else
-		{
-			ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED, Reason: %d", event->event_info.disconnected.reason);
+	if (event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+		ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED, Reason: %d", event->event_info.disconnected.reason);
 
-			pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
-			pWiFi->m_WiFiRunning = false;
-		}
+		pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
+		pWiFi->m_WiFiRunning = false;
 	}
 
 	if (event->event_id == SYSTEM_EVENT_AP_START) {
@@ -88,12 +87,6 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 
 	if (event->event_id == SYSTEM_EVENT_AP_STOP) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_AP_STOP");
-		pWiFi->m_WiFiRunning = false;
-	}
-
-
-	if (event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
-		ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED");
 		pWiFi->m_WiFiRunning = false;
 	}
 
@@ -219,8 +212,8 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	memset(&conf, 0, sizeof(conf));
 	conf.show_hidden = true;
 	conf.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-	conf.scan_time.active.min = 120;
-	conf.scan_time.active.max = 250;
+	conf.scan_time.active.min = 200;
+	conf.scan_time.active.max = 400;
 	conf.channel = 0;
 
 	m_scanFinished.Take("ScanFinished");
@@ -304,8 +297,13 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, const uint8_t& Channel, bool WaitForConnection) {
 	ESP_LOGD(tag, ">> connectAP: %s %s", SSID.c_str(), Password.c_str());
 
+	m_WiFiNetworkSwitch = false;
+	IsIPCheckSuccess = false;
+
 	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
 		::esp_wifi_disconnect();
+		m_WiFiNetworkSwitch = true;
+		FreeRTOS::Sleep(1000);
 	}
 
 	esp_err_t errRc = ::esp_wifi_stop();
@@ -388,6 +386,8 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_auth_mode_t Auth, uint8_t Channel, bool SSIDIsHidden, uint8_t MaxConnections) {
 	ESP_LOGD(tag, ">> startAP: ssid: %s", SSID.c_str());
+
+	m_WiFiNetworkSwitch = false;
 
     m_connectFinished.Give();
 	if (GetMode() == WIFI_MODE_STA_STR)
@@ -527,6 +527,13 @@ tcpip_adapter_ip_info_t WiFi_t::getStaIpInfo() {
 	return ipInfo;
 } // getStaIpInfo
 
+/**
+ * @brief Get if STA in network switch mode
+ * @return Is network switching to another one
+ */
+bool WiFi_t::GetWiFiNetworkSwitch() {
+	return m_WiFiNetworkSwitch;
+}
 
 /**
  * @brief Get the MAC address of the STA interface.

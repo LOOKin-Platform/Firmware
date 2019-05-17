@@ -18,6 +18,14 @@ using namespace std;
 
 static char tag[] = "WebServer";
 
+bool WebServer_t::HTTPServerStopFlag 			= false;
+bool WebServer_t::UDPServerStopFlag 			= false;
+
+TaskHandle_t WebServer_t::HTTPListenerTaskHandle= NULL;
+TaskHandle_t WebServer_t::UDPListenerTaskHandle	= NULL;
+
+httpd_handle_t WebServer_t::HTTPServerHandle = NULL;
+
 static vector<uint16_t> UDPPorts 				= { Settings.WiFi.UPDPort };
 QueueHandle_t WebServer_t::UDPBroadcastQueue 	= FreeRTOS::Queue::Create(Settings.WiFi.UDPBroadcastQueue.Size, sizeof(UDPBroacastQueueItem));
 string WebServer_t::SetupPage					= "<html><head><meta charset='UTF-8'><meta name='apple-mobile-web-app-capable' content='yes'><style> body { margin : 0px; } h1 { font-size : 56px; font-weight : bold; margin : 30px 0px; } .content { align-items : center; width : 100%; margin : auto; } .element { width : 90%; padding : 0px 20px; min-height : 100px !important; line-height : 30px; } p.element { font-size : 40px; line-height : 40px; margin-bottom : 30px; } select { width : 90%; margin : auto; line-height : 40px; background-color : white; padding-left : 12px; } .lang { margin : 10px; padding : 10px; font-size : 25px; cursor : pointer; } .lang.active { border : 1px solid black; } #Success { margin-top : 20px; } .hide { display : none; } .logo { text-align : center; font-size : 96px; font-family : 'Arial'; height : 100px; margin-top : 100px; } input, button, select { height : 100px; font-size : 40px; line-height : 40px; border : 1px solid black; margin-bottom : 50px; background-color : white; } @media (min-width: 1025px) { .content { width: 600px; } .logo { font-size: 72px; margin-top: 50px; } h1 { font-size: 32px ; margin: 0px 0px; } .element { min-height: 20px !important; } p.element{ font-size: 25px ; line-height: 25px; } input, button, select { margin-bottom: 20px; line-height: 20px; font-size: 20px; height: 40px;} } </style><script type='text/javascript'> var Language = 'ru'; var SSIDs = [{SSID_LIST}]; var CurrentDevice = '{CURRENT_DEVICE}'; var Title = new Map([ ['ru', 'Подключение устройства'], ['en', 'Wi-fi connection'] ]); var Description = new Map([ ['ru', 'Для подключения устройства к вашей сети Wi-Fi необходимо выбрать её в списке и задать для нее пароль'], ['en', 'To connect your device to your Wi-Fi network, select it in the list and set a password for it'] ]); var Device = new Map([ ['ru', 'Устройство'], ['en', 'Device'] ]); var Connect = new Map([ ['ru', 'Подключить'], ['en', 'Connect'] ]); var ConnectProcess = new Map([ ['ru', 'Идет подключение...'], ['en', 'Connecting...'] ]); var PasswordHint = new Map([ ['ru', 'Пароль от Wi-Fi'], ['en', 'Wi-Fi password'] ]); var WiFiHint = new Map([ ['ru', 'Выберите Wi-Fi сеть'], ['en', 'Choose Wi-Fi network'] ]); var PasswordEmpty = new Map([ ['ru', 'Пароль не может быть пустым'], ['en', 'Password cannot be empty'] ]); var SaveError = new Map([ ['ru', 'При настройки устройства произошла непредвиденная ошибка'], ['en', 'Unexpected error occured'] ]); var SetupDone = new Map([ ['ru', 'Настройка устройства прошла успешно.<br/><br/>Подключитесь к указанной ранее Wi-Fi сети для и откройте приложение LOOK.in Hub для продолжения работы с устройством.<br/><br/>Данную страницу можно закрыть.'], ['en', 'The device setup was successful.<br/><br/>Connect to the previously specified Wi-Fi network and open the LOOK.in Hub mobile app to continue working with the device.<br/><br/>This page can be closed.'] ]); function OnSave() { var SSIDElement = document.getElementById('ssid'); var SSID = SSIDElement.options[SSIDElement.selectedIndex].text; var Password = document.getElementById('password').value; if (Password == '') { alert(PasswordEmpty.get(Language)); return; } var xhr = new XMLHttpRequest(); var body = '{' + '\"WiFiSSID\":\"' + encodeURIComponent(SSID) + '\", ' + '\"WiFiPassword\": \"' + encodeURIComponent(Password) + '\"}'; document.getElementById('connect').innerHTML = ConnectProcess.get(Language); document.getElementById('connect').disabled = true; xhr.open('POST', '/network', true); xhr.setRequestHeader('Content-Type', 'text-plain'); xhr.onreadystatechange = function() { if (this.readyState != 4) return;  if(this.status === 200) { document.getElementById('StartScreen').classList.add('hide'); document.getElementById('Success').classList.remove('hide'); var xhrConnect = new XMLHttpRequest(); xhrConnect.open('GET', '/network/connect', true); xhrConnect.send(null); } else alert(SaveError.get(Language) + ':\\n\\n' +this.responseText); }; xhr.send(body); } function LoadData(lang = Language) { Language = lang; document.getElementById('title') .innerHTML = Title.get(lang); document.getElementById('description') .innerHTML = Description.get(lang); document.getElementById('device') .innerHTML = Device.get(lang); document.getElementById('connect') .innerHTML = Connect.get(lang); document.getElementById('password') .placeholder= PasswordHint.get(lang); document.getElementById('Success') .innerHTML = SetupDone.get(lang); document.getElementById('deviceTypeAndID').innerHTML = CurrentDevice; var WiFiSelect = document.getElementById('ssid'); document.getElementById('ssid').innerHTML = ''; var FirstOption = document.createElement('option'); FirstOption.innerHTML = WiFiHint.get(lang); FirstOption.disabled = true; WiFiSelect.appendChild(FirstOption); for(var i = 0; i < SSIDs.length; i++) { var Option = document.createElement('option'); Option.innerHTML = SSIDs[i]; Option.value = SSIDs[i]; WiFiSelect.appendChild(Option); } var LangRE = /^lang-/; var Elements = document.getElementsByTagName('*'); for (var i = Elements.length; i-- ;) if (LangRE.test(Elements[i].id)) Elements[i].classList.remove('active'); document.getElementById('lang-' + lang).classList.add('active'); } </script></head><body onLoad='LoadData()'><div class='content' align='center'><a class='lang' id='lang-en' onclick='LoadData(&quot;en&quot;)'>English</a><a class='lang' id='lang-ru' onclick='LoadData(&quot;ru&quot;)'>Русский</a><div class='logo'>LOOK.in</div><h1 id='title'></h1><div align='center' id='StartScreen'><p class='element' id='description'></p><p class='element'><span id='device'></span>: <span id='deviceTypeAndID'></span></p><select id='ssid' placeholder='Выберите точку доступа'></select><input id = 'password' class='element' placeholder='Пароль от WiFi' /><button id = 'connect' class='element' onclick='OnSave();' ></button></div><div align='center' id='Success' class='hide'></div></div></body></html>";
@@ -27,18 +35,64 @@ WebServer_t::WebServer_t() {
 	UDPListenerTaskHandle   = NULL;
 }
 
-void WebServer_t::Start() {
+/* Our URI handler function to be called during GET /uri request */
+esp_err_t get_handler(httpd_req_t *Request)
+{
+	WebServer_t::Response Response;
 
+	string QueryString = "GET " + string(Request->uri) + " ";
+	ESP_LOGI("tg", "%s", QueryString.c_str());
+
+	Query_t Query(QueryString);
+
+	API::Handle(Response, Query);
+
+	httpd_resp_send(Request, Response.Body.c_str(), Response.Body.size());
+    return ESP_OK;
+}
+
+/* URI handler structure for GET /uri */
+httpd_uri_t uri_get = {
+    .uri      = "/*",
+    .method   = HTTP_GET,
+    .handler  = get_handler,
+    .user_ctx = NULL
+};
+
+
+void WebServer_t::Start() {
+	ESP_LOGD(tag, "WebServer -> Start");
+
+    // Generate default configuration
+    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    // Empty handle to http_server
+    config.uri_match_fn = httpd_uri_match_wildcard;
+    HTTPServerHandle = NULL;
+
+    // Start the httpd server
+    if (httpd_start(&HTTPServerHandle, &config) == ESP_OK) {
+        // Register URI handlers
+        httpd_register_uri_handler(HTTPServerHandle, &uri_get);
+    }
+
+	/*
 	if (HTTPListenerTaskHandle == NULL)
 		HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 6144);
+	*/
 
 	if (UDPListenerTaskHandle == NULL)
 		UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
 }
 
 void WebServer_t::Stop() {
-	FreeRTOS::DeleteTask(HTTPListenerTaskHandle);
-	FreeRTOS::DeleteTask(UDPListenerTaskHandle);
+	ESP_LOGD(tag, "WebServer -> Stop");
+
+    if (HTTPServerHandle != NULL) {
+        httpd_stop(HTTPServerHandle);
+    }
+	//HTTPServerStopFlag 	= true;
+
+	UDPServerStopFlag 	= true;
 }
 
 void WebServer_t::UDPSendBroadcastAlive() {
@@ -77,35 +131,39 @@ string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value) {
 }
 
 void WebServer_t::UDPSendBroadcast(string Message) {
-	if (!WiFi.IsRunning()) {
+	if (WiFi.IsRunning()
+		&& (WiFi.GetMode() == WIFI_MODE_AP_STR || (WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.IsIPCheckSuccess)))
+	{
+		struct netconn *Connection;
+		struct netbuf *Buffer;
+		char *Data;
+
+		if (Message.length() > 128)
+			Message = Message.substr(0, 128);
+
+		for (uint16_t Port : UDPPorts) {
+			Connection = netconn_new(NETCONN_UDP);
+			netconn_connect(Connection, IP_ADDR_BROADCAST, Port);
+
+			Buffer  = netbuf_new();
+			Data    = (char *)netbuf_alloc(Buffer, Message.length());
+			memcpy (Data, Message.c_str(), Message.length());
+			netconn_send(Connection, Buffer);
+
+			netconn_close(Connection);
+			netconn_delete(Connection);
+
+			netbuf_free(Buffer);
+			netbuf_delete(Buffer); 		// De-allocate packet buffer
+
+			ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d", Message.c_str(), Port);
+		}
+	}
+	else
+	{
 		UDPSendBroadcastQueueAdd(Message);
 		ESP_LOGE(tag, "WiFi switched off - can't send UDP message");
 		return;
-	}
-
-	struct netconn *Connection;
-	struct netbuf *Buffer;
-	char *Data;
-
-	if (Message.length() > 128)
-		Message = Message.substr(0, 128);
-
-	for (uint16_t Port : UDPPorts) {
-		Connection = netconn_new(NETCONN_UDP);
-		netconn_connect(Connection, IP_ADDR_BROADCAST, Port);
-
-		Buffer  = netbuf_new();
-		Data    = (char *)netbuf_alloc(Buffer, Message.length());
-		memcpy (Data, Message.c_str(), Message.length());
-		netconn_send(Connection, Buffer);
-
-		netconn_close(Connection);
-		netconn_delete(Connection);
-
-		netbuf_free(Buffer);
-		netbuf_delete(Buffer); 		// De-allocate packet buffer
-
-		ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d", Message.c_str(), Port);
 	}
 }
 
@@ -141,6 +199,8 @@ void WebServer_t::UDPListenerTask(void *data) {
 		FreeRTOS::DeleteTask();
 		return;
 	}
+
+	UDPServerStopFlag = false;
 	ESP_LOGD(tag, "UDPListenerTask Run");
 
 	struct netconn 	*UDPConnection;
@@ -201,12 +261,14 @@ void WebServer_t::UDPListenerTask(void *data) {
 			netbuf_delete(UDPOutBuffer);
 			netbuf_delete(UDPInBuffer);
 		}
-
-	} while(err == ERR_OK);
+	} while(err == ERR_OK && !UDPServerStopFlag);
 
 	netbuf_delete(UDPInBuffer);
 	netconn_close(UDPConnection);
 	netconn_delete(UDPConnection);
+
+	FreeRTOS::DeleteTask(UDPListenerTaskHandle);
+	UDPListenerTaskHandle = NULL;
 }
 
 void WebServer_t::HTTPListenerTask(void *data) {
@@ -216,9 +278,12 @@ void WebServer_t::HTTPListenerTask(void *data) {
 		FreeRTOS::DeleteTask();
 		return;
 	}
-	ESP_LOGD(tag, "HTTPListenerTask Run");
 
-	struct netconn	*HTTPConnection, *HTTPNewConnection;
+	HTTPServerStopFlag = false;
+
+	ESP_LOGD(tag, "HTTPListenerTask Run");
+	struct netconn *HTTPConnection, *HTTPNewConnection;
+
 	err_t err;
 
 	HTTPConnection = netconn_new(NETCONN_TCP);
@@ -233,10 +298,13 @@ void WebServer_t::HTTPListenerTask(void *data) {
 			netconn_close(HTTPNewConnection);
 			netconn_delete(HTTPNewConnection);
 		}
-	} while(err == ERR_OK);
+	} while(err == ERR_OK && !HTTPServerStopFlag);
 
 	netconn_close(HTTPConnection);
 	netconn_delete(HTTPConnection);
+
+	FreeRTOS::DeleteTask(HTTPListenerTaskHandle);
+	HTTPListenerTaskHandle = NULL;
 }
 
 void WebServer_t::HandleHTTP(struct netconn *conn) {
@@ -249,7 +317,7 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 	err_t err;
 	string HTTPString;
 
-	conn->recv_timeout = 50; // timeout on 50 msecs
+	conn->recv_timeout = 60; // timeout on 50 msecs
 
 	while((err = netconn_recv(conn,&inbuf)) == ERR_OK) {
 		do {
@@ -270,8 +338,6 @@ void WebServer_t::HandleHTTP(struct netconn *conn) {
 
 			buf[buflen] = '\0';
 			HTTPString += string(buf);
-
-			ESP_LOGI(tag,"RAM left %d", system_get_free_heap_size());
 		} while(netbuf_next(inbuf) >= 0);
 
 		netbuf_free(inbuf);
@@ -301,6 +367,7 @@ void WebServer_t::Write(struct netconn *conn, string Data) {
 				(i + PartSize <= Data.size()) ? PartSize : Data.size() - i,
 				NETCONN_NOCOPY);
 }
+
 
 static bool IsSetupPageTemplated = false;
 string WebServer_t::GetSetupPage() {

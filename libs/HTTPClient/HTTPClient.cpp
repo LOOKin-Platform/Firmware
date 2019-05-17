@@ -95,8 +95,9 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
             break;
         case HTTP_EVENT_ON_DATA:
 			if (ClientData.ReadBodyCallback != NULL)
-				if (!ClientData.ReadBodyCallback((char*)event->data, event->data_len, ClientData.URL))
-					HTTPClient::Failed(ClientData);
+	            if (!esp_http_client_is_chunked_response(event->client))
+					if (!ClientData.ReadBodyCallback((char*)event->data, event->data_len, ClientData.URL))
+						HTTPClient::Failed(ClientData);
             break;
         case HTTP_EVENT_ON_FINISH:
 			if (ClientData.ReadFinishedCallback != NULL)
@@ -126,11 +127,16 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			config.url 		= ClientData.URL;
 			config.port 	= ClientData.Port;
 
+			config.timeout_ms = 5000;
+			config.buffer_size = ClientData.BufferSize;
+
+			string URLString = ClientData.URL;
+
 			switch (ClientData.Method) {
-				case POST   : config.method = esp_http_client_method_t::HTTP_METHOD_POST; break;
+				case POST   : config.method = esp_http_client_method_t::HTTP_METHOD_POST; 	break;
 				case DELETE : config.method = esp_http_client_method_t::HTTP_METHOD_DELETE; break;
 				case GET    :
-				default     : config.method = esp_http_client_method_t::HTTP_METHOD_GET; break;
+				default     : config.method = esp_http_client_method_t::HTTP_METHOD_GET; 	break;
 			}
 
 			config.user_data 	= (void*)&ClientData;
@@ -144,11 +150,11 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 				ESP_LOGI(tag, "Performing HTTP request success");
 			}
 			if (err != ESP_OK) {
-				ESP_LOGE(tag, "Connect to http server failed");
+				ESP_LOGE(tag, "Connect to http server failed: %s", esp_err_to_name(err));
 				HTTPClient::Failed(ClientData);
 				continue;
 			}
-
+			esp_http_client_close(Handle);
 			esp_http_client_cleanup(Handle);
 		}
 

@@ -8,6 +8,8 @@
 
 #include <map>
 #include "esp_efuse.h"
+#include "soc/efuse_reg.h"
+
 #include "driver/ledc.h"
 #include "driver/adc.h"
 #include "driver/timer.h"
@@ -22,7 +24,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.10";
+		const	string 						FirmwareVersion = "1.20";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -60,8 +62,8 @@ class Settings_t {
 
 			struct {
 				uint32_t Count		= 4;
-				uint32_t Timeout	= 300;
-				uint32_t Delay		= 30;
+				uint32_t Timeout	= 1000;
+				uint32_t Delay		= 500;
 			} PingAfterConnect;
 
 		} WiFi;
@@ -154,6 +156,7 @@ class Settings_t {
 				static constexpr uint8_t 	VersionMaxSize	= 20;
 				static constexpr uint16_t 	VersionsMax		= 0x400;
 			} Versions;
+
 			struct Data_t {
 				static constexpr uint32_t 	StartAddress	= 0x9C000;
 				static constexpr uint32_t 	Size			= 0x84000;
