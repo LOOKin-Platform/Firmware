@@ -222,6 +222,21 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			Result.Body = JSONObject.ToString();
 		}
 
+		if (URLParts.size() == 1 && URLParts[0] == "version") {
+			Result.Body = (LastVersion < 0x2000) ? "0" : Converter::ToHexString(LastVersion, 4);
+			return;
+		}
+
+		if (URLParts.size() == 1 && URLParts[0] == "count") {
+			Result.Body = Converter::ToString(CountItems());
+			return;
+		}
+
+		if (URLParts.size() == 1 && URLParts[0] == "freesize") {
+			Result.Body = Converter::ToString(GetFreeMemory());
+			return;
+		}
+
 		if (URLParts.size() == 1 && URLParts[0] == "types") {
 			Result.Body = JSON::CreateStringFromIntVector<uint8_t>(GetItemsTypes(), 2);
 			return;

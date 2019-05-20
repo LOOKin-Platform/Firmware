@@ -29,6 +29,7 @@ class Settings_t {
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
 			const uint16_t					ServerPort		= 80;
+			const uint8_t					MaxAttempts		= 3;
 		} OTA;
 
 		struct {

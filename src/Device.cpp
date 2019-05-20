@@ -51,12 +51,18 @@ void Device_t::Init() {
 	PowerMode = (Type.IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
 	switch (Type.Hex) {
-		case Settings.Devices.Plug	: PowerModeVoltage = +220; break;
-		case Settings.Devices.Remote: PowerModeVoltage = +5; break;
+		case Settings.Devices.Plug:
+			PowerModeVoltage = +220;
+			break;
+
+		case Settings.Devices.Remote:
+			PowerModeVoltage 	= +5;
+			SensorMode 			= GetSensorModeFromNVS();
+			break;
 	}
 }
 
-void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, httpd_req_t *Request) {
 	if (Type == QueryType::GET) {
 		// Запрос JSON со всеми параметрами
 		if (URLParts.size() == 0) {
@@ -75,6 +81,9 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 						make_pair("Temperature"		, TemperatureToString())
 			}));
 
+			if (Device.Type.Hex == Settings.Devices.Remote)
+				JSONObject.SetItem("SensorMode", SensorModeToString());
+
 			Result.Body = JSONObject.ToString();
 		}
 
@@ -91,6 +100,9 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			if (URLParts[0] == "firmware")		Result.Body = FirmwareVersionToString();
 			if (URLParts[0] == "temperature")	Result.Body = TemperatureToString();
 
+			if (URLParts[0] == "sensormode" && Device.Type.Hex == Settings.Devices.Remote)
+				Result.Body = SensorModeToString();
+
 			Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 		}
 	}
@@ -98,12 +110,13 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 	// обработка POST запроса - сохранение и изменение данных
 	if (Type == QueryType::POST) {
 		if (URLParts.size() == 0) {
-			bool isNameSet            = POSTName(Params);
-			bool isTimeSet            = POSTTime(Params);
-			bool isTimezoneSet        = POSTTimezone(Params);
-			bool isFirmwareVersionSet = POSTFirmwareVersion(Params, Result);
+			bool isNameSet            	= POSTName(Params);
+			bool isTimeSet            	= POSTTime(Params);
+			bool isTimezoneSet        	= POSTTimezone(Params);
+			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Request);
+			bool isSensorModeSet		= POSTSensorMode(Params, Result);
 
-			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet) && Result.Body == "")
+			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet) && Result.Body == "")
 				Result.Body = "{\"success\" : \"true\"}";
 		}
 
@@ -175,6 +188,17 @@ void Device_t::SetIDToNVS(uint32_t ID) {
 	Memory.Commit();
 }
 
+bool Device_t::GetSensorModeFromNVS() {
+	NVS Memory(NVSDeviceArea);
+	return (Memory.GetString(NVSDeviceSensorMode) == "1") ? true : false;
+}
+
+void Device_t::SetSensorModeToNVS(bool SensorMode) {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetString(NVSDeviceSensorMode, (SensorMode) ? "1" : "0");
+	Memory.Commit();
+}
+
 // Генерация ID на основе MAC-адреса чипа
 uint32_t Device_t::GenerateID() {
 	uint8_t mac[6];
@@ -219,7 +243,7 @@ bool Device_t::POSTTimezone(map<string,string> Params) {
 	return false;
 }
 
-bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response) {
+bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response, httpd_req_t *Request) {
 	if (Params.count("firmware") == 0)
 		return false;
 
@@ -242,25 +266,44 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 		return false;
 	}
 
-	if (Converter::ToLower(Params["firmware"]).find("http") == 0) {
-		OTA::Update(Params["firmware"]);
-	}
-	else
-	{
+	string OTAUrl = Params["firmware"];
+
+	if (Converter::ToLower(Params["firmware"]).find("http") != 0) {
 		string UpdateFilename = "firmware.bin";
 
 		if (Params["filename"].size() > 0)
 			UpdateFilename = Params["filename"];
 
-		OTA::Update(Settings.OTA.APIUrl + Params["firmware"] + "/" + UpdateFilename);
+		OTAUrl = Settings.OTA.APIUrl + Params["firmware"] + "/" + UpdateFilename;
 	}
 
 	Device.Status = DeviceStatus::UPDATING;
 
 	Response.ResponseCode = WebServer_t::Response::CODE::OK;
-	Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update started\"}";
+	Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update started. Web server temporarily stopped.\"}";
+	WebServer_t::SendHTTPData(Response, Request);
+
+	OTA::Update(OTAUrl);
 
 	return true;
+}
+
+bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& Response)
+{
+	if (Params.count("sensormode") > 0) {
+		if (Params["sensormode"] == "1" || Converter::ToLower(Params["sensormode"]) == "true")
+			SensorMode = true;
+
+		if (Params["sensormode"] == "0" || Converter::ToLower(Params["sensormode"]) == "false")
+			SensorMode = false;
+
+		SetSensorModeToNVS(SensorMode);
+
+		return true;
+	}
+
+	return false;
+
 }
 
 string Device_t::TypeToString() {
@@ -300,4 +343,8 @@ string Device_t::TemperatureToString() {
 
 string Device_t::CurrentVoltageToString() {
 	return Converter::ToString(CurrentVoltage);
+}
+
+string Device_t::SensorModeToString() {
+	return (SensorMode) ? "1" : "0";
 }

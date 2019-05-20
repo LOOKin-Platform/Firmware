@@ -7,37 +7,47 @@
 #include "OTA.h"
 #include "Globals.h"
 #include "HTTPClient.h"
+#include "esp_https_ota.h"
 
 static char tag[] = "OTA";
 
-int              OTA::BinaryFileLength  = 0;
-esp_ota_handle_t OTA::OutHandle         = 0;
-esp_partition_t  OTA::OperatePartition;
+int              	OTA::BinaryFileLength  	= 0;
+esp_ota_handle_t 	OTA::OutHandle         	= 0;
+esp_partition_t  	OTA::OperatePartition;
+uint8_t				OTA::Attempts			= 0;
 
 OTA::OTA() {
 	BinaryFileLength  = 0;
 	OutHandle         = 0;
 };
 
-void OTA::Update(string URL) {
+esp_err_t OTA::Update(string URL) {
+	Attempts = 0;
+	return PerformUpdate(URL);
+}
+
+esp_err_t OTA::PerformUpdate(string URL) {
 	ESP_LOGI(tag, "Starting OTA from URL %s...", URL.c_str());
 
-	HTTPClient::HTTPClientData_t QueryData;
+    esp_http_client_config_t config = {
+        .url = URL.c_str()
+    };
 
-	strncpy(QueryData.URL   , URL.c_str(), 64);
+    esp_err_t ret = esp_https_ota(&config);
+    if (ret == ESP_OK) {
+        esp_restart();
+    }
+    else {
+		Device.Status = DeviceStatus::RUNNING;
+		Attempts++;
 
-	QueryData.Port    				= Settings.OTA.ServerPort;
-	QueryData.Method  				= QueryType::GET;
-	QueryData.BufferSize			= 10240;
+		if (Attempts < Settings.OTA.MaxAttempts)
+			OTA::PerformUpdate(URL);
 
-	QueryData.ReadStartedCallback   = &ReadStarted;
-	QueryData.ReadBodyCallback      = &ReadBody;
-	QueryData.ReadFinishedCallback  = &ReadFinished;
-	QueryData.AbortedCallback       = &Aborted;
+        return ESP_FAIL;
+    }
 
-	HTTPClient::Query(QueryData, true);
-
-	Log::Add(Log::Events::System::OTAStarted);
+    return ESP_OK;
 }
 
 void OTA::ReadStarted(char IP[]) {

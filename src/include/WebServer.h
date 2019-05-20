@@ -36,23 +36,23 @@ class WebServer_t {
 				TYPE		ContentType;
 
 				Response();
-				string 		toString();
 
 				void 		SetSuccess();
 				void 		SetFail();
 				void		SetInvalid();
 
 				void 		Clear();
-			private:
-				string ResponseCodeToString();
-				string ContentTypeToString();
 		};
 
 		WebServer_t();
 		void Start();
 		void Stop();
 
-	    static esp_err_t GetHandler(httpd_req_t *);
+	    static esp_err_t GETHandler		(httpd_req_t *);
+	    static esp_err_t POSTHandler	(httpd_req_t *);
+	    static esp_err_t DELETEHandler	(httpd_req_t *);
+
+	    static void	SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request);
 
 		void UDPSendBroadcastAlive();
 		void UDPSendBroadcastDiscover();
@@ -65,14 +65,12 @@ class WebServer_t {
 		static string 	SetupPage;
 		string GetSetupPage();
 
-		static bool HTTPServerStopFlag;
 		static bool UDPServerStopFlag;
-
-		static TaskHandle_t	HTTPListenerTaskHandle;
 		static TaskHandle_t	UDPListenerTaskHandle;
 
-	private:
+		static void 	SetHeaders(WebServer_t::Response &, httpd_req_t *);
 
+	private:
 	    static QueueHandle_t UDPBroadcastQueue;
 	    static httpd_handle_t HTTPServerHandle;
 
@@ -81,11 +79,8 @@ class WebServer_t {
 		static string	UDPDiscoverBody(string ID = "");
 		static string	UDPUpdatedBody(uint8_t SensorID, string Value);
 
-		static void		UDPListenerTask(void *);
 
-		static void		HTTPListenerTask(void *);
-		static void 	HandleHTTP(struct netconn *);
-		static void 	Write(struct netconn *conn, string Data);
+		static void		UDPListenerTask(void *);
 };
 
 #endif

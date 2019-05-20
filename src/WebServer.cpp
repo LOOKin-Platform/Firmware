@@ -18,44 +18,107 @@ using namespace std;
 
 static char tag[] = "WebServer";
 
-bool WebServer_t::HTTPServerStopFlag 			= false;
 bool WebServer_t::UDPServerStopFlag 			= false;
-
-TaskHandle_t WebServer_t::HTTPListenerTaskHandle= NULL;
 TaskHandle_t WebServer_t::UDPListenerTaskHandle	= NULL;
 
-httpd_handle_t WebServer_t::HTTPServerHandle = NULL;
+httpd_handle_t WebServer_t::HTTPServerHandle 	= NULL;
 
 static vector<uint16_t> UDPPorts 				= { Settings.WiFi.UPDPort };
 QueueHandle_t WebServer_t::UDPBroadcastQueue 	= FreeRTOS::Queue::Create(Settings.WiFi.UDPBroadcastQueue.Size, sizeof(UDPBroacastQueueItem));
-string WebServer_t::SetupPage					= "<html><head><meta charset='UTF-8'><meta name='apple-mobile-web-app-capable' content='yes'><style> body { margin : 0px; } h1 { font-size : 56px; font-weight : bold; margin : 30px 0px; } .content { align-items : center; width : 100%; margin : auto; } .element { width : 90%; padding : 0px 20px; min-height : 100px !important; line-height : 30px; } p.element { font-size : 40px; line-height : 40px; margin-bottom : 30px; } select { width : 90%; margin : auto; line-height : 40px; background-color : white; padding-left : 12px; } .lang { margin : 10px; padding : 10px; font-size : 25px; cursor : pointer; } .lang.active { border : 1px solid black; } #Success { margin-top : 20px; } .hide { display : none; } .logo { text-align : center; font-size : 96px; font-family : 'Arial'; height : 100px; margin-top : 100px; } input, button, select { height : 100px; font-size : 40px; line-height : 40px; border : 1px solid black; margin-bottom : 50px; background-color : white; } @media (min-width: 1025px) { .content { width: 600px; } .logo { font-size: 72px; margin-top: 50px; } h1 { font-size: 32px ; margin: 0px 0px; } .element { min-height: 20px !important; } p.element{ font-size: 25px ; line-height: 25px; } input, button, select { margin-bottom: 20px; line-height: 20px; font-size: 20px; height: 40px;} } </style><script type='text/javascript'> var Language = 'ru'; var SSIDs = [{SSID_LIST}]; var CurrentDevice = '{CURRENT_DEVICE}'; var Title = new Map([ ['ru', 'Подключение устройства'], ['en', 'Wi-fi connection'] ]); var Description = new Map([ ['ru', 'Для подключения устройства к вашей сети Wi-Fi необходимо выбрать её в списке и задать для нее пароль'], ['en', 'To connect your device to your Wi-Fi network, select it in the list and set a password for it'] ]); var Device = new Map([ ['ru', 'Устройство'], ['en', 'Device'] ]); var Connect = new Map([ ['ru', 'Подключить'], ['en', 'Connect'] ]); var ConnectProcess = new Map([ ['ru', 'Идет подключение...'], ['en', 'Connecting...'] ]); var PasswordHint = new Map([ ['ru', 'Пароль от Wi-Fi'], ['en', 'Wi-Fi password'] ]); var WiFiHint = new Map([ ['ru', 'Выберите Wi-Fi сеть'], ['en', 'Choose Wi-Fi network'] ]); var PasswordEmpty = new Map([ ['ru', 'Пароль не может быть пустым'], ['en', 'Password cannot be empty'] ]); var SaveError = new Map([ ['ru', 'При настройки устройства произошла непредвиденная ошибка'], ['en', 'Unexpected error occured'] ]); var SetupDone = new Map([ ['ru', 'Настройка устройства прошла успешно.<br/><br/>Подключитесь к указанной ранее Wi-Fi сети для и откройте приложение LOOK.in Hub для продолжения работы с устройством.<br/><br/>Данную страницу можно закрыть.'], ['en', 'The device setup was successful.<br/><br/>Connect to the previously specified Wi-Fi network and open the LOOK.in Hub mobile app to continue working with the device.<br/><br/>This page can be closed.'] ]); function OnSave() { var SSIDElement = document.getElementById('ssid'); var SSID = SSIDElement.options[SSIDElement.selectedIndex].text; var Password = document.getElementById('password').value; if (Password == '') { alert(PasswordEmpty.get(Language)); return; } var xhr = new XMLHttpRequest(); var body = '{' + '\"WiFiSSID\":\"' + encodeURIComponent(SSID) + '\", ' + '\"WiFiPassword\": \"' + encodeURIComponent(Password) + '\"}'; document.getElementById('connect').innerHTML = ConnectProcess.get(Language); document.getElementById('connect').disabled = true; xhr.open('POST', '/network', true); xhr.setRequestHeader('Content-Type', 'text-plain'); xhr.onreadystatechange = function() { if (this.readyState != 4) return;  if(this.status === 200) { document.getElementById('StartScreen').classList.add('hide'); document.getElementById('Success').classList.remove('hide'); var xhrConnect = new XMLHttpRequest(); xhrConnect.open('GET', '/network/connect', true); xhrConnect.send(null); } else alert(SaveError.get(Language) + ':\\n\\n' +this.responseText); }; xhr.send(body); } function LoadData(lang = Language) { Language = lang; document.getElementById('title') .innerHTML = Title.get(lang); document.getElementById('description') .innerHTML = Description.get(lang); document.getElementById('device') .innerHTML = Device.get(lang); document.getElementById('connect') .innerHTML = Connect.get(lang); document.getElementById('password') .placeholder= PasswordHint.get(lang); document.getElementById('Success') .innerHTML = SetupDone.get(lang); document.getElementById('deviceTypeAndID').innerHTML = CurrentDevice; var WiFiSelect = document.getElementById('ssid'); document.getElementById('ssid').innerHTML = ''; var FirstOption = document.createElement('option'); FirstOption.innerHTML = WiFiHint.get(lang); FirstOption.disabled = true; WiFiSelect.appendChild(FirstOption); for(var i = 0; i < SSIDs.length; i++) { var Option = document.createElement('option'); Option.innerHTML = SSIDs[i]; Option.value = SSIDs[i]; WiFiSelect.appendChild(Option); } var LangRE = /^lang-/; var Elements = document.getElementsByTagName('*'); for (var i = Elements.length; i-- ;) if (LangRE.test(Elements[i].id)) Elements[i].classList.remove('active'); document.getElementById('lang-' + lang).classList.add('active'); } </script></head><body onLoad='LoadData()'><div class='content' align='center'><a class='lang' id='lang-en' onclick='LoadData(&quot;en&quot;)'>English</a><a class='lang' id='lang-ru' onclick='LoadData(&quot;ru&quot;)'>Русский</a><div class='logo'>LOOK.in</div><h1 id='title'></h1><div align='center' id='StartScreen'><p class='element' id='description'></p><p class='element'><span id='device'></span>: <span id='deviceTypeAndID'></span></p><select id='ssid' placeholder='Выберите точку доступа'></select><input id = 'password' class='element' placeholder='Пароль от WiFi' /><button id = 'connect' class='element' onclick='OnSave();' ></button></div><div align='center' id='Success' class='hide'></div></div></body></html>";
 
 WebServer_t::WebServer_t() {
-	HTTPListenerTaskHandle  = NULL;
 	UDPListenerTaskHandle   = NULL;
 }
 
-/* Our URI handler function to be called during GET /uri request */
-esp_err_t get_handler(httpd_req_t *Request)
+esp_err_t WebServer_t::GETHandler(httpd_req_t *Request)
 {
 	WebServer_t::Response Response;
 
 	string QueryString = "GET " + string(Request->uri) + " ";
-	ESP_LOGI("tg", "%s", QueryString.c_str());
-
 	Query_t Query(QueryString);
-
 	API::Handle(Response, Query);
 
-	httpd_resp_send(Request, Response.Body.c_str(), Response.Body.size());
+	SendHTTPData(Response, Request);
+
     return ESP_OK;
+}
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
+	WebServer_t::Response Response;
+    char content[4096];
+
+    size_t recv_size = MIN(Request->content_len, sizeof(content));
+    int ret = httpd_req_recv(Request, content, recv_size);
+
+    if (ret <= 0) {
+        if (ret == HTTPD_SOCK_ERR_TIMEOUT)
+            httpd_resp_send_408(Request);
+
+        return ESP_FAIL;
+    }
+
+    string PostData = content;
+	string QueryString = "POST " + string(Request->uri) + " \r\n" + PostData.substr(0, recv_size);
+
+	Query_t Query(QueryString);
+	API::Handle(Response, Query, Request);
+
+	SendHTTPData(Response, Request);
+
+    return ESP_OK;
+}
+
+esp_err_t WebServer_t::DELETEHandler(httpd_req_t *Request) {
+	WebServer_t::Response Response;
+
+	string QueryString = "DELETE " + string(Request->uri) + " ";
+	Query_t Query(QueryString);
+	API::Handle(Response, Query);
+
+	SendHTTPData(Response, Request);
+    return ESP_OK;
+}
+
+void WebServer_t::SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request) {
+	WebServer_t::SetHeaders(Response, Request);
+	httpd_resp_send(Request, Response.Body.c_str(), HTTPD_RESP_USE_STRLEN);
+}
+
+void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Request) {
+	switch (Response.ResponseCode) {
+		case Response::CODE::INVALID  	: httpd_resp_set_status	(Request, HTTPD_400); break;
+		case Response::CODE::ERROR    	: httpd_resp_set_status	(Request, HTTPD_500); break;
+		default							: httpd_resp_set_status	(Request, HTTPD_200); break;
+	}
+
+	switch (Response.ContentType) {
+		case Response::TYPE::JSON  		: httpd_resp_set_type	(Request, HTTPD_TYPE_JSON); break;
+		default							: httpd_resp_set_type	(Request, HTTPD_TYPE_TEXT); break;
+	}
 }
 
 /* URI handler structure for GET /uri */
 httpd_uri_t uri_get = {
     .uri      = "/*",
     .method   = HTTP_GET,
-    .handler  = get_handler,
+    .handler  = WebServer_t::GETHandler,
+    .user_ctx = NULL
+};
+
+/* URI handler structure for GET /uri */
+httpd_uri_t uri_post = {
+    .uri      = "/*",
+    .method   = HTTP_POST,
+    .handler  = WebServer_t::POSTHandler,
+    .user_ctx = NULL
+};
+
+/* URI handler structure for GET /uri */
+httpd_uri_t uri_delete = {
+    .uri      = "/*",
+    .method   = HTTP_DELETE,
+    .handler  = WebServer_t::DELETEHandler,
     .user_ctx = NULL
 };
 
@@ -63,22 +126,18 @@ httpd_uri_t uri_get = {
 void WebServer_t::Start() {
 	ESP_LOGD(tag, "WebServer -> Start");
 
-    // Generate default configuration
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    // Empty handle to http_server
-    config.uri_match_fn = httpd_uri_match_wildcard;
+
+    config.uri_match_fn 	= httpd_uri_match_wildcard;
+    config.stack_size		= 16384;
+    config.lru_purge_enable = true;
     HTTPServerHandle = NULL;
 
-    // Start the httpd server
     if (httpd_start(&HTTPServerHandle, &config) == ESP_OK) {
-        // Register URI handlers
         httpd_register_uri_handler(HTTPServerHandle, &uri_get);
+        httpd_register_uri_handler(HTTPServerHandle, &uri_post);
+        httpd_register_uri_handler(HTTPServerHandle, &uri_delete);
     }
-
-	/*
-	if (HTTPListenerTaskHandle == NULL)
-		HTTPListenerTaskHandle  = FreeRTOS::StartTask(HTTPListenerTask, "HTTPListenerTask", NULL, 6144);
-	*/
 
 	if (UDPListenerTaskHandle == NULL)
 		UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
@@ -271,104 +330,6 @@ void WebServer_t::UDPListenerTask(void *data) {
 	UDPListenerTaskHandle = NULL;
 }
 
-void WebServer_t::HTTPListenerTask(void *data) {
-	if (!WiFi.IsRunning()) {
-		ESP_LOGE(tag, "WiFi switched off - can't start HTTP listener task");
-		WebServer.HTTPListenerTaskHandle = NULL;
-		FreeRTOS::DeleteTask();
-		return;
-	}
-
-	HTTPServerStopFlag = false;
-
-	ESP_LOGD(tag, "HTTPListenerTask Run");
-	struct netconn *HTTPConnection, *HTTPNewConnection;
-
-	err_t err;
-
-	HTTPConnection = netconn_new(NETCONN_TCP);
-	netconn_bind(HTTPConnection, NULL, 80);
-	netconn_listen(HTTPConnection);
-
-	do {
-		err = netconn_accept(HTTPConnection, &HTTPNewConnection);
-
-		if (err == ERR_OK) {
-			WebServer_t::HandleHTTP(HTTPNewConnection);
-			netconn_close(HTTPNewConnection);
-			netconn_delete(HTTPNewConnection);
-		}
-	} while(err == ERR_OK && !HTTPServerStopFlag);
-
-	netconn_close(HTTPConnection);
-	netconn_delete(HTTPConnection);
-
-	FreeRTOS::DeleteTask(HTTPListenerTaskHandle);
-	HTTPListenerTaskHandle = NULL;
-}
-
-void WebServer_t::HandleHTTP(struct netconn *conn) {
-	ESP_LOGD(tag, "Handle HTTP Query");
-
-	struct netbuf *inbuf;
-	char *buf;
-	u16_t buflen;
-
-	err_t err;
-	string HTTPString;
-
-	conn->recv_timeout = 60; // timeout on 50 msecs
-
-	while((err = netconn_recv(conn,&inbuf)) == ERR_OK) {
-		do {
-			netbuf_data(inbuf, (void **)&buf, &buflen);
-
-			if (HTTPString.size() + buflen > Settings.WiFi.HTTPMaxQueryLen) {
-				HTTPString.clear();
-				WebServer_t::Response Result;
-				Result.SetInvalid();
-				Result.Body = "{ \"success\" : \"false\", \"message\" : \"Query length exceed max. It is "+
-						Converter::ToString(Settings.WiFi.HTTPMaxQueryLen) + "for UTF-8 queries and " +
-						Converter::ToString((uint16_t)(Settings.WiFi.HTTPMaxQueryLen/2)) + "for UTF-16 queries\"}";
-				Write(conn, Result.toString());
-				netbuf_free(inbuf);
-				netbuf_delete(inbuf);
-				return;
-			}
-
-			buf[buflen] = '\0';
-			HTTPString += string(buf);
-		} while(netbuf_next(inbuf) >= 0);
-
-		netbuf_free(inbuf);
-		netbuf_delete(inbuf);
-	}
-
-	netbuf_delete(inbuf);
-
-	if (!HTTPString.empty()) {
-		Query_t Query(HTTPString);
-		WebServer_t::Response Result;
-		HTTPString = "";
-
-		API::Handle(Result, Query);
-		Write(conn, Result.toString());
-
-		Result.Clear();
-	}
-}
-
-void WebServer_t::Write(struct netconn *conn, string Data) {
-	uint8_t PartSize = 100;
-
-	for (int i=0; i < Data.size(); i += PartSize)
-		netconn_write(conn,
-				Data.substr(i, ((i + PartSize <= Data.size()) ? PartSize : Data.size() - i)).c_str(),
-				(i + PartSize <= Data.size()) ? PartSize : Data.size() - i,
-				NETCONN_NOCOPY);
-}
-
-
 static bool IsSetupPageTemplated = false;
 string WebServer_t::GetSetupPage() {
 	if (!IsSetupPageTemplated)
@@ -406,16 +367,6 @@ WebServer_t::Response::Response() {
 	ContentType  = TYPE::JSON;
 }
 
-string WebServer_t::Response::toString() {
-	string Result = "";
-
-	Result = "HTTP/1.1 " + ResponseCodeToString() + "\r\n";
-	Result += "Content-type:" + ContentTypeToString() + "; charset=utf-8\r\n\r\n";
-	Result += Body;
-
-	return Result;
-}
-
 void WebServer_t::Response::SetSuccess() {
 	ResponseCode  = CODE::OK;
 	ContentType   = TYPE::JSON;
@@ -438,21 +389,4 @@ void WebServer_t::Response::Clear() {
 	Body = "";
 	ResponseCode = OK;
 	ContentType = JSON;
-}
-
-string WebServer_t::Response::ResponseCodeToString() {
-	switch (ResponseCode) {
-		case CODE::INVALID  : return "400"; break;
-		case CODE::ERROR    : return "500"; break;
-		default             : return "200"; break;
-	}
-}
-
-string WebServer_t::Response::ContentTypeToString() {
-	switch (ContentType) {
-		case TYPE::PLAIN  : return "text/plain"; 		break;
-		case TYPE::JSON   : return "application/json"; 	break;
-		case TYPE::HTML   : return "text/html"; 		break;
-		default           : return "";
-	}
 }

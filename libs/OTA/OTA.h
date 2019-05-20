@@ -27,7 +27,8 @@ using namespace std;
 class OTA {
   public:
     OTA();
-    static void Update(string URL);
+    static esp_err_t Update(string URL);
+    static esp_err_t PerformUpdate(string URL);
 
     // HTTP Callbacks
     static void ReadStarted(char [] = '\0');
@@ -37,10 +38,11 @@ class OTA {
 
     static void Rollback();
 
+    static uint8_t			Attempts;
   private:
-    static int               BinaryFileLength;
-    static esp_ota_handle_t  OutHandle;
-    static esp_partition_t   OperatePartition;
+    static int				BinaryFileLength;
+    static esp_ota_handle_t	OutHandle;
+    static esp_partition_t	OperatePartition;
 };
 
 #endif

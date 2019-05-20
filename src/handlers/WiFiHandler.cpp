@@ -47,10 +47,10 @@ void WiFiUptimeHandler::Start() {
 }
 
 void WiFiUptimeHandler::Pool() {
-	if (Device.PowerMode == DevicePowerMode::CONST) {
+	if (Device.PowerMode == DevicePowerMode::CONST ||
+	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
 
-		//ESP_LOGI("tag", "%d %d %s %d", ClientModeNextTime, Time::Unixtime(), WiFi_t::GetMode().c_str(), WiFi_t::GetAPClientsCount());
 		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_AP_STR && ClientModeNextTime > 0)
 		{
 			IsConnectedBefore = false;
