@@ -9,6 +9,8 @@
 #include <netdb.h>
 #include <mdns.h>
 
+static char HandlerTag[] = "WiFiHandler";
+
 static FreeRTOS::Timer		*IPDidntGetTimer;
 static FreeRTOS::Semaphore	IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPData");
 static bool 				IsIPCheckSuccess 	= false;
@@ -108,15 +110,23 @@ esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 	}
 
 	tcpip_adapter_ip_info_t GatewayIP = WiFi.getStaIpInfo();
-	ESP_LOGI("tag","ping to %s. Received %d, Sended %d", inet_ntoa(GatewayIP.gw) ,pf->recv_count, pf->send_count);
+
+	if (string(inet_ntoa(GatewayIP.gw)) == string("0.0.0.0") && pf->send_count > 0)
+		return ESP_FAIL;
+
+	ESP_LOGI(HandlerTag, "ping to %s. Received %d, Sended %d", inet_ntoa(GatewayIP.gw) ,pf->recv_count, pf->send_count);
 
 	if (pf->send_count == Settings.WiFi.PingAfterConnect.Count && pf->recv_count == 0) {
 		IsIPCheckSuccess = false;
 		IsCorrectIPData.Give();
 
+		ESP_LOGI(HandlerTag, "gateway does not ping. Waiting for 5s and restart dhcp");
 		FreeRTOS::Sleep(5000);
 
 		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
+
+		FreeRTOS::Sleep(1000);
+
 		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
 	}
 
@@ -185,6 +195,14 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			if (WiFi_t::GetWiFiNetworkSwitch())
 				return ESP_OK;
+
+
+			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE ||
+				DisconnectedInfo.reason == WIFI_REASON_ASSOC_EXPIRE)
+			{
+				::esp_wifi_set_ps(WIFI_PS_NONE);
+				FreeRTOS::Sleep(5000);
+			}
 
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось

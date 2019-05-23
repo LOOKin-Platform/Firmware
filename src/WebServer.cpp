@@ -48,18 +48,24 @@ esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
     char content[4096];
 
-    size_t recv_size = MIN(Request->content_len, sizeof(content));
-    int ret = httpd_req_recv(Request, content, recv_size);
+    string PostData = "";
 
-    if (ret <= 0) {
-        if (ret == HTTPD_SOCK_ERR_TIMEOUT)
-            httpd_resp_send_408(Request);
+    if (Request->content_len > 0) {
+        size_t recv_size = MIN(Request->content_len, sizeof(content));
+        int ret = httpd_req_recv(Request, content, recv_size);
 
-        return ESP_FAIL;
+        if (ret <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT)
+                httpd_resp_send_408(Request);
+
+            return ESP_FAIL;
+        }
+
+        PostData = content;
+        PostData = PostData.substr(0, recv_size);
     }
 
-    string PostData = content;
-	string QueryString = "POST " + string(Request->uri) + " \r\n" + PostData.substr(0, recv_size);
+	string QueryString = "POST " + string(Request->uri) + " \r\n" + PostData;
 
 	Query_t Query(QueryString);
 	API::Handle(Response, Query, Request);
