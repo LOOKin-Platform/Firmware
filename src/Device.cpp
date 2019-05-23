@@ -6,6 +6,8 @@
 #include "Globals.h"
 #include "Device.h"
 
+httpd_req_t	*Device_t::CachedRequest = NULL;
+
 DeviceType_t::DeviceType_t(string TypeStr) {
 	for(auto const &TypeItem : Settings.Devices.Literaly) {
 		if (Converter::ToLower(TypeItem.second) == Converter::ToLower(TypeStr))
@@ -277,15 +279,31 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 		OTAUrl = Settings.OTA.APIUrl + Params["firmware"] + "/" + UpdateFilename;
 	}
 
-	Device.Status = DeviceStatus::UPDATING;
-
-	Response.ResponseCode = WebServer_t::Response::CODE::OK;
-	Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update started. Web server temporarily stopped.\"}";
-	WebServer_t::SendHTTPData(Response, Request);
-
-	OTA::Update(OTAUrl);
+	CachedRequest = Request;
+	OTA::Update(OTAUrl, &OTACallbackSuccessfulStarted, &OTACallbackFileDoesntExist);
 
 	return true;
+}
+
+void Device_t::OTACallbackSuccessfulStarted() {
+	Device.Status = DeviceStatus::UPDATING;
+
+	WebServer_t::Response Response;
+	Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update will be started if file exists. Web server temporarily stopped.\"}";
+	Response.ResponseCode = WebServer_t::Response::CODE::OK;
+	Device.Status = DeviceStatus::UPDATING;
+
+	WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
+}
+
+void Device_t::OTACallbackFileDoesntExist() {
+	Device.Status = DeviceStatus::RUNNING;
+
+	WebServer_t::Response Response;
+	Response.Body = "{ \"success\": \"false\", \"Message\": \"Firmware update failed. No such file.\" }";
+	Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
+
+	WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
 }
 
 bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& Response)

@@ -11,19 +11,44 @@
 
 static char tag[] = "OTA";
 
-int              	OTA::BinaryFileLength  	= 0;
-esp_ota_handle_t 	OTA::OutHandle         	= 0;
-esp_partition_t  	OTA::OperatePartition;
-uint8_t				OTA::Attempts			= 0;
+int              			OTA::BinaryFileLength  			= 0;
+esp_ota_handle_t 			OTA::OutHandle         			= 0;
+esp_partition_t  			OTA::OperatePartition;
+uint8_t						OTA::Attempts					= 0;
+bool						OTA::IsOTAFileExist				= false;
+bool						OTA::IsFileCheckEnded			= false;
 
 OTA::OTA() {
 	BinaryFileLength  = 0;
 	OutHandle         = 0;
 };
 
-esp_err_t OTA::Update(string URL) {
-	Attempts = 0;
-	return PerformUpdate(URL);
+void OTA::Update(string URL, OTAStarted Started, OTAFileDoesntExist FileDoesntExist) {
+	Attempts 				= 0;
+
+	IsOTAFileExist			= false;
+	IsFileCheckEnded		= false;
+
+	/*
+	HTTPClient::Query(URL, Settings.OTA.ServerPort, QueryType::GET, true, NULL, OTA::FEReadBody, NULL, FEAborted);
+
+	while (!IsFileCheckEnded) {
+		FreeRTOS::Sleep(500);
+	}
+
+	if (!IsOTAFileExist) {
+		if (FileDoesntExist != NULL)
+			FileDoesntExist();
+
+		return;
+	}
+
+	if (Started != NULL)
+		Started();
+*/
+	Started();
+
+	PerformUpdate(URL);
 }
 
 esp_err_t OTA::PerformUpdate(string URL) {
@@ -35,6 +60,7 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
     esp_err_t ret = esp_https_ota(&config);
     if (ret == ESP_OK) {
+    	Log::Add(Log::Events::System::OTASucceed);
         esp_restart();
     }
     else {
@@ -43,6 +69,8 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
 		if (Attempts < Settings.OTA.MaxAttempts)
 			OTA::PerformUpdate(URL);
+
+		Log::Add((ret == ESP_ERR_OTA_VALIDATE_FAILED) ? Log::Events::System::OTAVerifyFailed : Log::Events::System::OTAFailed);
 
         return ESP_FAIL;
     }
@@ -127,7 +155,7 @@ void OTA::ReadFinished(char IP[]) {
 		return;
 	}
 
-	Log::Add(Log::Events::System::OTASucced);
+	Log::Add(Log::Events::System::OTASucceed);
 
 	ESP_LOGD(tag, "Prepare to restart system!");
 	esp_restart();
@@ -135,6 +163,22 @@ void OTA::ReadFinished(char IP[]) {
 
 void OTA::Aborted(char IP[]) {
 	Device.Status = DeviceStatus::RUNNING;
+}
+
+
+bool OTA::FEReadBody(char Data[], int DataLen, char IP[]) {
+	IsOTAFileExist		= (DataLen <= 300) ? false : true;
+	IsFileCheckEnded	= true;
+
+	ESP_LOGI(tag, "FEReadBody");
+
+	return false;
+}
+
+void OTA::FEAborted(char IP[]) {
+	IsFileCheckEnded 	= true;
+
+	ESP_LOGI(tag, "FEAborted");
 }
 
 void OTA::Rollback() {

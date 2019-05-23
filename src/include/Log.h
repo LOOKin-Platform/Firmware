@@ -95,7 +95,7 @@ class Log {
 					DeviceOn 		= 0x0001,
 					DeviceStarted 	= 0x0002,
 					DeviceRollback	= 0x00f0,
-					OTASucced		= 0x0040,
+					OTASucceed		= 0x0040,
 					OTAVerifyFailed	= 0x0041,
 					OTAFailed		= 0x1142,
 

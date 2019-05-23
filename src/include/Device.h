@@ -58,52 +58,56 @@ enum    DevicePowerMode { BATTERY, CONST };
 
 class Device_t {
 	public:
-		DeviceType_t    Type;
-		DeviceStatus    Status		= DeviceStatus::RUNNING;
+		DeviceType_t    	Type;
+		DeviceStatus    	Status		= DeviceStatus::RUNNING;
 
-		DevicePowerMode PowerMode	= DevicePowerMode::CONST;
-		uint8_t         PowerModeVoltage = 220;
+		DevicePowerMode 	PowerMode	= DevicePowerMode::CONST;
+		uint8_t         	PowerModeVoltage = 220;
 
-		string          FirmwareVersion = Settings.FirmwareVersion;
-		uint8_t         Temperature = 0;
-		uint16_t		CurrentVoltage = 0;
+		string          	FirmwareVersion = Settings.FirmwareVersion;
+		uint8_t         	Temperature = 0;
+		uint16_t			CurrentVoltage = 0;
 
-		bool			SensorMode = false;
+		bool				SensorMode = false;
 
 		Device_t();
-		void    		Init();
-		void    		HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params, httpd_req_t *Request = NULL);
+		void    			Init();
+		void    			HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params, httpd_req_t *Request = NULL);
 
-		string			GetName();
-		void			SetName(string);
+		string				GetName();
+		void				SetName(string);
 
-		static uint8_t	GetTypeFromNVS();
-		static void		SetTypeToNVS(uint8_t);
+		static uint8_t		GetTypeFromNVS();
+		static void			SetTypeToNVS(uint8_t);
 
-		static uint32_t	GetIDFromNVS();
-		static void		SetIDToNVS(uint32_t);
+		static uint32_t		GetIDFromNVS();
+		static void			SetIDToNVS(uint32_t);
 
-		static bool		GetSensorModeFromNVS();
-		static void		SetSensorModeToNVS(bool);
+		static bool			GetSensorModeFromNVS();
+		static void			SetSensorModeToNVS(bool);
 
-		string			IDToString();
-		string			TypeToString();
-		static uint32_t GenerateID();
+		string				IDToString();
+		string				TypeToString();
+		static uint32_t 	GenerateID();
+
+		static void			OTACallbackSuccessfulStarted();
+		static void			OTACallbackFileDoesntExist();
+		static	httpd_req_t	*CachedRequest;
 
 	private:
-		bool 			POSTName(map<string,string>);
-		bool 			POSTTime(map<string,string>);
-		bool 			POSTTimezone(map<string,string>);
-		bool 			POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request);
-		bool 			POSTSensorMode(map<string,string>, WebServer_t::Response &);
+		bool 				POSTName(map<string,string>);
+		bool 				POSTTime(map<string,string>);
+		bool 				POSTTimezone(map<string,string>);
+		bool 				POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request);
+		bool 				POSTSensorMode(map<string,string>, WebServer_t::Response &);
 
-		string 			StatusToString();
-		string 			NameToString();
-		string 			PowerModeToString();
-		string 			FirmwareVersionToString();
-		string 			TemperatureToString();
-		string 			CurrentVoltageToString();
-		string			SensorModeToString();
+		string 				StatusToString();
+		string 				NameToString();
+		string 				PowerModeToString();
+		string 				FirmwareVersionToString();
+		string 				TemperatureToString();
+		string 				CurrentVoltageToString();
+		string				SensorModeToString();
 };
 
 #endif

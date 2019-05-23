@@ -18,31 +18,43 @@
 #include <esp_log.h>
 
 #include "HTTPClient.h"
+#include "FreeRTOSWrapper.h"
 
 using namespace std;
 
 #define BUFFSIZE      1024
 #define TEXT_BUFFSIZE 1024
 
+typedef void (*OTAStarted)			();
+typedef void (*OTAFileDoesntExist)	();
+
 class OTA {
-  public:
-    OTA();
-    static esp_err_t Update(string URL);
-    static esp_err_t PerformUpdate(string URL);
+	public:
+		OTA();
+		static void 				Update(string URL, OTAStarted Started = NULL, OTAFileDoesntExist FileDoesntExist = NULL);
+		static esp_err_t			PerformUpdate(string URL);
 
-    // HTTP Callbacks
-    static void ReadStarted(char [] = '\0');
-    static bool ReadBody(char Data[], int DataLen, char[] = '\0');
-    static void ReadFinished(char [] = '\0');
-    static void Aborted(char [] = '\0');
+		// HTTP OTA Callbacks
+		static void 				ReadStarted		(char [] = '\0');
+		static bool 				ReadBody		(char Data[], int DataLen, char[] = '\0');
+		static void 				ReadFinished	(char [] = '\0');
+		static void 				Aborted			(char [] = '\0');
 
-    static void Rollback();
+		// HTTP File Exist Callbacks
+		static bool 				FEReadBody		(char Data[], int DataLen, char[] = '\0');
+		static void 				FEAborted		(char [] = '\0');
 
-    static uint8_t			Attempts;
-  private:
-    static int				BinaryFileLength;
-    static esp_ota_handle_t	OutHandle;
-    static esp_partition_t	OperatePartition;
+		static void 				Rollback();
+
+		static uint8_t				Attempts;
+		static bool					IsOTAFileExist;
+		static bool					IsFileCheckEnded;
+
+	private:
+
+		static int					BinaryFileLength;
+		static esp_ota_handle_t		OutHandle;
+		static esp_partition_t		OperatePartition;
 };
 
 #endif
