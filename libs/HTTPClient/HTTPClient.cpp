@@ -154,39 +154,16 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 				HTTPClient::Failed(ClientData);
 				continue;
 			}
-			esp_http_client_close(Handle);
-			esp_http_client_cleanup(Handle);
+
+			if (Handle != NULL) {
+				esp_http_client_close(Handle);
+				esp_http_client_cleanup(Handle);
+			}
 		}
 
 	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
     HTTPClient::ThreadsCounter--;
     FreeRTOS::DeleteTask();
-}
-
-/**
- * @brief Resolving an IP by hostname
- *
- * @param [in] Hostname Hostname to IP resolving
- * @return Resolved IP in string representation, e. g. 192.168.1.10
- */
-char* HTTPClient::ResolveIP(const char *Hostname, uint16_t Port) {
-	ESP_LOGI(tag, "IP not specified. Trying to resolve IP address");
-
-	struct addrinfo hints, *infoptr;
-
-    memset( &hints, 0, sizeof( hints ) );
-	hints.ai_family = AF_INET; // AF_INET means IPv4 only addresses //AF_UNSPEC for all
-	hints.ai_protocol = IPPROTO_TCP;
-
-	int result = ::getaddrinfo(Hostname, Converter::ToString(Port).c_str(), &hints, &infoptr);
-
-	if (result) {
-		ESP_LOGE(tag, "Can't resolve IP adress. Error code %i", result);
-	    return "";
-	}
-
-	struct sockaddr_in * p2 = (struct sockaddr_in *)(infoptr->ai_addr);
-	return inet_ntoa(p2->sin_addr);
 }
 
 /**

@@ -47,25 +47,24 @@ class HTTPClient {
 			QueryType					Method		= QueryType::GET;								/*!< Query method, e. g. QueryType::POST */
 			int 						BufferSize	= 0;
 
-			esp_http_client_handle_t	Handle;                 									/*!< Client handle */
+			esp_http_client_handle_t	Handle		= NULL;                 									/*!< Client handle */
 
-			ReadStarted   ReadStartedCallback   	= NULL;   /*!< Callback function invoked while started to read query data from server */
-			ReadBody      ReadBodyCallback      	= NULL;   /*!< Callback function invoked while query data reading process */
-			ReadFinished  ReadFinishedCallback  	= NULL;   /*!< Callback function invoked when query reading process is over */
-			Aborted       AbortedCallback       	= NULL;   /*!< Callback function invoked when reading data from server failed */
+			ReadStarted   	ReadStartedCallback   	= NULL;   /*!< Callback function invoked while started to read query data from server */
+			ReadBody      	ReadBodyCallback      	= NULL;   /*!< Callback function invoked while query data reading process */
+			ReadFinished  	ReadFinishedCallback  	= NULL;   /*!< Callback function invoked when query reading process is over */
+			Aborted       	AbortedCallback       	= NULL;   /*!< Callback function invoked when reading data from server failed */
 		};
 
-		static void Query(HTTPClientData_t, bool = false);
-		static void Query(string URL, uint16_t Port = 80, QueryType Type = GET, bool ToFront = false,
-            ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL);
+		static void 		Query(HTTPClientData_t, bool = false);
+		static void 		Query(string URL, uint16_t Port = 80, QueryType Type = GET, bool ToFront = false,
+								ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL);
 
-		static esp_err_t QueryHandler(esp_http_client_event_t *event);
-		static void HTTPClientTask(void *);
+		static esp_err_t	QueryHandler(esp_http_client_event_t *event);
+		static void			HTTPClientTask(void *);
 
-		static char*    ResolveIP           (const char *Hostname, uint16_t Port);
-		static void     Failed              (HTTPClientData_t &);
+		static void			Failed              (HTTPClientData_t &);
 
-		static void		CheckUserAgent		();
+		static void			CheckUserAgent		();
 	private:
 		static string			UserAgent;
 		static QueueHandle_t  	Queue;

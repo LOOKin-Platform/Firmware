@@ -147,6 +147,13 @@ void WiFi_t::Init() {
 	m_initCalled = true;
 } // Init
 
+void WiFi_t::DeInit() {
+	::esp_wifi_set_ps(WIFI_PS_NONE);
+	::esp_wifi_stop();
+	::esp_wifi_deinit();
+	m_initCalled = false;
+}
+
 void WiFi_t::Stop() {
 	::esp_wifi_stop();
 	m_WiFiRunning = false;
@@ -311,8 +318,6 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 	}
 
-	//FreeRTOS::Sleep(1000);
-
 	m_WiFiRunning = true;
 
 	m_apConnectionStatus = UINT8_MAX;
@@ -396,7 +401,18 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 	m_WiFiRunning = true;
 	Init();
 
-	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_AP);
+	esp_err_t errRc;
+
+	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
+		::esp_wifi_disconnect();
+		FreeRTOS::Sleep(1000);
+	}
+
+	errRc = ::esp_wifi_stop();
+	if (errRc != ESP_OK)
+		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+
+	errRc = ::esp_wifi_set_mode(WIFI_MODE_AP);
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();

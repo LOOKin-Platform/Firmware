@@ -120,6 +120,8 @@ class WiFi_t {
 
 	public:
 		void                Init();
+		void 				DeInit();
+
 		void 				Stop();
 
 		WiFi_t();
