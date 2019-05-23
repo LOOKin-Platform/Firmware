@@ -170,7 +170,6 @@ Log::Item Log::GetEventsLogItem(uint8_t Index) {
 		return Log::Item{};
 }
 
-
 /**
  * @brief Get system log record in JSON by index
  *
@@ -186,7 +185,6 @@ string Log::GetEventsLogJSONItem(uint8_t Index) {
 
 	return JSONObject.ToString();
 }
-
 
 /**
  * @brief Get JSON string with all exists system log records
@@ -242,7 +240,6 @@ void Log::CorrectTime() {
  *
  * @return if true last device boot was succesefull
  */
-
 bool Log::VerifyLastBoot() {
 	NVS *Memory = new NVS(NVSLogArea);
 
@@ -268,7 +265,6 @@ bool Log::VerifyLastBoot() {
  *
  * @param [in] LogItem Code of code to display
  */
-
 void Log::Indicator_t::Display(uint16_t LogItem) {
 
 	switch (LogItem) {
@@ -276,6 +272,9 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
 		case Events::WiFi::APStart			: Execute(255	, 255	, 0		, CONST		, 4);	break;
 		case Events::WiFi::STAConnecting	: Execute(0		, 255	, 0		, BLINKING	, 0);	break;
 		case Events::WiFi::STAGotIP			: Execute(0		, 255	, 0		, CONST		, 4);	break;
+		case Events::System::OTAStarted		: Execute(230	, 57 	, 155	, BLINKING	, 300);	break;
+		case Events::System::OTAFailed		:
+		case Events::System::OTAVerifyFailed: Execute(0		, 0 	, 0		, CONST		, 2);	break;
 
 		case Events::Commands::IRExecuted	:
 		case Events::Sensors ::IRReceived	:
