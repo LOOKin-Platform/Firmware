@@ -30,7 +30,7 @@ class NEC1 : public IRProto {
 			return false;
 		}
 
-		uint32_t GetData(vector<int32_t> RawData) override {
+		pair<uint32_t,uint16_t> GetData(vector<int32_t> RawData) override {
 			uint16_t 	Address = 0x0;
 			uint8_t		Command = 0x0;
 
@@ -40,7 +40,7 @@ class NEC1 : public IRProto {
 		    Data.erase(Data.begin());
 
 		    if (Data.size() == 16) { // repeat signal
-				return 0xFFFFFFFF;
+				return make_pair(0xFFFFFFFF,0x0);
 		    }
 
 		    for (uint8_t BlockId = 0; BlockId < 4; BlockId++) {
@@ -75,10 +75,10 @@ class NEC1 : public IRProto {
 				}
 		    }
 
-		    return (Address << 8) + Command;
+		    return make_pair((Address << 8) + Command, 0x0);
 		}
 
-		vector<int32_t> ConstructRaw(uint32_t Data) override {
+		vector<int32_t> ConstructRaw(uint32_t Data, uint16_t Misc) override {
 			uint16_t	 NECAddress = (uint16_t)((Data >> 8));
 			uint8_t 	 NECCommand = (uint8_t) ((Data << 24) >> 24);
 
@@ -118,7 +118,7 @@ class NEC1 : public IRProto {
 			return Raw;
 		}
 
-		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data) override {
+		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data, uint16_t Misc) override {
 			vector<int32_t> Result = vector<int32_t>();
 
 			Result.push_back(+9000);
@@ -129,8 +129,8 @@ class NEC1 : public IRProto {
 			return Result;
 		}
 
-		vector<int32_t> ConstructRawForSending(uint32_t data) {
-			return ConstructRaw(data);
+		vector<int32_t> ConstructRawForSending(uint32_t Data, uint16_t Misc) {
+			return ConstructRaw(Data, Misc);
 		}
 
 };

@@ -13,15 +13,15 @@
 
 class IRProto {
 	public:
-		uint8_t					ID 					= 0x00;
-		uint16_t				DefinedFrequency 	= 38500;
-		string 					Name 				= "";
-		virtual bool			IsProtocol(vector<int32_t>) 				{ return false; }
-		virtual uint32_t		GetData(vector<int32_t>)					{ return 0x00; 	}
-		virtual vector<int32_t> ConstructRaw(uint32_t Data) 				{ return vector<int32_t>(); }
+		uint8_t							ID 					= 0x00;
+		uint16_t						DefinedFrequency 	= 38500;
+		string 							Name 				= "";
+		virtual bool					IsProtocol(vector<int32_t>) 							{ return false; }
+		virtual pair<uint32_t,uint16_t>	GetData(vector<int32_t>)								{ return make_pair(0x0,0x0);}
+		virtual vector<int32_t> 		ConstructRaw(uint32_t Data, uint16_t Misc)				{ return vector<int32_t>(); }
 
-		virtual vector<int32_t> ConstructRawRepeatSignal(uint32_t Data) 	{ return vector<int32_t>(); }
-		virtual vector<int32_t> ConstructRawForSending(uint32_t Data)		{ return vector<int32_t>(); }
+		virtual vector<int32_t> 		ConstructRawRepeatSignal(uint32_t Data, uint16_t Misc)	{ return vector<int32_t>(); }
+		virtual vector<int32_t> 		ConstructRawForSending(uint32_t Data, uint16_t Misc)	{ return vector<int32_t>(); }
 
 		bool TestValue(int32_t Value, int32_t Reference) {
 			if (Converter::Sign(Value) != Converter::Sign(Reference))
@@ -37,5 +37,6 @@ class IRProto {
 #include "protocols/NEC1.cpp"
 #include "protocols/SONY_SIRC.cpp"
 #include "protocols/Samsung.cpp"
+#include "protocols/Panasonic.cpp"
 
 #endif

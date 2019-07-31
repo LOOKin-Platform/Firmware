@@ -13,6 +13,12 @@ static rmt_channel_t TXChannel = RMT_CHANNEL_4;
 
 class CommandIR_t : public Command_t {
 	public:
+		struct LastSignal_t {
+			uint8_t 	Protocol;
+			uint32_t 	Data;
+			uint16_t 	Misc;
+		};
+
 		CommandIR_t() {
 			ID          		= 0x07;
 			Name        		= "IR";
@@ -20,6 +26,7 @@ class CommandIR_t : public Command_t {
 			Events["nec1"]		= 0x01;
 			Events["sirc"]		= 0x03;
 			Events["samsung"]	= 0x04;
+			Events["panasonic"]	= 0x05;
 
 			Events["repeat"]	= 0xED;
 
@@ -31,12 +38,25 @@ class CommandIR_t : public Command_t {
 				RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
 		}
 
-		pair<uint8_t, uint32_t> LastSignal = make_pair(0x0,0x0);
+		LastSignal_t LastSignal;
 
 		bool Execute(uint8_t EventCode, string StringOperand) override {
-			uint32_t Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
+			uint16_t Misc 		= 0x0;
+			uint32_t Operand 	= 0x0;
 
-			ESP_LOGI("EventCode", "%d", EventCode);
+			if (StringOperand.size() > 8)
+			{
+				while (StringOperand.size() < 12)
+					StringOperand = "0" + StringOperand;
+
+				if (StringOperand.size() > 12)
+					StringOperand = StringOperand.substr(StringOperand.size() - 12);
+
+				Misc 	= Converter::UintFromHexString<uint16_t>(StringOperand.substr(0,4));
+				Operand = Converter::UintFromHexString<uint32_t>(StringOperand.substr(4,8));
+			}
+			else
+				Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
 			if (EventCode == 0xFF && Operand == 0)
 				return false;
@@ -45,12 +65,16 @@ class CommandIR_t : public Command_t {
 				IRLib IRSignal;
 				IRSignal.Protocol 	= EventCode;
 				IRSignal.Uint32Data = Operand;
+				IRSignal.MiscData	= Misc;
 
-				LastSignal.first 	= EventCode;
-				LastSignal.second 	= Operand;
+				LastSignal.Protocol = EventCode;
+				LastSignal.Data		= Operand;
+				LastSignal.Misc		= Misc;
+
+				if (Operand == 0x0 && Misc == 0x0)
+					return false;
 
 				RMT::TXSetItems(IRSignal.GetRawDataForSending());
-
 				TXSend(IRSignal.GetProtocolFrequency());
 				return true;
 			}
@@ -59,11 +83,12 @@ class CommandIR_t : public Command_t {
 				uint8_t ProtocolID = Converter::ToUint8(StringOperand);
 
 				if (ProtocolID == 0)
-					ProtocolID = LastSignal.first;
+					ProtocolID = LastSignal.Protocol;
 
 				IRLib IRSignal;
 				IRSignal.Protocol 	= ProtocolID;
-				IRSignal.Uint32Data = LastSignal.second;
+				IRSignal.Uint32Data = LastSignal.Data;
+				IRSignal.MiscData	= LastSignal.Misc;
 
 				vector<int32_t> RepeatedSignal = IRSignal.GetRawRepeatSignal();
 				if (RepeatedSignal.size() == 0)
@@ -93,8 +118,11 @@ class CommandIR_t : public Command_t {
 						if (DecodedValue.count("Protocol") > 0)
 							IRSignal.Protocol = (uint8_t)Converter::ToUint16(DecodedValue["Protocol"]);
 
-						LastSignal.first = IRSignal.Protocol;
-						LastSignal.second = IRSignal.Uint32Data;
+						LastSignal.Protocol 	= IRSignal.Protocol;
+						LastSignal.Data 		= IRSignal.Uint32Data;
+						LastSignal.Misc			= IRSignal.MiscData;
+
+						ESP_LOGI("ProntoHEX", "%s", IRSignal.GetProntoHex().c_str());
 
 						RMT::TXSetItems(IRSignal.GetRawDataForSending());
 						TXSend(IRSignal.Frequency);
@@ -114,8 +142,9 @@ class CommandIR_t : public Command_t {
 			if (EventCode == 0xF0) {
 				IRLib IRSignal(StringOperand);
 
-				LastSignal.first 	= IRSignal.Protocol;
-				LastSignal.second 	= IRSignal.Uint32Data;
+				LastSignal.Protocol	= IRSignal.Protocol;
+				LastSignal.Data 	= IRSignal.Uint32Data;
+				LastSignal.Misc		= IRSignal.MiscData;
 
 				RMT::TXSetItems(IRSignal.GetRawDataForSending());
 				TXSend(IRSignal.Frequency);
@@ -133,8 +162,9 @@ class CommandIR_t : public Command_t {
 
 				IRLib IRSignal(Converter::StringToVector(StringOperand, " "));
 
-				LastSignal.first 	= IRSignal.Protocol;
-				LastSignal.second 	= IRSignal.Uint32Data;
+				LastSignal.Protocol = IRSignal.Protocol;
+				LastSignal.Data 	= IRSignal.Uint32Data;
+				LastSignal.Misc		= IRSignal.MiscData;
 
 				RMT::TXClear();
 

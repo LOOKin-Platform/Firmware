@@ -22,7 +22,7 @@ class Samsung : public IRProto {
 			return false;
 		}
 
-		uint32_t GetData(vector<int32_t> RawData) override {
+		pair<uint32_t, uint16_t> GetData(vector<int32_t> RawData) override {
 			vector<int32_t> Data = RawData;
 			uint32_t Result = 0x0;
 
@@ -30,29 +30,29 @@ class Samsung : public IRProto {
 		    Data.erase(Data.begin());
 
 		    if (Data.size() < 10)
-		    	return 0xFFFFFFFF; // repeat signal
+		    	return make_pair(0xFFFFFFFF,0x0); // repeat signal
 
 		    if (Data.size() < 64)
-		    	return 0x00;
+		    	return make_pair(0x0, 0x0);
 
 		    for (int i=0; i<32; i++)
 		    {
 		    	if (!TestValue(Data.front(), 560))
-		    		return 0x00;
+			    	return make_pair(0x0, 0x0);
 
 			    Data.erase(Data.begin());
 
 				if      (TestValue(Data.front(), -1600)) 	Result = (Result << 1) | 1 ;
 				else if	(TestValue(Data.front(), -560))		Result = (Result << 1) | 0 ;
-				else return 0x00;
+				else return make_pair(0x0, 0x0);
 
 			    Data.erase(Data.begin());
 		    }
 
-		    return Result;
+		    return make_pair(Result, 0x0);
 		}
 
-		vector<int32_t> ConstructRaw(uint32_t Data) override {
+		vector<int32_t> ConstructRaw(uint32_t Data, uint16_t Misc) override {
 			vector<int32_t> Raw = vector<int32_t>();
 
 			Raw.push_back(+4500);
@@ -72,12 +72,12 @@ class Samsung : public IRProto {
 			return Raw;
 		}
 
-		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data) override {
-			return ConstructRaw(Data);
+		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data, uint16_t Misc) override {
+			return ConstructRaw(Data, Misc);
 		}
 
-		vector<int32_t> ConstructRawForSending(uint32_t Data) {
-			return ConstructRaw(Data);
+		vector<int32_t> ConstructRawForSending(uint32_t Data, uint16_t Misc) {
+			return ConstructRaw(Data, Misc);
 		}
 
 };

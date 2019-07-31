@@ -102,7 +102,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 			break;
 		}
 
-	ESP_LOGI("WiFiConnect", "SSID %s", SSID.c_str());
+	ESP_LOGI("WiFiConnect", "SSID: %s", SSID.c_str());
 
 	if (SSID != "" && Password == "")
 		return false;
@@ -112,7 +112,9 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 
 	if (SSID != "") // connect to specific WiFi SSID
 		for (auto &WiFiScannedItem : WiFiScannedList) {
+			ESP_LOGI("WiFiConnect", "%s %s", Converter::ToLower(WiFiScannedItem.getSSID()).c_str() , Converter::ToLower(SSID).c_str());
 			if (Converter::ToLower(WiFiScannedItem.getSSID()) == Converter::ToLower(SSID)) {
+				ESP_LOGI("WiFiConnect","!");
 				Log::Add(Log::Events::WiFi::STAConnecting);
 				WiFi.ConnectAP(WiFiScannedItem.getSSID(), Password, WiFiScannedItem.getChannel());
 

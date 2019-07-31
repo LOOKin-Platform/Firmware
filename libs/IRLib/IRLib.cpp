@@ -39,7 +39,8 @@ void IRLib::FillProtocols() {
 		Protocols = {
 				new NEC1(),
 				new SONY_SIRC(),
-				new Samsung()
+				new Samsung(),
+				new Panasonic(),
 		};
 }
 
@@ -48,10 +49,14 @@ void IRLib::LoadDataFromRaw() {
 
 	this->Protocol 		= 0xFF;
 	this->Uint32Data 	= 0x0;
+	this->MiscData		= 0x0;
 
 	if (Protocol != nullptr) {
 		this->Protocol 	= Protocol->ID;
-		this->Uint32Data= Protocol->GetData(RawData);
+
+		pair<uint32_t, uint16_t> Result = Protocol->GetData(RawData);
+		this->Uint32Data= Result.first;
+		this->MiscData	= Result.second;
 	}
 }
 
@@ -59,7 +64,7 @@ void IRLib::FillRawData() {
 	IRProto *Proto = GetProtocolByID(this->Protocol);
 
 	if (Proto != nullptr)
-		this->RawData = Proto->ConstructRaw(this->Uint32Data);
+		this->RawData = Proto->ConstructRaw(this->Uint32Data, this->MiscData);
 	else
 		this->RawData = vector<int32_t>();
 }
@@ -83,7 +88,7 @@ vector<int32_t> IRLib::GetRawDataForSending() {
 	vector<int32_t> Result = vector<int32_t>();
 
 	if (Proto != nullptr)
-		Result = Proto->ConstructRawForSending(this->Uint32Data);
+		Result = Proto->ConstructRawForSending(this->Uint32Data, this->MiscData);
 
 	return (Result.size() > 0) ? Result : this->RawData;
 }
@@ -94,7 +99,7 @@ vector<int32_t> IRLib::GetRawRepeatSignal() {
 	vector<int32_t> Result = vector<int32_t>();
 
 	if (Proto != nullptr)
-		Result = Proto->ConstructRawRepeatSignal(this->Uint32Data);
+		Result = Proto->ConstructRawRepeatSignal(this->Uint32Data, this->MiscData);
 
 	return (Result.size() > 0) ? Result : vector<int32_t>();
 }

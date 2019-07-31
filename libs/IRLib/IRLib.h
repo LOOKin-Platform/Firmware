@@ -18,9 +18,11 @@ using namespace std;
 
 class IRLib {
 	public:
-		uint8_t 		Protocol 	= 0xFF;
-		uint16_t 		Frequency 	= 38000;
-		uint32_t 		Uint32Data 	= 0;
+		uint8_t			Protocol	= 0xFF;
+		uint16_t		Frequency	= 38000;
+		uint32_t		Uint32Data	= 0;
+		uint16_t		MiscData	= 0;
+
 		vector<int32_t> RawData 	= vector<int32_t>();
 
 		IRLib(string ProntoHex);

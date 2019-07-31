@@ -72,15 +72,15 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 
 			JSONObject.SetItems(vector<pair<string,string>> ({
 				make_pair("Type"		, TypeToString()),
-						make_pair("Status"			, StatusToString()),
-						make_pair("ID"				, IDToString()),
-						make_pair("Name"			, NameToString()),
-						make_pair("Time"			, Time::UnixtimeString()),
-						make_pair("Timezone"		, Time::TimezoneStr()),
-						make_pair("PowerMode"		, PowerModeToString()),
-						make_pair("CurrentVoltage"	, CurrentVoltageToString()),
-						make_pair("Firmware"		, FirmwareVersionToString()),
-						make_pair("Temperature"		, TemperatureToString())
+				make_pair("Status"			, StatusToString()),
+				make_pair("ID"				, IDToString()),
+				make_pair("Name"			, NameToString()),
+				make_pair("Time"			, Time::UnixtimeString()),
+				make_pair("Timezone"		, Time::TimezoneStr()),
+				make_pair("PowerMode"		, PowerModeToString()),
+				make_pair("CurrentVoltage"	, CurrentVoltageToString()),
+				make_pair("Firmware"		, FirmwareVersionToString()),
+				make_pair("Temperature"		, TemperatureToString())
 			}));
 
 			if (Device.Type.Hex == Settings.Devices.Remote)
@@ -101,6 +101,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			if (URLParts[0] == "currentvoltage")Result.Body = CurrentVoltageToString();
 			if (URLParts[0] == "firmware")		Result.Body = FirmwareVersionToString();
 			if (URLParts[0] == "temperature")	Result.Body = TemperatureToString();
+			if (URLParts[0] == "restart")		esp_restart();
 
 			if (URLParts[0] == "sensormode" && Device.Type.Hex == Settings.Devices.Remote)
 				Result.Body = SensorModeToString();
@@ -262,11 +263,13 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 		return false;
 	}
 
+	/*
 	if (WiFi_t::GetMode() != WIFI_MODE_STA_STR) {
 		Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
 		Response.Body = "{\"success\" : \"false\" , \"Error\": \"Device is not connected to the Internet\"}";
 		return false;
 	}
+	*/
 
 	string OTAUrl = Params["firmware"];
 

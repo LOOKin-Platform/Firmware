@@ -62,10 +62,10 @@ class WebServer_t {
 		void UDPSendBroacastFromQueue();
 		void UDPSendBroadcastQueueAdd(string Message);
 
-		static string 	SetupPage;
+		static string 		SetupPage;
 		string GetSetupPage();
 
-		static bool UDPServerStopFlag;
+		static bool 		UDPServerStopFlag;
 		static TaskHandle_t	UDPListenerTaskHandle;
 
 		static void 	SetHeaders(WebServer_t::Response &, httpd_req_t *);
@@ -74,11 +74,9 @@ class WebServer_t {
 	    static QueueHandle_t UDPBroadcastQueue;
 	    static httpd_handle_t HTTPServerHandle;
 
-
 		static string	UDPAliveBody();
 		static string	UDPDiscoverBody(string ID = "");
 		static string	UDPUpdatedBody(uint8_t SensorID, string Value);
-
 
 		static void		UDPListenerTask(void *);
 };

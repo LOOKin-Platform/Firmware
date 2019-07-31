@@ -58,7 +58,10 @@ esp_err_t OTA::PerformUpdate(string URL) {
         .url = URL.c_str()
     };
 
+    Log::Add(Log::Events::System::OTAStarted);
+
     esp_err_t ret = esp_https_ota(&config);
+
     if (ret == ESP_OK) {
     	Log::Add(Log::Events::System::OTASucceed);
         esp_restart();

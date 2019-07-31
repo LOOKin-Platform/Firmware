@@ -30,8 +30,7 @@ WebServer_t::WebServer_t() {
 	UDPListenerTaskHandle   = NULL;
 }
 
-esp_err_t WebServer_t::GETHandler(httpd_req_t *Request)
-{
+esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
 
 	string QueryString = "GET " + string(Request->uri) + " ";
@@ -328,7 +327,6 @@ void WebServer_t::UDPListenerTask(void *data) {
 		}
 	} while(err == ERR_OK && !UDPServerStopFlag);
 
-	netbuf_delete(UDPInBuffer);
 	netconn_close(UDPConnection);
 	netconn_delete(UDPConnection);
 

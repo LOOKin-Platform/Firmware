@@ -22,13 +22,13 @@ class SONY_SIRC : public IRProto {
 			return false;
 		}
 
-		uint32_t GetData(vector<int32_t> RawData) override {
+		pair<uint32_t,uint16_t> GetData(vector<int32_t> RawData) override {
 			uint8_t 	Command 	= 0x00;
 			uint8_t		Device 		= 0x00;
 			uint8_t		Extended 	= 0x00;
 
 		    if (RawData.size() < 13*2)
-		    	return 0x00;
+		    	return make_pair(0x0, 0x0);
 
 		    uint32_t	Result = 0x0;
 
@@ -72,8 +72,6 @@ class SONY_SIRC : public IRProto {
 			}
 			else if (Data.size() >= 15*2)
 			{
-				ESP_LOGI("!","4");
-
 	    		bitset<5> DeviceBlock;
 
 				for (int i=0; i < 8; i++)
@@ -93,10 +91,10 @@ class SONY_SIRC : public IRProto {
 				Result += Extended;
 			}
 
-			return Result;
+			return make_pair(Result, 0x0);
 		}
 
-		vector<int32_t> ConstructRaw(uint32_t Data) override {
+		vector<int32_t> ConstructRaw(uint32_t Data, uint16_t Misc) override {
 			uint8_t 	Command 	= 0x00;
 			uint8_t		Device 		= 0x00;
 			uint8_t		Extended 	= 0x00;
@@ -157,14 +155,14 @@ class SONY_SIRC : public IRProto {
 			return Raw;
 		}
 
-		vector<int32_t> ConstructRawForSending(uint32_t Data) {
-			vector<int32_t> Result = ConstructRaw(Data);
+		vector<int32_t> ConstructRawForSending(uint32_t Data, uint16_t Misc) {
+			vector<int32_t> Result = ConstructRaw(Data, Misc);
 			Result.insert(Result.end(), Result.begin(), Result.end());
 
 			return Result;
 		}
 
-		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data) override {
-			return ConstructRaw(Data);
+		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data, uint16_t Misc) override {
+			return ConstructRaw(Data, Misc);
 		}
 };

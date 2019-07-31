@@ -16,7 +16,10 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 			Sensors = { new SensorSwitch_t(), new SensorColor_t() };
 			break;
 		case Settings.Devices.Remote:
-			Sensors = { new SensorIR_t() , new SensorTemperature_t() };
+			if (Settings.eFuse.Revision == 1 || Settings.eFuse.DeviceID == 0x00000002)
+				Sensors = { new SensorIR_t(), new SensorTemperature_t() };
+			else
+				Sensors = { new SensorIR_t() };
 			break;
 		case Settings.Devices.Motion:
 			Sensors = { new SensorMotion_t() };
@@ -74,7 +77,6 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 		}
 
 		if (Sensor->Values.size() > 0) {
-
 			JSON JSONObject;
 
 			JSONObject.SetItems(vector<pair<string,string>>({
