@@ -46,14 +46,16 @@ class CommandIR_t : public Command_t {
 
 			if (StringOperand.size() > 8)
 			{
-				while (StringOperand.size() < 12)
-					StringOperand = "0" + StringOperand;
+				string ConverterOperand = StringOperand;
 
-				if (StringOperand.size() > 12)
-					StringOperand = StringOperand.substr(StringOperand.size() - 12);
+				while (ConverterOperand.size() < 12)
+					ConverterOperand = "0" + ConverterOperand;
 
-				Misc 	= Converter::UintFromHexString<uint16_t>(StringOperand.substr(0,4));
-				Operand = Converter::UintFromHexString<uint32_t>(StringOperand.substr(4,8));
+				if (ConverterOperand.size() > 12)
+					ConverterOperand = ConverterOperand.substr(ConverterOperand.size() - 12);
+
+				Misc 	= Converter::UintFromHexString<uint16_t>(ConverterOperand.substr(0,4));
+				Operand = Converter::UintFromHexString<uint32_t>(ConverterOperand.substr(4,8));
 			}
 			else
 				Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
