@@ -40,21 +40,21 @@ class Panasonic : public IRProto {
 		    if (Data.size() < 97)
 		    	return make_pair(0x0,0x0);
 
-		    for (int i=0; i<32; i++)
+		    for (int i=0; i<16; i++)
 		    {
 		    	if (!TestValue(Data.front(), PANASONIC_BIT_MARK))
 			    	return make_pair(0x0,0x0);
 
 			    Data.erase(Data.begin());
 
-				if      (TestValue(Data.front(), -PANASONIC_ONE_SPACE)) 	Misc = (Result << 1) | 1 ;
-				else if	(TestValue(Data.front(), -PANASONIC_ZERO_SPACE))	Misc = (Result << 1) | 0 ;
+				if      (TestValue(Data.front(), -PANASONIC_ONE_SPACE)) 	Misc = (Misc << 1) | 1 ;
+				else if	(TestValue(Data.front(), -PANASONIC_ZERO_SPACE))	Misc = (Misc << 1) | 0 ;
 				else return make_pair(0x0,0x0);
 
 			    Data.erase(Data.begin());
 		    }
 
-		    for (int i=0; i<64; i++)
+		    for (int i=0; i<32; i++)
 		    {
 		    	if (!TestValue(Data.front(), PANASONIC_BIT_MARK))
 			    	return make_pair(0x0,0x0);
