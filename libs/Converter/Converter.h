@@ -87,5 +87,7 @@ class Converter {
 		static const char* 		ErrorToString(esp_err_t errCode);
 
 		static uint16_t			VoltageFromADC(uint16_t Value, uint8_t R1, uint8_t R2);
+
+		static bool				StartsWith(string &Src, string WhatToFind);
 };
 #endif

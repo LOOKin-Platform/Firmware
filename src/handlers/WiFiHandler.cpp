@@ -189,6 +189,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			Log::Add(Log::Events::WiFi::STADisconnected);
 
 			WebServer.Stop();
+			MQTT.Stop();
 
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;
@@ -208,7 +209,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось
 			if (DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
 			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
-				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL 		||
+				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL		||
 				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
 				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
 			}
@@ -277,6 +278,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			IsConnectedBefore = true;
 
 			Time::ServerSync(Settings.TimeSync.APIUrl);
+
+			MQTT.Start();
 
 			return ESP_OK;
 		}

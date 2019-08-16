@@ -42,7 +42,7 @@ void Query_t::FillParams(string &Query) {
 	Pos = Query.find(" ");
 
 	if (Pos == string::npos)
-		return;
+		Pos = Query.length();
 
 	vector<string> QueryParts = Converter::StringToVector(Query.substr(0, Pos), "?");
 

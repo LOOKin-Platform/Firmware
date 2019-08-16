@@ -34,17 +34,13 @@ class OTA {
 		static void 				Update(string URL, OTAStarted Started = NULL, OTAFileDoesntExist FileDoesntExist = NULL);
 		static esp_err_t			PerformUpdate(string URL);
 
+		static void 				Rollback();
+
 		// HTTP OTA Callbacks
 		static void 				ReadStarted		(char [] = '\0');
 		static bool 				ReadBody		(char Data[], int DataLen, char[] = '\0');
 		static void 				ReadFinished	(char [] = '\0');
 		static void 				Aborted			(char [] = '\0');
-
-		// HTTP File Exist Callbacks
-		static bool 				FEReadBody		(char Data[], int DataLen, char[] = '\0');
-		static void 				FEAborted		(char [] = '\0');
-
-		static void 				Rollback();
 
 		static uint8_t				Attempts;
 		static bool					IsOTAFileExist;

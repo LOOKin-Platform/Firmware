@@ -394,3 +394,12 @@ void WebServer_t::Response::Clear() {
 	ResponseCode = OK;
 	ContentType = JSON;
 }
+
+uint16_t WebServer_t::Response::CodeToInt() {
+	switch (ResponseCode) {
+		case Response::CODE::INVALID  	: return 400; break;
+		case Response::CODE::ERROR    	: return 500; break;
+		default							: return 200; break;
+	}
+}
+

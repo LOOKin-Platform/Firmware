@@ -28,24 +28,6 @@ void OTA::Update(string URL, OTAStarted Started, OTAFileDoesntExist FileDoesntEx
 
 	IsOTAFileExist			= false;
 	IsFileCheckEnded		= false;
-
-	/*
-	HTTPClient::Query(URL, Settings.OTA.ServerPort, QueryType::GET, true, NULL, OTA::FEReadBody, NULL, FEAborted);
-
-	while (!IsFileCheckEnded) {
-		FreeRTOS::Sleep(500);
-	}
-
-	if (!IsOTAFileExist) {
-		if (FileDoesntExist != NULL)
-			FileDoesntExist();
-
-		return;
-	}
-
-	if (Started != NULL)
-		Started();
-*/
 	Started();
 
 	PerformUpdate(URL);
@@ -79,6 +61,43 @@ esp_err_t OTA::PerformUpdate(string URL) {
     }
 
     return ESP_OK;
+}
+
+void OTA::Rollback() {
+	esp_partition_t RollbackPartition;
+
+	const esp_partition_t *esp_current_partition = esp_ota_get_boot_partition();
+	if (esp_current_partition->type != ESP_PARTITION_TYPE_APP) {
+		ESP_LOGE(tag, "Can't find partition to rollback");
+		return;
+	}
+
+	esp_partition_t find_partition;
+	memset(&RollbackPartition, 0, sizeof(esp_partition_t));
+
+	// На какую партицию должен быть осуществлен сброс
+	switch (esp_current_partition->subtype) {
+		case ESP_PARTITION_SUBTYPE_APP_OTA_0:
+			find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_1;
+    		break;
+    case ESP_PARTITION_SUBTYPE_APP_OTA_1:
+    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_0;
+    		break;
+    default:
+    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_FACTORY;
+    		break;
+	}
+
+	find_partition.type = ESP_PARTITION_TYPE_APP;
+
+	const esp_partition_t *partition = esp_partition_find_first(find_partition.type, find_partition.subtype, NULL);
+	assert(partition != NULL);
+	memset(&RollbackPartition, 0, sizeof(esp_partition_t));
+
+	esp_err_t err = esp_ota_set_boot_partition(&RollbackPartition);
+
+	if (err == ESP_OK)
+		esp_restart();
 }
 
 void OTA::ReadStarted(char IP[]) {
@@ -166,57 +185,4 @@ void OTA::ReadFinished(char IP[]) {
 
 void OTA::Aborted(char IP[]) {
 	Device.Status = DeviceStatus::RUNNING;
-}
-
-
-bool OTA::FEReadBody(char Data[], int DataLen, char IP[]) {
-	IsOTAFileExist		= (DataLen <= 300) ? false : true;
-	IsFileCheckEnded	= true;
-
-	ESP_LOGI(tag, "FEReadBody");
-
-	return false;
-}
-
-void OTA::FEAborted(char IP[]) {
-	IsFileCheckEnded 	= true;
-
-	ESP_LOGI(tag, "FEAborted");
-}
-
-void OTA::Rollback() {
-	esp_partition_t RollbackPartition;
-
-	const esp_partition_t *esp_current_partition = esp_ota_get_boot_partition();
-	if (esp_current_partition->type != ESP_PARTITION_TYPE_APP) {
-		ESP_LOGE(tag, "Can't find partition to rollback");
-		return;
-	}
-
-	esp_partition_t find_partition;
-	memset(&RollbackPartition, 0, sizeof(esp_partition_t));
-
-	// На какую партицию должен быть осуществлен сброс
-	switch (esp_current_partition->subtype) {
-		case ESP_PARTITION_SUBTYPE_APP_OTA_0:
-			find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_1;
-    		break;
-    case ESP_PARTITION_SUBTYPE_APP_OTA_1:
-    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_0;
-    		break;
-    default:
-    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_FACTORY;
-    		break;
-	}
-
-	find_partition.type = ESP_PARTITION_TYPE_APP;
-
-	const esp_partition_t *partition = esp_partition_find_first(find_partition.type, find_partition.subtype, NULL);
-	assert(partition != NULL);
-	memset(&RollbackPartition, 0, sizeof(esp_partition_t));
-
-	esp_err_t err = esp_ota_set_boot_partition(&RollbackPartition);
-
-	if (err == ESP_OK)
-		esp_restart();
 }

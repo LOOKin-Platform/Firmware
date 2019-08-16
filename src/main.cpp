@@ -45,6 +45,8 @@ Wireless_t			Wireless;
 vector<Sensor_t*>	Sensors;
 vector<Command_t*>	Commands;
 
+MQTT_t				MQTT;
+
 static char tag[] = "Main";
 
 void app_main(void) {
@@ -78,6 +80,7 @@ void app_main(void) {
 	Device.Init();
 	Network.Init();
 	Automation.Init();
+	MQTT.Init();
 
 	// Remote temporary hack
 	GPIO::Setup(GPIO_NUM_22);

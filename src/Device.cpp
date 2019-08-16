@@ -71,7 +71,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			JSON JSONObject;
 
 			JSONObject.SetItems(vector<pair<string,string>> ({
-				make_pair("Type"		, TypeToString()),
+				make_pair("Type"			, TypeToString()),
 				make_pair("Status"			, StatusToString()),
 				make_pair("ID"				, IDToString()),
 				make_pair("Name"			, NameToString()),

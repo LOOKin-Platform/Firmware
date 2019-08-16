@@ -339,13 +339,9 @@ uint16_t Converter::CRC16(vector<uint8_t> &Data, uint16_t Start, uint16_t Length
 }
 
 /**
-
  * @brief Convert an ESP error code to a string.
-
  * @param [in] errCode The errCode to be converted.
-
  * @return A string representation of the error code.
-
  */
 
 const char* Converter::ErrorToString(esp_err_t errCode) {
@@ -364,4 +360,19 @@ uint16_t Converter::VoltageFromADC(uint16_t Value, uint8_t R1, uint8_t R2) {
 
 	return Value;
 }
+
+/**
+ * @brief Check is one string starts with another
+ * @param [in] Src String where to find
+ * @param [in] WhatToFind what to find
+ * @return true if starts and false in else cases
+ */
+
+bool Converter::StartsWith(string &Src, string WhatToFind) {
+	if (WhatToFind.length() > Src.length())
+		return false;
+
+	return (Src.rfind(WhatToFind, 0) == 0);
+}
+
 

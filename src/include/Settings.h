@@ -78,6 +78,17 @@ class Settings_t {
         	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_N0;//ESP_PWR_LVL_N3;
 		} Bluetooth;
 
+		struct MQTT_t {
+			const string 					ServerHost				= "mqtt://mqtt.look-in.club";
+			const uint32_t					ServerPort				= 1883;
+			const uint8_t					MaxConnectionTries		= 3;
+
+			const uint8_t					DefaultQOS				= 2;
+			const uint8_t					DefaultRetain			= 0;
+
+			const string					DeviceTopicPrefix		= "/devices/";
+		} MQTT;
+
 		struct Wireless_t {
 			map<uint8_t, pair<uint16_t,uint16_t>> AliveIntervals = {
 				{ 0x8, { 294, 6 }}

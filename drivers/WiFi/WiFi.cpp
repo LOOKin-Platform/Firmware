@@ -302,7 +302,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
  * @returns ESP_OK if successfully receives a SYSTEM_EVENT_STA_GOT_IP event.  Otherwise returns wifi_err_reason_t - use GeneralUtils::wifiErrorToString(uint8_t errCode) to print the error.
  */
 uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, const uint8_t& Channel, bool WaitForConnection) {
-	ESP_LOGD(tag, ">> connectAP: %s %s", SSID.c_str(), Password.c_str());
+	ESP_LOGD(tag, "Connecting to AP: %s %s", SSID.c_str(), Password.c_str());
 
 	m_WiFiNetworkSwitch = false;
 	IsIPCheckSuccess = false;
@@ -345,8 +345,10 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	::memcpy(sta_config.sta.ssid, SSID.data(), SSID.size());
 	::memcpy(sta_config.sta.password, Password.data(), Password.size());
 
-	sta_config.sta.scan_method = WIFI_FAST_SCAN;
+	sta_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
 	sta_config.sta.bssid_set = 0;
+	sta_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+	sta_config.sta.listen_interval = 10;
 
 	if (Channel > 0)
 		sta_config.sta.channel = Channel;
@@ -366,7 +368,6 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		abort();
 	}
 
-	ESP_LOGD(tag, "<< connectAP");
 	return m_apConnectionStatus;  // Return ESP_OK if we are now connected and wifi_err_reason_t if not.
 } // connectAP
 

@@ -42,6 +42,8 @@ class WebServer_t {
 				void		SetInvalid();
 
 				void 		Clear();
+
+				uint16_t	CodeToInt();
 		};
 
 		WebServer_t();
@@ -70,13 +72,13 @@ class WebServer_t {
 
 		static void 	SetHeaders(WebServer_t::Response &, httpd_req_t *);
 
-	private:
-	    static QueueHandle_t UDPBroadcastQueue;
-	    static httpd_handle_t HTTPServerHandle;
-
 		static string	UDPAliveBody();
 		static string	UDPDiscoverBody(string ID = "");
 		static string	UDPUpdatedBody(uint8_t SensorID, string Value);
+
+	private:
+	    static QueueHandle_t UDPBroadcastQueue;
+	    static httpd_handle_t HTTPServerHandle;
 
 		static void		UDPListenerTask(void *);
 };

@@ -19,6 +19,7 @@
 #include "BLEServer.h"
 #include "BLEClient.h"
 #include "Wireless.h"
+#include "MQTT.h"
 
 #include "Settings.h"
 
@@ -40,5 +41,6 @@ extern BLEClient_t				BLEClient;
 #endif /* Bluetooth enabled */
 
 extern Wireless_t				Wireless;
+extern MQTT_t					MQTT;
 
 #endif
