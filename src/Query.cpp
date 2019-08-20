@@ -79,8 +79,15 @@ void Query_t::FillParams(string &Query) {
 		Pos = Query.rfind("\r\n");
 
 		if (Pos != string::npos) {
-			Query = Query.substr(Pos+1);
+			Query = Query.substr(Pos+2);
 			Converter::StringMove(RequestBody, Query);
+		}
+		else {
+			Pos = Query.rfind('\n');
+			if (Pos != string::npos) {
+				Query = Query.substr(Pos+1);
+				Converter::StringMove(RequestBody, Query);
+			}
 		}
 
 		if (RequestBody.size() > 2) {

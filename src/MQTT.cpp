@@ -28,35 +28,29 @@ void MQTT_t::Init() {
 	Username = Memory.GetString(NVSMQTTClientID);
 	Password = Memory.GetString(NVSMQTTClientSecret);
 
-	MQTT.SetCredentials("8qjY2WinkdepHKl1uzV7tNBOfvb4UFAM", "pElOGx6LWCPuUDFiYKcdJXswz04rkaqA");
+	//MQTT.SetCredentials("8qjY2WinkdepHKl1uzV7tNBOfvb4UFAM", "pElOGx6LWCPuUDFiYKcdJXswz04rkaqA");
 }
 
 void MQTT_t::Start() {
-	if (TaskHandle == NULL)
+	if (TaskHandle == NULL && Username != "")
 		TaskHandle = FreeRTOS::StartTask(MQTTTask, "MQTTTask", nullptr, 6144);
 }
 
 void MQTT_t::Stop() {
-	ESP_LOGI(TAG,"1");
 	if (ClientHandle != NULL) {
-		ESP_LOGI(TAG,"2");
 
 		::esp_mqtt_client_destroy(ClientHandle);
-		ESP_LOGI(TAG,"3");
-
 		ConnectionTries = 0;
-		ESP_LOGI(TAG,"4");
 
 		if (TaskHandle != NULL)
 			FreeRTOS::DeleteTask(TaskHandle);
 
-		ESP_LOGI(TAG,"5");
 		ClientHandle 	= NULL;
 		TaskHandle 		= NULL;
 
 		if (Status == CONNECTED)
 			Status = UNACTIVE;
-		ESP_LOGI(TAG,"6");
+
 	    ESP_LOGI(TAG,"MQTT Stopped");
 	}
 }
@@ -66,9 +60,6 @@ void MQTT_t::SetCredentials(string Username, string Password) {
 	this->Password 		= Password;
 
 	NVS Memory(NVSMQTTArea);
-
-	Memory.SetString(NVSMQTTClientID, Username);
-	Memory.SetString(NVSMQTTClientSecret, Password);
 }
 
 
@@ -120,6 +111,11 @@ esp_err_t MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
         {
             ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
 
+            if (Status == CONNECTED && ClientHandle != NULL) {
+            	Status = ERROR;
+				esp_mqtt_client_start(MQTT_t::ClientHandle);
+            }
+
         	ConnectionTries++;
 
         	if (ConnectionTries >= Settings.MQTT.MaxConnectionTries) {
@@ -157,7 +153,7 @@ esp_err_t MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 			string Topic	(event->topic, event->topic_len);
 			string Payload	(event->data, event->data_len);
 
-			ESP_LOGI(TAG, "Payload: %s, msg_id: %d, msg_id: %d", Payload.c_str(), event->msg_id, msg_id);
+			ESP_LOGI(TAG, "Payload: %s, msg_id: %d", Payload.c_str(), event->msg_id);
 
 			if (Topic == DeviceTopic + "/UDP")
 			{
@@ -193,6 +189,9 @@ esp_err_t MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 }
 
 int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retain) {
+	if (Status != CONNECTED)
+		return -1;
+
 	if (Topic == "")
 		Topic = Settings.MQTT.DeviceTopicPrefix + Device.IDToString();
 
