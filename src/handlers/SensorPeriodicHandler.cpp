@@ -8,7 +8,7 @@ class SensorPeriodicHandler {
 		static void Pool();
 };
 
-void SensorPeriodicHandler::Pool() {
+void IRAM_ATTR SensorPeriodicHandler::Pool() {
 	if (Time::Uptime() %10 == 0) {
 		for (auto& Sensor : Sensors)
 			Sensor->Pool();

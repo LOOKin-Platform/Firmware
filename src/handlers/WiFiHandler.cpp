@@ -48,7 +48,7 @@ void WiFiUptimeHandler::Start() {
 	}
 }
 
-void WiFiUptimeHandler::Pool() {
+void IRAM_ATTR WiFiUptimeHandler::Pool() {
 	if (Device.PowerMode == DevicePowerMode::CONST ||
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
@@ -103,7 +103,7 @@ void WiFiUptimeHandler::Pool() {
 	}
 }
 
-esp_err_t pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
+esp_err_t IRAM_ATTR pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
 	if (pf->recv_count > 0) {
 		IsIPCheckSuccess = true;
 		IsCorrectIPData.Give();

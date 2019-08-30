@@ -11,7 +11,6 @@
 static char tag[] = "BLEClient";
 
 BLEClient_t::BLEClient_t() {
-	BluetoothClientTaskHandle = NULL;
 }
 
 class MyClientCallback: public BLEClientCallbacks {

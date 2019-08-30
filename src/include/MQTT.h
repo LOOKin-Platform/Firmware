@@ -10,6 +10,7 @@
 using namespace std;
 
 #include "mqtt_client.h"
+
 #include "FreeRTOSWrapper.h"
 
 #include <string>
@@ -43,10 +44,11 @@ class MQTT_t {
 		static string		Password;
 
 		static esp_mqtt_client_handle_t ClientHandle;
-		static TaskHandle_t TaskHandle;
 
 		static Status_t		Status;
 		static uint8_t		ConnectionTries;
+
+		esp_mqtt_client_config_t ConfigDefault();
 };
 
 

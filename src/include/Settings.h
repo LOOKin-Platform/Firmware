@@ -79,8 +79,7 @@ class Settings_t {
 		} Bluetooth;
 
 		struct MQTT_t {
-			const string 					ServerHost				= "mqtt://mqtt.look-in.club";
-			const uint32_t					ServerPort				= 1883;
+			const string 					ServerHost				= "mqtts://mqtt.look-in.club:8883";
 			const uint8_t					MaxConnectionTries		= 3;
 
 			const uint8_t					DefaultQOS				= 2;

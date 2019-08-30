@@ -14,7 +14,7 @@ static char tag[] = "SPIFlash";
  * @param[out] Result of operation
  *
  */
-esp_err_t SPIFlash::EraseSector(uint32_t Sector) {
+esp_err_t IRAM_ATTR SPIFlash::EraseSector(uint32_t Sector) {
 	return spi_flash_erase_sector(Sector);
 }
 

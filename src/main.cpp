@@ -47,7 +47,7 @@ vector<Command_t*>	Commands;
 
 MQTT_t				MQTT;
 
-static char tag[] = "Main";
+const char tag[] = "Main";
 
 void app_main(void) {
 	NVS::Init();

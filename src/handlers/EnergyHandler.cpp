@@ -20,7 +20,7 @@ void EnergyPeriodicHandler::Init() {
     IsInited = true;
 }
 
-void EnergyPeriodicHandler::Pool() {
+void IRAM_ATTR EnergyPeriodicHandler::Pool() {
 	if (!IsInited)
 		Init();
 

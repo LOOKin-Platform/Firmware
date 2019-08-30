@@ -16,7 +16,6 @@ MQTT_t::Status_t 	MQTT_t::Status			= MQTT_t::Status_t::UNACTIVE;
 uint8_t				MQTT_t::ConnectionTries	= 0;
 
 esp_mqtt_client_handle_t MQTT_t::ClientHandle = NULL;
-TaskHandle_t MQTT_t::TaskHandle = NULL;
 
 MQTT_t::MQTT_t(string Username, string Password) {
 	SetCredentials	(Username, Password);
@@ -28,12 +27,29 @@ void MQTT_t::Init() {
 	Username = Memory.GetString(NVSMQTTClientID);
 	Password = Memory.GetString(NVSMQTTClientSecret);
 
-	//MQTT.SetCredentials("8qjY2WinkdepHKl1uzV7tNBOfvb4UFAM", "pElOGx6LWCPuUDFiYKcdJXswz04rkaqA");
+	//MQTT.SetCredentials("QgWyNcr8wHuLK39UVbZA2CkItzhnX45F", "2PSO1F7YCNL6rGs9WUygezhM0vfVRuBo");
 }
 
 void MQTT_t::Start() {
-	if (TaskHandle == NULL && Username != "")
-		TaskHandle = FreeRTOS::StartTask(MQTTTask, "MQTTTask", nullptr, 6144);
+	if (Username != "") {
+		ESP_LOGI("MQTT Started","RAM left %d", esp_get_free_heap_size());
+
+	    esp_mqtt_client_config_t mqtt_cfg = ConfigDefault();
+	    mqtt_cfg.uri 			= "mqtts://mqtt.look-in.club:8883";//Settings.MQTT.ServerHost.c_str();
+	    mqtt_cfg.event_handle 	= mqtt_event_handler;
+	    mqtt_cfg.transport 		= MQTT_TRANSPORT_OVER_SSL;
+
+	    mqtt_cfg.username		= "QgWyNcr8wHuLK39UVbZA2CkItzhnX45F";//Username.c_str();
+	    mqtt_cfg.password		= "2PSO1F7YCNL6rGs9WUygezhM0vfVRuBo";
+	    mqtt_cfg.client_id		= "QgWyNcr8wHuLK39UVbZA2CkItzhnX45F";
+
+	    MQTT_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
+
+	    if (ClientHandle != NULL)
+			esp_mqtt_client_start(MQTT_t::ClientHandle);
+	    else
+			ESP_LOGE(TAG, "esp_mqtt_client_init failed");
+	}
 }
 
 void MQTT_t::Stop() {
@@ -42,11 +58,7 @@ void MQTT_t::Stop() {
 		::esp_mqtt_client_destroy(ClientHandle);
 		ConnectionTries = 0;
 
-		if (TaskHandle != NULL)
-			FreeRTOS::DeleteTask(TaskHandle);
-
 		ClientHandle 	= NULL;
-		TaskHandle 		= NULL;
 
 		if (Status == CONNECTED)
 			Status = UNACTIVE;
@@ -62,31 +74,7 @@ void MQTT_t::SetCredentials(string Username, string Password) {
 	NVS Memory(NVSMQTTArea);
 }
 
-
-void MQTT_t::MQTTTask(void *TaskData) {
-    esp_mqtt_client_config_t mqtt_cfg;
-    mqtt_cfg.uri 			= Settings.MQTT.ServerHost.c_str();
-    mqtt_cfg.port			= Settings.MQTT.ServerPort;
-    mqtt_cfg.lwt_topic		= "";
-    mqtt_cfg.event_handle 	= mqtt_event_handler;
-    mqtt_cfg.username		= Username.c_str();
-    mqtt_cfg.password		= Password.c_str();
-
-    MQTT_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
-
-    if (ClientHandle != NULL)
-		esp_mqtt_client_start(MQTT_t::ClientHandle);
-    else
-		ESP_LOGE(TAG, "esp_mqtt_client_init failed");
-
-    ESP_LOGI(TAG,"MQTT Started");
-
-	while(1) {
-		FreeRTOS::Sleep(1000);
-	}
-}
-
-esp_err_t MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
+esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id = 0;
     string DeviceTopic = Settings.MQTT.DeviceTopicPrefix + Device.IDToString();
@@ -103,7 +91,7 @@ esp_err_t MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 			msg_id = esp_mqtt_client_subscribe(client, DeviceTopic.c_str(), Settings.MQTT.DefaultQOS);
 			msg_id = esp_mqtt_client_subscribe(client, string(DeviceTopic + "/UDP").c_str(), Settings.MQTT.DefaultQOS);
 
-			msg_id = SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
+			//msg_id = SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
 			break;
 		}
 
@@ -134,7 +122,7 @@ esp_err_t MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
             int msg_id = event->msg_id;
 
-            ESP_LOGI(TAG, "sent publish successful, msg_id=%d", msg_id);
+            ESP_LOGI(TAG, "subscribed successful to , msg_id=%d", msg_id);
             break;
         }
 
@@ -197,3 +185,33 @@ int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retai
 
 	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
 }
+
+esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
+	esp_mqtt_client_config_t Config;
+
+	Config.host				= NULL;
+	Config.uri				= NULL;
+	Config.port				= 0;
+	Config.keepalive		= 120;
+	Config.disable_auto_reconnect = true;
+
+	Config.client_id 		= NULL;
+	Config.lwt_topic		= NULL;
+	Config.lwt_msg			= NULL;
+
+	Config.cert_pem			= NULL;
+	Config.client_cert_pem 	= NULL;
+	Config.client_key_pem	= NULL;
+
+	Config.disable_clean_session = false;
+	Config.refresh_connection_after_ms = 0;
+
+	Config.buffer_size		= 0;
+	Config.task_stack		= 0;
+	Config.task_prio		= 0;
+
+	Config.user_context		= NULL;
+
+	return Config;
+}
+

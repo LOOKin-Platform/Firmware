@@ -36,9 +36,6 @@ class BLEClient_t {
 		uint32_t			ScanStartTime;
 	private:
 		BLEScan*			pBLEScan;
-
-		TaskHandle_t BluetoothClientTaskHandle;
-		static void BluetoothClientTask(void *);
 };
 
 #endif /* BLUETOOTHBCLIENT_H */

@@ -127,7 +127,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			config.url 		= ClientData.URL;
 			config.port 	= ClientData.Port;
 
-			config.timeout_ms = 5000;
+			config.timeout_ms = 7000;
 			config.buffer_size = ClientData.BufferSize;
 
 			string URLString = ClientData.URL;
