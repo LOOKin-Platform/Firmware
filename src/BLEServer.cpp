@@ -36,14 +36,32 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 			return;
 		}
 
-		ESP_LOGI(tag, "WiFi Data received. SSID: %s, Password: %s", Parts[0].c_str(), Parts[1].c_str());
+		ESP_LOGD(tag, "WiFi Data received. SSID: %s, Password: %s", Parts[0].c_str(), Parts[1].c_str());
 		Network.AddWiFiNetwork(Parts[0], Parts[1]);
 
 		//If device in AP mode or can't connect as Station - try to connect with new data
-		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() != WIFI_MODE_STA_STR))
+		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() != WIFI_MODE_AP_STR))
 			Network.WiFiConnect(Parts[0], true);
+	}
+}
 
-		//BLEServer.StopAdvertising();
+void MQTTCredentialsCallback::onWrite(BLECharacteristic *pCharacteristic) {
+	string Value = pCharacteristic->getValue();
+
+	if (Value.length() > 0) {
+		vector<string> Parts = Converter::StringToVector(Value," ");
+
+		if (Parts.size() != 2) {
+			ESP_LOGE(tag, "MQTT credentials error input format");
+			return;
+		}
+
+		ESP_LOGD(tag, "MQTT credentials data received. ClientID: %s, ClientSecret: %s", Parts[0].c_str(), Parts[1].c_str());
+		MQTT.SetCredentials(Parts[0], Parts[1]);
+
+		//If WiFi in connected STA mode - start MQTT
+		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == ESP_OK))
+			MQTT.Start();
 	}
 }
 
@@ -112,6 +130,10 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
 		pCharacteristicWiFiNetworks = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x4000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
 		pCharacteristicWiFiNetworks->setValue(Converter::VectorToString(Network.GetSavedWiFiList(), ","));
 		pCharacteristicWiFiNetworks->setCallbacks(new WiFiNetworksCallback());
+
+		pCharacteristicMQTTCredentials = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x5000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
+		pCharacteristicMQTTCredentials->setValue(MQTT.GetClientID());
+		pCharacteristicMQTTCredentials->setCallbacks(new MQTTCredentialsCallback());
 	}
 
 	// FFFF - Sensors and Commands Information
@@ -161,8 +183,10 @@ void BLEServer_t::StopAdvertising() {
 	delete(pCharacteristicFirmware);
 	delete(pCharacteristicControlFlag);
 
-	if (IsPrivateMode)
+	if (IsPrivateMode) {
 		delete(pCharacteristicWiFiNetworks);
+		delete(pCharacteristicMQTTCredentials);
+	}
 
 	delete(pServiceDevice);
 	//delete(pServiceActuators);
@@ -178,10 +202,19 @@ void BLEServer_t::SwitchToPublicMode() {
 	if (IsRunning() && IsPrivateMode) {
 		StopAdvertising();
 		StartAdvertising();
-		return;
 	}
-
-	StartAdvertising();
 }
+
+void BLEServer_t::SwitchToPrivateMode() {
+	if (IsRunning() && !IsPrivateMode) {
+		StopAdvertising();
+		StartAdvertising("", true);
+	}
+}
+
+bool BLEServer_t::IsInPrivateMode() {
+	return IsPrivateMode;
+}
+
 
 #endif /* Bluetooth enabled */

@@ -26,22 +26,20 @@ void MQTT_t::Init() {
 
 	Username = Memory.GetString(NVSMQTTClientID);
 	Password = Memory.GetString(NVSMQTTClientSecret);
-
-	//MQTT.SetCredentials("QgWyNcr8wHuLK39UVbZA2CkItzhnX45F", "2PSO1F7YCNL6rGs9WUygezhM0vfVRuBo");
 }
 
 void MQTT_t::Start() {
-	if (Username != "") {
+	if (Username != "" && Status != CONNECTED) {
 		ESP_LOGI("MQTT Started","RAM left %d", esp_get_free_heap_size());
 
 	    esp_mqtt_client_config_t mqtt_cfg = ConfigDefault();
-	    mqtt_cfg.uri 			= "mqtts://mqtt.look-in.club:8883";//Settings.MQTT.ServerHost.c_str();
+	    mqtt_cfg.uri 			= Settings.MQTT.Server.c_str();
 	    mqtt_cfg.event_handle 	= mqtt_event_handler;
 	    mqtt_cfg.transport 		= MQTT_TRANSPORT_OVER_SSL;
 
-	    mqtt_cfg.username		= "QgWyNcr8wHuLK39UVbZA2CkItzhnX45F";//Username.c_str();
-	    mqtt_cfg.password		= "2PSO1F7YCNL6rGs9WUygezhM0vfVRuBo";
-	    mqtt_cfg.client_id		= "QgWyNcr8wHuLK39UVbZA2CkItzhnX45F";
+	    mqtt_cfg.username		= Username.c_str();
+	    mqtt_cfg.password		= Password.c_str();
+	    mqtt_cfg.client_id		= Username.c_str();
 
 	    MQTT_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
 
@@ -67,11 +65,17 @@ void MQTT_t::Stop() {
 	}
 }
 
+string MQTT_t::GetClientID() {
+	return Username;
+}
+
 void MQTT_t::SetCredentials(string Username, string Password) {
 	this->Username 		= Username;
 	this->Password 		= Password;
 
 	NVS Memory(NVSMQTTArea);
+	Memory.SetString(NVSMQTTClientID	, Username);
+	Memory.SetString(NVSMQTTClientSecret, Password);
 }
 
 esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
@@ -91,7 +95,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 			msg_id = esp_mqtt_client_subscribe(client, DeviceTopic.c_str(), Settings.MQTT.DefaultQOS);
 			msg_id = esp_mqtt_client_subscribe(client, string(DeviceTopic + "/UDP").c_str(), Settings.MQTT.DefaultQOS);
 
-			//msg_id = SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
+			msg_id = SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
 			break;
 		}
 

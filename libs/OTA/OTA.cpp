@@ -37,8 +37,11 @@ esp_err_t OTA::PerformUpdate(string URL) {
 	ESP_LOGI(tag, "Starting OTA from URL %s...", URL.c_str());
 
     esp_http_client_config_t config = {
-        .url = URL.c_str()
+        .url 			= URL.c_str()
     };
+
+    config.buffer_size 	= Settings.OTA.BufferSize;
+
 
     Log::Add(Log::Events::System::OTAStarted);
 

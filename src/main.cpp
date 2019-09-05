@@ -5,6 +5,7 @@
 #include <esp_log.h>
 #include <esp_pm.h>
 #include <esp_system.h>
+#include <esp_phy_init.h>
 
 #include "Globals.h"
 
@@ -51,6 +52,8 @@ const char tag[] = "Main";
 
 void app_main(void) {
 	NVS::Init();
+
+	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 
 	if (!Log::VerifyLastBoot()) {
 		Log::Add(Log::Events::System::DeviceRollback);

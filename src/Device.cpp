@@ -80,7 +80,9 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 				make_pair("PowerMode"		, PowerModeToString()),
 				make_pair("CurrentVoltage"	, CurrentVoltageToString()),
 				make_pair("Firmware"		, FirmwareVersionToString()),
-				make_pair("Temperature"		, TemperatureToString())
+				make_pair("Temperature"		, TemperatureToString()),
+				make_pair("BluetoothMode"	, BluetoothModeToString())
+
 			}));
 
 			if (Device.Type.Hex == Settings.Devices.Remote)
@@ -118,8 +120,9 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			bool isTimezoneSet        	= POSTTimezone(Params);
 			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Request);
 			bool isSensorModeSet		= POSTSensorMode(Params, Result);
+			bool isBluetoothModeSet		= POSTBluetoothMode(Params);
 
-			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet) && Result.Body == "")
+			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet || isBluetoothModeSet) && Result.Body == "")
 				Result.Body = "{\"success\" : \"true\"}";
 		}
 
@@ -288,6 +291,22 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 	return true;
 }
 
+bool Device_t::POSTBluetoothMode(map<string,string> Params) {
+	if (Params.count("bluetoothmode") > 0) {
+
+		if (Converter::ToLower(Params["bluetoothmode"]) == "public")
+			BLEServer.SwitchToPublicMode();
+
+		if (Converter::ToLower(Params["bluetoothmode"]) == "private")
+			BLEServer.SwitchToPrivateMode();
+
+		return true;
+	}
+
+	return false;
+}
+
+
 void Device_t::OTACallbackSuccessfulStarted() {
 	Device.Status = DeviceStatus::UPDATING;
 
@@ -368,4 +387,12 @@ string Device_t::CurrentVoltageToString() {
 
 string Device_t::SensorModeToString() {
 	return (SensorMode) ? "1" : "0";
+}
+
+string Device_t::BluetoothModeToString() {
+	if (!BLEServer.IsRunning())
+		return "off";
+
+	return (BLEServer.IsInPrivateMode() ? "private" : "public");
+
 }

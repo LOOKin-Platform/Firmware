@@ -100,6 +100,7 @@ class Device_t {
 		bool 				POSTTimezone(map<string,string>);
 		bool 				POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request);
 		bool 				POSTSensorMode(map<string,string>, WebServer_t::Response &);
+		bool 				POSTBluetoothMode(map<string,string>);
 
 		string 				StatusToString();
 		string 				NameToString();
@@ -108,6 +109,7 @@ class Device_t {
 		string 				TemperatureToString();
 		string 				CurrentVoltageToString();
 		string				SensorModeToString();
+		string 				BluetoothModeToString();
 };
 
 #endif

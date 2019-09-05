@@ -24,12 +24,13 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.24";
+		const	string 						FirmwareVersion = "1.30";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
 			const uint16_t					ServerPort		= 80;
 			const uint8_t					MaxAttempts		= 3;
+			const uint16_t					BufferSize		= 2048;
 		} OTA;
 
 		struct {
@@ -79,7 +80,7 @@ class Settings_t {
 		} Bluetooth;
 
 		struct MQTT_t {
-			const string 					ServerHost				= "mqtts://mqtt.look-in.club:8883";
+			const string 					Server					= "mqtts://mqtt.look-in.club:8883";
 			const uint8_t					MaxConnectionTries		= 3;
 
 			const uint8_t					DefaultQOS				= 2;

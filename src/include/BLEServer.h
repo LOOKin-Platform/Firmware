@@ -21,9 +21,10 @@
 
 using namespace std;
 
-class ControlFlagCallback	: public BLECharacteristicCallbacks 	{ void onWrite(BLECharacteristic *pCharacteristic); };
-class WiFiNetworksCallback	: public BLECharacteristicCallbacks 	{ void onWrite(BLECharacteristic *pCharacteristic); };
-class ServerCallback		: public BLECharacteristicCallbacks 	{ void onWrite(BLECharacteristic *pCharacteristic); };
+class ControlFlagCallback		: public BLECharacteristicCallbacks 	{ void onWrite(BLECharacteristic *pCharacteristic); };
+class WiFiNetworksCallback		: public BLECharacteristicCallbacks 	{ void onWrite(BLECharacteristic *pCharacteristic); };
+class MQTTCredentialsCallback	: public BLECharacteristicCallbacks 	{ void onWrite(BLECharacteristic *pCharacteristic); };
+class ServerCallback			: public BLECharacteristicCallbacks 	{ void onWrite(BLECharacteristic *pCharacteristic); };
 
 class BLEServer_t {
 	public:
@@ -37,6 +38,9 @@ class BLEServer_t {
 		bool 				IsRunning() { return BLEDevice::IsRunning(); }
 
 		void				SwitchToPublicMode();
+		void				SwitchToPrivateMode();
+
+		bool				IsInPrivateMode();
 
 	private:
 		bool				IsPrivateMode = false;
@@ -52,6 +56,7 @@ class BLEServer_t {
 		BLECharacteristic	*pCharacteristicFirmware;
 		BLECharacteristic	*pCharacteristicControlFlag;
 		BLECharacteristic	*pCharacteristicWiFiNetworks;
+		BLECharacteristic	*pCharacteristicMQTTCredentials;
 
 		BLEService			*pServiceActuators;
 
