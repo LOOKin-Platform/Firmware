@@ -18,6 +18,8 @@ uint8_t						OTA::Attempts					= 0;
 bool						OTA::IsOTAFileExist				= false;
 bool						OTA::IsFileCheckEnded			= false;
 
+FreeRTOS::Timer*			OTA::DelayedRebootTimer			= nullptr;
+
 OTA::OTA() {
 	BinaryFileLength  = 0;
 	OutHandle         = 0;
@@ -66,42 +68,39 @@ esp_err_t OTA::PerformUpdate(string URL) {
     return ESP_OK;
 }
 
-void OTA::Rollback() {
+bool OTA::Rollback() {
 	esp_partition_t RollbackPartition;
 
 	const esp_partition_t *esp_current_partition = esp_ota_get_boot_partition();
 	if (esp_current_partition->type != ESP_PARTITION_TYPE_APP) {
-		ESP_LOGE(tag, "Can't find partition to rollback");
-		return;
+		ESP_LOGE(tag, "Error： esp_current_partition->type != ESP_PARTITION_TYPE_APP");
+		return false;
 	}
 
-	esp_partition_t find_partition;
-	memset(&RollbackPartition, 0, sizeof(esp_partition_t));
-
-	// На какую партицию должен быть осуществлен сброс
-	switch (esp_current_partition->subtype) {
-		case ESP_PARTITION_SUBTYPE_APP_OTA_0:
-			find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_1;
-    		break;
-    case ESP_PARTITION_SUBTYPE_APP_OTA_1:
-    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_OTA_0;
-    		break;
-    default:
-    		find_partition.subtype = ESP_PARTITION_SUBTYPE_APP_FACTORY;
-    		break;
-	}
-
-	find_partition.type = ESP_PARTITION_TYPE_APP;
-
-	const esp_partition_t *partition = esp_partition_find_first(find_partition.type, find_partition.subtype, NULL);
+	const esp_partition_t *partition = NULL;
+	partition = esp_ota_get_next_update_partition(NULL);
 	assert(partition != NULL);
-	memset(&RollbackPartition, 0, sizeof(esp_partition_t));
+
+	memcpy(&RollbackPartition, partition, sizeof(esp_partition_t));
 
 	esp_err_t err = esp_ota_set_boot_partition(&RollbackPartition);
 
 	if (err == ESP_OK)
-		esp_restart();
+	{
+
+		DelayedRebootTimer = new FreeRTOS::Timer((char*)"DelayedReboot", 1000 / portTICK_PERIOD_MS, pdFALSE, NULL, OTA::DelayedRebootTask);
+		DelayedRebootTimer->Start();
+
+		return true;
+	}
+	else
+		return false;
 }
+
+void OTA::DelayedRebootTask(FreeRTOS::Timer *) {
+	esp_restart();
+}
+
 
 void OTA::ReadStarted(char IP[]) {
 	ESP_LOGD(tag, "ReadStarted");

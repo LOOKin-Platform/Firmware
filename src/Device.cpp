@@ -110,6 +110,18 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 
 			Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 		}
+
+		if (URLParts.size() == 2) {
+			if (URLParts[0] == "ota" && URLParts[1] == "rollback") {
+				if (OTA::Rollback()) {
+					Result.Body = "{\"success\" : \"true\" , \"Description\": \"Device will be restarted shortly\"}";
+				}
+				else
+					Result.Body = "{\"error\": \"Can't find partition to rollback\"}";
+
+				return;
+			}
+		}
 	}
 
 	// обработка POST запроса - сохранение и изменение данных

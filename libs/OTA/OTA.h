@@ -34,7 +34,7 @@ class OTA {
 		static void 				Update(string URL, OTAStarted Started = NULL, OTAFileDoesntExist FileDoesntExist = NULL);
 		static esp_err_t			PerformUpdate(string URL);
 
-		static void 				Rollback();
+		static bool 				Rollback();
 
 		// HTTP OTA Callbacks
 		static void 				ReadStarted		(char [] = '\0');
@@ -47,10 +47,13 @@ class OTA {
 		static bool					IsFileCheckEnded;
 
 	private:
-
 		static int					BinaryFileLength;
 		static esp_ota_handle_t		OutHandle;
 		static esp_partition_t		OperatePartition;
+
+		static FreeRTOS::Timer*		DelayedRebootTimer;
+		static void					DelayedRebootTask(FreeRTOS::Timer *);
+
 };
 
 #endif
