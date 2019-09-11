@@ -60,9 +60,6 @@ class CommandIR_t : public Command_t {
 			else
 				Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
-			if (EventCode == 0xFF && Operand == 0)
-				return false;
-
 			if (EventCode > 0x0 && EventCode < 0xED) { // /commands/ir/nec || /commands/ir/nec2 || /commands/ir/sirc/
 				IRLib IRSignal;
 				IRSignal.Protocol 	= EventCode;
@@ -142,6 +139,9 @@ class CommandIR_t : public Command_t {
 			}
 
 			if (EventCode == 0xF0) {
+				if (StringOperand == "0")
+					return false;
+
 				IRLib IRSignal(StringOperand);
 
 				LastSignal.Protocol	= IRSignal.Protocol;
@@ -154,6 +154,9 @@ class CommandIR_t : public Command_t {
 			}
 
 			if (EventCode == 0xFF) {
+				if (StringOperand == "0")
+					return false;
+
 				uint16_t	Frequency = 38000;
 				size_t 		FrequencyDelimeterPos = StringOperand.find(";");
 
@@ -169,6 +172,9 @@ class CommandIR_t : public Command_t {
 				LastSignal.Misc		= IRSignal.MiscData;
 
 				RMT::TXClear();
+
+				ESP_LOGE("Protocol","%d", LastSignal.Protocol);
+				ESP_LOGE("Data","%d", LastSignal.Data);
 
 				for (int32_t Item : IRSignal.GetRawDataForSending())
 					RMT::TXAddItem(Item);

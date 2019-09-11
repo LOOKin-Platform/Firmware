@@ -71,7 +71,7 @@ class Network_t {
 
 		uint32_t 				KeepWiFiTimer 	= 0;
 
-		void HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params);
+		void 					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 
 	private:
 		string					ModeToString();

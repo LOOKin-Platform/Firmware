@@ -41,12 +41,18 @@ void MQTT_t::Start() {
 	    mqtt_cfg.password		= Password.c_str();
 	    mqtt_cfg.client_id		= Username.c_str();
 
+	    mqtt_cfg.disable_auto_reconnect = false;
+
+		ConnectionTries = 0;
+
 	    MQTT_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
 
 	    if (ClientHandle != NULL)
 			esp_mqtt_client_start(MQTT_t::ClientHandle);
 	    else
 			ESP_LOGE(TAG, "esp_mqtt_client_init failed");
+
+	    ESP_LOGI(TAG,"MQTT Started");
 	}
 }
 
@@ -54,7 +60,6 @@ void MQTT_t::Stop() {
 	if (ClientHandle != NULL) {
 
 		::esp_mqtt_client_destroy(ClientHandle);
-		ConnectionTries = 0;
 
 		ClientHandle 	= NULL;
 
@@ -63,6 +68,13 @@ void MQTT_t::Stop() {
 
 	    ESP_LOGI(TAG,"MQTT Stopped");
 	}
+}
+
+void MQTT_t::Reconnect() {
+		if (Status == CONNECTED) {
+			Stop();
+			Start();
+		}
 }
 
 string MQTT_t::GetClientID() {
@@ -77,6 +89,23 @@ void MQTT_t::SetCredentials(string Username, string Password) {
 	Memory.SetString(NVSMQTTClientID	, Username);
 	Memory.SetString(NVSMQTTClientSecret, Password);
 }
+
+void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
+	if (Username == this->Username && Password == this->Password && Status == CONNECTED) {
+		SendMessage(WebServer.UDPAliveBody(), Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/UDP");
+		return;
+	}
+
+	SetCredentials(Username, Password);
+
+	if (Status == CONNECTED)
+		Stop();
+
+	if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == ESP_OK))
+		Start();
+}
+
+
 
 esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
@@ -140,8 +169,6 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
         case MQTT_EVENT_DATA:
 		{
-			ESP_LOGI(TAG, "MQTT_EVENT_DATA");
-
 			string Topic	(event->topic, event->topic_len);
 			string Payload	(event->data, event->data_len);
 

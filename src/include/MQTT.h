@@ -24,14 +24,17 @@ class MQTT_t {
 	public:
 		enum Status_t { UNACTIVE, CONNECTED, ERROR };
 
-		MQTT_t(string Username = "", string Password = "");
+		MQTT_t							(string Username = "", string Password = "");
 
-		void SetCredentials(string Username = "", string Password = "");
+		void SetCredentials				(string Username = "", string Password = "");
+		void ChangeOrSetCredentialsBLE	(string Username = "", string Password = "");
 
 		void Init();
 
 		void Start();
 		void Stop();
+		void Reconnect();
+
 
 		string GetClientID();
 

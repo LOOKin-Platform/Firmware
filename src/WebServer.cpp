@@ -34,6 +34,7 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
 
 	string QueryString = "GET " + string(Request->uri) + " ";
+
 	Query_t Query(QueryString);
 	API::Handle(Response, Query);
 

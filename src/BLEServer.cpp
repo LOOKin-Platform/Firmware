@@ -40,7 +40,7 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 		Network.AddWiFiNetwork(Parts[0], Parts[1]);
 
 		//If device in AP mode or can't connect as Station - try to connect with new data
-		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() != WIFI_MODE_AP_STR))
+		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() == WIFI_MODE_AP_STR))
 			Network.WiFiConnect(Parts[0], true);
 	}
 }
@@ -57,11 +57,7 @@ void MQTTCredentialsCallback::onWrite(BLECharacteristic *pCharacteristic) {
 		}
 
 		ESP_LOGD(tag, "MQTT credentials data received. ClientID: %s, ClientSecret: %s", Parts[0].c_str(), Parts[1].c_str());
-		MQTT.SetCredentials(Parts[0], Parts[1]);
-
-		//If WiFi in connected STA mode - start MQTT
-		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == ESP_OK))
-			MQTT.Start();
+		MQTT.ChangeOrSetCredentialsBLE(Parts[0], Parts[1]);
 	}
 }
 

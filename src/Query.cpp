@@ -98,5 +98,6 @@ void Query_t::FillParams(string &Query) {
 		}
 		else
 			Params = map<string,string>();
+
 	}
 }

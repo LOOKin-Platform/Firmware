@@ -402,8 +402,16 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				if (!WiFiConnect(URLParts[1])) {
 					Result.ResponseCode = WebServer_t::Response::CODE::ERROR;
 					Result.Body = "{\"success\" : \"false\"}";
+					return;
 				}
 			}
+
+			if (URLParts[0] == "remotecontrol") {
+				if (URLParts[1] == "reconnect") {
+					MQTT.Reconnect();
+				}
+			}
+
 		}
 	}
 
