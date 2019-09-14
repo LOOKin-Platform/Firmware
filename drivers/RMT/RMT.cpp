@@ -70,14 +70,14 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 	config.rmt_mode                  	= RMT_MODE_RX;
 	config.channel                   	= Channel;
 	config.gpio_num                  	= Pin;
-	config.mem_block_num             	= 1;
+	config.mem_block_num             	= 4;
 	config.clk_div                   	= RMT_CLK_DIV;
 	config.rx_config.filter_en 			= true;
 	config.rx_config.filter_ticks_thresh= 80;
 	config.rx_config.idle_threshold 	= rmt_item32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
 
 	ESP_ERROR_CHECK(rmt_config(&config));
-	ESP_ERROR_CHECK(rmt_driver_install(Channel, 1000, 0));
+	ESP_ERROR_CHECK(rmt_driver_install(Channel, 2000, 0));
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;
@@ -152,6 +152,7 @@ void RMT::RXTask(void *TaskData) {
 				ChannelsMap[Channel].CallbackStart();
 
 			uint16_t SignalSize = rx_size;
+			ESP_LOGE("Signal size", "%d", SignalSize);
 
 			while (offset < SignalSize)
 			{
@@ -188,7 +189,7 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = Channel;
 	config.gpio_num                  = Pin;
-	config.mem_block_num             = 1;
+	config.mem_block_num             = 4;
 	config.clk_div                   = RMT_CLK_DIV;
 	config.tx_config.loop_en         = 0;
 	config.tx_config.carrier_en      = 1; //?1
@@ -292,6 +293,8 @@ void RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
 
 	::rmt_write_items(Channel, &OutputItems[0] , OutputItems.size(), true);
 	::rmt_wait_tx_done(Channel, portMAX_DELAY);
+
+	OutputItems.clear();
 }
 
 /**

@@ -6,11 +6,11 @@
 
 #include "API.h"
 
-void API::Handle(WebServer_t::Response &Response, Query_t Query, httpd_req_t *Request) {
+void API::Handle(WebServer_t::Response &Response, Query_t &Query, httpd_req_t *Request) {
 	return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody, Request);
 }
 
-void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request) {
+void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request) {
 
 	if (URLParts.size() == 0) {
 		if (!Params.count("summary")) {

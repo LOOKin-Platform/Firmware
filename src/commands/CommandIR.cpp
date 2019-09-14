@@ -46,7 +46,7 @@ class CommandIR_t : public Command_t {
 
 			if (StringOperand.size() > 8)
 			{
-				string ConverterOperand = StringOperand;
+				string ConverterOperand = (StringOperand.size() < 20) ? StringOperand : "";
 
 				while (ConverterOperand.size() < 12)
 					ConverterOperand = "0" + ConverterOperand;
@@ -154,7 +154,7 @@ class CommandIR_t : public Command_t {
 			}
 
 			if (EventCode == 0xFF) {
-				if (StringOperand == "0")
+				if (StringOperand == "0" || InOperation)
 					return false;
 
 				uint16_t	Frequency = 38000;
@@ -165,22 +165,82 @@ class CommandIR_t : public Command_t {
 					StringOperand = StringOperand.substr(FrequencyDelimeterPos+1);
 				}
 
-				IRLib IRSignal(Converter::StringToVector(StringOperand, " "));
+				ESP_LOGE("tag", "Started");
 
-				LastSignal.Protocol = IRSignal.Protocol;
-				LastSignal.Data 	= IRSignal.Uint32Data;
-				LastSignal.Misc		= IRSignal.MiscData;
+				if (StringOperand.find(" ") == string::npos)
+					return false;
 
-				RMT::TXClear();
+				IRLib *IRSignal = new IRLib();
+
+				while (StringOperand.size() > 0)
+				{
+					size_t Pos = StringOperand.find(" ");
+
+					string Item = (Pos != string::npos) ? StringOperand.substr(0,Pos) : StringOperand;
+					IRSignal->RawData.push_back(Converter::ToInt32(Item));
+
+					if (Pos == string::npos || StringOperand.size() < Pos)
+						StringOperand = "";
+					else
+						StringOperand.erase(0, Pos+1);
+				}
+
+				/*
+				 *
+
+				uint16_t BlockSize = 256;
+
+				while (StringOperand.size() > 0) {
+					string Block = (StringOperand.size() > BlockSize) ? StringOperand.substr(0, BlockSize) : StringOperand;
+					StringOperand = (StringOperand.size() > BlockSize) ? StringOperand.substr(BlockSize) : "";
+
+					if (StringOperand.size() > 0) {
+						size_t Pos = StringOperand.find(" ");
+
+						if (Pos == 0)
+							StringOperand = StringOperand.substr(1);
+						else
+						{
+							Block 			+= (Pos == string::npos) ? StringOperand : StringOperand.substr(0, Pos);
+							StringOperand 	 = (Pos == string::npos) ? "" : StringOperand.substr(Pos + 1);
+						}
+					}
+
+					if (Block.rfind(" ") == Block.size()-1)
+						Block = Block.substr(0,Block.size() - 1);
+
+					if (Block.find(" ") == 0)
+						Block = Block.substr(1);
+
+					vector<string> *PartData = new vector<string>(Converter::StringToVector(Block, " "));
+
+					for (string Item : *PartData)
+						IRSignal->RawData.push_back(Converter::ToInt32(Item));
+				}
+
+				*/
+
+				IRSignal->ExternFillPostOperations();
+
+				LastSignal.Protocol = IRSignal->Protocol;
+				LastSignal.Data 	= IRSignal->Uint32Data;
+				LastSignal.Misc		= IRSignal->MiscData;
 
 				ESP_LOGE("Protocol","%d", LastSignal.Protocol);
 				ESP_LOGE("Data","%d", LastSignal.Data);
 
-				for (int32_t Item : IRSignal.GetRawDataForSending())
-					RMT::TXAddItem(Item);
+				if (LastSignal.Protocol != 0xFF)
+					RMT::TXSetItems(IRSignal->GetRawDataForSending());
+				else {
+					RMT::TXClear();
+
+					while (IRSignal->RawData.size())
+						RMT::TXAddItem(IRSignal->RawPopItem());
+				}
 
 				TXSend(Frequency);
 
+				delete IRSignal;
 				return true;
 			}
 
@@ -188,9 +248,9 @@ class CommandIR_t : public Command_t {
 		}
 
     void TXSend(uint16_t Frequency) {
-    	InOperation = true;
+    	InOperation = false;
 
-		RMT::TXSend(RMT_CHANNEL_4, Frequency);
+		RMT::TXSend(TXChannel, Frequency);
 		Log::Add(Log::Events::Commands::IRExecuted);
 
 		InOperation = false;

@@ -19,8 +19,11 @@ class Panasonic : public IRProto {
 			DefinedFrequency	= 37000;
 		};
 
-		bool IsProtocol(vector<int32_t> RawData) override {
+		bool IsProtocol(vector<int32_t> &RawData) override {
 			if (RawData.size() < 49)
+				return false;
+
+			if (RawData.size() > 100)
 				return false;
 
 			if (TestValue(RawData.at(0), PANASONIC_HDR_MARK) && TestValue(RawData.at(1), -PANASONIC_HDR_SPACE) && TestValue(RawData.at(2), PANASONIC_BIT_MARK))

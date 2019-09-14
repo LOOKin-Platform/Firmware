@@ -12,7 +12,7 @@ class NEC1 : public IRProto {
 			DefinedFrequency	= 38500;
 		};
 
-		bool IsProtocol(vector<int32_t> RawData) override {
+		bool IsProtocol(vector<int32_t> &RawData) override {
 			if (RawData.size() >= 66) {
 				if (RawData.at(0) 	> 8700 	&& RawData.at(0) 	< 9300 &&
 					RawData.at(1) 	< -4200 && RawData.at(1) 	> -4800 &&

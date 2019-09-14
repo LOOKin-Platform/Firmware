@@ -16,7 +16,7 @@ class IRProto {
 		uint8_t							ID 					= 0x00;
 		uint16_t						DefinedFrequency 	= 38500;
 		string 							Name 				= "";
-		virtual bool					IsProtocol(vector<int32_t>) 							{ return false; }
+		virtual bool					IsProtocol(vector<int32_t> &) 							{ return false; }
 		virtual pair<uint32_t,uint16_t>	GetData(vector<int32_t>)								{ return make_pair(0x0,0x0);}
 		virtual vector<int32_t> 		ConstructRaw(uint32_t Data, uint16_t Misc)				{ return vector<int32_t>(); }
 

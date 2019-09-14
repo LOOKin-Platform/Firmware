@@ -12,7 +12,7 @@ class SONY_SIRC : public IRProto {
 			DefinedFrequency	= 40000;
 		};
 
-		bool IsProtocol(vector<int32_t> RawData) override {		
+		bool IsProtocol(vector<int32_t> &RawData) override {
 			if (RawData.size() >= 25) {
 				if (RawData.at(0) 	> 2000 	&& RawData.at(0) 	< 3000 &&
 					RawData.at(1) 	< -500 && RawData.at(1) 	> -600)

@@ -12,7 +12,7 @@ class Samsung : public IRProto {
 			DefinedFrequency	= 38500;
 		};
 
-		bool IsProtocol(vector<int32_t> RawData) override {
+		bool IsProtocol(vector<int32_t> &RawData) override {
 			if (RawData.size() < 66)
 				return false;
 

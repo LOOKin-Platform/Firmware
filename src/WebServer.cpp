@@ -135,8 +135,9 @@ void WebServer_t::Start() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     config.uri_match_fn 	= httpd_uri_match_wildcard;
-    config.stack_size		= 16384;
+    config.stack_size		= 16384;//16384;
     config.lru_purge_enable = true;
+
     HTTPServerHandle = NULL;
 
     if (httpd_start(&HTTPServerHandle, &config) == ESP_OK) {

@@ -40,6 +40,10 @@ class IRLib {
 
 		void 			SetFrequency(uint16_t);
 
+		void			ExternFillPostOperations();
+
+		int16_t			RawPopItem();
+
 		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);
 	private:
 		uint8_t		 	ProntoOneTimeBurst = 0;

@@ -34,6 +34,12 @@ IRLib::IRLib(string ProntoHex) {
 	LoadDataFromRaw();
 }
 
+void IRLib::ExternFillPostOperations() {
+	FillProtocols();
+	LoadDataFromRaw();
+}
+
+
 void IRLib::FillProtocols() {
 	if (IRLib::Protocols.size() == 0)
 		Protocols = {
@@ -132,6 +138,17 @@ void IRLib::SetFrequency(uint16_t Freq) {
 	else if (Frequency > 52000 && Frequency <= 60000)
 		Frequency = 56000;
 }
+
+int16_t IRLib::RawPopItem() {
+	if (RawData.size() == 0)
+		return 0;
+
+	int32_t Item = RawData.front();
+	RawData.erase(RawData.begin());
+
+	return Item;
+}
+
 
 bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 	if (Signal1.Protocol == Signal2.Protocol) {

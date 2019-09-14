@@ -92,12 +92,12 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageBody(int16_t Bit) {
-			if (SensorIRCurrentMessage.size() > 0 && SensorIRCurrentMessage.back() < -40000)
+			if (SensorIRCurrentMessage.size() > 0 && SensorIRCurrentMessage.back() <= -45000)
 				return;
 
-			if (Bit == 0)
-				SensorIRCurrentMessage.push_back(-45000);
-			else
+			//if (Bit == 0)
+			//	SensorIRCurrentMessage.push_back(-45000);
+			//else
 				SensorIRCurrentMessage.push_back(Bit);
 		};
 
@@ -111,11 +111,15 @@ class SensorIR_t : public Sensor_t {
 
 			Log::Add(Log::Events::Sensors::IRReceived);
 
+
+
 			SignalDetectionTime = Time::Unixtime();
 			LastSignal = IRLib(SensorIRCurrentMessage);
 			//LastSignal.SetFrequency(FrequencyDetectCalculate());
 
 			SensorIRCurrentMessage.empty();
+
+			ESP_LOGE("Received", "%s", LastSignal.GetRawSignal().c_str());
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
