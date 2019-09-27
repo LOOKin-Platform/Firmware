@@ -47,6 +47,8 @@ void IRLib::FillProtocols() {
 				new SONY_SIRC(),
 				new Samsung(),
 				new Panasonic(),
+				new Daikin(),
+				new MitsubishiAC()
 		};
 }
 
@@ -94,7 +96,22 @@ vector<int32_t> IRLib::GetRawDataForSending() {
 	vector<int32_t> Result = vector<int32_t>();
 
 	if (Proto != nullptr)
-		Result = Proto->ConstructRawForSending(this->Uint32Data, this->MiscData);
+		if (Uint32Data > 0)
+			Result = Proto->ConstructRawForSending(this->Uint32Data, this->MiscData);
+
+	// check for large pauses between signals
+	for (int i = 0 ; i< Result.size(); i++) {
+		int32_t IntValue = Result[i];
+
+		if (abs(IntValue) >= Settings.SensorsConfig.IR.Threshold && abs(IntValue) != Settings.SensorsConfig.IR.SignalEndingLen)
+		{
+			uint8_t Parts = (uint8_t)ceil(abs(IntValue) / (double)Settings.SensorsConfig.IR.Threshold);
+			Result.erase(Result.begin() + i);
+
+			for (int j = 0; j < Parts; j++)
+				Result.insert(Result.begin() + i, (int32_t)floor(IntValue/Parts));
+		}
+	}
 
 	return (Result.size() > 0) ? Result : this->RawData;
 }
@@ -139,6 +156,21 @@ void IRLib::SetFrequency(uint16_t Freq) {
 		Frequency = 56000;
 }
 
+void IRLib::AppendRawSignal(IRLib &DataToAppend) {
+
+	if (RawData.size() > 0) {
+		IRProto *Proto = GetProtocolByID(this->Protocol);
+
+		if (Proto != nullptr)
+			RawData.back() = Proto->GetBlocksDelimeter();
+	}
+
+	RawData.insert(RawData.end(), DataToAppend.RawData.begin(), DataToAppend.RawData.end());
+
+	ExternFillPostOperations();
+}
+
+
 int16_t IRLib::RawPopItem() {
 	if (RawData.size() == 0)
 		return 0;
@@ -148,7 +180,6 @@ int16_t IRLib::RawPopItem() {
 
 	return Item;
 }
-
 
 bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 	if (Signal1.Protocol == Signal2.Protocol) {
@@ -161,7 +192,7 @@ bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 		for (uint16_t i=0; i< MinimalSize; i++) {
 			uint16_t PartDif = abs(Signal1.RawData[i] - Signal2.RawData[i]);
 
-			if (PartDif > 0.15 * max(abs(Signal1.RawData[i]), abs(Signal2.RawData[i])))
+			if (PartDif > 0.20 * max(abs(Signal1.RawData[i]), abs(Signal2.RawData[i])))
 				return false;
 		}
 

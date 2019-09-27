@@ -142,7 +142,7 @@ void RMT::RXTask(void *TaskData) {
 
     while(rb) {
 		size_t rx_size = 0;
-		rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 1000);
+		rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 2000);
 
 		if(item)
 		{
@@ -152,13 +152,15 @@ void RMT::RXTask(void *TaskData) {
 				ChannelsMap[Channel].CallbackStart();
 
 			uint16_t SignalSize = rx_size;
-			ESP_LOGE("Signal size", "%d", SignalSize);
 
 			while (offset < SignalSize)
 			{
 				if (ChannelsMap[Channel].CallbackBody != nullptr) {
-					ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level0, (item+offset)->duration0));
-					ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level1, (item+offset)->duration1));
+					if (!ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level0, (item+offset)->duration0)))
+						break;
+
+					if (!ChannelsMap[Channel].CallbackBody(PrepareBit((bool)(item+offset)->level1, (item+offset)->duration1)))
+						break;
 				}
 				offset++;
 			}

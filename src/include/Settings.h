@@ -24,7 +24,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.30";
+		const	string 						FirmwareVersion = "1.31";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -219,6 +219,15 @@ class Settings_t {
 				} CommandOffset;
 			} Memory;
 		} Scenarios;
+
+		struct {
+			struct {
+				const uint16_t				Threshold 		= 9500; 	// Максимальное значени интервала, которое принимается в обработке
+				const uint16_t				SignalEndingLen	= 45000;	// Задержка, добавляемая в конец сигнала
+				const uint16_t				DetectionJoinU	= 40000; 	// Временной интервал в течении которого считается, что сигнал 1 (в микросекундах)
+				const uint32_t				SignalsMaxDelay	= 250000;
+			} IR;
+		} SensorsConfig;
 
 		// Commands and sensors data
 

@@ -23,6 +23,8 @@ class IRLib {
 		uint32_t		Uint32Data	= 0;
 		uint16_t		MiscData	= 0;
 
+		bool			IsRepeated	= false;
+
 		vector<int32_t> RawData 	= vector<int32_t>();
 
 		IRLib(string ProntoHex);
@@ -42,6 +44,7 @@ class IRLib {
 
 		void			ExternFillPostOperations();
 
+		void			AppendRawSignal(IRLib &);
 		int16_t			RawPopItem();
 
 		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);

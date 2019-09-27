@@ -28,6 +28,9 @@ class CommandIR_t : public Command_t {
 			Events["samsung"]	= 0x04;
 			Events["panasonic"]	= 0x05;
 
+			Events["daikin"]	= 0x08;
+			//Events["mitsubishi-ac"] = 0x09;
+
 			Events["repeat"]	= 0xED;
 
 			Events["saved"]		= 0xEE;
@@ -60,7 +63,8 @@ class CommandIR_t : public Command_t {
 			else
 				Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
-			if (EventCode > 0x0 && EventCode < 0xED) { // /commands/ir/nec || /commands/ir/nec2 || /commands/ir/sirc/
+			if (EventCode > 0x0 && EventCode < 0xED) { // /commands/ir/nec || /commands/ir/sirc ...
+
 				IRLib IRSignal;
 				IRSignal.Protocol 	= EventCode;
 				IRSignal.Uint32Data = Operand;
@@ -177,48 +181,24 @@ class CommandIR_t : public Command_t {
 					size_t Pos = StringOperand.find(" ");
 
 					string Item = (Pos != string::npos) ? StringOperand.substr(0,Pos) : StringOperand;
-					IRSignal->RawData.push_back(Converter::ToInt32(Item));
+					int32_t IntItem = Converter::ToInt32(Item);
+
+					if (abs(IntItem) >= Settings.SensorsConfig.IR.Threshold && abs(IntItem) != Settings.SensorsConfig.IR.SignalEndingLen)
+					{
+						// hack for large pauses between signals
+						uint8_t Parts = (uint8_t)ceil(abs(IntItem) / (double)Settings.SensorsConfig.IR.Threshold);
+
+						for (int i = 0; i < Parts; i++)
+							IRSignal->RawData.push_back((int32_t)floor(IntItem/Parts));
+					}
+					else
+						IRSignal->RawData.push_back(IntItem);
 
 					if (Pos == string::npos || StringOperand.size() < Pos)
 						StringOperand = "";
 					else
 						StringOperand.erase(0, Pos+1);
 				}
-
-				/*
-				 *
-
-				uint16_t BlockSize = 256;
-
-				while (StringOperand.size() > 0) {
-					string Block = (StringOperand.size() > BlockSize) ? StringOperand.substr(0, BlockSize) : StringOperand;
-					StringOperand = (StringOperand.size() > BlockSize) ? StringOperand.substr(BlockSize) : "";
-
-					if (StringOperand.size() > 0) {
-						size_t Pos = StringOperand.find(" ");
-
-						if (Pos == 0)
-							StringOperand = StringOperand.substr(1);
-						else
-						{
-							Block 			+= (Pos == string::npos) ? StringOperand : StringOperand.substr(0, Pos);
-							StringOperand 	 = (Pos == string::npos) ? "" : StringOperand.substr(Pos + 1);
-						}
-					}
-
-					if (Block.rfind(" ") == Block.size()-1)
-						Block = Block.substr(0,Block.size() - 1);
-
-					if (Block.find(" ") == 0)
-						Block = Block.substr(1);
-
-					vector<string> *PartData = new vector<string>(Converter::StringToVector(Block, " "));
-
-					for (string Item : *PartData)
-						IRSignal->RawData.push_back(Converter::ToInt32(Item));
-				}
-
-				*/
 
 				IRSignal->ExternFillPostOperations();
 
@@ -248,7 +228,7 @@ class CommandIR_t : public Command_t {
 		}
 
     void TXSend(uint16_t Frequency) {
-    	InOperation = false;
+    	InOperation = true;
 
 		RMT::TXSend(TXChannel, Frequency);
 		Log::Add(Log::Events::Commands::IRExecuted);

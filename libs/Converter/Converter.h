@@ -89,5 +89,11 @@ class Converter {
 		static uint16_t			VoltageFromADC(uint16_t Value, uint8_t R1, uint8_t R2);
 
 		static bool				StartsWith(string &Src, string WhatToFind);
+
+		static uint8_t			SumBytes(const uint8_t * const start, const uint16_t length, const uint8_t init = 0);
+
+		static uint8_t 			Uint8ToBcd(const uint8_t integer);
+		static uint8_t			BcdToUint8(const uint8_t bcd);
+
 };
 #endif

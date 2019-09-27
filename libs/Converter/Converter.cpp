@@ -376,3 +376,25 @@ bool Converter::StartsWith(string &Src, string WhatToFind) {
 }
 
 
+uint8_t Converter::SumBytes(const uint8_t * const start, const uint16_t length, const uint8_t init) {
+	uint8_t checksum = init;
+	const uint8_t *ptr;
+
+	for (ptr = start; ptr - start < length; ptr++) checksum += *ptr;
+	return checksum;
+}
+
+uint8_t Converter::Uint8ToBcd(const uint8_t integer) {
+	if (integer > 99)
+		return 255;
+
+	return ((integer / 10) << 4) + (integer % 10);
+}
+
+uint8_t Converter::BcdToUint8(const uint8_t bcd) {
+	if (bcd > 0x99)
+		return 255;
+
+	return (bcd >> 4) * 10 + (bcd & 0xF);
+}
+

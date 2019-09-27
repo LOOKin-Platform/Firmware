@@ -19,14 +19,15 @@ using namespace std;
 #include <esp_pm.h>
 
 #include "FreeRTOSWrapper.h"
+#include "Settings.h"
 
 typedef void (*IRChannelCallbackStart)();
-typedef void (*IRChannelCallbackBody)(int16_t);
+typedef bool (*IRChannelCallbackBody)(int16_t);
 typedef void (*IRChannelCallbackEnd)();
 
-#define RMT_CLK_DIV             80    							/*!< RMT counter clock divider */
-#define RMT_TICK_10_US          (80000000/RMT_CLK_DIV/100000)	/*!< RMT counter value for 10 us.(Source clock is APB clock) */
-#define rmt_item32_TIMEOUT_US   9500   							/*!< RMT receiver timeout value(us) */
+#define RMT_CLK_DIV             80    								/*!< RMT counter clock divider */
+#define RMT_TICK_10_US          (80000000/RMT_CLK_DIV/100000)		/*!< RMT counter value for 10 us.(Source clock is APB clock) */
+#define rmt_item32_TIMEOUT_US   Settings.SensorsConfig.IR.Threshold /*!< RMT receiver timeout value(us) */
 
 /**
  * @brief Drive the %RMT peripheral.
@@ -54,7 +55,7 @@ class RMT {
 		static void TXAddItem(int32_t);
 		static void TXSetItems(vector<int32_t>);
 		static void TXClear();
-		static void TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
+		static void IRAM_ATTR TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
 
 		static int32_t PrepareBit(bool, uint32_t);
 
@@ -65,7 +66,7 @@ class RMT {
 		static bool 				IsInited;
 		static esp_pm_lock_handle_t APBLock, CPULock;
 
-		static void RXTask(void *);
+		static IRAM_ATTR void RXTask(void *);
 };
 
 #endif /* DRIVERS_IR_H_ */

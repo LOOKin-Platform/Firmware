@@ -12,7 +12,10 @@ static uint8_t 				SensorIRID 						= 0x87;
 static constexpr uint8_t 	SensorIRQueueSize				= 30;
 
 static IRLib 	LastSignal;
+static IRLib	FollowingSignal;
+
 static uint32_t SignalDetectionTime = 0x1;
+static uint64_t	SignalDetectionTimeU= 0;
 
 class SensorIR_t : public Sensor_t {
 	public:
@@ -39,16 +42,19 @@ class SensorIR_t : public Sensor_t {
 				SetValue(0, "Signal"	, SignalDetectionTime);
 				SetValue(0, "Frequency"	, SignalDetectionTime);
 				SetValue(0, "Raw"		, SignalDetectionTime);
+				SetValue(0, "ISRepeated", SignalDetectionTime);
 				return;
 			}
 
 			if (Time::IsUptime(SignalDetectionTime) && Time::Offset > 0)
 				SignalDetectionTime = Time::Unixtime() - (Time::Uptime() - SignalDetectionTime);
 
-			SetValue(LastSignal.Protocol	, "Primary"		, SignalDetectionTime);
-			SetValue(LastSignal.Uint32Data	, "Signal" 		, SignalDetectionTime);
-			SetValue(LastSignal.Frequency	, "Frequency" 	, SignalDetectionTime);
-			SetValue(0						, "Raw"			, SignalDetectionTime);
+			SetValue(LastSignal.Protocol			, "Primary"		, SignalDetectionTime);
+			SetValue(LastSignal.Uint32Data			, "Signal" 		, SignalDetectionTime);
+			SetValue(LastSignal.Frequency			, "Frequency" 	, SignalDetectionTime);
+			SetValue(0								, "Raw"			, SignalDetectionTime);
+			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated"	, SignalDetectionTime);
+
 		}
 
 		string FormatValue(string Key = "Primary") override {
@@ -63,6 +69,9 @@ class SensorIR_t : public Sensor_t {
 
 			if (Key == "Raw")
 				return LastSignal.GetRawSignal();
+
+			if (Key == "IsRepeated")
+				return (LastSignal.IsRepeated) ? "1" : "0";
 
 			return Converter::ToHexString(Values[Key].Value, 8);
 		}
@@ -91,14 +100,17 @@ class SensorIR_t : public Sensor_t {
 			SensorIRCurrentMessage.clear();
 		};
 
-		static void MessageBody(int16_t Bit) {
-			if (SensorIRCurrentMessage.size() > 0 && SensorIRCurrentMessage.back() <= -45000)
-				return;
+		static bool MessageBody(int16_t Bit) {
+			if (SensorIRCurrentMessage.size() > 0 && SensorIRCurrentMessage.back() <= -Settings.SensorsConfig.IR.SignalEndingLen)
+				return false;
 
-			//if (Bit == 0)
-			//	SensorIRCurrentMessage.push_back(-45000);
-			//else
-				SensorIRCurrentMessage.push_back(Bit);
+			if (Bit == 0 || abs(Bit) >= Settings.SensorsConfig.IR.Threshold) {
+				SensorIRCurrentMessage.push_back(-Settings.SensorsConfig.IR.SignalEndingLen);
+				return false;
+			}
+
+			SensorIRCurrentMessage.push_back(Bit);
+			return true;
 		};
 
 		static void MessageEnd() {
@@ -109,12 +121,24 @@ class SensorIR_t : public Sensor_t {
 				if (Command_t::GetCommandByID(SensorIRID - 0x80)->InOperation)
 					return;
 
+			if ((Time::UptimeU() - SignalDetectionTimeU) < Settings.SensorsConfig.IR.SignalsMaxDelay && SignalDetectionTimeU > 0) {
+				FollowingSignal = IRLib(SensorIRCurrentMessage);
+
+				if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
+					LastSignal.IsRepeated = true;
+				else
+					LastSignal.AppendRawSignal(FollowingSignal);
+
+				FollowingSignal = IRLib();
+			}
+			else
+				LastSignal = IRLib(SensorIRCurrentMessage);
+
 			Log::Add(Log::Events::Sensors::IRReceived);
 
-
-
 			SignalDetectionTime = Time::Unixtime();
-			LastSignal = IRLib(SensorIRCurrentMessage);
+			SignalDetectionTimeU= Time::UptimeU();
+
 			//LastSignal.SetFrequency(FrequencyDetectCalculate());
 
 			SensorIRCurrentMessage.empty();
@@ -150,7 +174,6 @@ class SensorIR_t : public Sensor_t {
 			}
 			else
 				Result += "00";
-
 
 			uint8_t Protocol = 0xF0;
 			if (Data.count("protocol")) Protocol = (uint8_t)Converter::ToUint16(Data["protocol"]);

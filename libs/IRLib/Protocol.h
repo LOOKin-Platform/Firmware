@@ -8,6 +8,9 @@
 #define LIBS_IR_PROTOCOL_H
 
 #include "Converter.h"
+#include "ACOperand.cpp"
+
+#include <algorithm>
 
 #define IR_PROTOCOL_RAW 0xFF
 
@@ -23,14 +26,16 @@ class IRProto {
 		virtual vector<int32_t> 		ConstructRawRepeatSignal(uint32_t Data, uint16_t Misc)	{ return vector<int32_t>(); }
 		virtual vector<int32_t> 		ConstructRawForSending(uint32_t Data, uint16_t Misc)	{ return vector<int32_t>(); }
 
-		bool TestValue(int32_t Value, int32_t Reference) {
+		virtual int32_t					GetBlocksDelimeter()									{ return -Settings.SensorsConfig.IR.SignalEndingLen;}
+
+		static bool TestValue(int32_t Value, int32_t Reference) {
 			if (Converter::Sign(Value) != Converter::Sign(Reference))
 				return false;
 
 			if (Value > 0)
-				return (Value > 0.85*Reference && Value < 1.15*Reference) ? true : false;
+				return (Value > 0.75*Reference && Value < 1.25*Reference) ? true : false;
 			else
-				return (Value > 1.15*Reference && Value < 0.85*Reference) ? true : false;
+				return (Value > 1.25*Reference && Value < 0.75*Reference) ? true : false;
 		}
 };
 
@@ -38,5 +43,7 @@ class IRProto {
 #include "protocols/SONY_SIRC.cpp"
 #include "protocols/Samsung.cpp"
 #include "protocols/Panasonic.cpp"
+#include "protocols/Daikin.cpp"
+#include "protocols/MitsubishiAC.cpp"
 
 #endif
