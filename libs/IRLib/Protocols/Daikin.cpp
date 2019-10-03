@@ -81,7 +81,7 @@ class DaikinUnit {
 
 			for (int i = 0; i < Sections.size(); i++) {
 				Result.push_back(HeaderMark);
-				Result.push_back(HeaderSpace);
+				Result.push_back(-HeaderSpace);
 
 				int Start = 0;
 
@@ -112,12 +112,15 @@ class DaikinUnit {
 				return false;
 
 			int16_t Diff = StateLength*16 + Sections.size()*2 + Sections.size() - Raw.size();
-			if (abs(Diff) < 3 && Raw.at(Sections[0] * 16 + 2 + 1) < -15000)
-				return true;
+			int16_t SectionDelimeterSize = Sections[0] * 16 + 2 + 1;
+
+			if (abs(Diff) < 3)
+				if (Raw.size() > SectionDelimeterSize)
+					if (Raw.at(SectionDelimeterSize) < -15000)
+						return true;
 
 			return false;
 		}
-
 
 		ACOperand GetOperand(vector <int32_t> &Raw) {
 			int ByteNum = 0;
@@ -151,9 +154,10 @@ class DaikinUnit {
 
 			}
 
-			for (int i=0; i< StateLength; i++)
+			/*
+			for (int i=0; i < StateLength; i++)
 				ESP_LOGE("RemoteState", "[%d] = %s", i, Converter::ToHexString(RemoteState[i],2).c_str());
-
+			*/
 
 			ACOperand Operand;
 			Operand.DeviceType 		= DeviceType;
@@ -327,7 +331,6 @@ class Daikin2 : public DaikinUnit {
 		Daikin2() : DaikinUnit() {
 			DeviceType		= 2;
 
-
 			StateLength 	= 39;
 			Frequency 		= 36700;
 			Gap				= 35204;
@@ -336,7 +339,7 @@ class Daikin2 : public DaikinUnit {
 			HeaderSpace		= 1728;
 			BitMark			= 460;
 			OneSpace		= 1270;
-			ZeroSpace		= 420;
+			ZeroSpace		= 400;
 
 			Sections		= {20, 19};
 
@@ -385,7 +388,7 @@ class Daikin2 : public DaikinUnit {
 				case ACOperand::ModeDry:
 					break;
 				default:
-					u8mode = ACOperand::ModeAuto;
+					u8mode = ModeConverter(ACOperand::ModeAuto);
 			}
 
 			if (Mode == ACOperand::ModeOff) {
@@ -395,7 +398,7 @@ class Daikin2 : public DaikinUnit {
 			}
 			else {
 				RemoteState[25] |= 0b00000001;
-				RemoteState[6] &= ~0b00000001;
+				RemoteState[6] &= ~0b10000000;
 			}
 
 			RemoteState[25] &= 0b10001111;

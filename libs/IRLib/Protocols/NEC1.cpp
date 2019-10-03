@@ -13,7 +13,7 @@ class NEC1 : public IRProto {
 		};
 
 		bool IsProtocol(vector<int32_t> &RawData) override {
-			if (RawData.size() >= 66) {
+			if (RawData.size() == 68) {
 				if (RawData.at(0) 	> 8700 	&& RawData.at(0) 	< 9300 &&
 					RawData.at(1) 	< -4200 && RawData.at(1) 	> -4800 &&
 					RawData.at(66) 	> 500 	&& RawData.at(66)	< 700)

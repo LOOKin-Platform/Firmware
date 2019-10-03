@@ -53,6 +53,7 @@ class RMT {
 		static void SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency);
 		static void TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency);
 		static void TXAddItem(int32_t);
+		static void TXAddItemExact(int32_t);
 		static void TXSetItems(vector<int32_t>);
 		static void TXClear();
 		static void IRAM_ATTR TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);

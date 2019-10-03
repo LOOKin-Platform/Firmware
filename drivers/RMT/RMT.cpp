@@ -77,7 +77,7 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 	config.rx_config.idle_threshold 	= rmt_item32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
 
 	ESP_ERROR_CHECK(rmt_config(&config));
-	ESP_ERROR_CHECK(rmt_driver_install(Channel, 2000, 0));
+	ESP_ERROR_CHECK(rmt_driver_install(Channel, 2500, 0));
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;
@@ -142,7 +142,7 @@ void RMT::RXTask(void *TaskData) {
 
     while(rb) {
 		size_t rx_size = 0;
-		rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 2000);
+		rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 2500);
 
 		if(item)
 		{
@@ -231,11 +231,29 @@ void RMT::TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency) {
 }
 
 /**
- * @brief Add a level/duration to the transaction to be written.
+ * @brief Wrapper for TAddItem function
  *
  * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
  */
 void RMT::TXAddItem(int32_t Bit) {
+	// hack for large pauses between signals
+	if (abs(Bit) >= Settings.SensorsConfig.IR.Threshold && abs(Bit) != Settings.SensorsConfig.IR.SignalEndingLen)
+	{
+		uint8_t Parts = (uint8_t)ceil(abs(Bit) / (double)Settings.SensorsConfig.IR.Threshold);
+
+		for (int i = 0; i < Parts; i++)
+			TXAddItemExact((int32_t)floor(Bit/Parts));
+	}
+	else
+		TXAddItemExact(Bit);
+}
+
+/**
+ * @brief Add a level/duration to the transaction to be written.
+ *
+ * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
+ */
+void RMT::TXAddItemExact(int32_t Bit) {
 	if (OutputItems.size() == 0 || (OutputItems.back()).duration1 != 0)
 	{
 		rmt_item32_t Item;

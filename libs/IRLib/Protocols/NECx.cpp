@@ -1,22 +1,33 @@
 /*
- *    Samsung.cpp
- *    Class for Samsung protocol
+ *    NECx.cpp
+ *    Class for NECx protocol
  *
  */
 
-class Samsung : public IRProto {
+
+#define NECX_HDR_MARK		4500
+#define NECX_HDR_SPACE		4500
+
+#define NECX_BIT_MARK		560
+#define NECX_ONE_SPACE		1600
+#define NECX_ZERO_SPACE		560
+
+class NECx : public IRProto {
 	public:
-		Samsung() {
+		NECx() {
 			ID 					= 0x04;
-			Name 				= "Samsung";
-			DefinedFrequency	= 38500;
+			Name 				= "NECx";
+			DefinedFrequency	= 38000;
 		};
 
 		bool IsProtocol(vector<int32_t> &RawData) override {
 			if (RawData.size() < 66)
 				return false;
 
-			if (TestValue(RawData.at(0), 4500) && TestValue(RawData.at(1), -4500))
+			if (TestValue(RawData.at(0), NECX_HDR_MARK) &&
+				TestValue(RawData.at(1), -NECX_HDR_SPACE) &&
+				TestValue(RawData.at(2), NECX_BIT_MARK) &&
+				RawData.size() == 68)
 				return true;
 
 			return false;

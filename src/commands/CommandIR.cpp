@@ -20,22 +20,25 @@ class CommandIR_t : public Command_t {
 		};
 
 		CommandIR_t() {
-			ID          		= 0x07;
-			Name        		= "IR";
+			ID          			= 0x07;
+			Name        			= "IR";
 
-			Events["nec1"]		= 0x01;
-			Events["sirc"]		= 0x03;
-			Events["samsung"]	= 0x04;
-			Events["panasonic"]	= 0x05;
+			Events["nec1"]			= 0x1;
+			Events["sirc"]			= 0x3;
+			Events["necx"]			= 0x4;
+			Events["panasonic"]		= 0x5;
+			Events["samsung36"]		= 0x6;
 
-			Events["daikin"]	= 0x08;
-			//Events["mitsubishi-ac"] = 0x09;
+			Events["daikin"]		= 0x8;
+			Events["mitsubishi-ac"] = 0x9;
 
-			Events["repeat"]	= 0xED;
+			Events["aiwa"]			= 0x14;
 
-			Events["saved"]		= 0xEE;
-			Events["prontohex"]	= 0xF0;
-			Events["raw"]		= 0xFF;
+			Events["repeat"]		= 0xED;
+
+			Events["saved"]			= 0xEE;
+			Events["prontohex"]		= 0xF0;
+			Events["raw"]			= 0xFF;
 
 			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
 				RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
@@ -125,8 +128,6 @@ class CommandIR_t : public Command_t {
 						LastSignal.Data 		= IRSignal.Uint32Data;
 						LastSignal.Misc			= IRSignal.MiscData;
 
-						ESP_LOGI("ProntoHEX", "%s", IRSignal.GetProntoHex().c_str());
-
 						RMT::TXSetItems(IRSignal.GetRawDataForSending());
 						TXSend(IRSignal.Frequency);
 
@@ -169,8 +170,6 @@ class CommandIR_t : public Command_t {
 					StringOperand = StringOperand.substr(FrequencyDelimeterPos+1);
 				}
 
-				ESP_LOGE("tag", "Started");
-
 				if (StringOperand.find(" ") == string::npos)
 					return false;
 
@@ -181,18 +180,8 @@ class CommandIR_t : public Command_t {
 					size_t Pos = StringOperand.find(" ");
 
 					string Item = (Pos != string::npos) ? StringOperand.substr(0,Pos) : StringOperand;
-					int32_t IntItem = Converter::ToInt32(Item);
 
-					if (abs(IntItem) >= Settings.SensorsConfig.IR.Threshold && abs(IntItem) != Settings.SensorsConfig.IR.SignalEndingLen)
-					{
-						// hack for large pauses between signals
-						uint8_t Parts = (uint8_t)ceil(abs(IntItem) / (double)Settings.SensorsConfig.IR.Threshold);
-
-						for (int i = 0; i < Parts; i++)
-							IRSignal->RawData.push_back((int32_t)floor(IntItem/Parts));
-					}
-					else
-						IRSignal->RawData.push_back(IntItem);
+					IRSignal->RawData.push_back(Converter::ToInt32(Item));
 
 					if (Pos == string::npos || StringOperand.size() < Pos)
 						StringOperand = "";
@@ -205,9 +194,6 @@ class CommandIR_t : public Command_t {
 				LastSignal.Protocol = IRSignal->Protocol;
 				LastSignal.Data 	= IRSignal->Uint32Data;
 				LastSignal.Misc		= IRSignal->MiscData;
-
-				ESP_LOGE("Protocol","%d", LastSignal.Protocol);
-				ESP_LOGE("Data","%d", LastSignal.Data);
 
 				if (LastSignal.Protocol != 0xFF)
 					RMT::TXSetItems(IRSignal->GetRawDataForSending());

@@ -6,7 +6,6 @@
  *
  */
 
-
 enum MitsubishiACType { MACNULL = 0, MAC136 = 136, MAC144 = 144 };
 
 class MitsubishiAC : public IRProto {
@@ -96,6 +95,8 @@ class MitsubishiAC : public IRProto {
 			ACOperand AC(Data);
 
 			Type = static_cast<MitsubishiACType>(AC.DeviceType);
+			FillProtocolData();
+
 			SetMode(AC.Mode);
 			SetTemperature(AC.Temperature);
 			SetHSwing(AC.HSwingMode);
@@ -107,7 +108,7 @@ class MitsubishiAC : public IRProto {
 			vector<int32_t> Result;
 
 			Result.push_back(HeaderMark);
-			Result.push_back(HeaderSpace);
+			Result.push_back(-HeaderSpace);
 
 			for (int i = 0; i < StateLength; i++) {
 				bitset<8> Byte(RemoteState[i]);

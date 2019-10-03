@@ -5,7 +5,7 @@
  * 5: Horizontal swing mode
  * 6: Vertical swing mode
  * 7: Ventillator mode
- * 8: Conditionare mode
+ * 8: AC mode
 */
 
 #ifndef LIBS_AC_OPERAND_H

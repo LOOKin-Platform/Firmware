@@ -43,12 +43,14 @@ void IRLib::ExternFillPostOperations() {
 void IRLib::FillProtocols() {
 	if (IRLib::Protocols.size() == 0)
 		Protocols = {
-				new NEC1(),
-				new SONY_SIRC(),
-				new Samsung(),
-				new Panasonic(),
-				new Daikin(),
-				new MitsubishiAC()
+			new NEC1(),
+			new SONY_SIRC(),
+			new NECx(),
+			new Panasonic(),
+			new Samsung36(),
+			new Daikin(),
+			new MitsubishiAC(),
+			new Aiwa()
 		};
 }
 
@@ -98,20 +100,6 @@ vector<int32_t> IRLib::GetRawDataForSending() {
 	if (Proto != nullptr)
 		if (Uint32Data > 0)
 			Result = Proto->ConstructRawForSending(this->Uint32Data, this->MiscData);
-
-	// check for large pauses between signals
-	for (int i = 0 ; i< Result.size(); i++) {
-		int32_t IntValue = Result[i];
-
-		if (abs(IntValue) >= Settings.SensorsConfig.IR.Threshold && abs(IntValue) != Settings.SensorsConfig.IR.SignalEndingLen)
-		{
-			uint8_t Parts = (uint8_t)ceil(abs(IntValue) / (double)Settings.SensorsConfig.IR.Threshold);
-			Result.erase(Result.begin() + i);
-
-			for (int j = 0; j < Parts; j++)
-				Result.insert(Result.begin() + i, (int32_t)floor(IntValue/Parts));
-		}
-	}
 
 	return (Result.size() > 0) ? Result : this->RawData;
 }
