@@ -255,12 +255,18 @@ class MitsubishiAC : public IRProto {
 					case ACOperand::ModeAuto:
 						u8mode = 0x20;
 						RemoteState[8] = 0b00110000;
-
 						break;
+
 					case ACOperand::ModeDry:
 						u8mode = 0x10;
 						RemoteState[8] = 0b00110010;
 						break;
+
+					case ACOperand::ModeOff:
+						u8mode = 0x20;
+						RemoteState[8] = 0b00110000;
+						break;
+
 					default:
 						SetMode(ACOperand::ModeAuto);
 						return;
