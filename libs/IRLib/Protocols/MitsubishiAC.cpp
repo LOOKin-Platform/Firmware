@@ -6,6 +6,8 @@
  *
  */
 
+#include "DateTime.h"
+
 enum MitsubishiACType { MACNULL = 0, MAC136 = 136, MAC144 = 144 };
 
 class MitsubishiAC : public IRProto {
@@ -97,11 +99,14 @@ class MitsubishiAC : public IRProto {
 			Type = static_cast<MitsubishiACType>(AC.DeviceType);
 			FillProtocolData();
 
+			Erase();
+
 			SetMode(AC.Mode);
 			SetTemperature(AC.Temperature);
 			SetHSwing(AC.HSwingMode);
 			SetVSwing(AC.VSwingMode);
 			SetFanMode(AC.VentillatorMode);
+			SetTime(Time::DateTime());
 
 			Checksum();
 
@@ -111,6 +116,7 @@ class MitsubishiAC : public IRProto {
 			Result.push_back(-HeaderSpace);
 
 			for (int i = 0; i < StateLength; i++) {
+				//ESP_LOGE("RemoteState", "[%d], %02X", i, RemoteState[i]);
 				bitset<8> Byte(RemoteState[i]);
 				for (int j = 0; j < 8; j++) {
 					Result.push_back(BitMark);
@@ -213,6 +219,7 @@ class MitsubishiAC : public IRProto {
 					RemoteState[i] = 0;
 
 				RemoteState[StateLength - 1] = 0x1F;
+
 				Checksum();
 			}
 
@@ -245,26 +252,26 @@ class MitsubishiAC : public IRProto {
 				switch (Mode) {
 					case ACOperand::ModeCool:
 						u8mode = 0x18;
-						RemoteState[8] = 0b00110110;
+						RemoteState[8] = 0b00000110; //0b00110110;
 						break;
 					case ACOperand::ModeHeat:
 						u8mode = 0x08;
-						RemoteState[8] = 0b00110000;
+						RemoteState[8] = 0b00000000; //0b00110000;
 
 						break;
 					case ACOperand::ModeAuto:
 						u8mode = 0x20;
-						RemoteState[8] = 0b00110000;
+						RemoteState[8] = 0b00000000; // 0b00110000;
 						break;
 
 					case ACOperand::ModeDry:
 						u8mode = 0x10;
-						RemoteState[8] = 0b00110010;
+						RemoteState[8] = 0b00000010; // 0b00110010;
 						break;
 
 					case ACOperand::ModeOff:
 						u8mode = 0x20;
-						RemoteState[8] = 0b00110000;
+						RemoteState[8] = 0b00000000; // 0b00110000
 						break;
 
 					default:
@@ -466,6 +473,25 @@ class MitsubishiAC : public IRProto {
 
 			return ACOperand::VentAuto;
 		};
+
+		void SetTime(DateTime_t DateTime) {
+			ESP_LOGE("DateTime", "Hours: %d, Minutes: %d", DateTime.Hours, DateTime.Minutes);
+
+			if (Type == MitsubishiACType::MAC144)
+				RemoteState[10] = DateTime.Hours * 6 + (uint8_t)(DateTime.Minutes / 10);
+		}
+
+		DateTime_t GetTime() {
+			DateTime_t Result;
+
+			if (Type == MitsubishiACType::MAC144)
+			{
+				Result.Hours 	= (uint8_t)(RemoteState[10] / 6);
+				Result.Minutes	= ((uint8_t)(RemoteState[10] % 6)) * 10;
+			}
+
+			return DateTime_t();
+		}
 
 		void Checksum() {
 			if (Type == MitsubishiACType::MAC136) {

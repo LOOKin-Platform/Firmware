@@ -80,6 +80,15 @@ class CommandIR_t : public Command_t {
 				if (Operand == 0x0 && Misc == 0x0)
 					return false;
 
+				/*
+				string s = "";
+				for (auto& item : IRSignal.GetRawDataForSending()) {
+					s += Converter::ToString(item) + " ";
+				}
+				ESP_LOGE("OUTPUT:", "%s", s.c_str());
+				*/
+
+
 				RMT::TXSetItems(IRSignal.GetRawDataForSending());
 				TXSend(IRSignal.GetProtocolFrequency());
 				return true;

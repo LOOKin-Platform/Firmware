@@ -155,8 +155,8 @@ void WebServer_t::Stop() {
 
     if (HTTPServerHandle != NULL) {
         httpd_stop(HTTPServerHandle);
+        HTTPServerHandle = NULL;
     }
-	//HTTPServerStopFlag 	= true;
 
 	UDPServerStopFlag 	= true;
 }

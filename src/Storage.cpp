@@ -463,6 +463,23 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 	}
 
 	if (Type == QueryType::DELETE) {
+		if (URLParts.size() == 0) {
+
+			if (LastVersion >= 0x2000)
+			{
+				SPIFlash::EraseRange(Settings.Storage.Versions.StartAddress, Settings.Storage.Versions.Size);
+				SPIFlash::EraseRange(Settings.Storage.Data.StartAddress, Settings.Storage.Data.Size);
+
+				if (Patch->size() > 0)
+					Patch->clear();
+
+				AddressToWrite 	= Settings.Storage.Versions.StartAddress;
+				LastVersion 	= 0x1FFF;
+			}
+
+			Result.SetSuccess();
+		}
+
 		if (URLParts.size() == 1) {
 			vector<string> IDsToDelete = Converter::StringToVector(URLParts[0], ",");
 
