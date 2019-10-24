@@ -18,9 +18,6 @@
 #include "Sleep.h"
 
 #include "handlers/Pooling.cpp"
-//#include "HomeKit/hap.h"
-
-//#include "Daikin.h"
 
 using namespace std;
 

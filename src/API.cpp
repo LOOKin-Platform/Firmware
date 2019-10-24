@@ -54,13 +54,15 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			Result += "\"Commands\" : ";
 			for (int i = 0; i < Commands.size(); i++)
 				Command_t::HandleHTTPRequest(Response, Type, { }, Params);
-			Result += Response.Body + ",";
+			Result += Response.Body + "}";// ",";
 
+			/*
 			Result += "\"Log\" : ";
 			Log::HandleHTTPRequest(Response, Type, { }, Params);
 			Result += Response.Body + "";
 
 			Result += "}";
+			*/
 
 			Response.ResponseCode	= WebServer_t::Response::CODE::OK;
 			Response.ContentType	= WebServer_t::Response::TYPE::JSON;

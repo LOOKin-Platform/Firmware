@@ -24,7 +24,7 @@ class CommandIR_t : public Command_t {
 			Name        			= "IR";
 
 			Events["nec1"]			= 0x1;
-			Events["sirc"]			= 0x3;
+			Events["sony"]			= 0x3;
 			Events["necx"]			= 0x4;
 			Events["panasonic"]		= 0x5;
 			Events["samsung36"]		= 0x6;
@@ -187,7 +187,6 @@ class CommandIR_t : public Command_t {
 				while (StringOperand.size() > 0)
 				{
 					size_t Pos = StringOperand.find(" ");
-
 					string Item = (Pos != string::npos) ? StringOperand.substr(0,Pos) : StringOperand;
 
 					IRSignal->RawData.push_back(Converter::ToInt32(Item));
