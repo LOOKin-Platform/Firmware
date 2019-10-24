@@ -44,7 +44,7 @@ void IRLib::FillProtocols() {
 	if (IRLib::Protocols.size() == 0)
 		Protocols = {
 			new NEC1(),
-			new SONY_SIRC(),
+			new SONY(),
 			new NECx(),
 			new Panasonic(),
 			new Samsung36(),
@@ -159,12 +159,14 @@ void IRLib::AppendRawSignal(IRLib &DataToAppend) {
 }
 
 
-int16_t IRLib::RawPopItem() {
+int32_t IRLib::RawPopItem() {
 	if (RawData.size() == 0)
 		return 0;
 
 	int32_t Item = RawData.front();
 	RawData.erase(RawData.begin());
+
+	ESP_LOGE("RawPopItemBit", "%d", Item);
 
 	return Item;
 }

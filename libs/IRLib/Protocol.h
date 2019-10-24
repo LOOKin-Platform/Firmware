@@ -40,7 +40,7 @@ class IRProto {
 };
 
 #include "protocols/NEC1.cpp"
-#include "protocols/SONY_SIRC.cpp"
+#include "Protocols/SONY.cpp"
 #include "Protocols/NECx.cpp"
 #include "protocols/Panasonic.cpp"
 #include "protocols/Samsung36.cpp"
