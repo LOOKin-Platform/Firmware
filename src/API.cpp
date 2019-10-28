@@ -44,8 +44,7 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 
 			Result += ", \"Sensors\" : [";
 			for (int i = 0; i < Sensors.size(); i++) {
-				Sensor_t::HandleHTTPRequest	(Response, Type, { Sensors[i]->Name }, Params);
-				Result += " { \"" + Sensors[i]->Name + "\":" + Response.Body + "}";
+				Result += " { \"" + Sensors[i]->Name + "\":" + Sensors[i]->EchoSummaryJSON() + "}";
 				if (i < Sensors.size() - 1)
 					Result += ",";
 			}

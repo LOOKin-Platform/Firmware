@@ -96,6 +96,11 @@ class SensorIR_t : public Sensor_t {
 			return false;
 		};
 
+		string SummaryJSON() override {
+			return "{}";
+		};
+
+
 		static void MessageStart() {
 			SensorIRCurrentMessage.clear();
 		};

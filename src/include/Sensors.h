@@ -62,6 +62,9 @@ class Sensor_t {
 
 		virtual void				Pool()								{ }
 
+		string						EchoSummaryJSON();
+		virtual string				SummaryJSON()						{ return ""; };
+
 		static void					UpdateSensors();
 		static vector<Sensor_t*>	GetSensorsForDevice();
 		static Sensor_t*			GetSensorByName(string);
