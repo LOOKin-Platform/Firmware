@@ -105,7 +105,7 @@ class MitsubishiAC : public IRProto {
 			SetTemperature(AC.Temperature);
 			SetHSwing(AC.HSwingMode);
 			SetVSwing(AC.VSwingMode);
-			SetFanMode(AC.VentillatorMode);
+			SetFanMode(AC.FanMode);
 			SetTime(Time::DateTime());
 
 			Checksum();
@@ -177,7 +177,7 @@ class MitsubishiAC : public IRProto {
 			AC.Temperature	= GetTemperature();
 			AC.HSwingMode	= GetHSwing();
 			AC.VSwingMode	= GetVSwing();
-			AC.VentillatorMode = GetFanMode();
+			AC.FanMode 		= GetFanMode();
 
 			return make_pair(AC.ToUint32(), 0x0);
 		}
@@ -410,17 +410,17 @@ class MitsubishiAC : public IRProto {
 			return ACOperand::SwingOff;
 		}
 
-		void SetFanMode(ACOperand::VentMode Mode) {
+		void SetFanMode(ACOperand::FanModeEnum Mode) {
 			uint8_t u8mode = 0x0;
 
 			if (Type == MitsubishiACType::MAC136) {
 				switch (Mode) {
-					case ACOperand::VentQuite	: u8mode = 0b00; break;
-					case ACOperand::Vent1		: u8mode = 0b01; break;
-					case ACOperand::Vent3		: u8mode = 0b10; break;
-					case ACOperand::Vent5		: u8mode = 0b11; break;
+					case ACOperand::FanQuite	: u8mode = 0b00; break;
+					case ACOperand::Fan1		: u8mode = 0b01; break;
+					case ACOperand::Fan3		: u8mode = 0b10; break;
+					case ACOperand::Fan5		: u8mode = 0b11; break;
 					default:
-						SetFanMode(ACOperand::Vent3);
+						SetFanMode(ACOperand::Fan3);
 						return;
 				}
 
@@ -430,12 +430,12 @@ class MitsubishiAC : public IRProto {
 
 			if (Type == MitsubishiACType::MAC144) {
 				switch (Mode) {
-					case ACOperand::VentQuite	: u8mode = 0x6; break;
-					case ACOperand::Vent5		: u8mode = 0x4; break;
-					case ACOperand::VentAuto	: u8mode = 0x0; break;
+					case ACOperand::FanQuite	: u8mode = 0x6; break;
+					case ACOperand::Fan5		: u8mode = 0x4; break;
+					case ACOperand::FanAuto	: u8mode = 0x0; break;
 
 					default:
-						SetFanMode(ACOperand::VentAuto);
+						SetFanMode(ACOperand::FanAuto);
 						return;
 				}
 
@@ -444,19 +444,19 @@ class MitsubishiAC : public IRProto {
 			}
 		};
 
-		ACOperand::VentMode GetFanMode() {
+		ACOperand::FanModeEnum GetFanMode() {
 			uint8_t u8mode = 0x0;
 
 			if (Type == MitsubishiACType::MAC136) {
 				u8mode = (RemoteState[7] & 0b00000110) >> 1;
 
 				switch (u8mode) {
-					case 0b00: return ACOperand::VentQuite	; break;
-					case 0b01: return ACOperand::Vent1		; break;
-					case 0b10: return ACOperand::Vent3		; break;
-					case 0b11: return ACOperand::Vent5		; break;
+					case 0b00: return ACOperand::FanQuite	; break;
+					case 0b01: return ACOperand::Fan1		; break;
+					case 0b10: return ACOperand::Fan3		; break;
+					case 0b11: return ACOperand::Fan5		; break;
 					default:
-						return ACOperand::Vent3;
+						return ACOperand::Fan3;
 				}
 			}
 
@@ -464,14 +464,14 @@ class MitsubishiAC : public IRProto {
 				u8mode = RemoteState[9] & 0b111;
 
 				switch (u8mode) {
-					case 0x6: return ACOperand::VentQuite	; break;
-					case 0x4: return ACOperand::Vent5		; break;
+					case 0x6: return ACOperand::FanQuite	; break;
+					case 0x4: return ACOperand::Fan5		; break;
 					default:
-						return ACOperand::VentAuto;
+						return ACOperand::FanAuto;
 				}
 			}
 
-			return ACOperand::VentAuto;
+			return ACOperand::FanAuto;
 		};
 
 		void SetTime(DateTime_t DateTime) {

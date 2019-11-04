@@ -164,6 +164,16 @@ bool Sensor_t::SetValue(uint32_t Value, string Key, uint32_t UpdatedTime) {
 	return false;
 }
 
+string Sensor_t::EchoSummaryJSON() {
+	if (SummaryJSON() != "")
+		return SummaryJSON();
+
+	WebServer_t::Response Response;
+	Sensor_t::HandleHTTPRequest	(Response, QueryType::GET, { Name }, map<string,string>());
+
+	return Response.Body;
+}
+
 SensorValueItem Sensor_t::GetValue(string Key) {
 	if (!(Values.count(Key) > 0))
 		SetValue(ReceiveValue(Key));

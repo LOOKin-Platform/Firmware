@@ -47,5 +47,6 @@ class IRProto {
 #include "protocols/Daikin.cpp"
 #include "protocols/MitsubishiAC.cpp"
 #include "protocols/Aiwa.cpp"
-
+#include "protocols/Gree.cpp"
+#include "protocols/HaierAC.cpp"
 #endif

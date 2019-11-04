@@ -71,8 +71,8 @@ class DaikinUnit {
 		virtual void 	SetVSwing(ACOperand::SwingMode) {};
 		virtual ACOperand::SwingMode GetVSwing() { return ACOperand::SwingOff; };
 
-		virtual void 	SetFanMode(ACOperand::VentMode) {};
-		virtual ACOperand::VentMode GetFanMode() { return ACOperand::VentAuto; };
+		virtual void 	SetFanMode(ACOperand::FanModeEnum) {};
+		virtual ACOperand::FanModeEnum GetFanMode() { return ACOperand::FanAuto; };
 
 		vector<int32_t> GetSignal() {
 			Checksum();
@@ -164,7 +164,7 @@ class DaikinUnit {
 			Operand.Temperature		= GetTemperature();
 			Operand.HSwingMode		= GetHSwing();
 			Operand.VSwingMode		= GetVSwing();
-			Operand.VentillatorMode = GetFanMode();
+			Operand.FanMode 		= GetFanMode();
 			Operand.Mode			= GetMode();
 
 			return Operand;
@@ -286,14 +286,14 @@ class DaikinGeneric : public DaikinUnit {
 		return ACOperand::SwingAuto;
 	}
 
-	void SetFanMode(ACOperand::VentMode Mode) override {
+	void SetFanMode(ACOperand::FanModeEnum Mode) override {
 		  uint8_t fanset;
 
 		  switch (Mode) {
-		  	  case ACOperand::VentAuto:
+		  	  case ACOperand::FanAuto:
 		  		  fanset = 0b1010;
 		  		  break;
-		  	  case ACOperand::VentQuite:
+		  	  case ACOperand::FanQuite:
 		  		  fanset = 0b1011;
 		  		  break;
 		  	  default:
@@ -304,19 +304,19 @@ class DaikinGeneric : public DaikinUnit {
 		  RemoteState[24] |= (fanset << 4);
 	};
 
-	ACOperand::VentMode GetFanMode() override {
+	ACOperand::FanModeEnum GetFanMode() override {
 		  uint8_t fan = RemoteState[24] >> 4;
 
 		  switch (fan) {
-		  	  case 0b1011: return ACOperand::VentQuite	; break;
-		  	  case 0b1010: return ACOperand::VentAuto	; break;
+		  	  case 0b1011: return ACOperand::FanQuite	; break;
+		  	  case 0b1010: return ACOperand::FanAuto	; break;
 		  	  default:
 		  		  if (fan > 7) fan = 7;
 
-		  		  return static_cast<ACOperand::VentMode>(fan-2);
+		  		  return static_cast<ACOperand::FanModeEnum>(fan-2);
 		  }
 
-		return ACOperand::VentAuto;
+		return ACOperand::FanAuto;
 	};
 
 	void Checksum() override {
@@ -453,7 +453,9 @@ class Daikin2 : public DaikinUnit {
 				case ACOperand::SwingLow		: Position = 0x6; break;
 				case ACOperand::SwingBreeze		: Position = 0xC; break;
 				case ACOperand::SwingCirculate	: Position = 0xD; break;
-				case ACOperand::SwingAuto		: Position = 0xE; break;
+				case ACOperand::SwingAuto		:
+					default						:
+					Position = 0xE; break;
 			}
 
 			RemoteState[18] &= 0xF0;
@@ -474,12 +476,12 @@ class Daikin2 : public DaikinUnit {
 			}
 		}
 
-		void SetFanMode(ACOperand::VentMode Mode) override {
+		void SetFanMode(ACOperand::FanModeEnum Mode) override {
 			  uint8_t fanset;
 
 			  switch (Mode) {
-			  	  case ACOperand::VentQuite	: fanset = 0b1011; break;
-			  	  case ACOperand::VentAuto	: fanset = 0b1010; break;
+			  	  case ACOperand::FanQuite	: fanset = 0b1011; break;
+			  	  case ACOperand::FanAuto	: fanset = 0b1010; break;
 			  	  default:
 			  		  fanset = Mode+2;
 			  }
@@ -488,19 +490,19 @@ class Daikin2 : public DaikinUnit {
 			  RemoteState[28] |= (fanset << 4);
 		};
 
-		ACOperand::VentMode GetFanMode() override {
+		ACOperand::FanModeEnum GetFanMode() override {
 			  uint8_t fan = RemoteState[28] >> 4;
 
 			  switch (fan) {
-			  	  case 0b1011: return ACOperand::VentQuite	; break;
-			  	  case 0b1010: return ACOperand::VentAuto	; break;
+			  	  case 0b1011: return ACOperand::FanQuite	; break;
+			  	  case 0b1010: return ACOperand::FanAuto	; break;
 			  	  default:
 			  		  if (fan > 7) fan = 7;
 
-			  		  return static_cast<ACOperand::VentMode>(fan-2);
+			  		  return static_cast<ACOperand::FanModeEnum>(fan-2);
 			  }
 
-			return ACOperand::VentAuto;
+			return ACOperand::FanAuto;
 		};
 
 		void Checksum() override {
@@ -605,25 +607,25 @@ class Daikin128 : public DaikinUnit {
 				return ACOperand::SwingAuto;
 		}
 
-		void SetFanMode(ACOperand::VentMode Mode) override {
+		void SetFanMode(ACOperand::FanModeEnum Mode) override {
 			uint8_t Speed = 0x0;
 
 			switch (Mode) {
-				case ACOperand::VentQuite:
-				case ACOperand::VentAuto:
+				case ACOperand::FanQuite:
+				case ACOperand::FanAuto:
 					Speed = (GetMode() == ACOperand::ModeAuto) ? 0b0001 : 0b1001;
 					break;
-				case ACOperand::Vent1:
-				case ACOperand::Vent2:
+				case ACOperand::Fan1:
+				case ACOperand::Fan2:
 					Speed = 0b1000;
 					break;
-				case ACOperand::Vent3:
+				case ACOperand::Fan3:
 					Speed = 0b0100;
 					break;
-				case ACOperand::Vent4:
+				case ACOperand::Fan4:
 					Speed = 0b0010;
 					break;
-				case ACOperand::Vent5:
+				case ACOperand::Fan5:
 					Speed = 0b0011;
 					break;
 			}
@@ -632,19 +634,19 @@ class Daikin128 : public DaikinUnit {
 			RemoteState[1] |= (Speed << 4);
 		};
 
-		ACOperand::VentMode GetFanMode() override {
+		ACOperand::FanModeEnum GetFanMode() override {
 			uint8_t FanSpeed = (RemoteState[1] & 0b11110000) >> 4;
 
 			switch (FanSpeed) {
-				case 0b0001: return ACOperand::VentAuto; break;
-				case 0b1001: return ACOperand::VentQuite; break;
-				case 0b1000: return ACOperand::Vent1; break;
-				case 0b0100: return ACOperand::Vent3; break;
-				case 0b0010: return ACOperand::Vent4; break;
-				case 0b0011: return ACOperand::Vent5; break;
+				case 0b0001: return ACOperand::FanAuto; break;
+				case 0b1001: return ACOperand::FanQuite; break;
+				case 0b1000: return ACOperand::Fan1; break;
+				case 0b0100: return ACOperand::Fan3; break;
+				case 0b0010: return ACOperand::Fan4; break;
+				case 0b0011: return ACOperand::Fan5; break;
 			}
 
-			return ACOperand::VentAuto;
+			return ACOperand::FanAuto;
 		};
 
 		void Checksum() override {
@@ -720,9 +722,9 @@ class Daikin152 : public DaikinUnit {
 
 		ACOperand::SwingMode GetVSwing() override 				{ return ACOperand::SwingOff; }
 
-		void SetFanMode(ACOperand::VentMode Mode) override 		{ };
+		void SetFanMode(ACOperand::FanModeEnum Mode) override 	{ };
 
-		ACOperand::VentMode GetFanMode() override 				{ return ACOperand::VentAuto; };
+		ACOperand::FanModeEnum GetFanMode() override 			{ return ACOperand::FanAuto; };
 
 		void Checksum() override 								{ };
 };
@@ -854,17 +856,17 @@ class Daikin160 : public DaikinUnit {
 			}
 		}
 
-		void SetFanMode(ACOperand::VentMode Mode) override {
+		void SetFanMode(ACOperand::FanModeEnum Mode) override {
 			uint8_t Speed = 0x0;
 
 			switch (Mode) {
-				case ACOperand::VentQuite	: Speed = 0b1011; break;
-				case ACOperand::VentAuto	: Speed = 0b1010; break;
-				case ACOperand::Vent1		:
-				case ACOperand::Vent2		: Speed = 0b0011; break;
-				case ACOperand::Vent3		: Speed = 0b0101; break;
-				case ACOperand::Vent4		:
-				case ACOperand::Vent5		: Speed = 0b0111; break;
+				case ACOperand::FanQuite	: Speed = 0b1011; break;
+				case ACOperand::FanAuto		: Speed = 0b1010; break;
+				case ACOperand::Fan1		:
+				case ACOperand::Fan2		: Speed = 0b0011; break;
+				case ACOperand::Fan3		: Speed = 0b0101; break;
+				case ACOperand::Fan4		:
+				case ACOperand::Fan5		: Speed = 0b0111; break;
 				default:
 					Speed = 0b1010;
 			}
@@ -873,18 +875,18 @@ class Daikin160 : public DaikinUnit {
 			RemoteState[17] |= Speed;
 		};
 
-		ACOperand::VentMode GetFanMode() override {
+		ACOperand::FanModeEnum GetFanMode() override {
 			uint8_t FanSpeed = RemoteState[17] & 0b00001111;
 
 			switch (FanSpeed) {
-				case 0b1011: return ACOperand::VentQuite; break;
-				case 0b1010: return ACOperand::VentAuto; break;
-				case 0b0011: return ACOperand::Vent1; break;
-				case 0b0101: return ACOperand::Vent3; break;
-				case 0b0111: return ACOperand::Vent5; break;
+				case 0b1011: return ACOperand::FanQuite	; break;
+				case 0b1010: return ACOperand::FanAuto	; break;
+				case 0b0011: return ACOperand::Fan1		; break;
+				case 0b0101: return ACOperand::Fan3		; break;
+				case 0b0111: return ACOperand::Fan5		; break;
 			}
 
-			return ACOperand::VentAuto;
+			return ACOperand::FanAuto;
 		};
 
 		void Checksum() override {
@@ -1057,14 +1059,14 @@ class Daikin176 : public DaikinUnit {
 			return ACOperand::SwingOff;
 		}
 
-		void SetFanMode(ACOperand::VentMode Mode) override {
+		void SetFanMode(ACOperand::FanModeEnum Mode) override {
 			uint8_t Speed = 0x0;
 
 			switch (Mode) {
-				case ACOperand::Vent1	: Speed = 1; break;
-				case ACOperand::Vent5	: Speed = 3; break;
+				case ACOperand::Fan1	: Speed = 1; break;
+				case ACOperand::Fan5	: Speed = 3; break;
 				default:
-					SetFanMode(ACOperand::Vent5);
+					SetFanMode(ACOperand::Fan5);
 					return;
 			}
 
@@ -1073,15 +1075,15 @@ class Daikin176 : public DaikinUnit {
 			RemoteState[13] = 0;
 		};
 
-		ACOperand::VentMode GetFanMode() override {
-			uint8_t FanSpeed = RemoteState[18] >> 4;;
+		ACOperand::FanModeEnum GetFanMode() override {
+			uint8_t FanSpeed = RemoteState[18] >> 4;
 
 			switch (FanSpeed) {
 				case 1:
-					return ACOperand::Vent1;
+					return ACOperand::Fan1;
 					break;
 				default:
-					return ACOperand::Vent5;
+					return ACOperand::Fan5;
 			}
 		};
 
@@ -1202,19 +1204,19 @@ class Daikin216 : public DaikinUnit {
 			return (RemoteState[16] & 0b00001111) ? ACOperand::SwingAuto : ACOperand::SwingOff;
 		}
 
-		void SetFanMode(ACOperand::VentMode Mode) override {
+		void SetFanMode(ACOperand::FanModeEnum Mode) override {
 			uint8_t Speed = 0x0;
 
 			switch (Mode) {
-				case ACOperand::VentAuto	: Speed = 0b1010; break;
-				case ACOperand::VentQuite	: Speed = 0b1011; break;
-				case ACOperand::Vent1		:
-				case ACOperand::Vent2		: Speed = 0b0011; break;
-				case ACOperand::Vent3		: Speed = 0b0101; break;
-				case ACOperand::Vent4		:
-				case ACOperand::Vent5		: Speed = 0b0111; break;
+				case ACOperand::FanAuto		: Speed = 0b1010; break;
+				case ACOperand::FanQuite	: Speed = 0b1011; break;
+				case ACOperand::Fan1		:
+				case ACOperand::Fan2		: Speed = 0b0011; break;
+				case ACOperand::Fan3		: Speed = 0b0101; break;
+				case ACOperand::Fan4		:
+				case ACOperand::Fan5		: Speed = 0b0111; break;
 				default:
-					SetFanMode(ACOperand::VentAuto);
+					SetFanMode(ACOperand::FanAuto);
 					return;
 			}
 
@@ -1222,17 +1224,17 @@ class Daikin216 : public DaikinUnit {
 			RemoteState[16] |= (Speed << 4);
 		};
 
-		ACOperand::VentMode GetFanMode() override {
+		ACOperand::FanModeEnum GetFanMode() override {
 			uint8_t FanSpeed = RemoteState[16] >> 4;
 
 			switch (FanSpeed) {
-				case 0b1010: return ACOperand::VentAuto	; break;
-				case 0b1011: return ACOperand::VentQuite; break;
-				case 0b0011: return ACOperand::Vent1	; break;
-				case 0b0101: return ACOperand::Vent3	; break;
-				case 0b0111: return ACOperand::Vent5	; break;
+				case 0b1010: return ACOperand::FanAuto	; break;
+				case 0b1011: return ACOperand::FanQuite	; break;
+				case 0b0011: return ACOperand::Fan1		; break;
+				case 0b0101: return ACOperand::Fan3		; break;
+				case 0b0111: return ACOperand::Fan5		; break;
 				default:
-					return ACOperand::VentAuto;
+					return ACOperand::FanAuto;
 			}
 		};
 

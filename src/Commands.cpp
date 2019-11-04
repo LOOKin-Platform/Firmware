@@ -97,7 +97,6 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 
 		string Action = "";
-
 		if (URLParts.size() > 1) Action = URLParts[1];
 
 		if (Params.find("action") != Params.end()) {

@@ -23,14 +23,16 @@ class CommandIR_t : public Command_t {
 			ID          			= 0x07;
 			Name        			= "IR";
 
-			Events["nec1"]			= 0x1;
-			Events["sony"]			= 0x3;
-			Events["necx"]			= 0x4;
-			Events["panasonic"]		= 0x5;
-			Events["samsung36"]		= 0x6;
+			Events["nec1"]			= 0x01;
+			Events["sony"]			= 0x03;
+			Events["necx"]			= 0x04;
+			Events["panasonic"]		= 0x05;
+			Events["samsung36"]		= 0x06;
 
-			Events["daikin"]		= 0x8;
-			Events["mitsubishi-ac"] = 0x9;
+			Events["daikin"]		= 0x08;
+			Events["mitsubishi-ac"] = 0x09;
+			//Events["gree"] = 0x0A;
+			Events["haier-ac"] 		= 0x0B;
 
 			Events["aiwa"]			= 0x14;
 

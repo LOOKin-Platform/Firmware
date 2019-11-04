@@ -50,7 +50,9 @@ void IRLib::FillProtocols() {
 			new Samsung36(),
 			new Daikin(),
 			new MitsubishiAC(),
-			new Aiwa()
+			new Aiwa(),
+			//new Gree(),
+			new HaierAC()
 		};
 }
 
