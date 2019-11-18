@@ -96,7 +96,7 @@ T JSON::GetItemsTemplated(cJSON *Parent, bool CaseSensitive) {
 		cJSON *Child = (Parent != NULL) ? Parent->child : Root->child;
 
 		while( Child ) {
-			if (Child->type != cJSON_Array)
+			if (Child->type != cJSON_Array && Child->type == cJSON_String)
 				AddToMapOrTupple(Result,  Child->string, Child->valuestring, CaseSensitive);
 
 			Child = Child->next;
