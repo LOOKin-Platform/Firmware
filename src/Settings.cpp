@@ -17,6 +17,9 @@ void FillDevices() {
 	Plug.Color.Blue.GPIO			= GPIO_NUM_2;
 	Plug.Color.Blue.Channel			= LEDC_CHANNEL_2;
 
+	Settings_t::GPIOData_t::DeviceInfo_t Duo;
+	Duo.MultiSwitch.GPIO 			= { GPIO_NUM_4, GPIO_NUM_17 };
+
 	Settings_t::GPIOData_t::DeviceInfo_t Remote;
 	Remote.Indicator.Timer			= LEDC_TIMER_0;
 	Remote.Indicator.Red.GPIO		= GPIO_NUM_25;
@@ -44,6 +47,7 @@ void FillDevices() {
 
 	Settings_t::GPIOData_t::Devices =
 	{
+		{ 0x02, Duo 	},
 		{ 0x03, Plug 	},
 		{ 0x81, Remote 	},
 		{ 0x82, Motion 	}

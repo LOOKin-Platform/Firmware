@@ -53,6 +53,9 @@ void Device_t::Init() {
 	PowerMode = (Type.IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
 	switch (Type.Hex) {
+		case Settings.Devices.Duo:
+			PowerModeVoltage = +220;
+
 		case Settings.Devices.Plug:
 			PowerModeVoltage = +220;
 			break;

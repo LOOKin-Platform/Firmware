@@ -83,6 +83,7 @@ extern Wireless_t	Wireless;
 extern Storage_t	Storage;
 
 #include "../sensors/SensorSwitch.cpp"
+#include "../sensors/SensorMultiSwitch.cpp"
 #include "../sensors/SensorRGBW.cpp"
 #include "../sensors/SensorIR.cpp"
 #include "../sensors/SensorMotion.cpp"

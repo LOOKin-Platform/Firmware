@@ -24,7 +24,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.33";
+		const	string 						FirmwareVersion = "1.34";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -113,11 +113,13 @@ class Settings_t {
 
 		struct Devices_t {
 			public:
+				static constexpr uint8_t	Duo				= 0x02;
 				static constexpr uint8_t	Plug 			= 0x03;
 				static constexpr uint8_t	Remote			= 0x81;
 				static constexpr uint8_t	Motion			= 0x82;
 
 				map<uint8_t,string> Literaly = {
+					{ Duo	, "Duo"		},
 					{ Plug	, "Plug"	},
 					{ Remote, "Remote" 	},
 					{ Motion, "Motion" 	}
@@ -165,7 +167,7 @@ class Settings_t {
 			struct Versions_t {
 				static constexpr uint32_t 	StartAddress	= 0x92000;
 				static constexpr uint32_t 	Size			= 0xA000;
-				static constexpr uint8_t 	VersionMaxSize	= 20;
+				static constexpr uint8_t 	VersionMaxSize	= 10;
 				static constexpr uint16_t 	VersionsMax		= 0x400;
 			} Versions;
 
@@ -236,6 +238,10 @@ class Settings_t {
 				gpio_num_t			GPIO 			= GPIO_NUM_0;
 			};
 
+			struct MultiSwitch_t {
+				vector<gpio_num_t>	GPIO			= vector<gpio_num_t>();
+			};
+
 			struct Color_t {
 				struct Item_t {
 					gpio_num_t		GPIO 			= GPIO_NUM_0;
@@ -277,6 +283,7 @@ class Settings_t {
 
 			struct DeviceInfo_t {
 				Switch_t		Switch;
+				MultiSwitch_t	MultiSwitch;
 				Color_t			Color;
 				IR_t			IR;
 				Motion_t		Motion;

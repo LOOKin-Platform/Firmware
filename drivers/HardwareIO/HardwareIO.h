@@ -39,6 +39,8 @@ class GPIO {
 
 		// Regular work with PIN outputs and inputs
 		static void 	Setup(gpio_num_t);
+		static void 	Setup(gpio_num_t, gpio_mode_t);
+
 		static bool 	IsInRange(gpio_num_t pin);
 		static bool 	Read(gpio_num_t pin);
 		static void 	Write(gpio_num_t pin, bool value);

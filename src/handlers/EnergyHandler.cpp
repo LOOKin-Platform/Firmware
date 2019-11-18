@@ -24,8 +24,10 @@ void IRAM_ATTR EnergyPeriodicHandler::Pool() {
 	if (!IsInited)
 		Init();
 
-	if (Time::Uptime() %5 == 0) {
+	if (Device.Type.Hex != Settings.Devices.Remote)
+		return;
 
+	if (Time::Uptime() %5 == 0) {
 	    uint16_t ConstValueSrc		= 0;
 	    uint16_t BatteryValueSrc	= 0;
 
