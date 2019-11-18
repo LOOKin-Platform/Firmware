@@ -254,6 +254,7 @@ class MitsubishiAC : public IRProto {
 						u8mode = 0x18;
 						RemoteState[8] = 0b00000110; //0b00110110;
 						break;
+
 					case ACOperand::ModeHeat:
 						u8mode = 0x08;
 						RemoteState[8] = 0b00000000; //0b00110000;
@@ -379,10 +380,24 @@ class MitsubishiAC : public IRProto {
 			}
 
 			if (Type == MitsubishiACType::MAC144) {
-				uint8_t u8mode = (Mode == ACOperand::SwingAuto) ? 7 : 0;
-				u8mode |= 0b1000;
-				u8mode <<= 3;
-				RemoteState[9] &= 0b11000111;  // Clear the previous setting.
+				u8mode = 0x0;
+
+				switch (Mode)
+				{
+					case ACOperand::SwingBottom:
+						u8mode = 0b01001000;
+						break;
+					case ACOperand::SwingMiddle:
+						u8mode = 0b01011000;
+						break;
+					case ACOperand::SwingTop:
+						u8mode = 0b01101000;
+						break;
+					default:
+						u8mode = 0b01111000;
+						break;
+				}
+				RemoteState[9] &= 0b10000111;  // Clear the previous setting.
 				RemoteState[9] |= u8mode;
 			}
 		}
@@ -404,8 +419,17 @@ class MitsubishiAC : public IRProto {
 				}
 			}
 
-			if (Type == MitsubishiACType::MAC144)
-				return (((RemoteState[9] & 0b00111000) >> 3) == 0) ? ACOperand::SwingOff  : ACOperand::SwingAuto;
+			if (Type == MitsubishiACType::MAC144) {
+				uint8_t u8mode = RemoteState[9] & 0b01111000;
+
+				switch (u8mode) {
+					case 0b01001000: return ACOperand::SwingBottom;
+					case 0b01011000: return ACOperand::SwingMiddle;
+					case 0b01101000: return ACOperand::SwingTop;
+					default:
+						return ACOperand::SwingAuto;
+				}
+			}
 
 			return ACOperand::SwingOff;
 		}
@@ -430,13 +454,22 @@ class MitsubishiAC : public IRProto {
 
 			if (Type == MitsubishiACType::MAC144) {
 				switch (Mode) {
-					case ACOperand::FanQuite	: u8mode = 0x6; break;
-					case ACOperand::Fan5		: u8mode = 0x4; break;
-					case ACOperand::FanAuto	: u8mode = 0x0; break;
-
-					default:
-						SetFanMode(ACOperand::FanAuto);
-						return;
+					case ACOperand::FanQuite	:
+					case ACOperand::Fan1		:
+					case ACOperand::Fan2		:
+						u8mode = 0b00000001;
+						break;
+					case ACOperand::Fan3		:
+						u8mode = 0b00000010;
+						break;
+					case ACOperand::Fan4		:
+					case ACOperand::Fan5		:
+						u8mode = 0b00000011;
+						break;
+					case ACOperand::FanAuto		:
+						u8mode = 0b00000000;
+						//RemoteState[9] = 0b10000000 | (RemoteState[9] & 0b01111000);
+						break;
 				}
 
 				RemoteState[9] &= 0b01111000;  // Clear the previous state
@@ -464,10 +497,13 @@ class MitsubishiAC : public IRProto {
 				u8mode = RemoteState[9] & 0b111;
 
 				switch (u8mode) {
-					case 0x6: return ACOperand::FanQuite	; break;
-					case 0x4: return ACOperand::Fan5		; break;
+					case 0b00000001: return ACOperand::Fan1;
+					case 0b00000010: return ACOperand::Fan3;
+					case 0b00000011: return ACOperand::Fan5;
 					default:
 						return ACOperand::FanAuto;
+					//case 0x6: return ACOperand::FanQuite	; break;
+					//case 0x4: return ACOperand::Fan5		; break;
 				}
 			}
 

@@ -18,8 +18,8 @@ class ACOperand {
 	public:
 		enum GenericMode{ ModeOff 	= 0x0, ModeAuto 	= 0x1, ModeHeat = 0x2	, ModeCool = 0x3, ModeDry 		= 0x4, ModeFan 	= 0x5 };
 		enum SwingMode	{ SwingOff 	= 0x0, SwingAuto 	= 0x1, SwingHigh= 0x2	, SwingLow = 0x3, SwingBreeze 	= 0x4, SwingCirculate = 0x5,
-						  SwingTop	= 0x6, SwingMiddle	= 0x7, SwingBottom = 0x8, SwingDown = 0x9};
-		enum FanModeEnum{ FanAuto 	= 0x0, Fan1 		= 0x1, Fan2 	= 0x2	, Fan3 	= 0x3, Fan4 		= 0x4, Fan5 	= 0x5, FanQuite = 0x6 };
+						  SwingTop	= 0x6, SwingMiddle	= 0x7, SwingBottom = 0x8, SwingDown = 0x9 };
+		enum FanModeEnum{ FanAuto 	= 0x0, Fan1 		= 0x1, Fan2 	= 0x2	, Fan3 	= 0x3, Fan4 			= 0x4, Fan5 	= 0x5, FanQuite = 0x6 };
 		enum CommandEnum{ CommandNULL= 0x0, CommandOff	= 0x1, CommandOn= 0x2	, CommandMode = 0x3, CommandFan = 0x4, CommandTempUp = 0x5, CommandTempDown = 0x6, CommandHSwing = 0x7, CommandVSwing = 0x8  };
 
 		uint8_t			DeviceType 		= 0x0;
