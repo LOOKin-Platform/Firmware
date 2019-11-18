@@ -29,19 +29,35 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	string Value = pCharacteristic->getValue();
 
 	if (Value.length() > 0) {
-		vector<string> Parts = Converter::StringToVector(Value," ");
+		JSON JSONItem(Value);
 
-		if (Parts.size() != 2) {
+		map<string,string> Params;
+
+		ESP_LOGE(tag, "Value %s", Value.c_str());
+
+
+		if (JSONItem.GetType() == JSON::RootType::Object)
+			Params = JSONItem.GetItems();
+
+		if (!(Params.count("s") && Params.count("p")))
+		{
+			vector<string> Parts = Converter::StringToVector(Value," ");
+			Params["s"] = Parts[0].c_str();
+			Params["p"] = Parts[1].c_str();
+		}
+
+		if (!(Params.count("s") && Params.count("p")))
+		{
 			ESP_LOGE(tag, "WiFi characteristics error input format");
 			return;
 		}
 
-		ESP_LOGD(tag, "WiFi Data received. SSID: %s, Password: %s", Parts[0].c_str(), Parts[1].c_str());
-		Network.AddWiFiNetwork(Parts[0], Parts[1]);
+		ESP_LOGD(tag, "WiFi Data received. SSID: %s, Password: %s", Params["s"].c_str(), Params["p"].c_str());
+		Network.AddWiFiNetwork(Params["s"], Params["p"]);
 
 		//If device in AP mode or can't connect as Station - try to connect with new data
 		if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() == WIFI_MODE_AP_STR))
-			Network.WiFiConnect(Parts[0], true);
+			Network.WiFiConnect(Params["s"], true);
 	}
 }
 
@@ -94,7 +110,14 @@ void BLEServer_t::SetScanPayload(string Payload) {
 void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
 	ESP_LOGI(tag, ">> StartAdvertising");
 
-	BLEDevice::Init(Settings.Bluetooth.DeviceNamePrefix + DeviceType_t::ToString(Settings.eFuse.Type) + " " + Device.IDToString());
+	string BLEDeviceName = DeviceType_t::ToString(Settings.eFuse.Type);
+
+	if (BLEDeviceName.size() < 4)
+		BLEDeviceName += "!";
+
+	BLEDeviceName = Settings.Bluetooth.DeviceNamePrefix + BLEDeviceName + " " + Device.IDToString();
+
+	BLEDevice::Init(BLEDeviceName);
 
 	IsPrivateMode = ShouldUsePrivateMode;
 
