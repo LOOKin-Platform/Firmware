@@ -306,7 +306,7 @@ Log::Indicator_t::MODE
 
 ISR::HardwareTimer Log::Indicator_t::IndicatorTimer = ISR::HardwareTimer();
 
-void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint8_t Duration) {
+void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration) {
 	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
 
 	if (!IsInited) {

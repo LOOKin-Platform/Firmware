@@ -186,7 +186,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
-			Log::Add(Log::Events::WiFi::STADisconnected);
+			Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
 
 			WebServer.Stop();
 			MQTT.Stop();

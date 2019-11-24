@@ -71,10 +71,10 @@ void MQTT_t::Stop() {
 }
 
 void MQTT_t::Reconnect() {
-		if (Status == CONNECTED) {
-			Stop();
-			Start();
-		}
+	if (Status == CONNECTED) {
+		Stop();
+		Start();
+	}
 }
 
 string MQTT_t::GetClientID() {
@@ -104,8 +104,6 @@ void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 	if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == ESP_OK))
 		Start();
 }
-
-
 
 esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
@@ -172,8 +170,6 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 			string Topic	(event->topic, event->topic_len);
 			string Payload	(event->data, event->data_len);
 
-			ESP_LOGI(TAG, "Payload: %s, msg_id: %d", Payload.c_str(), event->msg_id);
-
 			if (Topic == DeviceTopic + "/UDP")
 			{
 				if (Payload == WebServer_t::UDPDiscoverBody())
@@ -185,7 +181,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 				WebServer_t::Response Response;
 				Query_t Query(Payload);
 
-				API::Handle(Response, Query);
+				API::Handle(Response, Query, NULL, WebServer_t::QueryTransportType::MQTT);
 
 				Response.Body = Converter::ToString(Response.CodeToInt()) + " " + Response.Body;
 
@@ -204,6 +200,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
             ESP_LOGI(TAG, "Other event id:%d", event->event_id);
             break;
     }
+
     return ESP_OK;
 }
 
@@ -215,6 +212,14 @@ int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retai
 		Topic = Settings.MQTT.DeviceTopicPrefix + Device.IDToString();
 
 	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
+}
+
+bool MQTT_t::IsCredentialsSet() {
+	return (Username != "" && Password != "");
+}
+
+MQTT_t::Status_t MQTT_t::GetStatus() {
+	return Status;
 }
 
 esp_mqtt_client_config_t MQTT_t::ConfigDefault() {

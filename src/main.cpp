@@ -88,7 +88,6 @@ void app_main(void) {
 	GPIO::Setup(GPIO_NUM_22);
 	GPIO::Write(GPIO_NUM_22, 0);
 
-
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();
 

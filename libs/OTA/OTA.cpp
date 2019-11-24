@@ -44,16 +44,17 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
     config.buffer_size 	= Settings.OTA.BufferSize;
 
-
     Log::Add(Log::Events::System::OTAStarted);
 
     esp_err_t ret = esp_https_ota(&config);
 
-    if (ret == ESP_OK) {
+    if (ret == ESP_OK)
+    {
     	Log::Add(Log::Events::System::OTASucceed);
         esp_restart();
     }
-    else {
+    else
+    {
 		Device.Status = DeviceStatus::RUNNING;
 		Attempts++;
 
@@ -87,7 +88,6 @@ bool OTA::Rollback() {
 
 	if (err == ESP_OK)
 	{
-
 		DelayedRebootTimer = new FreeRTOS::Timer((char*)"DelayedReboot", 1000 / portTICK_PERIOD_MS, pdFALSE, NULL, OTA::DelayedRebootTask);
 		DelayedRebootTimer->Start();
 

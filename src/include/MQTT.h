@@ -38,11 +38,14 @@ class MQTT_t {
 
 		string GetClientID();
 
-		static void MQTTTask(void *TaskData);
-		static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event);
+		static void 		MQTTTask(void *TaskData);
+		static esp_err_t 	mqtt_event_handler(esp_mqtt_event_handle_t event);
 
-		static int SendMessage (string Payload, string Topic = "",
+		static int 			SendMessage (string Payload, string Topic = "",
 				uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+
+		static bool 		IsCredentialsSet();
+		static Status_t 	GetStatus();
 
 	private:
 		static string		Username;

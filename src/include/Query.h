@@ -16,20 +16,19 @@ using namespace std;
 #include "HTTPClient.h"
 
 class Query_t {
-  public:
-    QueryType           Type;
-    string              RequestedUrl;
-    vector<string>      RequestedUrlParts;
+	public:
+		QueryType           Type;
+		string              RequestedUrl;
+		vector<string>      RequestedUrlParts;
 
-    string              RequestBody;
-    map<string,string>  Params;
+		string              RequestBody;
+		map<string,string>  Params;
 
-    Query_t(string &);
+		Query_t(string &);
+		static string       UrlDecode(string);
 
-    static string       UrlDecode(string);
-
-  private:
-    void                FillParams(string &);
+	private:
+		void                FillParams(string &);
 };
 
 #endif

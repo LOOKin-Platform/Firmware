@@ -6,11 +6,11 @@
 
 #include "API.h"
 
-void API::Handle(WebServer_t::Response &Response, Query_t &Query, httpd_req_t *Request) {
-	return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody, Request);
+void API::Handle(WebServer_t::Response &Response, Query_t &Query, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType) {
+	return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody, Request, TransportType);
 }
 
-void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request) {
+void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType) {
 
 	if (URLParts.size() == 0) {
 		if (!Params.count("summary")) {
@@ -76,7 +76,7 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 		string APISection = URLParts[0];
 		URLParts.erase(URLParts.begin(), URLParts.begin() + 1);
 
-		if (APISection == "device")		Device.HandleHTTPRequest	(Response, Type, URLParts, Params, Request);
+		if (APISection == "device")		Device.HandleHTTPRequest	(Response, Type, URLParts, Params, Request, TransportType);
 		if (APISection == "network")	Network.HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "automation")	Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
 		if (APISection == "storage")	Storage.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody);

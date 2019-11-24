@@ -60,16 +60,21 @@ class Storage_t {
 
 	    void							HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>, string RequestBody);
 	private:
+
 		vector<Item>					*Patch = new vector<Item>();
-		uint32_t						AddressToWrite 	= Settings.Storage.Versions.StartAddress;
-		uint16_t						LastVersion 	= 0x1FFF;
+		uint32_t						AddressToWrite 			= Settings.Storage.Versions.StartAddress;
+
+		uint16_t						LastVersion 			= 0x1FFF;
+		uint16_t						MemoryStoredItemsSize	= 0x0;
+		uint16_t						MemoryStoredItems		= 0x0;
 
 		uint16_t 						FindFreeID();
 		uint16_t 						WriteNow	(Item Record);
 		void							EraseNow	(uint16_t ItemID);
 
 		uint32_t						GetFreeMemory();
-		uint16_t						GetMemoryItemsLen();
+
+		void							CalculateMemoryItemsData();
 
 		vector<uint8_t>					GetItemsTypes();
 		uint16_t						CountItems();

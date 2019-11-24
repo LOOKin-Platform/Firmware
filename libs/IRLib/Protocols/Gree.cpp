@@ -8,13 +8,13 @@
 
 #include "DateTime.h"
 
-enum GreeACType { GreeNULL = 0, Gree1 = 1, Gree2 = 2};
+enum GreeACType { GreeGeneric = 0, Gree1 = 1, Gree2 = 2};
 // Gree1: Ultimate, EKOKAI, RusClimate (Default)
 // Gree2: Green, YBOFB2, YAPOF3
 
 class Gree : public IRProto {
 	public:
-		GreeACType 	Type 			= GreeNULL;
+		GreeACType 	Type 			= GreeGeneric;
 
 		uint8_t		StateLength 	= 8;
 		uint16_t	Gap				= 19000;
@@ -27,7 +27,6 @@ class Gree : public IRProto {
 
 		uint8_t 	RemoteState[18];
 
-
 		Gree() {
 			ID 					= 0x0A;
 			Name 				= "Gree";
@@ -39,10 +38,10 @@ class Gree : public IRProto {
 			if (RawData.size() != 140)
 				return false;
 
-			if (TestValue(RawData.at(0), HeaderMark) &&
-				TestValue(RawData.at(1), -HeaderSpace) &&
-				TestValue(RawData.at(2), BitMark) &&
-				TestValue(RawData.at(74), -Gap) &&
+			if (TestValue(RawData.at(0)	, HeaderMark	) &&
+				TestValue(RawData.at(1)	, -HeaderSpace	) &&
+				TestValue(RawData.at(2)	, BitMark		) &&
+				TestValue(RawData.at(73), -Gap			) &&
 				RawData.size() == 140)
 				return true;
 
@@ -131,7 +130,7 @@ class Gree : public IRProto {
 
 			ACOperand AC;
 
-			AC.DeviceType 	= GetType();
+			AC.DeviceType 	= static_cast<uint8_t>(GetType());
 			AC.Mode			= GetMode();
 			AC.Temperature	= GetTemperature();
 			AC.HSwingMode	= GetHSwing();
@@ -152,7 +151,7 @@ class Gree : public IRProto {
 			RemoteState[1] = 0x09;
 			RemoteState[2] = 0x20;
 			RemoteState[3] = 0x50;
-			RemoteState[5] = 0x20;
+			RemoteState[5] = (GetType() == GreeGeneric) ? 0x46 : 0x20;
 			RemoteState[7] = 0x50;
 
 			Checksum();
@@ -162,7 +161,7 @@ class Gree : public IRProto {
 			if (GetPower())
 				Type = (RemoteState[2] & 0b01000000) ? Gree1 : Gree2;
 
-			return GreeNULL;
+			return GreeGeneric;
 		}
 
 		void SetPower(bool Power) {
@@ -250,19 +249,46 @@ class Gree : public IRProto {
 		void SetVSwing(ACOperand::SwingMode Mode) {
 			RemoteState[0] &= ~0b01000000;
 
-			if (Mode == ACOperand::SwingAuto) {
+			if (Mode == ACOperand::SwingAuto)
 				RemoteState[0] |= 0b01000000;
-				RemoteState[4] &= ~0b00001111;
-				RemoteState[4] |= 0b00000001;
+			else
+				RemoteState[0] |= 0b00000000;
+
+			uint8_t u8pos = 0x0;
+
+			switch (Mode)
+			{
+				case ACOperand::SwingTop	: u8pos = 0b00000010; break;
+				case ACOperand::SwingMiddle	: u8pos = 0b00000100; break;
+				case ACOperand::SwingDown	: u8pos = 0b00000110; break;
+				case ACOperand::SwingAuto	: u8pos = 0b00000001; break;
+				default:
+					SetVSwing(ACOperand::SwingAuto);
+					return;
 			}
-			else {
-				RemoteState[4] &= ~0b00001111;
-				RemoteState[4] |= 0b00000000;
-			}
+
+			RemoteState[4] &= ~0b00001111;
+			RemoteState[4] |= u8pos;
 		}
 
 		ACOperand::SwingMode GetVSwing() {
-			return (RemoteState[0] & 0b01000000) ? ACOperand::SwingAuto : ACOperand::SwingOff;
+			if (RemoteState[0] & 0b01000000)
+				return ACOperand::SwingAuto;
+
+			uint8_t u8swing = RemoteState[4] & 0b00001111;
+
+			switch (u8swing) {
+				case 0b00000010:
+				case 0b00000011:
+					return ACOperand::SwingTop; break;
+				case 0b00000100:
+				case 0b00000101:
+					return ACOperand::SwingMiddle; break;
+				case 0b00000110:
+					return ACOperand::SwingDown; break;
+				default:
+					return ACOperand::SwingAuto;
+			}
 		}
 
 		void SetFanMode(ACOperand::FanModeEnum Mode) {

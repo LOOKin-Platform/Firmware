@@ -139,6 +139,7 @@ void WebServer_t::Start() {
     config.uri_match_fn 	= httpd_uri_match_wildcard;
     config.stack_size		= 16384;
     config.lru_purge_enable = true;
+    //config.task_priority	= tskIDLE_PRIORITY+5;
 
     HTTPServerHandle = NULL;
 
@@ -263,7 +264,7 @@ void WebServer_t::UDPSendBroadcastQueueAdd(string Message) {
 void WebServer_t::UDPListenerTask(void *data) {
 	if (!WiFi.IsRunning()) {
 		ESP_LOGE(tag, "WiFi switched off - can't start UDP listener task");
-		WebServer.UDPListenerTaskHandle = NULL;
+		WebServer_t::UDPListenerTaskHandle = NULL;
 		FreeRTOS::DeleteTask();
 		return;
 	}

@@ -52,7 +52,7 @@ void Query_t::FillParams(string &Query) {
 		// разбиваем строку запроса на массив пути с переводом в нижний регистр
 		for (string& part : Converter::StringToVector(QueryParts[0], "/")) {
 			transform(part.begin(), part.end(), part.begin(), ::tolower);
-			if (part != "") RequestedUrlParts.push_back( part );
+			if (part != "") RequestedUrlParts.push_back( Converter::StringURLDecode(part) );
 		}
 	}
 

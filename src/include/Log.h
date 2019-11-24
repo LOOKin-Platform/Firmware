@@ -64,7 +64,7 @@ class Log {
 				enum MODE { NONE, CONST, BLINKING, STROBE };
 
 				static void Display(uint16_t);
-				static void Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint8_t Duration = 0);
+				static void Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration = 0);
 			private:
 				static bool		IsInited;
 				static constexpr float Brightness = 0.03;
@@ -115,7 +115,8 @@ class Log {
 					STADisconnected	= 0x1205,
 					STAUndefinedIP	= 0x0206,
 					STAGotIP		= 0x1206,
-					STAStarted		= 0x1207
+					STAStarted		= 0x1207,
+					STAUnreachable	= 0x1208
 				};
 
 				// Bluetooth события 0xX300...0xX3FF

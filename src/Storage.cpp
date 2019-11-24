@@ -21,6 +21,8 @@ Storage_t::Storage_t() {
 
 		AddressToWrite += 2;
 	}
+
+	CalculateMemoryItemsData();
 }
 
 void Storage_t::Item::SetData(string StringData) {
@@ -216,9 +218,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			JSON JSONObject;
 
 			JSONObject.SetItem("Version" , (LastVersion < 0x2000) ? "0" : Converter::ToHexString(LastVersion, 4));
-			JSONObject.SetItem("Count"	 , Converter::ToString(CountItems()));
+			JSONObject.SetItem("Count"	 , Converter::ToString(MemoryStoredItems));
 			JSONObject.SetItem("Freesize", Converter::ToString(GetFreeMemory()));
-
 			Result.Body = JSONObject.ToString();
 		}
 
@@ -228,7 +229,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 
 		if (URLParts.size() == 1 && URLParts[0] == "count") {
-			Result.Body = Converter::ToString(CountItems());
+			Result.Body = Converter::ToString(MemoryStoredItems);
 			return;
 		}
 
@@ -310,7 +311,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			// delete write items already in commit
 			while (it != Items.end()) {
 				Output.push_back(vector<pair<string,string>>({
-		    		make_pair("ID"		, Converter::ToHexString(it->Header.MemoryID, 3) ),
+			   		make_pair("ID"		, Converter::ToHexString(it->Header.MemoryID, 3) ),
 				    make_pair("TypeID"	, Converter::ToHexString(it->Header.TypeID  , 2) ),
 				    make_pair("Data"	, it->DataToString() )
 					}));
@@ -325,7 +326,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			return;
 		}
 
-		if (URLParts.size() == 2 && URLParts[0] == "history") {
+		if (URLParts.size() == 2 && URLParts[0] == "history"  && URLParts[1] != "upgrade") {
 			uint16_t VersionID = Converter::UintFromHexString<uint16_t>(URLParts[1]);
 			Result.Body =  JSON::CreateStringFromIntVector<uint16_t>(GetItemsForVersion(VersionID), 4);
 
@@ -473,8 +474,11 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				if (Patch->size() > 0)
 					Patch->clear();
 
-				AddressToWrite 	= Settings.Storage.Versions.StartAddress;
-				LastVersion 	= 0x1FFF;
+				AddressToWrite 			= Settings.Storage.Versions.StartAddress;
+				LastVersion 			= 0x1FFF;
+				MemoryStoredItemsSize	= 0x0;
+				MemoryStoredItems		= 0x0;
+
 			}
 
 			Result.SetSuccess();
@@ -532,6 +536,8 @@ uint16_t Storage_t::WriteNow(Item Record) {
 	vector<uint32_t> 	AddressVector 	= vector<uint32_t>();
 	uint8_t				tmpLength		= Record.Header.Length;
 
+	MemoryStoredItemsSize += Record.Header.Length;
+
 	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
@@ -585,7 +591,7 @@ uint16_t Storage_t::WriteNow(Item Record) {
 	return ((AddressVector[0] - Settings.Storage.Data.StartAddress) / Settings.Storage.Data.ItemSize);
 }
 
-void Storage_t::EraseNow(uint16_t ItemID) {
+void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
 	uint32_t 			Address 		= Settings.Storage.Data.StartAddress;
 	vector<uint32_t> 	AddressVector 	= vector<uint32_t>();
 
@@ -604,29 +610,34 @@ void Storage_t::EraseNow(uint16_t ItemID) {
 	if (Address > (Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size -1 ))
 		return;
 
-	for (uint32_t AddressItem : AddressVector)
+	for (uint32_t AddressItem : AddressVector) {
 		SPIFlash::EraseRange(AddressItem, Settings.Storage.Data.ItemSize);
+
+		if (MemoryStoredItemsSize > 0) MemoryStoredItemsSize --;
+	}
 }
 
-uint32_t Storage_t::GetFreeMemory() {
-	return ((Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) - GetMemoryItemsLen()) * (Settings.Storage.Data.ItemSize - sizeof(RecordHeader) - sizeof(RecordPartInfo));
+uint32_t IRAM_ATTR Storage_t::GetFreeMemory() {
+	return ((Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) - MemoryStoredItemsSize) * (Settings.Storage.Data.ItemSize - sizeof(RecordHeader) - sizeof(RecordPartInfo));
 }
 
-uint16_t Storage_t::GetMemoryItemsLen() {
-	uint16_t MemoryContentLen 	= 0x0;
-	uint32_t Address			= Settings.Storage.Data.StartAddress;
+void IRAM_ATTR Storage_t::CalculateMemoryItemsData() {
+	MemoryStoredItemsSize 	= 0x0;
+	MemoryStoredItems		= 0x0;
+	uint32_t Address		= Settings.Storage.Data.StartAddress;
 
 	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
 		if (Header.MemoryID != Settings.Memory.Empty16Bit)
-			MemoryContentLen++;
+			MemoryStoredItemsSize++;
+
+		if (Header.MemoryID != Settings.Memory.Empty16Bit && Header.Length == 0)
+			MemoryStoredItems++;
 
 		Address += Settings.Storage.Data.ItemSize;
 	}
-
-	return MemoryContentLen;
 }
 
 vector<uint8_t> Storage_t::GetItemsTypes() {
@@ -647,7 +658,7 @@ vector<uint8_t> Storage_t::GetItemsTypes() {
 
 	return Result;
 }
-uint16_t Storage_t::CountItemsForTypeID(uint8_t TypeID) {
+uint16_t IRAM_ATTR Storage_t::CountItemsForTypeID(uint8_t TypeID) {
 	uint16_t Result = 0;
 
 	uint32_t Address = Settings.Storage.Data.StartAddress;
@@ -657,24 +668,6 @@ uint16_t Storage_t::CountItemsForTypeID(uint8_t TypeID) {
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
 		if (Header.MemoryID != Settings.Memory.Empty16Bit && Header.TypeID == TypeID && Header.Length == 0)
-			Result ++;
-
-		Address += Settings.Storage.Data.ItemSize;
-	}
-
-	return Result;
-}
-
-uint16_t Storage_t::CountItems() {
-	uint16_t Result = 0;
-
-	uint32_t Address = Settings.Storage.Data.StartAddress;
-
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
-		RecordHeader Header;
-		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
-
-		if (Header.MemoryID != Settings.Memory.Empty16Bit && Header.Length == 0)
 			Result ++;
 
 		Address += Settings.Storage.Data.ItemSize;
@@ -706,7 +699,7 @@ vector<uint16_t> Storage_t::GetItemsForTypeID(uint8_t Type, uint16_t Limit, uint
 	return Result;
 }
 
-bool Storage_t::IsExist(uint16_t ID) {
+bool IRAM_ATTR Storage_t::IsExist(uint16_t ID) {
 	uint32_t Address = Settings.Storage.Data.StartAddress;
 
 	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
@@ -722,7 +715,7 @@ bool Storage_t::IsExist(uint16_t ID) {
 	return false;
 }
 
-uint16_t Storage_t::VersionHistoryCount() {
+uint16_t IRAM_ATTR Storage_t::VersionHistoryCount() {
 	uint16_t Count = 0;
 
 	uint32_t Address = Settings.Storage.Versions.StartAddress;
@@ -744,7 +737,7 @@ uint16_t Storage_t::VersionHistoryCount() {
 	return Count;
 }
 
-vector<uint16_t> Storage_t::VersionHistoryGet(uint16_t Limit, uint8_t Page) {
+vector<uint16_t> IRAM_ATTR Storage_t::VersionHistoryGet(uint16_t Limit, uint8_t Page) {
 	vector<uint16_t> Result = vector<uint16_t>();
 
 	uint16_t Counter = 0;
@@ -777,12 +770,12 @@ vector<uint16_t> Storage_t::VersionHistoryGet(uint16_t Limit, uint8_t Page) {
 	return Result;
 }
 
-vector<uint16_t> Storage_t::GetItemsForVersion(uint16_t Version) {
+vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version) {
 	uint32_t LastAddress;
 	return GetItemsForVersion(Version, LastAddress);
 }
 
-vector<uint16_t> Storage_t::GetItemsForVersion(uint16_t Version, uint32_t &LastAddress, uint32_t StartAdress) {
+vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version, uint32_t &LastAddress, uint32_t StartAdress) {
 	vector<uint16_t> Result = vector<uint16_t>();
 
 	bool VersionFinded = false;
@@ -828,13 +821,19 @@ vector<uint16_t> Storage_t::GetItemsForVersion(uint16_t Version, uint32_t &LastA
 	return Result;
 }
 
-vector<Storage_t::Item> Storage_t::GetUpgradeItems(uint16_t From, uint16_t &ToCurrent) {
+vector<Storage_t::Item> IRAM_ATTR Storage_t::GetUpgradeItems(uint16_t From, uint16_t &ToCurrent) {
 	vector<Item> Result 	= vector<Item>();
 	vector<Item> ResultPart	= vector<Item>();
 	uint32_t LastAddress 	= Settings.Storage.Versions.StartAddress;
 
 	if (From == 0)
 		From = 0x1FFF;
+
+	if (From == LastVersion)
+	{
+		ToCurrent = (LastVersion >= 0x2000) ? LastVersion : 0;
+		return vector<Storage_t::Item>();
+	}
 
 	uint8_t		TotalCount 	= 0;
 	uint8_t		PartCount 	= 0;

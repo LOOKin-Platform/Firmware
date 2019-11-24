@@ -24,7 +24,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.34";
+		const	string 						FirmwareVersion = "1.35";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -104,6 +104,9 @@ class Settings_t {
 
 		struct {
 			const uint16_t					Interval 		= 1000;
+
+			const uint32_t					MQTTInterval	= 180*1000; // 3 минуты
+
 			struct {
 				const uint16_t				Inverval 		= 4000;
 				const uint8_t 				OverheatTemp	= 90;

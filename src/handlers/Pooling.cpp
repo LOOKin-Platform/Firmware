@@ -6,6 +6,7 @@
 #include "BluetoothHandler.cpp"
 #include "EnergyHandler.cpp"
 #include "SensorPeriodicHandler.cpp"
+#include "MQTTPeriodicHandler.cpp"
 
 class Pooling_t: public Task {
 	void Run(void *data) override {
@@ -22,6 +23,7 @@ class Pooling_t: public Task {
 			BluetoothPeriodicHandler::Pool();
 			EnergyPeriodicHandler	::Pool();
 			SensorPeriodicHandler	::Pool();
+			MQTTPeriodicHandler		::Pool();
 
 			FreeRTOS::Sleep(Settings.Pooling.Interval);
 		}

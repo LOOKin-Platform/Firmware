@@ -67,7 +67,9 @@ void Device_t::Init() {
 	}
 }
 
-void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, httpd_req_t *Request) {
+void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
+		vector<string> URLParts, map<string,string> Params, httpd_req_t *Request,
+		WebServer_t::QueryTransportType TransportType) {
 	if (Type == QueryType::GET) {
 		// Запрос JSON со всеми параметрами
 		if (URLParts.size() == 0) {
@@ -133,7 +135,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			bool isNameSet            	= POSTName(Params);
 			bool isTimeSet            	= POSTTime(Params);
 			bool isTimezoneSet        	= POSTTimezone(Params);
-			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Request);
+			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Request, TransportType);
 			bool isSensorModeSet		= POSTSensorMode(Params, Result);
 			bool isBluetoothModeSet		= POSTBluetoothMode(Params);
 
@@ -264,7 +266,10 @@ bool Device_t::POSTTimezone(map<string,string> Params) {
 	return false;
 }
 
-bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response, httpd_req_t *Request) {
+
+static WebServer_t::QueryTransportType PostFirmwareTransportType = WebServer_t::QueryTransportType::WebServer;
+
+bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType) {
 	if (Params.count("firmware") == 0)
 		return false;
 
@@ -301,6 +306,11 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 	}
 
 	CachedRequest = Request;
+
+	Device.Status = DeviceStatus::UPDATING;
+
+	PostFirmwareTransportType = TransportType;
+
 	OTA::Update(OTAUrl, &OTACallbackSuccessfulStarted, &OTACallbackFileDoesntExist);
 
 	return true;
@@ -328,9 +338,14 @@ void Device_t::OTACallbackSuccessfulStarted() {
 	WebServer_t::Response Response;
 	Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update will be started if file exists. Web server temporarily stopped.\"}";
 	Response.ResponseCode = WebServer_t::Response::CODE::OK;
-	Device.Status = DeviceStatus::UPDATING;
 
-	WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
+	if (PostFirmwareTransportType == WebServer_t::QueryTransportType::WebServer)
+		WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
+
+	/*
+	if (PostFirmwareTransportType == WebServer_t::QueryTransportType::MQTT)
+		MQTT.SendMessage("200 " + Response.Body, Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
+	*/
 }
 
 void Device_t::OTACallbackFileDoesntExist() {

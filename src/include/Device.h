@@ -72,7 +72,7 @@ class Device_t {
 
 		Device_t();
 		void    			Init();
-		void    			HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params, httpd_req_t *Request = NULL);
+		void    			HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params, httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer);
 
 		string				GetName();
 		void				SetName(string);
@@ -98,7 +98,7 @@ class Device_t {
 		bool 				POSTName(map<string,string>);
 		bool 				POSTTime(map<string,string>);
 		bool 				POSTTimezone(map<string,string>);
-		bool 				POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request);
+		bool 				POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request, WebServer_t::QueryTransportType);
 		bool 				POSTSensorMode(map<string,string>, WebServer_t::Response &);
 		bool 				POSTBluetoothMode(map<string,string>);
 
