@@ -51,7 +51,7 @@ void IRLib::FillProtocols() {
 			new Daikin(),
 			new MitsubishiAC(),
 			new Aiwa(),
-			//new Gree(),
+			new Gree(),
 			new HaierAC()
 		};
 }
@@ -106,7 +106,7 @@ vector<int32_t> IRLib::GetRawDataForSending() {
 	return (Result.size() > 0) ? Result : this->RawData;
 }
 
-vector<int32_t> IRLib::GetRawRepeatSignal() {
+vector<int32_t> IRLib::GetRawRepeatSignalForSending() {
 	IRProto *Proto = GetProtocolByID(this->Protocol);
 
 	vector<int32_t> Result = vector<int32_t>();

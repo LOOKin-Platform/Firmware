@@ -37,7 +37,7 @@ class IRLib {
 		string			GetRawSignal();
 
 		vector<int32_t>	GetRawDataForSending();
-		vector<int32_t>	GetRawRepeatSignal();
+		vector<int32_t>	GetRawRepeatSignalForSending();
 		uint16_t 		GetProtocolFrequency();
 
 		void 			SetFrequency(uint16_t);
@@ -48,9 +48,10 @@ class IRLib {
 		int32_t			RawPopItem();
 
 		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);
+
 	private:
-		uint8_t		 	ProntoOneTimeBurst = 0;
-		uint8_t 		ProntoRepeatBurst = 0;
+		uint8_t		 	ProntoOneTimeBurst 	= 0;
+		uint8_t 		ProntoRepeatBurst 	= 0;
 
 		void 			FillProtocols();
 

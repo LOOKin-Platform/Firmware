@@ -31,7 +31,7 @@ class CommandIR_t : public Command_t {
 
 			Events["daikin"]		= 0x08;
 			Events["mitsubishi-ac"] = 0x09;
-			//Events["gree"] = 0x0A;
+			Events["gree"] 			= 0x0A;
 			Events["haier-ac"] 		= 0x0B;
 
 			Events["aiwa"]			= 0x14;
@@ -107,7 +107,7 @@ class CommandIR_t : public Command_t {
 				IRSignal.Uint32Data = LastSignal.Data;
 				IRSignal.MiscData	= LastSignal.Misc;
 
-				vector<int32_t> RepeatedSignal = IRSignal.GetRawRepeatSignal();
+				vector<int32_t> RepeatedSignal = IRSignal.GetRawRepeatSignalForSending();
 				if (RepeatedSignal.size() == 0)
 					return false;
 
