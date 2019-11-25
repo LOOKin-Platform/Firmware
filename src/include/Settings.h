@@ -105,7 +105,7 @@ class Settings_t {
 		struct {
 			const uint16_t					Interval 		= 1000;
 
-			const uint32_t					MQTTInterval	= 180*1000; // 3 минуты
+			const uint32_t					MQTTInterval	= 60*1000; // 1 минута
 
 			struct {
 				const uint16_t				Inverval 		= 4000;
