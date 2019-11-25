@@ -537,6 +537,7 @@ uint16_t Storage_t::WriteNow(Item Record) {
 	uint8_t				tmpLength		= Record.Header.Length;
 
 	MemoryStoredItemsSize += Record.Header.Length;
+	MemoryStoredItems ++;
 
 	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
 		RecordHeader Header;
@@ -615,6 +616,8 @@ void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
 
 		if (MemoryStoredItemsSize > 0) MemoryStoredItemsSize --;
 	}
+
+	MemoryStoredItems--;
 }
 
 uint32_t IRAM_ATTR Storage_t::GetFreeMemory() {
