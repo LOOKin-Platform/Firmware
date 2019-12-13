@@ -9,10 +9,10 @@
 
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
-static constexpr uint8_t 	SensorIRQueueSize				= 30;
 
 static IRLib 	LastSignal;
 static IRLib	FollowingSignal;
+static string	RepeatCode;
 
 static uint32_t SignalDetectionTime = 0x1;
 static uint64_t	SignalDetectionTimeU= 0;
@@ -38,11 +38,12 @@ class SensorIR_t : public Sensor_t {
 			Values.clear();
 
 			if (LastSignal.Protocol == IR_PROTOCOL_RAW && LastSignal.RawData.size() == 0) {
-				SetValue(0, "Primary"	, SignalDetectionTime);
-				SetValue(0, "Signal"	, SignalDetectionTime);
-				SetValue(0, "Frequency"	, SignalDetectionTime);
-				SetValue(0, "Raw"		, SignalDetectionTime);
-				SetValue(0, "ISRepeated", SignalDetectionTime);
+				SetValue(0, "Primary"		, SignalDetectionTime);
+				SetValue(0, "Signal"		, SignalDetectionTime);
+				SetValue(0, "Frequency"		, SignalDetectionTime);
+				SetValue(0, "Raw"			, SignalDetectionTime);
+				SetValue(0, "IsRepeated"	, SignalDetectionTime);
+				SetValue(0, "RepeatSignal"	, SignalDetectionTime);
 				return;
 			}
 
@@ -54,7 +55,7 @@ class SensorIR_t : public Sensor_t {
 			SetValue(LastSignal.Frequency			, "Frequency" 	, SignalDetectionTime);
 			SetValue(0								, "Raw"			, SignalDetectionTime);
 			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated"	, SignalDetectionTime);
-
+			SetValue(0								, "RepeatSignal", SignalDetectionTime);
 		}
 
 		string FormatValue(string Key = "Primary") override {
@@ -72,6 +73,9 @@ class SensorIR_t : public Sensor_t {
 
 			if (Key == "IsRepeated")
 				return (LastSignal.IsRepeated) ? "1" : "0";
+
+			if (Key == "RepeatSignal")
+				return RepeatCode;
 
 			return Converter::ToHexString(Values[Key].Value, 8);
 		}
@@ -103,6 +107,7 @@ class SensorIR_t : public Sensor_t {
 
 		static void MessageStart() {
 			SensorIRCurrentMessage.clear();
+			RepeatCode = "";
 		};
 
 		static bool MessageBody(int16_t Bit) {
@@ -119,8 +124,15 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageEnd() {
-			if (SensorIRCurrentMessage.size() <= 14)
+			if (SensorIRCurrentMessage.size() <= 14) {
+				if (RepeatCode == "" && SensorIRCurrentMessage.size() > 2)
+					for (int i=0; i < SensorIRCurrentMessage.size(); i++)
+						RepeatCode += Converter::ToString(SensorIRCurrentMessage[i]) + ((i != SensorIRCurrentMessage.size() - 1) ? " " : "");
+
 				return;
+			}
+
+			RepeatCode = "";
 
 			if (Command_t::GetCommandByID(SensorIRID - 0x80) != nullptr)
 				if (Command_t::GetCommandByID(SensorIRID - 0x80)->InOperation)

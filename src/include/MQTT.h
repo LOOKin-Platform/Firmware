@@ -35,7 +35,6 @@ class MQTT_t {
 		void Stop();
 		void Reconnect();
 
-
 		string GetClientID();
 
 		static void 		MQTTTask(void *TaskData);

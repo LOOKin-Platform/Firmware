@@ -41,7 +41,7 @@ class Gree : public IRProto {
 			if (TestValue(RawData.at(0)	, HeaderMark	) &&
 				TestValue(RawData.at(1)	, -HeaderSpace	) &&
 				TestValue(RawData.at(2)	, BitMark		) &&
-				TestValue(RawData.at(73), -Gap			) &&
+				RawData.at(73) 			< -Gap * 0.85	  &&
 				RawData.size() == 140)
 				return true;
 

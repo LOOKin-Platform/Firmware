@@ -411,7 +411,16 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 					MQTT.Reconnect();
 				}
 			}
+		}
 
+		if (URLParts.size() == 3) {
+			if (URLParts[0] == "remotecontrol" && URLParts[1] == "stop") {
+				if (Converter::ToLower(MQTT.GetClientID()) == URLParts[2]) {
+					MQTT.Stop();
+					Result.Body = "{\"success\" : \"true\"}";
+					return;
+				}
+			}
 		}
 	}
 

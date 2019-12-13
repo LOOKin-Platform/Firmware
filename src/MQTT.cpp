@@ -41,8 +41,6 @@ void MQTT_t::Start() {
 	    mqtt_cfg.password		= Password.c_str();
 	    mqtt_cfg.client_id		= Username.c_str();
 
-	    mqtt_cfg.disable_auto_reconnect = false;
-
 		ConnectionTries = 0;
 
 	    MQTT_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
@@ -57,24 +55,22 @@ void MQTT_t::Start() {
 }
 
 void MQTT_t::Stop() {
-	if (ClientHandle != NULL) {
+	if (ClientHandle && Status != UNACTIVE) {
+		Status = UNACTIVE;
 
 		::esp_mqtt_client_destroy(ClientHandle);
 
-		ClientHandle 	= NULL;
-
-		if (Status == CONNECTED)
-			Status = UNACTIVE;
+		ClientHandle	= NULL;
 
 	    ESP_LOGI(TAG,"MQTT Stopped");
 	}
 }
 
 void MQTT_t::Reconnect() {
-	if (Status == CONNECTED) {
-		Stop();
+	if (Status != UNACTIVE && ClientHandle != nullptr)
+		::esp_mqtt_client_reconnect(ClientHandle);
+	else
 		Start();
-	}
 }
 
 string MQTT_t::GetClientID() {
@@ -97,12 +93,7 @@ void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 	}
 
 	SetCredentials(Username, Password);
-
-	if (Status == CONNECTED)
-		Stop();
-
-	if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == ESP_OK))
-		Start();
+	Reconnect();
 }
 
 esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
@@ -130,10 +121,8 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
         {
             ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
 
-            if (Status == CONNECTED && ClientHandle != NULL) {
+            if (Status == CONNECTED && ClientHandle != NULL)
             	Status = ERROR;
-				esp_mqtt_client_start(MQTT_t::ClientHandle);
-            }
 
         	ConnectionTries++;
 
@@ -143,6 +132,8 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
             	Status = Status_t::ERROR;
         		MQTT.Stop();
         	}
+        	else if (ClientHandle != NULL)
+        		::esp_mqtt_client_reconnect(ClientHandle);
 
             break;
         }
@@ -150,10 +141,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
         case MQTT_EVENT_SUBSCRIBED:
         {
             ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-
             int msg_id = event->msg_id;
-
-            ESP_LOGI(TAG, "subscribed successful to , msg_id=%d", msg_id);
             break;
         }
 
@@ -225,28 +213,35 @@ MQTT_t::Status_t MQTT_t::GetStatus() {
 esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	esp_mqtt_client_config_t Config;
 
-	Config.host				= NULL;
-	Config.uri				= NULL;
-	Config.port				= 0;
-	Config.keepalive		= 120;
-	Config.disable_auto_reconnect = true;
+	Config.host					= NULL;
+	Config.uri					= NULL;
+	Config.port					= 0;
+	Config.keepalive			= 120;
+	Config.disable_auto_reconnect
+								= true;
 
-	Config.client_id 		= NULL;
-	Config.lwt_topic		= NULL;
-	Config.lwt_msg			= NULL;
+	Config.client_id 			= NULL;
+	Config.lwt_topic			= NULL;
+	Config.lwt_msg				= NULL;
 
-	Config.cert_pem			= NULL;
-	Config.client_cert_pem 	= NULL;
-	Config.client_key_pem	= NULL;
+	Config.cert_pem				= NULL;
+	Config.client_cert_pem 		= NULL;
+	Config.client_key_pem		= NULL;
+	Config.cert_len				= 0;
+	Config.client_cert_len		= 0;
+	Config.client_key_len		= 0;
+	Config.psk_hint_key			= NULL;
 
-	Config.disable_clean_session = false;
-	Config.refresh_connection_after_ms = 0;
+	Config.disable_clean_session= false;
+	Config.refresh_connection_after_ms
+								= 0;
 
-	Config.buffer_size		= 0;
-	Config.task_stack		= 0;
-	Config.task_prio		= 0;
+	Config.buffer_size			= 0;
+	Config.task_stack			= 0;
+	Config.task_prio			= 0;
 
-	Config.user_context		= NULL;
+	Config.user_context			= NULL;
+	Config.use_global_ca_store 	= false;
 
 	return Config;
 }

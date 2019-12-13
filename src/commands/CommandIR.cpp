@@ -224,7 +224,7 @@ class CommandIR_t : public Command_t {
 		}
 
     void TXSend(uint16_t Frequency) {
-    	InOperation = true;
+    	InOperation = false;
 
 		RMT::TXSend(TXChannel, Frequency);
 		Log::Add(Log::Events::Commands::IRExecuted);

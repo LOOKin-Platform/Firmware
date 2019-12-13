@@ -83,15 +83,12 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
         	Failed(ClientData);
             break;
         case HTTP_EVENT_ON_CONNECTED:
-            //ESP_LOGI(tag, "HTTP_EVENT_ON_CONNECTED");
 			if (ClientData.ReadStartedCallback != NULL)
 				ClientData.ReadStartedCallback(ClientData.URL);
             break;
         case HTTP_EVENT_HEADER_SENT:
-            //ESP_LOGI(tag, "HTTP_EVENT_HEADER_SENT");
             break;
         case HTTP_EVENT_ON_HEADER:
-            //ESP_LOGI(tag, "HTTP_EVENT_ON_HEADER");
             break;
         case HTTP_EVENT_ON_DATA:
 			if (ClientData.ReadBodyCallback != NULL)

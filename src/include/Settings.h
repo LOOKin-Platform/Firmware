@@ -71,7 +71,7 @@ class Settings_t {
 		} WiFi;
 
 		struct Bluetooth_t {
-			const string					DeviceNamePrefix		= "LOOK.in ";
+			const string					DeviceNamePrefix		= "LOOK.in_";
 			const string					SecretCodeServiceUUID   = "997d2872-b4e2-414d-b4be-985263a70411";
         	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
 
@@ -105,7 +105,8 @@ class Settings_t {
 		struct {
 			const uint16_t					Interval 		= 1000;
 
-			const uint32_t					MQTTInterval	= 60*1000; // 1 минута
+			const uint32_t					MQTTInterval	= 3*60*1000; 	// 3 минуты
+			const uint32_t					PingInterval	= 30*60*1000; 	// 30 минут
 
 			struct {
 				const uint16_t				Inverval 		= 4000;

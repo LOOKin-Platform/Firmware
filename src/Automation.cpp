@@ -53,7 +53,7 @@ void Automation_t::SensorChanged(uint8_t SensorID) {
 
 void Automation_t::TimeChangedTask(void *) {
 	while (1) {
-		while (Time::Unixtime()%Settings.Scenarios.TimePoolInterval!=0)
+		while (Time::Unixtime()%Settings.Scenarios.TimePoolInterval != 0)
 			FreeRTOS::Sleep(1000);
 
 		for (auto& ScenarioCacheItem : Automation.ScenariosCache)

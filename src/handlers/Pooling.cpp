@@ -7,6 +7,7 @@
 #include "EnergyHandler.cpp"
 #include "SensorPeriodicHandler.cpp"
 #include "MQTTPeriodicHandler.cpp"
+#include "PingPeriodicHandler.cpp"
 
 class Pooling_t: public Task {
 	void Run(void *data) override {
@@ -14,9 +15,8 @@ class Pooling_t: public Task {
 		WiFiUptimeHandler::Start();
 
 		while (1) {
-			if (Time::Uptime() % 10 == 0) {
+			if (Time::Uptime() % 10 == 0)
 				ESP_LOGI("Pooling","RAM left %d", esp_get_free_heap_size());
-			}
 
 			OverheatHandler			::Pool();
 			WiFiUptimeHandler		::Pool();
@@ -24,6 +24,7 @@ class Pooling_t: public Task {
 			EnergyPeriodicHandler	::Pool();
 			SensorPeriodicHandler	::Pool();
 			MQTTPeriodicHandler		::Pool();
+			PingPeriodicHandler		::Pool();
 
 			FreeRTOS::Sleep(Settings.Pooling.Interval);
 		}

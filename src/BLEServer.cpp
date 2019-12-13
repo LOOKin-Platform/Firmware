@@ -115,7 +115,7 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
 	if (BLEDeviceName.size() < 4)
 		BLEDeviceName += "!";
 
-	BLEDeviceName = Settings.Bluetooth.DeviceNamePrefix + BLEDeviceName + " " + Device.IDToString();
+	BLEDeviceName = Settings.Bluetooth.DeviceNamePrefix + BLEDeviceName + "_" + Device.IDToString();
 
 	BLEDevice::Init(BLEDeviceName);
 
@@ -220,6 +220,7 @@ void BLEServer_t::StopAdvertising() {
 void BLEServer_t::SwitchToPublicMode() {
 	if (IsRunning() && IsPrivateMode) {
 		StopAdvertising();
+		FreeRTOS::Sleep(1000);
 		StartAdvertising();
 	}
 }
@@ -227,6 +228,7 @@ void BLEServer_t::SwitchToPublicMode() {
 void BLEServer_t::SwitchToPrivateMode() {
 	if (IsRunning() && !IsPrivateMode) {
 		StopAdvertising();
+		FreeRTOS::Sleep(1000);
 		StartAdvertising("", true);
 	}
 }
