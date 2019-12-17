@@ -31,11 +31,6 @@ class BLEAddress {
 		esp_bd_addr_t*	GetNative();
 		string   		ToString();
 
-		bool operator == (const BLEAddress& Other)
-		{
-			return (Equals(Other));
-		}
-
 	private:
 		esp_bd_addr_t m_address;
 };

@@ -55,6 +55,7 @@ class MQTT_t {
 		static Status_t		Status;
 		static uint8_t		ConnectionTries;
 
+		esp_mqtt_client_config_t CreateConfig();
 		esp_mqtt_client_config_t ConfigDefault();
 };
 

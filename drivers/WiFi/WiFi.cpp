@@ -694,3 +694,12 @@ void WiFi_t::SetWiFiEventHandler(WiFiEventHandler* WiFiEventHandler) {
 	this->m_pWifiEventHandler = WiFiEventHandler;
 	ESP_LOGD(tag, "<< setWiFiEventHandler");
 } // setWiFiEventHandler
+
+bool WiFi_t::IsConnectedSTA() {
+	if (!m_WiFiRunning) return false;
+	if (GetMode() != WIFI_MODE_STA_STR) return false;
+	if (GetConnectionStatus() != ESP_OK) return false;
+
+	return true;
+}
+

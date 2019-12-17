@@ -12,12 +12,12 @@
 
 #ifndef DRIVERS_BLEADVERTISEDDEVICE_H_
 #define DRIVERS_BLEADVERTISEDDEVICE_H_
+
 #include "sdkconfig.h"
 #if defined(CONFIG_BT_ENABLED)
 #include <map>
 #include <sstream>
 
-#include "BLEUtils.h"
 #include "BLEAddress.h"
 #include "BLEScan.h"
 #include "BLEUUID.h"
@@ -26,6 +26,7 @@
 #include <esp_log.h>
 
 class BLEScan;
+
 /**
  * @brief A representation of a %BLE advertised device found by a scan.
  *
@@ -36,69 +37,77 @@ class BLEAdvertisedDevice {
 	public:
 		BLEAdvertisedDevice();
 
-		BLEAddress	getAddress();
-		uint16_t	getAppearance();
-		string		getManufacturerData();
-		string		getName();
-		int			getRSSI();
-		BLEScan*	getScan();
-		string		getServiceData();
-		BLEUUID		getServiceDataUUID();
-		BLEUUID		getServiceUUID();
-		int8_t		getTXPower();
+		BLEAddress			GetAddress();
+		uint16_t			GetAppearance();
+		string				GetManufacturerData();
+		string				GetName();
+		int					GetRSSI();
+		BLEScan*			GetScan();
+		string				GetServiceData();
+		BLEUUID				GetServiceDataUUID();
+		BLEUUID				GetServiceUUID();
+		int8_t				GetTXPower();
+		uint8_t* 			GetPayload();
+		size_t				GetPayloadLength();
+		esp_ble_addr_type_t	GetAddressType();
+		void 				SetAddressType(esp_ble_addr_type_t type);
 
 
-		bool		isAdvertisingService(BLEUUID uuid);
-		bool		haveAppearance();
-		bool		haveManufacturerData();
-		bool		haveName();
-		bool		haveRSSI();
-		bool		haveServiceData();
-		bool		haveServiceUUID();
-		bool		haveTXPower();
+		bool				IsAdvertisingService(BLEUUID uuid);
+		bool				HaveAppearance();
+		bool				HaveManufacturerData();
+		bool				HaveName();
+		bool				HaveRSSI();
+		bool				HaveServiceData();
+		bool				HaveServiceUUID();
+		bool				HaveTXPower();
 
-	string toString();
+		string 				ToString();
 
 	private:
 		friend class BLEScan;
 
-		void		parseAdvertisement(uint8_t* payload);
-		void		setAddress(BLEAddress address);
-		void		setAdFlag(uint8_t adFlag);
-		void		setAdvertizementResult(uint8_t* payload);
-		void		setAppearance(uint16_t appearance);
-		void		setManufacturerData(std::string manufacturerData);
-		void		setName(std::string name);
-		void		setRSSI(int rssi);
-		void		setScan(BLEScan* pScan);
-		void		setServiceData(std::string data);
-		void		setServiceDataUUID(BLEUUID uuid);
-		void		setServiceUUID(const char* serviceUUID);
-		void		setServiceUUID(BLEUUID serviceUUID);
-		void		setTXPower(int8_t txPower);
+		void				ParseAdvertisement(uint8_t* payload, size_t total_len=62);
+		void				SetAddress(BLEAddress address);
+		void				SetAdFlag(uint8_t adFlag);
+		void				SetAdvertizementResult(uint8_t* payload);
+		void				SetAppearance(uint16_t appearance);
+		void				SetManufacturerData(std::string manufacturerData);
+		void				SetName(std::string name);
+		void				SetRSSI(int rssi);
+		void				SetScan(BLEScan* pScan);
+		void				SetServiceData(std::string data);
+		void				SetServiceDataUUID(BLEUUID uuid);
+		void				SetServiceUUID(const char* serviceUUID);
+		void				SetServiceUUID(BLEUUID serviceUUID);
+		void				SetTXPower(int8_t txPower);
 
 
-		bool		m_haveAppearance;
-		bool		m_haveManufacturerData;
-		bool		m_haveName;
-		bool		m_haveRSSI;
-		bool		m_haveServiceData;
-		bool		m_haveServiceUUID;
-		bool		m_haveTXPower;
+		bool				m_haveAppearance;
+		bool				m_haveManufacturerData;
+		bool				m_haveName;
+		bool				m_haveRSSI;
+		bool				m_haveServiceData;
+		bool				m_haveServiceUUID;
+		bool				m_haveTXPower;
 
 
-		BLEAddress	m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
-		uint8_t		m_adFlag;
-		uint16_t	m_appearance;
-		int			m_deviceType;
-		string		m_manufacturerData;
-		string		m_name;
-		BLEScan*    m_pScan;
-		int         m_rssi;
-		vector<BLEUUID> m_serviceUUIDs;
-		int8_t		m_txPower;
-		string		m_serviceData;
-		BLEUUID     m_serviceDataUUID;
+		BLEAddress			m_address = BLEAddress((uint8_t*)"\0\0\0\0\0\0");
+		uint8_t				m_adFlag;
+		uint16_t			m_appearance;
+		int					m_deviceType;
+		string				m_manufacturerData;
+		string				m_name;
+		BLEScan*			m_pScan;
+		int					m_rssi;
+		vector<BLEUUID>		m_serviceUUIDs;
+		int8_t				m_txPower;
+		string				m_serviceData;
+		BLEUUID				m_serviceDataUUID;
+
+		uint8_t*			m_payload = nullptr;
+		size_t				m_payloadLength = 0;
+		esp_ble_addr_type_t	m_addressType;
 };
 
 /**
@@ -117,7 +126,8 @@ class BLEAdvertisedDeviceCallbacks {
 		 * As we are scanning, we will find new devices.  When found, this call back is invoked with a reference to the
 		 * device that was found.  During any individual scan, a device will only be detected one time.
 		 */
-		virtual void onResult(BLEAdvertisedDevice advertisedDevice) = 0;
+		virtual void OnResult(BLEAdvertisedDevice advertisedDevice);
+		virtual void OnResult(BLEAdvertisedDevice* advertisedDevice);
 };
 
 #endif /* CONFIG_BT_ENABLED */

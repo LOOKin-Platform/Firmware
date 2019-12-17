@@ -49,13 +49,13 @@ void I2C::Init(uint8_t address, gpio_num_t sdaPin, gpio_num_t sclPin, uint32_t c
 	esp_err_t errRc = ::i2c_param_config(m_portNum, &conf);
 
 	if (errRc != ESP_OK)
-		ESP_LOGE(tag, "i2c_param_config: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_param_config: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 
 	if (!IsDriverInstalled) {
 		errRc = ::i2c_driver_install(m_portNum, I2C_MODE_MASTER, 0, 0, 0);
 
 		if (errRc != ESP_OK)
-			ESP_LOGE(tag, "i2c_driver_install: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+			ESP_LOGE(tag, "i2c_driver_install: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 
 		IsDriverInstalled = true;
 	}
@@ -72,7 +72,7 @@ void I2C::Start() {
 	esp_err_t errRc = ::i2c_master_start(m_cmd);
 
 	if (errRc != ESP_OK)
-		ESP_LOGE(tag, "i2c_master_start: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_start: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 
 	m_directionKnown = false;
 } // start
@@ -89,7 +89,7 @@ void I2C::Stop() {
 	esp_err_t errRc = ::i2c_master_stop(m_cmd);
 
 	if (errRc != ESP_OK)
-		ESP_LOGE(tag, "i2c_master_stop: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_stop: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 
 	m_directionKnown = false;
 } // stop
@@ -180,7 +180,7 @@ void I2C::BeginTransaction() {
 	m_cmd = ::i2c_cmd_link_create();
 	esp_err_t errRc = ::i2c_master_start(m_cmd);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "i2c_master_start: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_start: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}
 	m_directionKnown = false;
 } // beginTransaction
@@ -199,12 +199,12 @@ void I2C::EndTransaction() {
 	}
 	esp_err_t errRc = ::i2c_master_stop(m_cmd);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "i2c_master_stop: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_stop: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}
 
 	errRc = ::i2c_master_cmd_begin(m_portNum, m_cmd, 1000/portTICK_PERIOD_MS);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "i2c_master_cmd_begin: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_cmd_begin: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}
 	::i2c_cmd_link_delete(m_cmd);
 	m_directionKnown = false;
@@ -226,12 +226,12 @@ void I2C::Read(uint8_t* bytes, size_t length, bool ack) {
 		m_directionKnown = true;
 		esp_err_t errRc = ::i2c_master_write_byte(m_cmd, (m_address << 1) | I2C_MASTER_READ, !ack);
 		if (errRc != ESP_OK) {
-			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 		}
 	}
 	esp_err_t errRc = ::i2c_master_read(m_cmd, bytes, length, ack?I2C_MASTER_ACK:I2C_MASTER_NACK);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "i2c_master_read: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_read: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}
 } // read
 
@@ -251,7 +251,7 @@ void I2C::Read(uint8_t *byte, bool ack) {
 		m_directionKnown = true;
 		esp_err_t errRc = ::i2c_master_write_byte(m_cmd, (m_address << 1) | I2C_MASTER_READ, !ack);
 		if (errRc != ESP_OK) {
-			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 		}
 	}
 	ESP_ERROR_CHECK(::i2c_master_read_byte(m_cmd, byte, ack?I2C_MASTER_ACK:I2C_MASTER_NACK));
@@ -273,12 +273,12 @@ void I2C::Write(uint8_t byte, bool ack) {
 		m_directionKnown = true;
 		esp_err_t errRc = ::i2c_master_write_byte(m_cmd, (m_address << 1) | I2C_MASTER_WRITE, !ack);
 		if (errRc != ESP_OK) {
-			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 		}
 	}
 	esp_err_t errRc = ::i2c_master_write_byte(m_cmd, byte, !ack);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}
 } // write
 
@@ -299,12 +299,12 @@ void I2C::Write(uint8_t *bytes, size_t length, bool ack) {
 		m_directionKnown = true;
 		esp_err_t errRc = ::i2c_master_write_byte(m_cmd, (m_address << 1) | I2C_MASTER_WRITE, !ack);
 		if (errRc != ESP_OK) {
-			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+			ESP_LOGE(tag, "i2c_master_write_byte: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 		}
 	}
 	esp_err_t errRc = ::i2c_master_write(m_cmd, bytes, length, !ack);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "i2c_master_write: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "i2c_master_write: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}
 } // write
 

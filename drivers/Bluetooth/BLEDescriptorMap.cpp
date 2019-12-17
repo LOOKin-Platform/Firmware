@@ -18,23 +18,22 @@
  * @param [in] UUID The UUID to look up the descriptor.
  * @return The descriptor.  If not present, then nullptr is returned.
  */
-BLEDescriptor* BLEDescriptorMap::getByUUID(const char* uuid) {
-    return getByUUID(BLEUUID(uuid));
+BLEDescriptor* BLEDescriptorMap::GetByUUID(const char* uuid) {
+	return GetByUUID(BLEUUID(uuid));
 }
-
 
 /**
  * @brief Return the descriptor by UUID.
  * @param [in] UUID The UUID to look up the descriptor.
  * @return The descriptor.  If not present, then nullptr is returned.
  */
-BLEDescriptor* BLEDescriptorMap::getByUUID(BLEUUID uuid) {
+BLEDescriptor* BLEDescriptorMap::GetByUUID(BLEUUID uuid) {
 	for (auto &myPair : m_uuidMap) {
-		if (myPair.second->getUUID().equals(uuid)) {
-			return myPair.second;
+		if (myPair.first->GetUUID().Equals(uuid)) {
+			return myPair.first;
 		}
 	}
-	//return m_uuidMap.at(uuid.toString());
+	//return m_uuidMap.at(uuid.ToString());
 	return nullptr;
 } // getByUUID
 
@@ -44,7 +43,7 @@ BLEDescriptor* BLEDescriptorMap::getByUUID(BLEUUID uuid) {
  * @param [in] handle The handle to look up the descriptor.
  * @return The descriptor.
  */
-BLEDescriptor* BLEDescriptorMap::getByHandle(uint16_t handle) {
+BLEDescriptor* BLEDescriptorMap::GetByHandle(uint16_t handle) {
 	return m_handleMap.at(handle);
 } // getByHandle
 
@@ -55,8 +54,8 @@ BLEDescriptor* BLEDescriptorMap::getByHandle(uint16_t handle) {
  * @param [in] characteristic The descriptor to cache.
  * @return N/A.
  */
-void BLEDescriptorMap::setByUUID(const char* uuid, BLEDescriptor *pDescriptor){
-	m_uuidMap.insert(std::pair<std::string, BLEDescriptor *>(uuid, pDescriptor));
+void BLEDescriptorMap::SetByUUID(const char* uuid, BLEDescriptor* pDescriptor){
+	m_uuidMap.insert(std::pair<BLEDescriptor*, std::string>(pDescriptor, uuid));
 } // setByUUID
 
 
@@ -67,8 +66,8 @@ void BLEDescriptorMap::setByUUID(const char* uuid, BLEDescriptor *pDescriptor){
  * @param [in] characteristic The descriptor to cache.
  * @return N/A.
  */
-void BLEDescriptorMap::setByUUID(BLEUUID uuid, BLEDescriptor *pDescriptor) {
-	m_uuidMap.insert(std::pair<std::string, BLEDescriptor *>(uuid.toString(), pDescriptor));
+void BLEDescriptorMap::SetByUUID(BLEUUID uuid, BLEDescriptor* pDescriptor) {
+	m_uuidMap.insert(std::pair<BLEDescriptor*, std::string>(pDescriptor, uuid.ToString()));
 } // setByUUID
 
 
@@ -78,9 +77,8 @@ void BLEDescriptorMap::setByUUID(BLEUUID uuid, BLEDescriptor *pDescriptor) {
  * @param [in] descriptor The descriptor to cache.
  * @return N/A.
  */
-void BLEDescriptorMap::setByHandle(uint16_t handle,
-		BLEDescriptor *pDescriptor) {
-	m_handleMap.insert(std::pair<uint16_t, BLEDescriptor *>(handle, pDescriptor));
+void BLEDescriptorMap::SetByHandle(uint16_t handle, BLEDescriptor* pDescriptor) {
+	m_handleMap.insert(std::pair<uint16_t, BLEDescriptor*>(handle, pDescriptor));
 } // setByHandle
 
 
@@ -88,16 +86,16 @@ void BLEDescriptorMap::setByHandle(uint16_t handle,
  * @brief Return a string representation of the descriptor map.
  * @return A string representation of the descriptor map.
  */
-std::string BLEDescriptorMap::toString() {
+std::string BLEDescriptorMap::ToString() {
 	std::stringstream stringStream;
 	stringStream << std::hex << std::setfill('0');
-	int count=0;
-	for (auto &myPair: m_uuidMap) {
+	int count = 0;
+	for (auto &myPair : m_uuidMap) {
 		if (count > 0) {
 			stringStream << "\n";
 		}
 		count++;
-		stringStream << "handle: 0x" << std::setw(2) << myPair.second->getHandle() << ", uuid: " + myPair.second->getUUID().toString();
+		stringStream << "handle: 0x" << std::setw(2) << myPair.first->GetHandle() << ", uuid: " + myPair.first->GetUUID().ToString();
 	}
 	return stringStream.str();
 } // toString
@@ -109,13 +107,13 @@ std::string BLEDescriptorMap::toString() {
  * @param [in] gatts_if
  * @param [in] param
  */
-void BLEDescriptorMap::handleGATTServerEvent(
+void BLEDescriptorMap::HandleGATTServerEvent(
 		esp_gatts_cb_event_t      event,
 		esp_gatt_if_t             gatts_if,
-		esp_ble_gatts_cb_param_t *param) {
+		esp_ble_gatts_cb_param_t* param) {
 	// Invoke the handler for every descriptor we have.
 	for (auto &myPair : m_uuidMap) {
-		myPair.second->handleGATTServerEvent(event, gatts_if, param);
+		myPair.first->HandleGATTServerEvent(event, gatts_if, param);
 	}
 } // handleGATTServerEvent
 
@@ -124,12 +122,10 @@ void BLEDescriptorMap::handleGATTServerEvent(
  * @brief Get the first descriptor in the map.
  * @return The first descriptor in the map.
  */
-BLEDescriptor* BLEDescriptorMap::getFirst() {
+BLEDescriptor* BLEDescriptorMap::GetFirst() {
 	m_iterator = m_uuidMap.begin();
-	if (m_iterator == m_uuidMap.end()) {
-		return nullptr;
-	}
-	BLEDescriptor *pRet = m_iterator->second;
+	if (m_iterator == m_uuidMap.end()) return nullptr;
+	BLEDescriptor* pRet = m_iterator->first;
 	m_iterator++;
 	return pRet;
 } // getFirst
@@ -139,11 +135,9 @@ BLEDescriptor* BLEDescriptorMap::getFirst() {
  * @brief Get the next descriptor in the map.
  * @return The next descriptor in the map.
  */
-BLEDescriptor* BLEDescriptorMap::getNext() {
-	if (m_iterator == m_uuidMap.end()) {
-		return nullptr;
-	}
-	BLEDescriptor *pRet = m_iterator->second;
+BLEDescriptor* BLEDescriptorMap::GetNext() {
+	if (m_iterator == m_uuidMap.end()) return nullptr;
+	BLEDescriptor* pRet = m_iterator->first;
 	m_iterator++;
 	return pRet;
 } // getNext

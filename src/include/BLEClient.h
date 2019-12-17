@@ -18,7 +18,9 @@
 #include "BLEDevice.h"
 #include "BLEHIDDevice.h"
 #include "BLEServerGeneric.h"
+#include "BLEClientGeneric.h"
 #include "BLEUtils.h"
+#include "BLEScan.h"
 #include "BLE2902.h"
 
 #include <esp_log.h>
@@ -35,7 +37,7 @@ class BLEClient_t {
 		vector<BLEAddress>	ScanDevicesProcessed = {};
 		uint32_t			ScanStartTime;
 	private:
-		BLEScan*			pBLEScan;
+		BLEScan				*pBLEScan;
 };
 
 #endif /* BLUETOOTHBCLIENT_H */

@@ -16,6 +16,8 @@ void MQTTPeriodicHandler::ClearCounter() {
 }
 
 void IRAM_ATTR MQTTPeriodicHandler::Pool() {
+	return;
+
 	if (Device.Type.IsBattery())
 		return;
 

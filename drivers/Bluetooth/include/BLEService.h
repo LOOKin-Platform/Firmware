@@ -23,22 +23,21 @@ class BLEServerGeneric;
  */
 class BLECharacteristicMap {
 	public:
-		void SetByUUID(BLECharacteristic* pCharacteristic, const char* uuid);
-		void SetByUUID(BLECharacteristic* pCharacteristic, BLEUUID uuid);
-		void SetByHandle(uint16_t handle, BLECharacteristic* pCharacteristic);
-
+		void 				SetByUUID(BLECharacteristic* pCharacteristic, const char* uuid);
+		void 				SetByUUID(BLECharacteristic* pCharacteristic, BLEUUID uuid);
+		void 				SetByHandle(uint16_t handle, BLECharacteristic* pCharacteristic);
 		BLECharacteristic*	GetByUUID(const char* uuid);
 		BLECharacteristic*	GetByUUID(BLEUUID uuid);
 		BLECharacteristic*	GetByHandle(uint16_t handle);
 		BLECharacteristic*	GetFirst();
 		BLECharacteristic*	GetNext();
-		string 				ToString();
+		std::string 		ToString();
+		void HandleGATTServerEvent(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param);
 
-		void handleGATTServerEvent(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param);
 	private:
-		map<BLECharacteristic*, string> 			m_uuidMap;
-		map<uint16_t, BLECharacteristic*> 			m_handleMap;
-		map<BLECharacteristic*, string>::iterator 	m_iterator;
+		std::map<BLECharacteristic*, std::string> m_uuidMap;
+		std::map<uint16_t, BLECharacteristic*> m_handleMap;
+		std::map<BLECharacteristic*, std::string>::iterator m_iterator;
 };
 
 
@@ -53,20 +52,20 @@ class BLEService {
 		BLECharacteristic*	CreateCharacteristic(BLEUUID uuid, uint32_t properties);
 		void				Dump();
 		void				ExecuteCreate(BLEServerGeneric* pServer);
+		void				ExecuteDelete();
 		BLECharacteristic*	GetCharacteristic(const char* uuid);
 		BLECharacteristic*	GetCharacteristic(BLEUUID uuid);
 		BLEUUID				GetUUID();
 		BLEServerGeneric*	GetServer();
 		void				Start();
 		void				Stop();
-		string				ToString();
+		std::string			ToString();
 		uint16_t			GetHandle();
-
-		~BLEService();
+		uint8_t				m_instId = 0;
 
 	private:
-		BLEService(const char* uuid, uint32_t numHandles);
-		BLEService(BLEUUID uuid, uint32_t numHandles);
+		BLEService(const char* uuid, uint16_t numHandles);
+		BLEService(BLEUUID uuid, uint16_t numHandles);
 
 		friend class BLEServerGeneric;
 		friend class BLEServiceMap;
@@ -74,25 +73,25 @@ class BLEService {
 		friend class BLECharacteristic;
 		friend class BLEDevice;
 
-		BLECharacteristicMap	m_characteristicMap;
-		uint16_t				m_handle;
-		BLECharacteristic*		m_lastCreatedCharacteristic;
-		BLEServerGeneric*		m_pServer;
-		BLEUUID					m_uuid;
+		BLECharacteristicMap 	m_characteristicMap;
+		uint16_t             	m_handle;
+		BLECharacteristic*   	m_lastCreatedCharacteristic = nullptr;
+		BLEServerGeneric*		m_pServer = nullptr;
+		BLEUUID              	m_uuid;
 
-		FreeRTOS::Semaphore		m_semaphoreCreateEvt 	= FreeRTOS::Semaphore("CreateEvt");
-		FreeRTOS::Semaphore		m_semaphoreStartEvt 	= FreeRTOS::Semaphore("StartEvt");
-		FreeRTOS::Semaphore		m_semaphoreStopEvt  	= FreeRTOS::Semaphore("StopEvt");
+		FreeRTOS::Semaphore  m_semaphoreCreateEvt = FreeRTOS::Semaphore("CreateEvt");
+		FreeRTOS::Semaphore  m_semaphoreDeleteEvt = FreeRTOS::Semaphore("DeleteEvt");
+		FreeRTOS::Semaphore  m_semaphoreStartEvt  = FreeRTOS::Semaphore("StartEvt");
+		FreeRTOS::Semaphore  m_semaphoreStopEvt   = FreeRTOS::Semaphore("StopEvt");
 
-		uint32_t				m_numHandles;
+		uint16_t             m_numHandles;
 
-		BLECharacteristic* 		getLastCreatedCharacteristic();
-
-		void					handleGATTServerEvent(esp_gatts_cb_event_t event,esp_gatt_if_t gatts_if,esp_ble_gatts_cb_param_t* param);
-		void					setHandle(uint16_t handle);
-		//void               setService(esp_gatt_srvc_id_t srvc_id);
+		BLECharacteristic*	GetLastCreatedCharacteristic();
+		void 				HandleGATTServerEvent(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param);
+		void				SetHandle(uint16_t handle);
+	//void               setService(esp_gatt_srvc_id_t srvc_id);
 }; // BLEService
 
 
 #endif // CONFIG_BT_ENABLED
-#endif /* DRIVERS_BLESERVICE_H_ */
+#endif /* COMPONENTS_CPP_UTILS_BLESERVICE_H_ */

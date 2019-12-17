@@ -24,21 +24,21 @@ static char tag[] = "BLEDescriptor";
 /**
  * @brief BLEDescriptor constructor.
  */
-BLEDescriptor::BLEDescriptor(const char* uuid) : BLEDescriptor(BLEUUID(uuid)) {
+BLEDescriptor::BLEDescriptor(const char* uuid, uint16_t len) : BLEDescriptor(BLEUUID(uuid), len) {
 }	
 
 /**
  * @brief BLEDescriptor constructor.
  */
-BLEDescriptor::BLEDescriptor(BLEUUID uuid) {
+BLEDescriptor::BLEDescriptor(BLEUUID uuid, uint16_t max_len) {
 	m_bleUUID            = uuid;
-	m_value.attr_value   = (uint8_t *)malloc(ESP_GATT_MAX_ATTR_LEN); // Allocate storage for the value.
-	m_value.attr_len     = 0;
-	m_value.attr_max_len = ESP_GATT_MAX_ATTR_LEN;
-	m_handle             = NULL_HANDLE;
-	m_pCharacteristic    = nullptr;   // No initial characteristic.
-	m_pCallback          = nullptr;   // No initial callback.
+	m_value.attr_len     = 0;                                         // Initial length is 0.
+	m_value.attr_max_len = max_len;                     // Maximum length of the data.
+	m_handle             = NULL_HANDLE;                               // Handle is initially unknown.
+	m_pCharacteristic    = nullptr;                                   // No initial characteristic.
+	m_pCallback          = nullptr;                                   // No initial callback.
 
+	m_value.attr_value   = (uint8_t*) malloc(max_len);  // Allocate storage for the value.
 } // BLEDescriptor
 
 
@@ -46,7 +46,7 @@ BLEDescriptor::BLEDescriptor(BLEUUID uuid) {
  * @brief BLEDescriptor destructor.
  */
 BLEDescriptor::~BLEDescriptor() {
-	free(m_value.attr_value);
+	free(m_value.attr_value);   // Release the storage we created in the constructor.
 } // ~BLEDescriptor
 
 
@@ -54,8 +54,8 @@ BLEDescriptor::~BLEDescriptor() {
  * @brief Execute the creation of the descriptor with the BLE runtime in ESP.
  * @param [in] pCharacteristic The characteristic to which to register this descriptor.
  */
-void BLEDescriptor::executeCreate(BLECharacteristic* pCharacteristic) {
-	ESP_LOGD(tag, ">> executeCreate(): %s", toString().c_str());
+void BLEDescriptor::ExecuteCreate(BLECharacteristic* pCharacteristic) {
+	ESP_LOGD(tag, ">> executeCreate(): %s", ToString().c_str());
 
 	if (m_handle != NULL_HANDLE) {
 		ESP_LOGE(tag, "Descriptor already has a handle.");
@@ -65,16 +65,16 @@ void BLEDescriptor::executeCreate(BLECharacteristic* pCharacteristic) {
 	m_pCharacteristic = pCharacteristic; // Save the characteristic associated with this service.
 
 	esp_attr_control_t control;
-	control.auto_rsp = ESP_GATT_RSP_BY_APP;
+	control.auto_rsp = ESP_GATT_AUTO_RSP;
 	m_semaphoreCreateEvt.Take("executeCreate");
+
 	esp_err_t errRc = ::esp_ble_gatts_add_char_descr(
-			pCharacteristic->getService()->GetHandle(),
-			getUUID().getNative(),
-			(esp_gatt_perm_t)(ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE),
-			&m_value,
-			&control);
+			pCharacteristic->GetService()->GetHandle(),
+			GetUUID().GetNative(),
+			(esp_gatt_perm_t)m_permissions, &m_value, &control);
+
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "<< esp_ble_gatts_add_char_descr: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "<< esp_ble_gatts_add_char_descr: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 		return;
 	}
 
@@ -87,7 +87,7 @@ void BLEDescriptor::executeCreate(BLECharacteristic* pCharacteristic) {
  * @brief Get the BLE handle for this descriptor.
  * @return The handle for this descriptor.
  */
-uint16_t BLEDescriptor::getHandle() {
+uint16_t BLEDescriptor::GetHandle() {
 	return m_handle;
 } // getHandle
 
@@ -96,7 +96,7 @@ uint16_t BLEDescriptor::getHandle() {
  * @brief Get the length of the value of this descriptor.
  * @return The length (in bytes) of the value of this descriptor.
  */
-size_t BLEDescriptor::getLength() {
+size_t BLEDescriptor::GetLength() {
 	return m_value.attr_len;
 } // getLength
 
@@ -104,7 +104,7 @@ size_t BLEDescriptor::getLength() {
 /**
  * @brief Get the UUID of the descriptor.
  */
-BLEUUID BLEDescriptor::getUUID() {
+BLEUUID BLEDescriptor::GetUUID() {
 	return m_bleUUID;
 } // getUUID
 
@@ -114,7 +114,7 @@ BLEUUID BLEDescriptor::getUUID() {
  * @brief Get the value of this descriptor.
  * @return A pointer to the value of this descriptor.
  */
-uint8_t* BLEDescriptor::getValue() {
+uint8_t* BLEDescriptor::GetValue() {
 	return m_value.attr_value;
 } // getValue
 
@@ -125,11 +125,11 @@ uint8_t* BLEDescriptor::getValue() {
  * @param [in] gatts_if
  * @param [in] param
  */
-void BLEDescriptor::handleGATTServerEvent(
+void BLEDescriptor::HandleGATTServerEvent(
 		esp_gatts_cb_event_t      event,
 		esp_gatt_if_t             gatts_if,
-		esp_ble_gatts_cb_param_t *param) {
-	switch(event) {
+		esp_ble_gatts_cb_param_t* param) {
+	switch (event) {
 		// ESP_GATTS_ADD_CHAR_DESCR_EVT
 		//
 		// add_char_descr:
@@ -138,22 +138,11 @@ void BLEDescriptor::handleGATTServerEvent(
 		// - uint16_t          service_handle
 		// - esp_bt_uuid_t     char_uuid
 		case ESP_GATTS_ADD_CHAR_DESCR_EVT: {
-			/*
-			ESP_LOGD(tag, "DEBUG: m_pCharacteristic: %x", (uint32_t)m_pCharacteristic);
-			ESP_LOGD(tag, "DEBUG: m_bleUUID: %s, add_char_descr.char_uuid: %s, equals: %d",
-				m_bleUUID.toString().c_str(),
-				BLEUUID(param->add_char_descr.char_uuid).toString().c_str(),
-				m_bleUUID.equals(BLEUUID(param->add_char_descr.char_uuid)));
-			ESP_LOGD(tag, "DEBUG: service->getHandle: %x, add_char_descr.service_handle: %x",
-					m_pCharacteristic->getService()->getHandle(), param->add_char_descr.service_handle);
-			ESP_LOGD(tag, "DEBUG: service->lastCharacteristic: %x",
-					(uint32_t)m_pCharacteristic->getService()->getLastCreatedCharacteristic());
-					*/
 			if (m_pCharacteristic != nullptr &&
-					m_bleUUID.equals(BLEUUID(param->add_char_descr.descr_uuid)) &&
-					m_pCharacteristic->getService()->GetHandle() == param->add_char_descr.service_handle &&
-					m_pCharacteristic == m_pCharacteristic->getService()->getLastCreatedCharacteristic()) {
-				setHandle(param->add_char_descr.attr_handle);
+					m_bleUUID.Equals(BLEUUID(param->add_char_descr.descr_uuid)) &&
+					m_pCharacteristic->GetService()->GetHandle() == param->add_char_descr.service_handle &&
+					m_pCharacteristic == m_pCharacteristic->GetService()->GetLastCreatedCharacteristic()) {
+				SetHandle(param->add_char_descr.attr_handle);
 				m_semaphoreCreateEvt.Give();
 			}
 			break;
@@ -173,27 +162,10 @@ void BLEDescriptor::handleGATTServerEvent(
 		// - uint8_t *value
 		case ESP_GATTS_WRITE_EVT: {
 			if (param->write.handle == m_handle) {
-				setValue(param->write.value, param->write.len);   // Set the value of the descriptor.
-
-				esp_gatt_rsp_t rsp;   // Build a response.
-				rsp.attr_value.len    = getLength();
-				rsp.attr_value.handle = m_handle;
-				rsp.attr_value.offset = 0;
-				rsp.attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-				memcpy(rsp.attr_value.value, getValue(), rsp.attr_value.len);
-				esp_err_t errRc = ::esp_ble_gatts_send_response(
-						gatts_if,
-						param->write.conn_id,
-						param->write.trans_id,
-						ESP_GATT_OK,
-						&rsp);
-
-				if (errRc != ESP_OK) {   // Check the return code from the send of the response.
-					ESP_LOGE(tag, "esp_ble_gatts_send_response: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-				}
+				SetValue(param->write.value, param->write.len);   // Set the value of the descriptor.
 
 				if (m_pCallback != nullptr) {   // We have completed the write, if there is a user supplied callback handler, invoke it now.
-					m_pCallback->onWrite(this);   // Invoke the onWrite callback handler.
+					m_pCallback->OnWrite(this);   // Invoke the onWrite callback handler.
 				}
 			}  // End of ... this is our handle.
 
@@ -215,37 +187,16 @@ void BLEDescriptor::handleGATTServerEvent(
 			if (param->read.handle == m_handle) {  // If this event is for this descriptor ... process it
 
 				if (m_pCallback != nullptr) {   // If we have a user supplied callback, invoke it now.
-					m_pCallback->onRead(this);    // Invoke the onRead callback method in the callback handler.
+					m_pCallback->OnRead(this);    // Invoke the onRead callback method in the callback handler.
 				}
 
-				if (param->read.need_rsp) {   // Do we need a response
-					ESP_LOGD(tag, "Sending a response (esp_ble_gatts_send_response)");
-					esp_gatt_rsp_t rsp;
-					rsp.attr_value.len      = getLength();
-					rsp.attr_value.handle   = param->read.handle;
-					rsp.attr_value.offset   = 0;
-					rsp.attr_value.auth_req = ESP_GATT_AUTH_REQ_NONE;
-					memcpy(rsp.attr_value.value, getValue(), rsp.attr_value.len);
-
-					esp_err_t errRc = ::esp_ble_gatts_send_response(
-							gatts_if,
-							param->read.conn_id,
-							param->read.trans_id,
-							ESP_GATT_OK,
-							&rsp);
-
-					if (errRc != ESP_OK) {   // Check the return code from the send of the response.
-						ESP_LOGE(tag, "esp_ble_gatts_send_response: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-					}
-				} // End of need a response.
 			} // End of this is our handle
 			break;
 		} // ESP_GATTS_READ_EVT
 
-		default: {
+		default:
 			break;
-		}
-	}// switch event
+	} // switch event
 } // handleGATTServerEvent
 
 
@@ -253,8 +204,8 @@ void BLEDescriptor::handleGATTServerEvent(
  * @brief Set the callback handlers for this descriptor.
  * @param [in] pCallbacks An instance of a callback structure used to define any callbacks for the descriptor.
  */
-void BLEDescriptor::setCallbacks(BLEDescriptorCallbacks* pCallback) {
-	ESP_LOGD(tag, ">> setCallbacks: 0x%x", (uint32_t)pCallback);
+void BLEDescriptor::SetCallbacks(BLEDescriptorCallbacks* pCallback) {
+	ESP_LOGD(tag, ">> setCallbacks: 0x%x", (uint32_t) pCallback);
 	m_pCallback = pCallback;
 	ESP_LOGD(tag, "<< setCallbacks");
 } // setCallbacks
@@ -266,7 +217,7 @@ void BLEDescriptor::setCallbacks(BLEDescriptorCallbacks* pCallback) {
  * @param [in] handle The handle to be associated with this descriptor.
  * @return N/A.
  */
-void BLEDescriptor::setHandle(uint16_t handle) {
+void BLEDescriptor::SetHandle(uint16_t handle) {
 	ESP_LOGD(tag, ">> setHandle(0x%.2x): Setting descriptor handle to be 0x%.2x", handle, handle);
 	m_handle = handle;
 	ESP_LOGD(tag, "<< setHandle()");
@@ -278,7 +229,7 @@ void BLEDescriptor::setHandle(uint16_t handle) {
  * @param [in] data The data to set for the descriptor.
  * @param [in] length The length of the data in bytes.
  */
-void BLEDescriptor::setValue(uint8_t* data, size_t length) {
+void BLEDescriptor::SetValue(uint8_t* data, size_t length) {
 	if (length > ESP_GATT_MAX_ATTR_LEN) {
 		ESP_LOGE(tag, "Size %d too large, must be no bigger than %d", length, ESP_GATT_MAX_ATTR_LEN);
 		return;
@@ -292,19 +243,22 @@ void BLEDescriptor::setValue(uint8_t* data, size_t length) {
  * @brief Set the value of the descriptor.
  * @param [in] value The value of the descriptor in string form.
  */
-void BLEDescriptor::setValue(std::string value) {
-	setValue((uint8_t *)value.data(), value.length());
+void BLEDescriptor::SetValue(std::string value) {
+	SetValue((uint8_t*) value.data(), value.length());
 } // setValue
 
+void BLEDescriptor::SetAccessPermissions(esp_gatt_perm_t perm) {
+	m_permissions = perm;
+}
 
 /**
  * @brief Return a string representation of the descriptor.
  * @return A string representation of the descriptor.
  */
-std::string BLEDescriptor::toString() {
+std::string BLEDescriptor::ToString() {
 	std::stringstream stringstream;
 	stringstream << std::hex << std::setfill('0');
-	stringstream << "UUID: " << m_bleUUID.toString() + ", handle: 0x" << std::setw(2) << m_handle;
+	stringstream << "UUID: " << m_bleUUID.ToString() + ", handle: 0x" << std::setw(2) << m_handle;
 	return stringstream.str();
 } // toString
 
@@ -315,7 +269,7 @@ BLEDescriptorCallbacks::~BLEDescriptorCallbacks() {}
  * @brief Callback function to support a read request.
  * @param [in] pDescriptor The descriptor that is the source of the event.
  */
-void BLEDescriptorCallbacks::onRead(BLEDescriptor* pDescriptor) {
+void BLEDescriptorCallbacks::OnRead(BLEDescriptor* pDescriptor) {
 	ESP_LOGD("BLEDescriptorCallbacks", ">> onRead: default");
 	ESP_LOGD("BLEDescriptorCallbacks", "<< onRead");
 } // onRead
@@ -325,7 +279,7 @@ void BLEDescriptorCallbacks::onRead(BLEDescriptor* pDescriptor) {
  * @brief Callback function to support a write request.
  * @param [in] pDescriptor The descriptor that is the source of the event.
  */
-void BLEDescriptorCallbacks::onWrite(BLEDescriptor* pDescriptor) {
+void BLEDescriptorCallbacks::OnWrite(BLEDescriptor* pDescriptor) {
 	ESP_LOGD("BLEDescriptorCallbacks", ">> onWrite: default");
 	ESP_LOGD("BLEDescriptorCallbacks", "<< onWrite");
 } // onWrite

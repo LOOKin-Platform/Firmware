@@ -16,21 +16,24 @@
 #include <sstream>
 #include <string>
 
-#include "include/BLEServerGeneric.h"
+#include "BLEServerGeneric.h"
 #include "BLEService.h"
 #include "BLEUtils.h"
 #include "GeneralUtils.h"
 
+#include "esp_log.h"
+static const char* tag = "BLEService"; // Tag for logging.
+
+
 #define NULL_HANDLE (0xffff)
 
-static char tag[] = "BLEService"; // Tag for logging.
 
 /**
  * @brief Construct an instance of the BLEService
  * @param [in] uuid The UUID of the service.
  * @param [in] numHandles The maximum number of handles associated with the service.
  */
-BLEService::BLEService(const char* uuid, uint32_t numHandles) : BLEService(BLEUUID(uuid), numHandles) {
+BLEService::BLEService(const char* uuid, uint16_t numHandles) : BLEService(BLEUUID(uuid), numHandles) {
 }
 
 
@@ -39,7 +42,7 @@ BLEService::BLEService(const char* uuid, uint32_t numHandles) : BLEService(BLEUU
  * @param [in] uuid The UUID of the service.
  * @param [in] numHandles The maximum number of handles associated with the service.
  */
-BLEService::BLEService(BLEUUID uuid, uint32_t numHandles) {
+BLEService::BLEService(BLEUUID uuid, uint16_t numHandles) {
 	m_uuid      = uuid;
 	m_handle    = NULL_HANDLE;
 	m_pServer   = nullptr;
@@ -49,26 +52,6 @@ BLEService::BLEService(BLEUUID uuid, uint32_t numHandles) {
 } // BLEService
 
 
-BLEService::~BLEService() {
-	ESP_LOGE(tag, "destructor");
-
-	ESP_LOGD(tag, ">> start(): Stopping service (esp_ble_gatts_stop_service): %s", ToString().c_str());
-	if (m_handle == NULL_HANDLE) {
-		ESP_LOGE(tag, "<< !!! We attempted to stop a service but don't know its handle!");
-		return;
-	}
-
-	m_semaphoreStopEvt.Take("stop");
-	esp_err_t errRc = ::esp_ble_gatts_stop_service(m_handle);
-	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "<< esp_ble_gatts_stop_service: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
-		return;
-	}
-	m_semaphoreStopEvt.Wait("stop");
-
-	ESP_LOGD(tag, "<< start()");
-}
-
 /**
  * @brief Create the service.
  * Create the service.
@@ -76,27 +59,19 @@ BLEService::~BLEService() {
  * @return N/A.
  */
 
-void BLEService::ExecuteCreate(BLEServerGeneric *pServer) {
-	//ESP_LOGD(tag, ">> executeCreate() - Creating service (esp_ble_gatts_create_service) service uuid: %s", getUUID().toString().c_str());
-	//getUUID(); // Needed for a weird bug fix
-	//char x[1000];
-	//memcpy(x, &m_uuid, sizeof(m_uuid));
-	//char x[10];
-	//memcpy(x, &deleteMe, 10);
+void BLEService::ExecuteCreate(BLEServerGeneric* pServer) {
+	ESP_LOGD(tag, ">> executeCreate() - Creating service (esp_ble_gatts_create_service) service uuid: %s", GetUUID().ToString().c_str());
 	m_pServer          = pServer;
 	m_semaphoreCreateEvt.Take("executeCreate"); // Take the mutex and release at event ESP_GATTS_CREATE_EVT
 
 	esp_gatt_srvc_id_t srvc_id;
-	srvc_id.id.inst_id = 0;
-	srvc_id.id.uuid    = *m_uuid.getNative();
-	esp_err_t errRc = ::esp_ble_gatts_create_service(
-		GetServer()->GetGattsIf(),
-		&srvc_id,
-		m_numHandles   // The maximum number of handles associated with the service.
-	);
+	srvc_id.is_primary = true;
+	srvc_id.id.inst_id = m_instId;
+	srvc_id.id.uuid    = *m_uuid.GetNative();
+	esp_err_t errRc = ::esp_ble_gatts_create_service(GetServer()->GetGattsIf(), &srvc_id, m_numHandles); // The maximum number of handles associated with the service.
 
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "esp_ble_gatts_create_service: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "esp_ble_gatts_create_service: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 		return;
 	}
 
@@ -106,12 +81,34 @@ void BLEService::ExecuteCreate(BLEServerGeneric *pServer) {
 
 
 /**
+ * @brief Delete the service.
+ * Delete the service.
+ * @return N/A.
+ */
+
+void BLEService::ExecuteDelete() {
+	ESP_LOGD(tag, ">> executeDelete()");
+	m_semaphoreDeleteEvt.Take("executeDelete"); // Take the mutex and release at event ESP_GATTS_DELETE_EVT
+
+	esp_err_t errRc = ::esp_ble_gatts_delete_service(GetHandle());
+
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_ble_gatts_delete_service: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
+		return;
+	}
+
+	m_semaphoreDeleteEvt.Wait("executeDelete");
+	ESP_LOGD(tag, "<< executeDelete");
+} // executeDelete
+
+
+/**
  * @brief Dump details of this BLE GATT service.
  * @return N/A.
  */
 void BLEService::Dump() {
 	ESP_LOGD(tag, "Service: uuid:%s, handle: 0x%.2x",
-		m_uuid.toString().c_str(),
+		m_uuid.ToString().c_str(),
 		m_handle);
 	ESP_LOGD(tag, "Characteristics:\n%s", m_characteristicMap.ToString().c_str());
 } // dump
@@ -145,9 +142,9 @@ void BLEService::Start() {
 
 	BLECharacteristic *pCharacteristic = m_characteristicMap.GetFirst();
 
-	while(pCharacteristic != nullptr) {
+	while (pCharacteristic != nullptr) {
 		m_lastCreatedCharacteristic = pCharacteristic;
-		pCharacteristic->executeCreate(this);
+		pCharacteristic->ExecuteCreate(this);
 
 		pCharacteristic = m_characteristicMap.GetNext();
 	}
@@ -157,7 +154,7 @@ void BLEService::Start() {
 	esp_err_t errRc = ::esp_ble_gatts_start_service(m_handle);
 
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "<< esp_ble_gatts_start_service: rc=%d %s", errRc, GeneralUtils::errorToString(errRc));
+		ESP_LOGE(tag, "<< esp_ble_gatts_start_service: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 		return;
 	}
 	m_semaphoreStartEvt.Wait("start");
@@ -165,12 +162,39 @@ void BLEService::Start() {
 	ESP_LOGD(tag, "<< start()");
 } // start
 
+
+/**
+ * @brief Stop the service.
+ */
+void BLEService::Stop() {
+// We ask the BLE runtime to start the service and then create each of the characteristics.
+// We start the service through its local handle which was returned in the ESP_GATTS_CREATE_EVT event
+// obtained as a result of calling esp_ble_gatts_create_service().
+	ESP_LOGD(tag, ">> stop(): Stopping service (esp_ble_gatts_stop_service): %s", ToString().c_str());
+	if (m_handle == NULL_HANDLE) {
+		ESP_LOGE(tag, "<< !!! We attempted to stop a service but don't know its handle!");
+		return;
+	}
+
+	m_semaphoreStopEvt.Take("stop");
+	esp_err_t errRc = ::esp_ble_gatts_stop_service(m_handle);
+
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "<< esp_ble_gatts_stop_service: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
+		return;
+	}
+	m_semaphoreStopEvt.Wait("stop");
+
+	ESP_LOGD(tag, "<< stop()");
+} // start
+
+
 /**
  * @brief Set the handle associated with this service.
  * @param [in] handle The handle associated with the service.
  */
-void BLEService::setHandle(uint16_t handle) {
-	ESP_LOGD(tag, ">> setHandle - Handle=0x%.2x, service UUID=%s)", handle, GetUUID().toString().c_str());
+void BLEService::SetHandle(uint16_t handle) {
+	ESP_LOGD(tag, ">> setHandle - Handle=0x%.2x, service UUID=%s)", handle, GetUUID().ToString().c_str());
 	if (m_handle != NULL_HANDLE) {
 		ESP_LOGE(tag, "!!! Handle is already set %.2x", m_handle);
 		return;
@@ -194,24 +218,24 @@ uint16_t BLEService::GetHandle() {
  * @param [in] pCharacteristic A pointer to the characteristic to be added.
  */
 void BLEService::AddCharacteristic(BLECharacteristic* pCharacteristic) {
-// We maintain a mapping of characteristics owned by this service.  These are managed by the
-// BLECharacteristicMap class instance found in m_characteristicMap.  We add the characteristic
-// to the map and then ask the service to add the characteristic at the BLE level (ESP-IDF).
-//
+	// We maintain a mapping of characteristics owned by this service.  These are managed by the
+	// BLECharacteristicMap class instance found in m_characteristicMap.  We add the characteristic
+	// to the map and then ask the service to add the characteristic at the BLE level (ESP-IDF).
+
 	ESP_LOGD(tag, ">> addCharacteristic()");
 	ESP_LOGD(tag, "Adding characteristic: uuid=%s to service: %s",
-		pCharacteristic->getUUID().toString().c_str(),
+		pCharacteristic->GetUUID().ToString().c_str(),
 		ToString().c_str());
 
 	// Check that we don't add the same characteristic twice.
-	if (m_characteristicMap.GetByUUID(pCharacteristic->getUUID()) != nullptr) {
-		ESP_LOGE(tag, "<< Attempt to add a characteristic but we already have one with this UUID");
+	if (m_characteristicMap.GetByUUID(pCharacteristic->GetUUID()) != nullptr) {
+		ESP_LOGW(tag, "<< Adding a new characteristic with the same UUID as a previous one");
 		//return;
 	}
 
 	// Remember this characteristic in our map of characteristics.  At this point, we can lookup by UUID
 	// but not by handle.  The handle is allocated to us on the ESP_GATTS_ADD_CHAR_EVT.
-	m_characteristicMap.SetByUUID(pCharacteristic, pCharacteristic->getUUID());
+	m_characteristicMap.SetByUUID(pCharacteristic, pCharacteristic->GetUUID());
 
 	ESP_LOGD(tag, "<< addCharacteristic()");
 } // addCharacteristic
@@ -235,7 +259,7 @@ BLECharacteristic* BLEService::CreateCharacteristic(const char* uuid, uint32_t p
  * @return The new BLE characteristic.
  */
 BLECharacteristic* BLEService::CreateCharacteristic(BLEUUID uuid, uint32_t properties) {
-	BLECharacteristic *pCharacteristic = new BLECharacteristic(uuid, properties);
+	BLECharacteristic* pCharacteristic = new BLECharacteristic(uuid, properties);
 	AddCharacteristic(pCharacteristic);
 	return pCharacteristic;
 } // createCharacteristic
@@ -244,13 +268,8 @@ BLECharacteristic* BLEService::CreateCharacteristic(BLEUUID uuid, uint32_t prope
 /**
  * @brief Handle a GATTS server event.
  */
-void BLEService::handleGATTServerEvent(
-		esp_gatts_cb_event_t      event,
-		esp_gatt_if_t             gatts_if,
-		esp_ble_gatts_cb_param_t *param) {
-
-
-	switch(event) {
+void BLEService::HandleGATTServerEvent(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t* param) {
+	switch (event) {
 		// ESP_GATTS_ADD_CHAR_EVT - Indicate that a characteristic was added to the service.
 		// add_char:
 		// - esp_gatt_status_t status
@@ -262,16 +281,15 @@ void BLEService::handleGATTServerEvent(
 		// for that characteristic.
 		case ESP_GATTS_ADD_CHAR_EVT: {
 			if (m_handle == param->add_char.service_handle) {
-				BLECharacteristic *pCharacteristic = getLastCreatedCharacteristic();
+				BLECharacteristic *pCharacteristic = GetLastCreatedCharacteristic();
 				if (pCharacteristic == nullptr) {
 					ESP_LOGE(tag, "Expected to find characteristic with UUID: %s, but didnt!",
-							BLEUUID(param->add_char.char_uuid).toString().c_str());
+							BLEUUID(param->add_char.char_uuid).ToString().c_str());
 					Dump();
 					break;
 				}
-				pCharacteristic->setHandle(param->add_char.attr_handle);
+				pCharacteristic->SetHandle(param->add_char.attr_handle);
 				m_characteristicMap.SetByHandle(param->add_char.attr_handle, pCharacteristic);
-				//ESP_LOGD(tag, "Characteristic map: %s", m_characteristicMap.toString().c_str());
 				break;
 			} // Reached the correct service.
 			break;
@@ -292,15 +310,16 @@ void BLEService::handleGATTServerEvent(
 
 		// ESP_GATTS_STOP_EVT
 		//
-		// start:
+		// stop:
 		// esp_gatt_status_t status
 		// uint16_t service_handle
+		//
 		case ESP_GATTS_STOP_EVT: {
 			if (param->stop.service_handle == GetHandle()) {
 				m_semaphoreStopEvt.Give();
 			}
 			break;
-		} // ESP_GATTS_START_EVT
+		} // ESP_GATTS_STOP_EVT
 
 
 		// ESP_GATTS_CREATE_EVT
@@ -316,20 +335,34 @@ void BLEService::handleGATTServerEvent(
 		// * - bool is_primary
 		//
 		case ESP_GATTS_CREATE_EVT: {
-			if (GetUUID().equals(BLEUUID(param->create.service_id.id.uuid))) {
-				setHandle(param->create.service_handle);
+			if (GetUUID().Equals(BLEUUID(param->create.service_id.id.uuid)) && m_instId == param->create.service_id.id.inst_id) {
+				SetHandle(param->create.service_handle);
 				m_semaphoreCreateEvt.Give();
 			}
 			break;
 		} // ESP_GATTS_CREATE_EVT
 
-		default: {
+
+		// ESP_GATTS_DELETE_EVT
+		// Called when a service is deleted.
+		//
+		// delete:
+		// * esp_gatt_status_t status
+		// * uint16_t service_handle
+		//
+		case ESP_GATTS_DELETE_EVT: {
+			if (param->del.service_handle == GetHandle()) {
+				m_semaphoreDeleteEvt.Give();
+			}
 			break;
-		} // Default
+		} // ESP_GATTS_DELETE_EVT
+
+		default:
+			break;
 	} // Switch
 
 	// Invoke the GATTS handler in each of the associated characteristics.
-	m_characteristicMap.handleGATTServerEvent(event, gatts_if, param);
+	m_characteristicMap.HandleGATTServerEvent(event, gatts_if, param);
 } // handleGATTServerEvent
 
 
@@ -352,7 +385,7 @@ BLECharacteristic* BLEService::GetCharacteristic(BLEUUID uuid) {
  */
 std::string BLEService::ToString() {
 	std::stringstream stringStream;
-	stringStream << "UUID: " << GetUUID().toString() <<
+	stringStream << "UUID: " << GetUUID().ToString() <<
 		", handle: 0x" << std::hex << std::setfill('0') << std::setw(2) << GetHandle();
 	return stringStream.str();
 } // toString
@@ -365,7 +398,7 @@ std::string BLEService::ToString() {
  * is associated with the last characteristics created and we need that information.
  * @return The last created characteristic.
  */
-BLECharacteristic* BLEService::getLastCreatedCharacteristic() {
+BLECharacteristic* BLEService::GetLastCreatedCharacteristic() {
 	return m_lastCreatedCharacteristic;
 } // getLastCreatedCharacteristic
 

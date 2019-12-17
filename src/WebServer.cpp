@@ -137,7 +137,7 @@ void WebServer_t::Start() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     config.uri_match_fn 	= httpd_uri_match_wildcard;
-    config.stack_size		= 16384;
+    config.stack_size		= 20000;//16384;
     config.lru_purge_enable = true;
     //config.task_priority	= tskIDLE_PRIORITY+5;
 

@@ -27,39 +27,9 @@
 #include <esp_log.h>
 #include <esp_err.h>
 #include <esp_gap_ble_api.h>
+#include <FreeRTOSWrapper.h>
 
 using namespace std;
-
-#define ENDIAN_CHANGE_U16(x) ((((x)&0xFF00)>>8) + (((x)&0xFF)<<8))
-
-/**
- * @brief Representation of a beacon.
- * See:
- * * https://en.wikipedia.org/wiki/IBeacon
- */
-class BLEBeacon {
-	private:
-		struct {
-			uint16_t	manufacturerId;
-			uint8_t		subType;
-			uint8_t		subTypeLength;
-			uint8_t		proximityUUID[16];
-			uint16_t	major;
-			uint16_t	minor;
-			int8_t		signalPower;
-		} __attribute__((packed))m_beaconData;
-
-	public:
-		BLEBeacon();
-		void		SetManufacturerId(uint16_t manufacturerId);
-		//void setSubType(uint8_t subType);
-		void		SetProximityUUID(BLEUUID uuid);
-		void		SetMajor(uint16_t major);
-		void		SetMinor(uint16_t minor);
-		void		SetSignalPower(int8_t signalPower);
-		string		GetData();
-}; // BLEBeacon
-
 
 /**
  * @brief Advertisement data set by the programmer to be published by the %BLE server.
@@ -69,20 +39,20 @@ class BLEAdvertisementData {
 	// be exposed on demand/request or as time permits.
 	//
 	public:
-		void 	SetAppearance(uint16_t appearance);
-		void 	SetCompleteServices(BLEUUID uuid);
-		void 	SetFlags(uint8_t);
-		void 	SetManufacturerData(string data);
-		void 	SetName(string name);
-		void 	SetPartialServices(BLEUUID uuid);
-		void 	SetShortName(string name);
+		void	SetAppearance(uint16_t appearance);
+		void	SetCompleteServices(BLEUUID uuid);
+		void	SetFlags(uint8_t);
+		void	SetManufacturerData(std::string data);
+		void	SetName(std::string name);
+		void	SetPartialServices(BLEUUID uuid);
+		void	SetServiceData(BLEUUID uuid, std::string data);
+		void	SetShortName(std::string name);
+		void	AddData(std::string data);  // Add data to the payload.
+		string	GetPayload();               // Retrieve the current advert payload.
 
 	private:
-		friend	class BLEAdvertising;
-		string	m_payload;   // The payload of the advertisement.
-
-		void	AddData(string data);	// Add data to the payload.
-		string	GetPayload();			// Retrieve the current advert payload.
+		friend class BLEAdvertising;
+		string m_payload;   // The payload of the advertisement.
 };   // BLEAdvertisementData
 
 
@@ -94,21 +64,32 @@ class BLEAdvertisementData {
 class BLEAdvertising {
 	public:
 		BLEAdvertising();
-		void AddServiceUUID(BLEUUID serviceUUID);
-		void AddServiceUUID(const char* serviceUUID);
-		void Start();
-		void Stop();
-		void SetAppearance(uint16_t appearance);
-		void SetAdvertisementData(BLEAdvertisementData& advertisementData);
-		void SetScanFilter(bool scanRequertWhitelistOnly, bool connectWhitelistOnly);
-		void SetScanResponseData(BLEAdvertisementData& advertisementData);
+		void	AddServiceUUID(BLEUUID serviceUUID);
+		void	AddServiceUUID(const char* serviceUUID);
+		void	Start();
+		void	Stop();
+		void	SetAppearance(uint16_t appearance);
+		void	SetMaxInterval(uint16_t maxinterval);
+		void	SetMinInterval(uint16_t mininterval);
+		void	SetAdvertisementData(BLEAdvertisementData& advertisementData);
+		void	SetScanFilter(bool scanRequertWhitelistOnly, bool connectWhitelistOnly);
+		void	SetScanResponseData(BLEAdvertisementData& advertisementData);
+		void	SetPrivateAddress(esp_ble_addr_type_t type = BLE_ADDR_TYPE_RANDOM);
+
+		void	HandleGAPEvent(esp_gap_ble_cb_event_t  event, esp_ble_gap_cb_param_t* param);
+		void	SetMinPreferred(uint16_t);
+		void	SetMaxPreferred(uint16_t);
+		void	SetScanResponse(bool);
 
 	private:
-		esp_ble_adv_data_t   	m_advData;
-		esp_ble_adv_params_t 	m_advParams;
-		vector<BLEUUID> 		m_serviceUUIDs;
-		bool                 	m_customAdvData;  // Are we using custom advertising data?
-		bool                 	m_customScanResponseData;  // Are we using custom scan response data?
+		esp_ble_adv_data_t		m_advData;
+		esp_ble_adv_params_t	m_advParams;
+		std::vector<BLEUUID>	m_serviceUUIDs;
+		bool					m_customAdvData = false;  // Are we using custom advertising data?
+		bool					m_customScanResponseData = false;  // Are we using custom scan response data?
+		FreeRTOS::Semaphore		m_semaphoreSetAdv = FreeRTOS::Semaphore("startAdvert");
+		bool					m_scanResp = true;
 };
+
 #endif /* CONFIG_BT_ENABLED */
 #endif /* DRIVERS_BLEADVERTISING_H_ */

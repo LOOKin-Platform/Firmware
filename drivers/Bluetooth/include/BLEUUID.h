@@ -25,12 +25,12 @@ class BLEUUID {
 		BLEUUID		(uint8_t* pData, size_t size, bool msbFirst);
 		BLEUUID		(esp_gatt_id_t gattId);
 		BLEUUID		();
-		int bitSize	();   // Get the number of bits in this uuid.
-		bool equals	(BLEUUID uuid);
-		esp_bt_uuid_t* getNative();
-		BLEUUID to128();
-		string toString();
-		static BLEUUID fromString(string uuid); // Create a BLEUUID from a string
+		uint8_t BitSize	();   // Get the number of bits in this uuid.
+		bool Equals	(BLEUUID uuid);
+		esp_bt_uuid_t* GetNative();
+		BLEUUID To128();
+		string ToString();
+		static BLEUUID FromString(string uuid); // Create a BLEUUID from a string
 
 	private:
 		esp_bt_uuid_t m_uuid; 	// The underlying UUID structure that this class wraps.

@@ -22,17 +22,17 @@ class BLERemoteCharacteristic;
  */
 class BLERemoteDescriptor {
 public:
-	uint16_t    getHandle();
-	BLERemoteCharacteristic* getRemoteCharacteristic();
-	BLEUUID     getUUID();
-	std::string readValue(void);
-	uint8_t     readUInt8(void);
-	uint16_t    readUInt16(void);
-	uint32_t    readUInt32(void);
-	std::string toString(void);
-	void        writeValue(uint8_t* data, size_t length, bool response = false);
-	void        writeValue(std::string newValue, bool response = false);
-	void        writeValue(uint8_t newValue, bool response = false);
+	uint16_t    GetHandle();
+	BLERemoteCharacteristic* GetRemoteCharacteristic();
+	BLEUUID     GetUUID();
+	std::string ReadValue(void);
+	uint8_t     ReadUInt8(void);
+	uint16_t    ReadUInt16(void);
+	uint32_t    ReadUInt32(void);
+	string 		ToString(void);
+	void        WriteValue(uint8_t* data, size_t length, bool response = false);
+	void        WriteValue(std::string newValue, bool response = false);
+	void        WriteValue(uint8_t newValue, bool response = false);
 
 
 private:
@@ -51,4 +51,4 @@ private:
 
 };
 #endif /* CONFIG_BT_ENABLED */
-#endif /* DRIVERS_BLEREMOTEDESCRIPTOR_H_ */
+#endif /* COMPONENTS_CPP_UTILS_BLEREMOTEDESCRIPTOR_H_ */

@@ -15,8 +15,8 @@ static char tag[] = "BLEServer";
 
 BLEServer_t::BLEServer_t() {}
 
-void ControlFlagCallback::onWrite(BLECharacteristic *pCharacteristic) {
-	string Value = pCharacteristic->getValue();
+void ControlFlagCallback::OnWrite(BLECharacteristic *pCharacteristic) {
+	string Value = pCharacteristic->GetValue();
 	if (Value.length() > 0) {
 		if (Value == "1") {
 			ESP_LOGI(tag, "Received signal to switch on WiFi for interval");
@@ -25,8 +25,8 @@ void ControlFlagCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	}
 };
 
-void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
-	string Value = pCharacteristic->getValue();
+void WiFiNetworksCallback::OnWrite(BLECharacteristic *pCharacteristic) {
+	string Value = pCharacteristic->GetValue();
 
 	if (Value.length() > 0) {
 		JSON JSONItem(Value);
@@ -34,7 +34,6 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 		map<string,string> Params;
 
 		ESP_LOGE(tag, "Value %s", Value.c_str());
-
 
 		if (JSONItem.GetType() == JSON::RootType::Object)
 			Params = JSONItem.GetItems();
@@ -61,8 +60,8 @@ void WiFiNetworksCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	}
 }
 
-void MQTTCredentialsCallback::onWrite(BLECharacteristic *pCharacteristic) {
-	string Value = pCharacteristic->getValue();
+void MQTTCredentialsCallback::OnWrite(BLECharacteristic *pCharacteristic) {
+	string Value = pCharacteristic->GetValue();
 
 	if (Value.length() > 0) {
 		vector<string> Parts = Converter::StringToVector(Value," ");
@@ -77,8 +76,8 @@ void MQTTCredentialsCallback::onWrite(BLECharacteristic *pCharacteristic) {
 	}
 }
 
-void ServerCallback::onWrite(BLECharacteristic *pCharacteristic) {
-	string Value = pCharacteristic->getValue();
+void ServerCallback::OnWrite(BLECharacteristic *pCharacteristic) {
+	string Value = pCharacteristic->GetValue();
 
 	if (Value.length() > 0) {
 
@@ -131,28 +130,28 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
 	pServiceDevice = pServer->CreateService((uint16_t)0x180A);
 
 	pCharacteristicManufacturer = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A29), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
-	pCharacteristicManufacturer->setValue("LOOK.in");
+	pCharacteristicManufacturer->SetValue("LOOK.in");
 
 	pCharacteristicModel = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A24), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
-	pCharacteristicModel->setValue(Converter::ToHexString(Settings.eFuse.Type,2));
+	pCharacteristicModel->SetValue(Converter::ToHexString(Settings.eFuse.Type,2));
 
 	pCharacteristicID = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A25), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
-	pCharacteristicID->setValue(Converter::ToHexString(Settings.eFuse.DeviceID,8));
+	pCharacteristicID->SetValue(Converter::ToHexString(Settings.eFuse.DeviceID,8));
 
 	pCharacteristicFirmware = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x2A26), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_BROADCAST);
-	pCharacteristicFirmware->setValue(Settings.FirmwareVersion);
+	pCharacteristicFirmware->SetValue(Settings.FirmwareVersion);
 
 	pCharacteristicControlFlag = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x3000), BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
-	pCharacteristicControlFlag->setCallbacks(new ControlFlagCallback());
+	pCharacteristicControlFlag->SetCallbacks(new ControlFlagCallback());
 
 	if (IsPrivateMode) {
 		pCharacteristicWiFiNetworks = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x4000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
-		pCharacteristicWiFiNetworks->setValue(Converter::VectorToString(Network.GetSavedWiFiList(), ","));
-		pCharacteristicWiFiNetworks->setCallbacks(new WiFiNetworksCallback());
+		pCharacteristicWiFiNetworks->SetValue(Converter::VectorToString(Network.GetSavedWiFiList(), ","));
+		pCharacteristicWiFiNetworks->SetCallbacks(new WiFiNetworksCallback());
 
 		pCharacteristicMQTTCredentials = pServiceDevice->CreateCharacteristic(BLEUUID((uint16_t)0x5000), BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_WRITE | BLECharacteristic::PROPERTY_BROADCAST);
-		pCharacteristicMQTTCredentials->setValue(MQTT.GetClientID());
-		pCharacteristicMQTTCredentials->setCallbacks(new MQTTCredentialsCallback());
+		pCharacteristicMQTTCredentials->SetValue(MQTT.GetClientID());
+		pCharacteristicMQTTCredentials->SetCallbacks(new MQTTCredentialsCallback());
 	}
 
 	// FFFF - Sensors and Commands Information
@@ -161,7 +160,7 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
 	/*
 	for (auto& Sensor : Sensors) {
 		BLECharacteristic* pCharacteristicSensor = pServiceActuators->createCharacteristic(BLEUUID((uint16_t)Sensor->ID), BLECharacteristic::PROPERTY_READ);
-		pCharacteristicSensor->setValue(Converter::ToHexString(Sensor->GetValue().Value,2));
+		pCharacteristicSensor->SetValue(Converter::ToHexString(Sensor->GetValue().Value,2));
 	}
 
 	for (auto& Command : Commands) {

@@ -32,14 +32,7 @@ void MQTT_t::Start() {
 	if (Username != "" && Status != CONNECTED) {
 		ESP_LOGI("MQTT Started","RAM left %d", esp_get_free_heap_size());
 
-	    esp_mqtt_client_config_t mqtt_cfg = ConfigDefault();
-	    mqtt_cfg.uri 			= Settings.MQTT.Server.c_str();
-	    mqtt_cfg.event_handle 	= mqtt_event_handler;
-	    mqtt_cfg.transport 		= MQTT_TRANSPORT_OVER_SSL;
-
-	    mqtt_cfg.username		= Username.c_str();
-	    mqtt_cfg.password		= Password.c_str();
-	    mqtt_cfg.client_id		= Username.c_str();
+	    esp_mqtt_client_config_t mqtt_cfg = CreateConfig();
 
 		ConnectionTries = 0;
 
@@ -67,10 +60,19 @@ void MQTT_t::Stop() {
 }
 
 void MQTT_t::Reconnect() {
-	if (Status != UNACTIVE && ClientHandle != nullptr)
-		::esp_mqtt_client_reconnect(ClientHandle);
-	else
+	if (Status == CONNECTED  && ClientHandle != nullptr) {
+		Stop();
+		FreeRTOS::Sleep(1000);
 		Start();
+		return;
+	}
+
+	if (Status != UNACTIVE && ClientHandle != nullptr) {
+		::esp_mqtt_client_reconnect(ClientHandle);
+		return;
+	}
+
+	Start();
 }
 
 string MQTT_t::GetClientID() {
@@ -93,7 +95,31 @@ void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 	}
 
 	SetCredentials(Username, Password);
-	Reconnect();
+
+	if (!WiFi.IsConnectedSTA())
+		return;
+
+	switch (Status)
+	{
+		case UNACTIVE	: ESP_LOGE("Status", "Unactive"); break;
+		case CONNECTED	: ESP_LOGE("Status", "Connected"); break;
+		case ERROR		: ESP_LOGE("Status", "Error");  break;
+	}
+
+	if (ClientHandle == nullptr)
+		ESP_LOGE("ClientHandle", "nullptr");
+	else
+		ESP_LOGE("ClientHandle", "not empty");
+
+
+	if (Status == UNACTIVE && ClientHandle == nullptr)
+		Start();
+	else if (ClientHandle != nullptr)
+	{
+		esp_mqtt_client_config_t Config = CreateConfig();
+		::esp_mqtt_set_config(ClientHandle, &Config);
+		::esp_mqtt_client_reconnect(ClientHandle);
+	}
 }
 
 esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
@@ -124,6 +150,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
             if (Status == CONNECTED && ClientHandle != NULL)
             	Status = ERROR;
 
+            /*
         	ConnectionTries++;
 
         	if (ConnectionTries >= Settings.MQTT.MaxConnectionTries) {
@@ -134,7 +161,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
         	}
         	else if (ClientHandle != NULL)
         		::esp_mqtt_client_reconnect(ClientHandle);
-
+			*/
             break;
         }
 
@@ -210,6 +237,20 @@ MQTT_t::Status_t MQTT_t::GetStatus() {
 	return Status;
 }
 
+esp_mqtt_client_config_t MQTT_t::CreateConfig() {
+	esp_mqtt_client_config_t Config = ConfigDefault();
+
+	Config.uri 			= Settings.MQTT.Server.c_str();
+	Config.event_handle = mqtt_event_handler;
+	Config.transport 	= MQTT_TRANSPORT_OVER_SSL;
+
+	Config.username		= Username.c_str();
+    Config.password		= Password.c_str();
+    Config.client_id	= Username.c_str();
+
+    return Config;
+}
+
 esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	esp_mqtt_client_config_t Config;
 
@@ -218,7 +259,7 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.port					= 0;
 	Config.keepalive			= 120;
 	Config.disable_auto_reconnect
-								= true;
+								= false;
 
 	Config.client_id 			= NULL;
 	Config.lwt_topic			= NULL;

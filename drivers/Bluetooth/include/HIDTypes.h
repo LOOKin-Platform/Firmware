@@ -16,8 +16,8 @@
 * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
-#ifndef DRIVERS_HID_TYPES
-#define DRIVERS_HID_TYPES
+#ifndef USBCLASS_HID_TYPES
+#define USBCLASS_HID_TYPES
 
 #include <stdint.h>
 
@@ -45,8 +45,13 @@
 /* of data as per HID Class standard */
 
 /* Main items */
+#ifdef ARDUINO_ARCH_ESP32
+#define HIDINPUT(size)             (0x80 | size)
+#define HIDOUTPUT(size)            (0x90 | size)
+#else
 #define INPUT(size)             (0x80 | size)
 #define OUTPUT(size)            (0x90 | size)
+#endif
 #define FEATURE(size)           (0xb0 | size)
 #define COLLECTION(size)        (0xa0 | size)
 #define END_COLLECTION(size)    (0xc0 | size)
@@ -59,9 +64,9 @@
 #define PHYSICAL_MAXIMUM(size)  (0x44 | size)
 #define UNIT_EXPONENT(size)     (0x54 | size)
 #define UNIT(size)              (0x64 | size)
-#define REPORT_SIZE(size)       (0x74 | size)
+#define REPORT_SIZE(size)       (0x74 | size)  //bits
 #define REPORT_ID(size)         (0x84 | size)
-#define REPORT_COUNT(size)      (0x94 | size)
+#define REPORT_COUNT(size)      (0x94 | size)  //bytes
 #define PUSH(size)              (0xa4 | size)
 #define POP(size)               (0xb4 | size)
 
@@ -84,8 +89,8 @@
 #define MAX_HID_REPORT_SIZE (64)
 
 typedef struct {
-    uint32_t length;
-    uint8_t data[MAX_HID_REPORT_SIZE];
+	uint32_t length;
+	uint8_t data[MAX_HID_REPORT_SIZE];
 } HID_REPORT;
 
 #endif

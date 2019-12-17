@@ -16,13 +16,13 @@ BLEClient_t::BLEClient_t() {
 class MyClientCallback: public BLEClientCallbacks {
 	uint32_t RemainingTime;
 
-	void onConnect(BLEClientGeneric *pClient) {
-		BLEClient.ScanDevicesProcessed.push_back(pClient->getPeerAddress());
+	void OnConnect(BLEClientGeneric *pClient) {
+		BLEClient.ScanDevicesProcessed.push_back(pClient->GetPeerAddress());
 		RemainingTime = BLEDevice::GetScan()->ScanDuration - ((Time::Uptime() - BLEClient.ScanStartTime));
 		return;
 	}
 
-	void onDisconnect(BLEClientGeneric *pClient)  {
+	void OnDisconnect(BLEClientGeneric *pClient)  {
 		if (RemainingTime > 0)
 			BLEClient.Scan(RemainingTime);
 
@@ -35,10 +35,10 @@ class SecretCodeClient: public Task {
 		BLEAddress* 		pAddress = (BLEAddress*)data;
 		BLEClientGeneric* 	pClient  = BLEDevice::CreateClient();
 
-		pClient->setClientCallbacks(new MyClientCallback());
+		pClient->SetClientCallbacks(new MyClientCallback());
 		pClient->Connect(*pAddress);
 
-		BLERemoteService *SecretCodeService = pClient->getService(BLEUUID(Settings.Bluetooth.SecretCodeServiceUUID));
+		BLERemoteService *SecretCodeService = pClient->GetService(BLEUUID(Settings.Bluetooth.SecretCodeServiceUUID));
 
 		if (SecretCodeService == nullptr) {
 			ESP_LOGE(tag, "Failed to find secret code service UUID: %s",Settings.Bluetooth.SecretCodeServiceUUID.c_str());
@@ -49,7 +49,7 @@ class SecretCodeClient: public Task {
 			if (SecretCodeCharacteristic == nullptr)
 				ESP_LOGE(tag, "Failed to find secret code characteristic");
 			else
-				if (SecretCodeCharacteristic->canWrite()) {
+				if (SecretCodeCharacteristic->CanWrite()) {
 					//SecretCodeCharacteristic->WriteValue(BLEServer.SecretCodeString(), true);
 				}
 		}
@@ -65,32 +65,37 @@ class SecretCodeClient: public Task {
 
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 	void onResult(BLEAdvertisedDevice advertisedDevice) {
+
+		/*
+		invalid cast from Const to non-const
+
 	    if (find(BLEClient.ScanDevicesProcessed.begin(),
-	    		BLEClient.ScanDevicesProcessed.end(), advertisedDevice.getAddress()) != BLEClient.ScanDevicesProcessed.end())
+	    		BLEClient.ScanDevicesProcessed.end(), advertisedDevice.GetAddress()) != BLEClient.ScanDevicesProcessed.end())
 	    	return;
+	    */
 
 		bool CorrectDevice = false;
 
-		ESP_LOGI("tag","%s", advertisedDevice.toString().c_str());
+		ESP_LOGI("tag","%s", advertisedDevice.ToString().c_str());
 
-		if (advertisedDevice.getName().find(Settings.Bluetooth.DeviceNamePrefix) == 0)
+		if (advertisedDevice.GetName().find(Settings.Bluetooth.DeviceNamePrefix) == 0)
 			CorrectDevice = true;
 
-		if (advertisedDevice.haveServiceUUID())
-			if (advertisedDevice.getServiceUUID().toString() == BLEUUID(Settings.Bluetooth.SecretCodeServiceUUID).toString())
+		if (advertisedDevice.HaveServiceUUID())
+			if (advertisedDevice.GetServiceUUID().ToString() == BLEUUID(Settings.Bluetooth.SecretCodeServiceUUID).ToString())
 				CorrectDevice = true;
 
 		if (CorrectDevice) {
 				ESP_LOGI(tag, "Device Founded");
 
-				advertisedDevice.getScan()->Stop();
+				advertisedDevice.GetScan()->Stop();
 
 				SecretCodeClient *pSecretCodeClient = new SecretCodeClient();
 				pSecretCodeClient->SetStackSize(10000);
 				pSecretCodeClient->SetPriority(255);
 				pSecretCodeClient->SetCore(0);
 
-				pSecretCodeClient->Start(new BLEAddress(*advertisedDevice.getAddress().GetNative()));
+				pSecretCodeClient->Start(new BLEAddress(*advertisedDevice.GetAddress().GetNative()));
 
 				return;
 			}

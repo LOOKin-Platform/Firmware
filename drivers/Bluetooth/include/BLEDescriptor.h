@@ -22,36 +22,42 @@ class BLEDescriptorCallbacks;
  * @brief A model of a %BLE descriptor.
  */
 class BLEDescriptor {
-public:
-	BLEDescriptor(const char* uuid);
-	BLEDescriptor(BLEUUID uuid);
-	virtual ~BLEDescriptor();
+	public:
+		BLEDescriptor(const char* uuid, uint16_t max_len = 100);
+		BLEDescriptor(BLEUUID uuid, uint16_t max_len = 100);
+		virtual ~BLEDescriptor();
 
-	uint16_t getHandle();
-	size_t   getLength();
-	BLEUUID  getUUID();
-	uint8_t* getValue();
-	void handleGATTServerEvent(
+		uint16_t GetHandle();
+		size_t   GetLength();
+		BLEUUID  GetUUID();
+		uint8_t* GetValue();
+		void HandleGATTServerEvent(
 			esp_gatts_cb_event_t      event,
 			esp_gatt_if_t             gatts_if,
 			esp_ble_gatts_cb_param_t* param);
-	void setCallbacks(BLEDescriptorCallbacks* pCallbacks);
-	void setValue(uint8_t* data, size_t size);
-	void setValue(std::string value);
-	std::string toString();
 
-private:
+		void 	SetAccessPermissions(esp_gatt_perm_t perm);	      // Set the permissions of the descriptor.
+		void 	SetCallbacks(BLEDescriptorCallbacks* pCallbacks);  // Set callbacks to be invoked for the descriptor.
+		void	SetValue(uint8_t* data, size_t size);              // Set the value of the descriptor as a pointer to data.
+		void	SetValue(std::string value);                       // Set the value of the descriptor as a data buffer.
 
-	friend class BLEDescriptorMap;
-	friend class BLECharacteristic;
-	BLEUUID              m_bleUUID;
-	esp_attr_value_t     m_value;
-	uint16_t             m_handle;
-	BLECharacteristic*   m_pCharacteristic;
-	BLEDescriptorCallbacks* m_pCallback;
-	void executeCreate(BLECharacteristic* pCharacteristic);
-	void setHandle(uint16_t handle);
-	FreeRTOS::Semaphore m_semaphoreCreateEvt = FreeRTOS::Semaphore("CreateEvt");
+		string	ToString();                                 // Convert the descriptor to a string representation.
+
+	private:
+		friend class BLEDescriptorMap;
+		friend class BLECharacteristic;
+
+		BLEUUID                 m_bleUUID;
+		uint16_t                m_handle;
+		BLEDescriptorCallbacks* m_pCallback;
+		BLECharacteristic*      m_pCharacteristic;
+		esp_gatt_perm_t			m_permissions = ESP_GATT_PERM_READ | ESP_GATT_PERM_WRITE;
+		FreeRTOS::Semaphore     m_semaphoreCreateEvt = FreeRTOS::Semaphore("CreateEvt");
+		esp_attr_value_t        m_value;
+
+		void ExecuteCreate(BLECharacteristic* pCharacteristic);
+		void SetHandle(uint16_t handle);
+
 };
 
 /**
@@ -64,8 +70,8 @@ private:
 class BLEDescriptorCallbacks {
 public:
 	virtual ~BLEDescriptorCallbacks();
-	virtual void onRead(BLEDescriptor* pDescriptor);
-	virtual void onWrite(BLEDescriptor* pDescriptor);
+	virtual void OnRead(BLEDescriptor* pDescriptor);
+	virtual void OnWrite(BLEDescriptor* pDescriptor);
 };
 #endif /* CONFIG_BT_ENABLED */
 #endif /* DRIVERS_BLEDESCRIPTOR_H_ */

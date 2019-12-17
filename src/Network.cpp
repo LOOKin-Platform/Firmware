@@ -416,7 +416,8 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		if (URLParts.size() == 3) {
 			if (URLParts[0] == "remotecontrol" && URLParts[1] == "stop") {
 				if (Converter::ToLower(MQTT.GetClientID()) == URLParts[2]) {
-					MQTT.Stop();
+					MQTT.SetCredentials("","");
+					//MQTT.Stop();
 					Result.Body = "{\"success\" : \"true\"}";
 					return;
 				}
