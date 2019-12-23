@@ -94,10 +94,11 @@ void Network_t::DeviceInfoReceived(string ID, string Type, string PowerMode, str
 	}
 }
 
-bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
+bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 	string Password = "";
 	for (auto &item : WiFiSettings)
 		if (Converter::ToLower(item.SSID) == Converter::ToLower(SSID)) {
+			SSID = item.SSID;
 			Password = item.Password;
 			break;
 		}
@@ -109,6 +110,11 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache) {
 
 	if (SSID != "" && Converter::ToLower(SSID) == Converter::ToLower(WiFi.GetSSID()))
 		return false;
+
+	if (SSID != "" && IsHidden) {
+		WiFi.ConnectAP(SSID, Password);
+		return true;
+	}
 
 	if (SSID != "") // connect to specific WiFi SSID
 		for (auto &WiFiScannedItem : WiFiScannedList) {
@@ -399,7 +405,9 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 		if (URLParts.size() == 2) {
 			if (URLParts[0] == "connect") {
-				if (!WiFiConnect(URLParts[1])) {
+				bool IsHidden = (Params.count("hidden") > 0);
+
+				if (!WiFiConnect(URLParts[1], false, IsHidden)) {
 					Result.ResponseCode = WebServer_t::Response::CODE::ERROR;
 					Result.Body = "{\"success\" : \"false\"}";
 					return;

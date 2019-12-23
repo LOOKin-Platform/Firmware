@@ -55,7 +55,7 @@ class Network_t {
 		void					SetNetworkDeviceFlagByIP(string IP, bool Flag);
 		void					DeviceInfoReceived(string ID, string Type, string PowerMode, string IP, string ScenariosVersion, string StorageVersion);
 
-		bool					WiFiConnect(string SSID = "", bool DontUseCache = false);
+		bool					WiFiConnect(string SSID = "", bool DontUseCache = false, bool IsHidden = false);
 		void					UpdateWiFiIPInfo(string SSID, tcpip_adapter_ip_info_t Data);
 
 		void					AddWiFiNetwork(string SSID, string Password);
