@@ -19,6 +19,15 @@ void FillDevices() {
 
 	Settings_t::GPIOData_t::DeviceInfo_t Duo;
 	Duo.MultiSwitch.GPIO 			= { GPIO_NUM_4, GPIO_NUM_17 };
+	Duo.Indicator.Timer				= LEDC_TIMER_0;
+	Duo.Indicator.Red.GPIO			= GPIO_NUM_0;
+	Duo.Indicator.Red.Channel		= LEDC_CHANNEL_0;
+	Duo.Indicator.Green.GPIO		= GPIO_NUM_25;
+	Duo.Indicator.Green.Channel		= LEDC_CHANNEL_1;
+	Duo.Indicator.Blue.GPIO			= GPIO_NUM_0;
+	Duo.Indicator.Blue.Channel		= LEDC_CHANNEL_2;
+	Duo.Indicator.ISRTimerGroup		= TIMER_GROUP_0;
+	Duo.Indicator.ISRTimerIndex		= TIMER_0;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Remote;
 	Remote.Indicator.Timer			= LEDC_TIMER_0;

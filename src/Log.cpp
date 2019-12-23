@@ -310,9 +310,9 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
 
 	if (!IsInited) {
-		GPIO::SetupPWM(GPIO.Red.GPIO	, GPIO.Timer, GPIO.Red.Channel	);
-		GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
-		GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
+		if (GPIO.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Red.GPIO	, GPIO.Timer, GPIO.Red.Channel	);
+		if (GPIO.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
+		if (GPIO.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
 
 		IndicatorTimer = ISR::HardwareTimer(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex, TIMER_ALARM, &IndicatorCallback);
 		IndicatorTimer.Pause();
@@ -329,9 +329,9 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	tExpired	= 0;
 	tBlinking	= Blinking;
 
-	GPIO::PWMFadeTo(GPIO.Red	, tRed	, 	0);
-	GPIO::PWMFadeTo(GPIO.Green	, tGreen, 	0);
-	GPIO::PWMFadeTo(GPIO.Blue 	, tBlue	, 	0);
+	if (GPIO.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Red	, tRed	, 	0);
+	if (GPIO.Green.GPIO != GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Green	, tGreen, 	0);
+	if (GPIO.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Blue 	, tBlue	, 	0);
 
 	IndicatorTimer.Start();
 }
