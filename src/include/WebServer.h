@@ -14,6 +14,7 @@ using namespace std;
 #include "lwip/netdb.h"
 #include "lwip/api.h"
 #include "lwip/err.h"
+#include "lwip/ip.h"
 
 #include "esp_http_server.h"
 
@@ -57,6 +58,9 @@ class WebServer_t {
 	    static esp_err_t DELETEHandler	(httpd_req_t *);
 
 	    static void	SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request);
+
+	    static void SendChunk(httpd_req_t *Request, string Part);
+	    static void EndChunk(httpd_req_t *Request);
 
 		void UDPSendBroadcastAlive();
 		void UDPSendBroadcastDiscover();

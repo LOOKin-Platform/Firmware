@@ -29,29 +29,33 @@ void IRAM_ATTR SPIFlash::EraseRange(uint32_t Start, uint32_t Length) {
         return;
 
     if (Length % 4 != 0) {
-    		ESP_LOGE(tag,"Range must be 4 bytes aligned");
-    		return;
+    	ESP_LOGE(tag,"Range must be 4 bytes aligned");
+    	return;
     }
 
     if (Start % 4 != 0) {
-    		ESP_LOGE(tag,"Start must be 4 bytes aligned");
-    		return;
+    	ESP_LOGE(tag,"Start must be 4 bytes aligned");
+    	return;
     }
 
     uint32_t	BlockStart 		= (Start / Settings.Memory.BlockSize) * Settings.Memory.BlockSize; // block starts every 4kb
     uint8_t		BlocksToErase 	= ceil((Start + Length) / Settings.Memory.BlockSize) - BlockStart / Settings.Memory.BlockSize + 1;
 
-    uint32_t 	*HeadBuffer 	= (uint32_t *) malloc((Start - BlockStart) / 4);
-    uint32_t 	*TailBuffer 	= (uint32_t *) malloc((BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length) / 4);
+    uint32_t 	*HeadBuffer 	= (uint32_t *) malloc((Start - BlockStart));
+    uint32_t 	*TailBuffer 	= (uint32_t *) malloc((BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 
-	::spi_flash_read(BlockStart		, HeadBuffer, (Start - BlockStart) / 4);
-    ::spi_flash_read(Start + Length	, TailBuffer, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length) / 4);
+	::spi_flash_read(BlockStart		, HeadBuffer, (Start - BlockStart));
+    ::spi_flash_read(Start + Length	, TailBuffer, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
+
+    ESP_LOGE("SPI FLASH", "BlockStart: %d, BlocksToErase: %d", BlockStart, BlocksToErase);
+    ESP_LOGE("SPI FLASH", "Start address: %d, Size: %d", BlockStart, (Start - BlockStart));
+    ESP_LOGE("SPI FLASH", "End address: %d, Size: %d", Start + Length, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 
     for (int i=0; i < BlocksToErase; i++)
     		EraseSector((BlockStart + i*Settings.Memory.BlockSize) / Settings.Memory.BlockSize);
 
-	::spi_flash_write(BlockStart	, HeadBuffer, (Start - BlockStart) / 4);
-    ::spi_flash_write(Start + Length, TailBuffer, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length) / 4);
+	::spi_flash_write(BlockStart	, HeadBuffer, (Start - BlockStart));
+    ::spi_flash_write(Start + Length, TailBuffer, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 
     free(HeadBuffer);
     free(TailBuffer);
@@ -69,10 +73,10 @@ esp_err_t IRAM_ATTR SPIFlash::Write(void* Data, uint32_t Address, size_t Size) {
 	if (Size == 0)
 		Size = sizeof(Data);
 
-    if (Address + Size > spi_flash_get_chip_size())
-        return ESP_ERR_INVALID_SIZE;
-
-	return ::spi_flash_write(Address, Data, Size);
+    if ((Address + Size) > spi_flash_get_chip_size())
+    	return ESP_ERR_INVALID_SIZE;
+    else
+    	return ::spi_flash_write(Address, Data, Size);
 }
 
 /**

@@ -45,9 +45,7 @@ void Network_t::SetNetworkDeviceFlagByIP(string IP, bool Flag) {
 		}
 }
 
-void Network_t::DeviceInfoReceived(string ID, string Type, string PowerMode, string IP, string ScenariosVersion, string StorageVersion) {
-	ESP_LOGD(tag, "DeviceInfoReceived");
-
+void Network_t::DeviceInfoReceived(string ID, string Type, string PowerMode, string IP, string AutomationVersion, string StorageVersion) {
 	NVS Memory(NVSNetworkArea);
 
 	bool isIDFound = false;
@@ -63,14 +61,17 @@ void Network_t::DeviceInfoReceived(string ID, string Type, string PowerMode, str
 
 			// If IP of the device changed - change it and save
 			if (Devices.at(i).IP != IP) {
-				Devices.at(i).IP       = IP;
-				Devices.at(i).IsActive = false;
+				Devices.at(i).IP      		 	= IP;
+				Devices.at(i).IsActive 			= false;
 
 				string Data = SerializeNetworkDevice(Devices.at(i));
 				Memory.StringArrayReplace(NVSNetworkDevicesArray, i, Data);
 
 				Memory.Commit();
 			}
+
+			Devices.at(i).StorageVersion 	= Converter::UintFromHexString<uint16_t>(StorageVersion);
+			Devices.at(i).AutomationVersion = Converter::UintFromHexString<uint32_t>(AutomationVersion);
 
 			Devices.at(i).IsActive = true;
 		}
@@ -82,16 +83,20 @@ void Network_t::DeviceInfoReceived(string ID, string Type, string PowerMode, str
 	if (!isIDFound) {
 		NetworkDevice_t NetworkDevice;
 
-		NetworkDevice.TypeHex   = TypeHex;
-		NetworkDevice.ID        = Converter::UintFromHexString<uint32_t>(ID);
-		NetworkDevice.IP        = IP;
-		NetworkDevice.IsActive  = true;
+		NetworkDevice.TypeHex   		= TypeHex;
+		NetworkDevice.ID        		= Converter::UintFromHexString<uint32_t>(ID);
+		NetworkDevice.IP        		= IP;
+		NetworkDevice.IsActive  		= true;
+		NetworkDevice.StorageVersion 	= Converter::UintFromHexString<uint16_t>(StorageVersion);
+		NetworkDevice.AutomationVersion = Converter::UintFromHexString<uint32_t>(AutomationVersion);
 
 		Devices.push_back(NetworkDevice);
 
 		Memory.StringArrayAdd(NVSNetworkDevicesArray, SerializeNetworkDevice(NetworkDevice));
 		Memory.Commit();
 	}
+
+	PoolingNetworkMapReceivedTimer = Settings.Pooling.NetworkMap.ActionsDelay;
 }
 
 bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
@@ -288,9 +293,9 @@ NetworkDevice_t Network_t::DeserializeNetworkDevice(string Data) {
 
 	JSON JSONObject(Data);
 
-	if (!(JSONObject.GetItem("ID").empty()))      Result.ID      = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("ID"));
-	if (!(JSONObject.GetItem("IP").empty()))      Result.IP      = JSONObject.GetItem("IP");
-	if (!(JSONObject.GetItem("TypeHex").empty())) Result.TypeHex = (uint8_t)strtol((JSONObject.GetItem("TypeHex")).c_str(), NULL, 16);
+	if (!(JSONObject.GetItem("ID").empty()))      	Result.ID      			= Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("ID"));
+	if (!(JSONObject.GetItem("IP").empty()))      	Result.IP      			= JSONObject.GetItem("IP");
+	if (!(JSONObject.GetItem("TypeHex").empty())) 	Result.TypeHex 			= (uint8_t)strtol((JSONObject.GetItem("TypeHex")).c_str(), NULL, 16);
 
 	Result.IsActive = false;
 	return Result;
@@ -495,3 +500,127 @@ vector<string> Network_t::GetSavedWiFiList() {
 string Network_t::WiFiCurrentSSIDToString() {
 	return WiFi_t::GetSSID();
 }
+
+/*
+ *
+ * NetworkSync class implementation
+ *
+ */
+
+uint8_t		NetworkSync::SameQueryCount 		= 0;
+uint16_t	NetworkSync::MaxStorageVersion 		= 0x0;
+string		NetworkSync::SourceIP 				= "";
+string		NetworkSync::Chunk 					= "";
+uint16_t	NetworkSync::ToVersionUpgrade		= 0;
+
+static string			SourceIP;
+
+void NetworkSync::Start() {
+	ESP_LOGE("MAP RECEIVED", "UDP Timer");
+
+	int Index = -1;
+	uint16_t CurrentVersion		= Storage.CurrentVersion();
+	MaxStorageVersion = 0;
+
+	for (int i = 0; i < Network.Devices.size(); i++)
+		if (Network.Devices.at(i).StorageVersion > MaxStorageVersion) {
+			MaxStorageVersion = Network.Devices.at(i).StorageVersion;
+			Index = i;
+		}
+
+	if (Index == -1)
+		return;
+
+	if (MaxStorageVersion > CurrentVersion) {
+		SourceIP = Network.Devices.at(Index).IP;
+		SameQueryCount = 0;
+		NetworkSync::StorageHistoryQuery();
+	}
+
+}
+
+void NetworkSync::StorageHistoryQuery() {
+	if (SameQueryCount >= 3)
+		return;
+
+	string QueryURL = "http://" + SourceIP + "/storage/history/upgrade?from=" + Converter::ToHexString((Storage.CurrentVersion() < 0x2000) ? 0 : Storage.CurrentVersion(), 4);
+	ESP_LOGE("StorageHistoryQuery", "%s", QueryURL.c_str());
+
+	ToVersionUpgrade 	= 0;
+	HTTPClient::Query(QueryURL, 80, QueryType::GET, true, &ReadStorageStarted, &ReadStorageBody, &ReadStorageFinished, &StorageAborted);
+}
+
+void NetworkSync::ReadStorageStarted (char IP[]) {}
+
+bool NetworkSync::ReadStorageBody (char Data[], int DataLen, char IP[]) {
+
+	if (ToVersionUpgrade == 0)
+		Chunk = string(Data,DataLen);
+	else if (string(Data,DataLen) == ",") {
+		Chunk = "";
+		return true;
+	}
+	else
+		Chunk += string(Data, DataLen);
+
+	ESP_LOGE("CHUNK ", "%s", Chunk.c_str());
+
+	if (ToVersionUpgrade == 0) {
+		JSON JSONItem(Chunk + "]}");
+
+		if (JSONItem.GetItems().count("to"))
+			ToVersionUpgrade  = Converter::UintFromHexString<uint16_t>(JSONItem.GetItem("to"));
+
+		Chunk = "";
+
+		if (ToVersionUpgrade == 0)
+			return false;
+	}
+	else if (Chunk != ",")
+	{
+		JSON JSONItem(Chunk);
+
+		Storage_t::Item ItemToSave;
+
+		if (!JSONItem.IsItemExists("id") || !JSONItem.IsItemExists("typeid") || !JSONItem.IsItemExists("data"))
+			return true;
+
+		ItemToSave.Header.MemoryID	= Converter::UintFromHexString<uint16_t>(JSONItem.GetItem("id"));
+		ItemToSave.Header.TypeID	= Converter::UintFromHexString<uint8_t>(JSONItem.GetItem("typeid"));
+		ItemToSave.SetData(JSONItem.GetItem("data"));
+
+		if (ItemToSave.GetData().size() == 0 || ItemToSave.Header.TypeID == Settings.Memory.Empty8Bit)
+			return true;
+
+		Storage.Write(ItemToSave);
+		ESP_LOGE("Storage Sync", "Item with ID %d writed", ItemToSave.Header.MemoryID);
+
+		Chunk = "";
+	}
+
+	return true;
+}
+
+void NetworkSync::ReadStorageFinished(char IP[]) {
+	SameQueryCount = 0;
+	Chunk = "";
+
+	if (ToVersionUpgrade == 0)
+		return;
+
+	Storage.Commit(ToVersionUpgrade);
+	ESP_LOGE("Storage Sync", "Commited version %d", ToVersionUpgrade);
+
+	if (ToVersionUpgrade < MaxStorageVersion)
+		StorageHistoryQuery();
+}
+
+void NetworkSync::StorageAborted(char IP[]) {
+	SameQueryCount++;
+	Chunk = "";
+	StorageHistoryQuery();
+
+	ESP_LOGE("Network_t::StorageAborted", "");
+
+}
+

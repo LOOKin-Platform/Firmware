@@ -212,7 +212,7 @@ uint16_t Storage_t::CurrentVersion() {
 }
 
 
-void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody) {
+void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request) {
 	if (Type == QueryType::GET) {
 		if (URLParts.size() == 0) {
 			JSON JSONObject;
@@ -298,30 +298,35 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			uint16_t To = 0x0;
 			vector<Item> Items = GetUpgradeItems(From, To);
 
-			JSON JSONObject;
 
-			JSONObject.SetItems(vector<pair<string,string>>({
-	    		make_pair("From", Converter::ToHexString(From,4)),
-	    	    make_pair("To"	, Converter::ToHexString(To	,4))
-			}));
-
-			vector<vector<pair<string,string>>> Output = vector<vector<pair<string,string>>>();
+			WebServer_t::SendChunk(Request,
+					"{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
+					+ Converter::ToHexString(To	,4) + "\", \"Items\":[");
 
 			vector<Item>::iterator it = Items.begin();
 			// delete write items already in commit
 			while (it != Items.end()) {
-				Output.push_back(vector<pair<string,string>>({
-			   		make_pair("ID"		, Converter::ToHexString(it->Header.MemoryID, 3) ),
-				    make_pair("TypeID"	, Converter::ToHexString(it->Header.TypeID  , 2) ),
+				JSON JSONObject;
+
+				JSONObject.SetItems(vector<pair<string,string>>({
+		    		make_pair("ID"		, Converter::ToHexString(it->Header.MemoryID, 3)),
+		    	    make_pair("TypeID"	, Converter::ToHexString(it->Header.TypeID  , 2)),
 				    make_pair("Data"	, it->DataToString() )
-					}));
+				}));
+
+				WebServer_t::SendChunk(Request, JSONObject.ToString());
 
 				Items.erase(Items.begin());
+
+				if (Items.size() > 0)
+					WebServer_t::SendChunk(Request, ",");
 			}
 
-			JSONObject.SetObjectsArray("Items", Output);
+			WebServer_t::SendChunk(Request, "]}");
+			WebServer_t::EndChunk(Request);
+			return;
 
-			Result.Body = JSONObject.ToString();
+			Result.Body = "";
 
 			return;
 		}
@@ -396,7 +401,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 				RequestBody = "";
 			}
-			else {
+			else
+			{
 				Items.push_back(map<string,string>());
 
 				for (auto &MapItem : Params) {
@@ -612,6 +618,8 @@ void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
 		return;
 
 	for (uint32_t AddressItem : AddressVector) {
+		ESP_LOGE("Storage ", "EraseRange %d %d",AddressItem, Settings.Storage.Data.ItemSize);
+
 		SPIFlash::EraseRange(AddressItem, Settings.Storage.Data.ItemSize);
 
 		if (MemoryStoredItemsSize > 0) MemoryStoredItemsSize --;

@@ -33,8 +33,9 @@ void HTTPClient::Query(string URL, uint16_t Port, QueryType Type, bool ToFront,
 
 	strncpy(QueryData.URL   , URL.c_str(), 64);
 
-	QueryData.Port    = Port;
-	QueryData.Method  = Type;
+	QueryData.Port    		= Port;
+	QueryData.Method  		= Type;
+	QueryData.BufferSize 	= 512; //4096
 
 	QueryData.ReadStartedCallback   = ReadStartedCallback;
 	QueryData.ReadBodyCallback      = ReadBodyCallback;
@@ -92,7 +93,7 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
             break;
         case HTTP_EVENT_ON_DATA:
 			if (ClientData.ReadBodyCallback != NULL)
-	            if (!esp_http_client_is_chunked_response(event->client))
+	            //if (!esp_http_client_is_chunked_response(event->client))
 					if (!ClientData.ReadBodyCallback((char*)event->data, event->data_len, ClientData.URL))
 						HTTPClient::Failed(ClientData);
             break;
@@ -149,7 +150,6 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			if (err != ESP_OK) {
 				ESP_LOGE(tag, "Connect to http server failed: %s", esp_err_to_name(err));
 				HTTPClient::Failed(ClientData);
-				continue;
 			}
 
 			if (Handle != NULL) {

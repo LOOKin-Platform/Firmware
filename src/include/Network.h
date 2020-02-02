@@ -24,10 +24,12 @@ using namespace std;
 #define  NVSNetworkDevicesArray "Devices"
 
 struct NetworkDevice_t {
-	uint8_t		TypeHex		= 0x00;
-	bool		IsActive	= false;
-	uint32_t	ID			= 0;
-	string		IP			= "";
+	uint8_t		TypeHex				= 0x00;
+	bool		IsActive			= false;
+	uint32_t	ID					= 0;
+	string		IP					= "";
+	uint16_t	StorageVersion 		= 0;
+	uint32_t	AutomationVersion	= 0;
 };
 
 struct WiFiSettingsItem {
@@ -73,9 +75,29 @@ class Network_t {
 
 		void 					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
 
+		uint8_t					PoolingNetworkMapReceivedTimer = Settings.Pooling.NetworkMap.DefaultValue;
+
 	private:
 		string					ModeToString();
 		string					WiFiCurrentSSIDToString();
+};
+
+class NetworkSync {
+	public:
+		static void 			Start();
+		static void 			StorageHistoryQuery();
+
+    	// HTTP Callbacks
+    	static void 			ReadStorageStarted (char IP[]);
+    	static bool 			ReadStorageBody    (char Data[], int DataLen, char IP[]);
+    	static void 			ReadStorageFinished(char IP[]);
+    	static void 			StorageAborted     (char IP[]);
+	private:
+    	static uint8_t			SameQueryCount;
+    	static uint16_t			MaxStorageVersion;
+    	static uint16_t			ToVersionUpgrade;
+    	static string			SourceIP;
+    	static string 			Chunk;
 };
 
 #endif

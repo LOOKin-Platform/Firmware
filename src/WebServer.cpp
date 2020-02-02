@@ -36,7 +36,7 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 	string QueryString = "GET " + string(Request->uri) + " ";
 
 	Query_t Query(QueryString);
-	API::Handle(Response, Query);
+	API::Handle(Response, Query, Request);
 
 	SendHTTPData(Response, Request);
 
@@ -91,6 +91,15 @@ void WebServer_t::SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Req
 	httpd_resp_send(Request, Response.Body.c_str(), HTTPD_RESP_USE_STRLEN);
 }
 
+void WebServer_t::SendChunk(httpd_req_t *Request, string Part) {
+	::httpd_resp_sendstr_chunk(Request, Part.c_str());
+}
+
+void WebServer_t::EndChunk(httpd_req_t *Request) {
+	::httpd_resp_sendstr_chunk(Request, NULL);
+}
+
+
 void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Request) {
 	switch (Response.ResponseCode) {
 		case Response::CODE::INVALID  	: httpd_resp_set_status	(Request, HTTPD_400); break;
@@ -103,7 +112,7 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 		default							: httpd_resp_set_type	(Request, HTTPD_TYPE_TEXT); break;
 	}
 
-	//httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
+	httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
 }
 
 /* URI handler structure for GET /uri */
@@ -137,7 +146,7 @@ void WebServer_t::Start() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     config.uri_match_fn 	= httpd_uri_match_wildcard;
-    config.stack_size		= 20000;//16384;
+    config.stack_size		= 16384;//20000;
     config.lru_purge_enable = true;
     //config.task_priority	= tskIDLE_PRIORITY+5;
 
@@ -150,7 +159,7 @@ void WebServer_t::Start() {
     }
 
 	if (UDPListenerTaskHandle == NULL)
-		UDPListenerTaskHandle   = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
+		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
 }
 
 void WebServer_t::Stop() {
@@ -203,29 +212,56 @@ void WebServer_t::UDPSendBroadcast(string Message) {
 	if (WiFi.IsRunning()
 		&& (WiFi.GetMode() == WIFI_MODE_AP_STR || (WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.IsIPCheckSuccess)))
 	{
-		struct netconn *Connection;
-		struct netbuf *Buffer;
-		char *Data;
+	    char addr_str[128];
+	    int addr_family;
+	    int ip_protocol;
 
 		if (Message.length() > 128)
 			Message = Message.substr(0, 128);
 
 		for (uint16_t Port : UDPPorts) {
-			Connection = netconn_new(NETCONN_UDP);
-			netconn_connect(Connection, IP_ADDR_BROADCAST, Port);
+			struct sockaddr_in dest_addr, cliaddr;
+			dest_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
+			dest_addr.sin_family = AF_INET;
+			dest_addr.sin_port = htons(Port);
+			addr_family = AF_INET;
+			ip_protocol = IPPROTO_IP;
 
-			Buffer  = netbuf_new();
-			Data    = (char *)netbuf_alloc(Buffer, Message.length());
-			memcpy (Data, Message.c_str(), Message.length());
-			netconn_send(Connection, Buffer);
+			inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
-			netconn_close(Connection);
-			netconn_delete(Connection);
+			int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+			if (sock < 0) {
+				ESP_LOGE(tag, "Unable to create socket: errno %d", errno);
+				break;
+			}
+			ESP_LOGI(tag, "Socket created, sending to port %d", Port);
 
-			netbuf_free(Buffer);
-			netbuf_delete(Buffer); 		// De-allocate packet buffer
+			int option = 1;
+
+			if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,(char*)&option,sizeof(option)) < 0)
+				ESP_LOGE(tag, "setsockopt SO_REUSEADDR failed");
+
+			if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST,(char*)&option,sizeof(option)) < 0)
+				ESP_LOGE(tag, "setsockopt SO_BROADCAST failed");
+
+			cliaddr.sin_family = AF_INET;
+			cliaddr.sin_addr.s_addr= htonl(INADDR_ANY);
+			cliaddr.sin_port=htons(Port); //source port for outgoing packets
+			bind(sock,(struct sockaddr *)&cliaddr,sizeof(cliaddr));
+
+			int err = sendto(sock, Message.c_str(), Message.length(), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+
+			if (err < 0) {
+				ESP_LOGE(tag, "Error occurred during sending: errno %d", errno);
+				break;
+			}
 
 			ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d", Message.c_str(), Port);
+
+	        if (sock != -1) {
+	            shutdown(sock, 0);
+	            close(sock);
+	        }
 		}
 	}
 	else
@@ -272,68 +308,109 @@ void WebServer_t::UDPListenerTask(void *data) {
 	UDPServerStopFlag = false;
 	ESP_LOGD(tag, "UDPListenerTask Run");
 
-	struct netconn 	*UDPConnection;
-	struct netbuf 	*UDPInBuffer, *UDPOutBuffer;
-	char 			*UDPInData	, *UDPOutData;
-	u16_t inDataLen;
-	err_t err;
+    char 	rx_buffer[128];
+    char	addr_str[128];
+    int 	addr_family;
+    int 	ip_protocol;
 
-	UDPConnection = netconn_new(NETCONN_UDP);
-	netconn_bind(UDPConnection, IP_ADDR_ANY, Settings.WiFi.UPDPort);
+    do {
+    	struct sockaddr_in dest_addr;
+    	dest_addr.sin_addr.s_addr 	= htonl(INADDR_ANY);
+    	dest_addr.sin_family 		= AF_INET;
+    	dest_addr.sin_port 			= htons(Settings.WiFi.UPDPort);
+    	addr_family 				= AF_INET;
+    	ip_protocol 				= IPPROTO_IP;
 
-	do {
-		err = netconn_recv(UDPConnection, &UDPInBuffer);
+    	inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
-		if (err == ERR_OK) {
-			netbuf_data(UDPInBuffer, (void * *)&UDPInData, &inDataLen);
-			string Datagram = UDPInData;
 
-			ESP_LOGI(tag, "UDP received \"%s\"", Datagram.c_str());
+    	int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
+    	if (sock < 0) {
+    		ESP_LOGE(tag, "Unable to create socket: errno %d", errno);
+    		break;
+    	}
+    	ESP_LOGI(tag, "Socket created");
 
-			if(find(UDPPorts.begin(), UDPPorts.end(), UDPInBuffer->port) == UDPPorts.end()) {
-				if (UDPPorts.size() == Settings.WiFi.UDPHoldPortsMax) UDPPorts.erase(UDPPorts.begin() + 1);
-				UDPPorts.push_back(UDPInBuffer->port);
-			}
+    	int option = 1;
+        if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,(char*)&option,sizeof(option)) < 0)
+        	ESP_LOGE(tag, "setsockopt SO_REUSEADDR failed");
 
-			UDPOutBuffer = netbuf_new();
+    	int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    	if (err < 0) {
+    		ESP_LOGE(tag, "Socket unable to bind: errno %d", errno);
+    	}
+    	ESP_LOGI(tag, "Socket bound, port %d", Settings.WiFi.UPDPort);
 
-			// Redirect UDP message if in access point mode
-			//if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
-			//	WebServer->UDPSendBroadcast(Datagram);
 
-			// answer to the Discover query
-			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device.IDToString())) {
-				string Answer = WebServer_t::UDPAliveBody();
+    	do {
+            ESP_LOGI(tag, "Waiting for data");
+            struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
+            socklen_t socklen = sizeof(source_addr);
+            int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
 
-				UDPOutData = (char *)netbuf_alloc(UDPOutBuffer, Answer.length());
-				memcpy (UDPOutData, Answer.c_str(), Answer.length());
+            if (len < 0) {
+                ESP_LOGE(tag, "recvfrom failed: errno %d", errno);
+                break;
+            }
+            else
+            {
+                // Get the sender's ip address as string
+                if (source_addr.sin6_family == PF_INET) {
+                    inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr.s_addr, addr_str, sizeof(addr_str) - 1);
+                } else if (source_addr.sin6_family == PF_INET6) {
+                    inet6_ntoa_r(source_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
+                }
 
-				netconn_sendto(UDPConnection, UDPOutBuffer, &UDPInBuffer->addr, UDPInBuffer->port);
+                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string...
 
-				ESP_LOGD(tag, "UDP \"%s\" sended to %s:%u", Answer.c_str(), inet_ntoa(UDPInBuffer->addr), UDPInBuffer->port);
-			}
+                string Datagram = rx_buffer;
+    			ESP_LOGI(tag, "UDP received \"%s\" from port %d", Datagram.c_str(), ntohs(source_addr.sin6_port));
 
-			string AliveText = Settings.WiFi.UDPPacketPrefix + string("Alive!");
-			size_t AliveFound = Datagram.find(AliveText);
+    			if(find(UDPPorts.begin(), UDPPorts.end(), ntohs(source_addr.sin6_port)) == UDPPorts.end()) {
+    				if (UDPPorts.size() == Settings.WiFi.UDPHoldPortsMax)
+    					UDPPorts.erase(UDPPorts.begin() + 1);
+    				UDPPorts.push_back(ntohs(source_addr.sin6_port));
+    			}
 
-			if (AliveFound != string::npos) {
-				string Alive = Datagram;
-				Alive.replace(Alive.find(AliveText),AliveText.length(),"");
-				vector<string> Data = Converter::StringToVector(Alive, ":");
+    			// Redirect UDP message if in access point mode
+    			//if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+    			//	WebServer->UDPSendBroadcast(Datagram);
 
-				while (Data.size() < 6)
-					Data.push_back("");
+    			// answer to the Discover query
+    			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device.IDToString())) {
+    				string Answer = WebServer_t::UDPAliveBody();
 
-				Network.DeviceInfoReceived(Data[0], Data[1], Data[2], Data[3], Data[4], Data[5]);
-			}
+    				int err = sendto(sock, Answer.c_str(), Answer.length(), 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
+    	            if (err < 0) {
+    	                ESP_LOGE(tag, "Error occurred during sending: errno %d", errno);
+    	                break;
+    	            }
 
-			netbuf_delete(UDPOutBuffer);
-			netbuf_delete(UDPInBuffer);
-		}
-	} while(err == ERR_OK && !UDPServerStopFlag);
+    				ESP_LOGD(tag, "UDP \"%s\" sended to port %u", Answer.c_str(), ntohs(source_addr.sin6_port));
+    			}
 
-	netconn_close(UDPConnection);
-	netconn_delete(UDPConnection);
+    			string AliveText = Settings.WiFi.UDPPacketPrefix + string("Alive!");
+    			size_t AliveFound = Datagram.find(AliveText);
+
+    			if (AliveFound != string::npos) {
+    				string Alive = Datagram;
+    				Alive.replace(Alive.find(AliveText),AliveText.length(),"");
+    				vector<string> Data = Converter::StringToVector(Alive, ":");
+
+    				while (Data.size() < 6)
+    					Data.push_back("");
+
+    				Network.DeviceInfoReceived(Data[0], Data[1], Data[2], Data[3], Data[4], Data[5]);
+    			}
+    		}
+    	} while(!UDPServerStopFlag);
+
+        if (sock != -1) {
+            shutdown(sock, 0);
+            close(sock);
+        }
+
+    } while(!UDPServerStopFlag);
 
 	FreeRTOS::DeleteTask(UDPListenerTaskHandle);
 	UDPListenerTaskHandle = NULL;

@@ -79,7 +79,7 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 		if (APISection == "device")		Device.HandleHTTPRequest	(Response, Type, URLParts, Params, Request, TransportType);
 		if (APISection == "network")	Network.HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "automation")	Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-		if (APISection == "storage")	Storage.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody);
+		if (APISection == "storage")	Storage.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request);
 		if (APISection == "sensors")	Sensor_t::HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "commands")	Command_t::HandleHTTPRequest(Response, Type, URLParts, Params);
 		if (APISection == "log")		Log::HandleHTTPRequest		(Response, Type, URLParts, Params);
