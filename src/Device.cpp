@@ -54,8 +54,6 @@ void Device_t::Init() {
 
 	switch (Type.Hex) {
 		case Settings.Devices.Duo:
-			PowerModeVoltage = +220;
-
 		case Settings.Devices.Plug:
 			PowerModeVoltage = +220;
 			break;
@@ -148,7 +146,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.Body = "{\"success\" : \"true\"}";
 
 				if (URLParts[1] == "start")
-					OTA::ReadStarted();
+					OTA::ReadStarted("");
 
 				if (URLParts[1] == "write") {
 					if (Params.count("data") == 0) {
@@ -163,7 +161,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 					for (int i=0; i < HexData.length(); i=i+2)
 						BinaryData[i/2] = Converter::UintFromHexString<uint8_t>(HexData.substr(i, 2));
 
-					if (!OTA::ReadBody(reinterpret_cast<char*>(BinaryData), HexData.length() / 2)) {
+					if (!OTA::ReadBody(reinterpret_cast<char*>(BinaryData), HexData.length() / 2, "")) {
 						Result.ResponseCode = WebServer_t::Response::INVALID;
 						Result.Body = "{\"success\" : \"false\" , \"Error\": \"Writing data failed\"}";
 					}
@@ -172,7 +170,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				}
 
 				if (URLParts[1] == "finish")
-					OTA::ReadFinished();
+					OTA::ReadFinished("");
 			}
 		}
 	}

@@ -19,6 +19,8 @@ void FillDevices() {
 
 	Settings_t::GPIOData_t::DeviceInfo_t Duo;
 	Duo.MultiSwitch.GPIO 			= { GPIO_NUM_4, GPIO_NUM_17 };
+	Duo.Touch.GPIO					= { GPIO_NUM_18 };
+
 	Duo.Indicator.Timer				= LEDC_TIMER_0;
 	Duo.Indicator.Red.GPIO			= GPIO_NUM_0;
 	Duo.Indicator.Red.Channel		= LEDC_CHANNEL_0;
@@ -133,7 +135,7 @@ void Settings_t::eFuse_t::ReadData() {
 		Type = Device.GetTypeFromNVS();
 
 		if (Type == 0x0 || Type == 0xFF) {
-			Type = 0x81;
+			Type = 0x02;
 			Device.SetTypeToNVS(Type);
 		}
 	}

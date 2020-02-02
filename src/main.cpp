@@ -3,7 +3,6 @@
 #include "stdio.h"
 
 #include <esp_log.h>
-#include <esp_pm.h>
 #include <esp_system.h>
 #include <esp_phy_init.h>
 
@@ -16,6 +15,8 @@
 #include "DateTime.h"
 #include "Memory.h"
 #include "Sleep.h"
+
+#include "PowerManagement.h"
 
 #include "handlers/Pooling.cpp"
 
@@ -62,18 +63,7 @@ void app_main(void) {
 	Settings.eFuse.ReadData();
 	Log::Add(Log::Events::System::DeviceOn);
 
-	#if defined(CONFIG_PM_ENABLE)
-
-    esp_pm_config_esp32_t pm_config = {
-		.max_cpu_freq = RTC_CPU_FREQ_160M,
-		.min_cpu_freq = RTC_CPU_FREQ_XTAL
-    };
-
-    esp_err_t ret;
-    if((ret = esp_pm_configure(&pm_config)) != ESP_OK)
-        ESP_LOGI(tag, "pm config error %s\n",  ret == ESP_ERR_INVALID_ARG ?  "ESP_ERR_INVALID_ARG": "ESP_ERR_NOT_SUPPORTED");
-
-	#endif
+	PowerManagement::SetIsActive((Settings.eFuse.Type == 0x81) ? false : true);
 
 	Network.WiFiScannedList = WiFi.Scan();
 
@@ -84,9 +74,12 @@ void app_main(void) {
 	Automation.Init();
 	MQTT.Init();
 
+
 	// Remote temporary hack
-	GPIO::Setup(GPIO_NUM_22);
-	GPIO::Write(GPIO_NUM_22, 0);
+	if (Settings.eFuse.Type == 0x81) {
+		GPIO::Setup(GPIO_NUM_22);
+		GPIO::Write(GPIO_NUM_22, 0);
+	}
 
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();

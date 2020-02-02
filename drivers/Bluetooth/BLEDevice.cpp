@@ -419,6 +419,12 @@ gatts_event_handler 	BLEDevice::m_customGattsHandler = nullptr;
 	vTaskDelay(200 / portTICK_PERIOD_MS); // Delay for 200 msecs as a workaround to an apparent Arduino environment issue.
 } // init
 
+/* STATIC */ void BLEDevice::SetSleep(bool SleepEnabled) {
+	if (SleepEnabled)
+		::esp_bt_sleep_enable();
+	else
+		::esp_bt_sleep_disable();
+}
 
 /**
  * @brief Set the transmission power.
@@ -475,7 +481,7 @@ gatts_event_handler 	BLEDevice::m_customGattsHandler = nullptr;
  */
 void BLEDevice::WhiteListAdd(BLEAddress address) {
 	ESP_LOGD(tag, ">> whiteListAdd: %s", address.ToString().c_str());
-	esp_err_t errRc = esp_ble_gap_update_whitelist(true, *address.GetNative());  // True to add an entry.
+	esp_err_t errRc = esp_ble_gap_update_whitelist(true, *address.GetNative(), BLE_WL_ADDR_TYPE_PUBLIC);  // True to add an entry.
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_ble_gap_update_whitelist: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}
@@ -489,7 +495,7 @@ void BLEDevice::WhiteListAdd(BLEAddress address) {
  */
 void BLEDevice::WhiteListRemove(BLEAddress address) {
 	ESP_LOGD(tag, ">> whiteListRemove: %s", address.ToString().c_str());
-	esp_err_t errRc = esp_ble_gap_update_whitelist(false, *address.GetNative());  // False to remove an entry.
+	esp_err_t errRc = esp_ble_gap_update_whitelist(false, *address.GetNative(), BLE_WL_ADDR_TYPE_PUBLIC);  // False to remove an entry.
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_ble_gap_update_whitelist: rc=%d %s", errRc, GeneralUtils::ErrorToString(errRc));
 	}

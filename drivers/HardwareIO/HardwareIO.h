@@ -45,6 +45,8 @@ class GPIO {
 		static bool 	Read(gpio_num_t pin);
 		static void 	Write(gpio_num_t pin, bool value);
 
+		static void		Hold(gpio_num_t pin, bool value);
+
 		// PWM to rule LEDs
 		static bool		PWMIsInited;
 		static void 	SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel);

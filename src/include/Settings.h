@@ -24,7 +24,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.35";
+		const	string 						FirmwareVersion = "1.36";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -71,7 +71,7 @@ class Settings_t {
 		} WiFi;
 
 		struct Bluetooth_t {
-			const string					DeviceNamePrefix		= "LOOK.in_";
+			const string					DeviceNamePrefix		= "LOOKin_";
 			const string					SecretCodeServiceUUID   = "997d2872-b4e2-414d-b4be-985263a70411";
         	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
 
@@ -113,6 +113,11 @@ class Settings_t {
 				const uint8_t 				OverheatTemp	= 90;
 				const uint8_t				ChilledTemp		= 77;
 			} OverHeat;
+
+			struct {
+				const uint8_t				ActionsDelay	= 5;
+				const uint8_t				DefaultValue	= 0xFF;
+			} NetworkMap;
 		} Pooling;
 
 		struct Devices_t {
@@ -233,6 +238,11 @@ class Settings_t {
 				const uint16_t				DetectionJoinU	= 40000; 	// Временной интервал в течении которого считается, что сигнал 1 (в микросекундах)
 				const uint32_t				SignalsMaxDelay	= 250000;
 			} IR;
+
+			struct {
+				const uint8_t				QueueSize		= 50; 		// Размер очереди сенсора
+				const uint16_t				TaskDelay		= 50;		// Задержка в запуске процесса проверки значений в мс
+			} TouchSensor;
 		} SensorsConfig;
 
 		// Commands and sensors data
@@ -285,6 +295,10 @@ class Settings_t {
 				adc1_channel_t 		BatteryPowerChannel = ADC1_CHANNEL_MAX;
 			};
 
+			struct Touch_t {
+				vector<gpio_num_t>	GPIO = vector<gpio_num_t>();
+			};
+
 			struct DeviceInfo_t {
 				Switch_t		Switch;
 				MultiSwitch_t	MultiSwitch;
@@ -298,6 +312,8 @@ class Settings_t {
 
 				// Device PowerMeters
 				PowerMeter_t 	PowerMeter;
+
+				Touch_t			Touch;
 			};
 
 			DeviceInfo_t GetCurrent();

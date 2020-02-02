@@ -34,6 +34,8 @@ class BLEDevice {
 		static void					Init(string deviceName);	// Initialize the local BLE environment.
 		static void					Deinit(bool release_memory = false);
 
+		static void					SetSleep(bool);
+
 		static BLEClientGeneric*	CreateClient();    // Create a new BLE client.
 		static BLEServerGeneric*	CreateServer();    // Create a new BLE server.
 		static BLEAddress  			GetAddress();      // Retrieve our own local BD address.

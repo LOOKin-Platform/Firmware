@@ -8,6 +8,7 @@
 #include "BLEServer.h"
 #include "Converter.h"
 #include "FreeRTOSTask.h"
+#include "PowerManagement.h"
 
 #if defined(CONFIG_BT_ENABLED)
 
@@ -107,19 +108,18 @@ void BLEServer_t::SetScanPayload(string Payload) {
 
 
 void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
+
 	ESP_LOGI(tag, ">> StartAdvertising");
 
 	string BLEDeviceName = DeviceType_t::ToString(Settings.eFuse.Type);
-	BLEDeviceName = Settings.Bluetooth.DeviceNamePrefix + BLEDeviceName + "_" + Device.IDToString();
+	BLEDeviceName = Settings.Bluetooth.DeviceNamePrefix  + Device.IDToString();
 
 	BLEDevice::Init(BLEDeviceName);
 
 	IsPrivateMode = ShouldUsePrivateMode;
 
-	if (ShouldUsePrivateMode)
-		BLEDevice::SetPower(Settings.Bluetooth.PrivateModePower, ESP_BLE_PWR_TYPE_ADV);
-	else
-		BLEDevice::SetPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_ADV);
+	BLEDevice::SetSleep(PowerManagement::GetIsActive());
+	BLEDevice::SetPower( (ShouldUsePrivateMode) ? Settings.Bluetooth.PrivateModePower : Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_ADV);
 
 	pServer  = BLEDevice::CreateServer();
 

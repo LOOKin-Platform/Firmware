@@ -19,14 +19,16 @@ using namespace std;
 #include <esp_pm.h>
 
 #include "FreeRTOSWrapper.h"
+#include "PowerManagement.h"
+
 #include "Settings.h"
 
 typedef void (*IRChannelCallbackStart)();
 typedef bool (*IRChannelCallbackBody)(int16_t);
 typedef void (*IRChannelCallbackEnd)();
 
-#define RMT_CLK_DIV             80    								/*!< RMT counter clock divider */
-#define RMT_TICK_10_US          (80000000/RMT_CLK_DIV/100000)		/*!< RMT counter value for 10 us.(Source clock is APB clock) */
+#define RMT_CLK_DIV             1    								/*!< RMT counter clock divider */
+#define RMT_TICK_10_US          (1000000/RMT_CLK_DIV/100000)		/*!< RMT counter value for 10 us.(Source clock is APB clock) */
 #define rmt_item32_TIMEOUT_US   Settings.SensorsConfig.IR.Threshold /*!< RMT receiver timeout value(us) */
 
 /**
@@ -65,7 +67,6 @@ class RMT {
 		static vector<rmt_item32_t> OutputItems;
 	private:
 		static bool 				IsInited;
-		static esp_pm_lock_handle_t APBLock, CPULock;
 
 		static IRAM_ATTR void RXTask(void *);
 };

@@ -11,7 +11,6 @@ static char tag[] = "RMT";
 bool 									RMT::IsInited = false;
 map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap = {};
 vector<rmt_item32_t> 					RMT::OutputItems = {};
-esp_pm_lock_handle_t 					RMT::APBLock, RMT::CPULock;
 
 /**
  * @brief Firstly init RMT driver
@@ -19,39 +18,15 @@ esp_pm_lock_handle_t 					RMT::APBLock, RMT::CPULock;
  */
 
 void RMT::Init() {
-	if (IsInited) return;
-
-	#if defined(CONFIG_PM_ENABLE)
-
-	// Create APB clock to accurate signal handling
-	if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "RMT_APB_FREQ_MAX", &APBLock) == ESP_OK) {
-		if (esp_pm_lock_acquire(APBLock) != ESP_OK)
-			ESP_LOGE(tag, "Error while acquiring APB Lock");
-	}
-	else
-		ESP_LOGE(tag, "Error while creating APB Lock");
-
-	// Create CPU clock to accurate signal handling
-	if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "RMT_CPU_FREQ_MAX", &CPULock) == ESP_OK) {
-		if (esp_pm_lock_acquire(CPULock) != ESP_OK)
-			ESP_LOGE(tag, "Error while acquiring CPU Lock");
-	}
-	else
-		ESP_LOGE(tag, "Error while creating CPU Lock");
-
-	#endif
+	if (IsInited)
+		return;
 
 	IsInited = true;
 }
 
 void RMT::Deinit() {
-	if (!IsInited) return;
-
-	if (esp_pm_lock_release(APBLock) != ESP_OK)
-		ESP_LOGE(tag, "Error while releasing APB Lock");
-
-	if (esp_pm_lock_release(CPULock) != ESP_OK)
-		ESP_LOGE(tag, "Error while releasing CPU Lock");
+	if (!IsInited)
+		return;
 }
 
 /**
@@ -78,6 +53,7 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 2500, 0));
+	ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_REF));
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;
@@ -192,7 +168,7 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 	config.channel                   = Channel;
 	config.gpio_num                  = Pin;
 	config.mem_block_num             = 4;
-	config.clk_div                   = RMT_CLK_DIV;
+	config.clk_div                   = 80;
 	config.tx_config.loop_en         = 0;
 	config.tx_config.carrier_en      = 1; //?1
 	config.tx_config.idle_output_en  = 1;
@@ -203,6 +179,7 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 0, 0));
+	//ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASE));
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].Frequency 		= Frequency;
@@ -304,6 +281,8 @@ void RMT::TXClear() {
  */
 
 void RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
+	PowerManagement::AddLock("RMTSend");
+
 	if (OutputItems.size() == 0) return;
 
 	if (OutputItems.back().duration0 > -30000 || OutputItems.back().duration1 > -30000)
@@ -315,6 +294,8 @@ void RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
 	::rmt_wait_tx_done(Channel, portMAX_DELAY);
 
 	OutputItems.clear();
+
+	PowerManagement::ReleaseLock("RMTSend");
 }
 
 /**

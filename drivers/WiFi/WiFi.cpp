@@ -6,7 +6,8 @@
  */
 #include "WiFi.h"
 
-#include <esp_heap_trace.h>
+#include "Settings.h"
+#include "PowerManagement.h"
 
 static char 	tag[]				= "WiFi";
 
@@ -136,7 +137,7 @@ void WiFi_t::Init() {
 			abort();
 		}
 
-		::esp_wifi_set_ps(WIFI_PS_NONE);
+		PowerManagement::SetWiFiOptions();
 
 		errRc = ::esp_wifi_set_storage(WIFI_STORAGE_RAM);
 		if (errRc != ESP_OK) {
@@ -217,10 +218,12 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
-	conf.show_hidden = true;
-	conf.scan_type = WIFI_SCAN_TYPE_ACTIVE;
-	conf.scan_time.active.min = 200;
-	conf.scan_time.active.max = 400;
+	conf.bssid 					= NULL;
+	conf.ssid 					= NULL;
+	conf.show_hidden 			= true;
+	conf.scan_type 				= WIFI_SCAN_TYPE_ACTIVE;
+	conf.scan_time.active.min 	= 500;
+	conf.scan_time.active.max 	= 1000;
 	conf.channel = 0;
 
 	m_scanFinished.Take("ScanFinished");
@@ -459,7 +462,7 @@ void WiFi_t::Dump() {
 	ESP_LOGD(tag, "WiFi Dump");
 	ESP_LOGD(tag, "---------");
 	char ipAddrStr[30];
-	ip_addr_t ip = ::dns_getserver(0);
+	ip_addr_t ip = *(::dns_getserver(0));
 	inet_ntop(AF_INET, &ip, ipAddrStr, sizeof(ipAddrStr));
 	ESP_LOGD(tag, "DNS Server[0]: %s", ipAddrStr);
 } // dump

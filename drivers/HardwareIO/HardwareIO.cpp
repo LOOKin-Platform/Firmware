@@ -44,6 +44,20 @@ void GPIO::Write(gpio_num_t pin, bool value) {
 }
 
 /**
+ * @brief Set hold value to the given pin.
+ *
+ * @param [in] pin The gpio pin to change.
+ * @param [out] value The value to be written to the pin.
+ */
+void GPIO::Hold(gpio_num_t pin, bool value) {
+	if (value)
+		::gpio_hold_en(pin);
+	else
+		::gpio_hold_dis(pin);
+}
+
+
+/**
  * @brief Setting up pin for Output.
  *
  * @param [in] pin to setup.
@@ -81,42 +95,20 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
 	if (GPIO == GPIO_NUM_0)
 		return;
 
-	if (!PWMIsInited) {
-		#if defined(CONFIG_PM_ENABLE)
-
-		esp_pm_lock_handle_t APBLock, CPULock;
-
-		// Create APB clock to accurate signal handling
-		if (esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "PWM_APB_FREQ_MAX", &APBLock) == ESP_OK) {
-			if (esp_pm_lock_acquire(APBLock) != ESP_OK)
-				ESP_LOGE(tag, "Error while acquiring APB Lock");
-		}
-		else
-			ESP_LOGE(tag, "Error while creating APB Lock");
-
-		// Create CPU clock to accurate signal handling
-		if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "PWM_CPU_FREQ_MAX", &CPULock) == ESP_OK) {
-			if (esp_pm_lock_acquire(CPULock) != ESP_OK)
-				ESP_LOGE(tag, "Error while acquiring CPU Lock");
-		}
-		else
-			ESP_LOGE(tag, "Error while creating CPU Lock");
-
-		#endif
-
+	if (!PWMIsInited)
 		PWMIsInited = true;
-	}
 
 	//::rtc_gpio_isolate(GPIO);
 
 	ledc_timer_config_t ledc_timer;
 
-	ledc_timer.duty_resolution	= LEDC_TIMER_10_BIT;
-	ledc_timer.freq_hz			= 5000;
+	ledc_timer.duty_resolution	= LEDC_TIMER_8_BIT;
+	ledc_timer.freq_hz			= 1000;
 	ledc_timer.speed_mode		= LEDC_HIGH_SPEED_MODE;
 	ledc_timer.timer_num		= TimerIndex;
+	ledc_timer.clk_cfg			= LEDC_USE_REF_TICK;
 
-	ledc_timer_config(&ledc_timer);
+	::ledc_timer_config(&ledc_timer);
 
 	ledc_channel_config_t ledc_channel;
 	ledc_channel.duty 		= 0;
@@ -125,8 +117,8 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
 	ledc_channel.channel	= PWMChannel;
 	ledc_channel.gpio_num	= GPIO;
 
-	ledc_channel_config(&ledc_channel);
-	ledc_fade_func_install(0);
+	::ledc_channel_config(&ledc_channel);
+	::ledc_fade_func_install(0);
  }
 
  /**
@@ -145,7 +137,7 @@ uint8_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
 	}
 
 	int Duty = ledc_get_duty(LEDC_HIGH_SPEED_MODE, PWMChannel);
-	return floor(Duty/4);
+	return floor(Duty);
 }
 
  /**
@@ -162,12 +154,12 @@ void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty, uint16_t FadeTime)
 		return;
 
 	if (FadeTime < 50) {
-		::ledc_set_duty(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty*4);
+		::ledc_set_duty(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty);
         ::ledc_update_duty(LEDC_HIGH_SPEED_MODE, PWMChannel);
 		return;
 	}
 
-	if (ESP_OK == ::ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty*4, FadeTime))
+	if (ESP_OK == ::ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty, FadeTime))
 		if (ESP_OK == ::ledc_fade_start(LEDC_HIGH_SPEED_MODE, PWMChannel, LEDC_FADE_NO_WAIT))
 			PWMValuesCache[PWMChannel] = PWMCacheItem(Duty, Time::Uptime());
 }
