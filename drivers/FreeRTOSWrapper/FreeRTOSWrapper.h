@@ -104,10 +104,10 @@ class FreeRTOS {
 
 		};
 
-		// experimental. need to test ringbuffer implamentation
+		// experimental. need to test ringbuffer implementation
 		class RingBuffer {
 			public:
-				static RingbufHandle_t		Create				(uint16_t Length, ringbuf_type_t type);
+				static RingbufHandle_t		Create				(uint16_t Length, RingbufferType_t type);
 				static RingbufHandle_t		CreateNoSplit		(uint16_t Length, size_t ItemSize);
 				static BaseType_t			Send				(RingbufHandle_t Handle, void *Item, size_t ItemSize, TickType_t xTicksToWait = 50);
 				static BaseType_t			SendFromISR			(RingbufHandle_t Handle, void *Item, size_t ItemSize, bool IsHighPriorityTask = true);

@@ -7,7 +7,7 @@
 #include "sdkconfig.h"
 #if defined(CONFIG_BT_ENABLED)
 #include "BLEAddress.h"
-#include "include/BLEClientGeneric.h"
+#include "BLEClientGeneric.h"
 #include "BLEUtils.h"
 #include "BLEUUID.h"
 #include "GeneralUtils.h"

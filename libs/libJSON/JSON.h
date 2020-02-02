@@ -7,7 +7,7 @@
 #ifndef LIBS_JSON_H
 #define LIBS_JSON_H
 
-#include <map>
+//#include <map>
 #include <vector>
 #include <string>
 #include <utility>
@@ -27,6 +27,8 @@ class JSON {
 
     enum RootType { Object, Array, Undefined };
     RootType							GetType();
+
+    bool								IsItemExists			(string Key);
 
     string								GetItem					(string Key);
     void								SetItem					(string Key, string Value);

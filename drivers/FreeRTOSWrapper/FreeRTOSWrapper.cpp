@@ -404,7 +404,7 @@ bool FreeRTOS::Queue::IsQueueFullFromISR(QueueHandle_t QueueHandle) {
 	return (::xQueueIsQueueFullFromISR(QueueHandle) == pdTRUE) ? true : false;
 }
 
-RingbufHandle_t	FreeRTOS::RingBuffer::Create(uint16_t Length, ringbuf_type_t Type) {
+RingbufHandle_t	FreeRTOS::RingBuffer::Create(uint16_t Length, RingbufferType_t Type) {
 	return ::xRingbufferCreate(Length, Type);
 }
 

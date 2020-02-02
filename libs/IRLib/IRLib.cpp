@@ -175,7 +175,7 @@ int32_t IRLib::RawPopItem() {
 
 bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 	if (Signal1.Protocol == Signal2.Protocol) {
-		uint16_t SizeDiff		= abs(Signal1.RawData.size() - Signal2.RawData.size());
+		uint16_t SizeDiff		= abs((uint16_t)(Signal1.RawData.size() - Signal2.RawData.size()));
 		uint16_t MinimalSize	= min(Signal1.RawData.size(), Signal2.RawData.size());
 
 		if (SizeDiff >= 5) // too big difference between signals length

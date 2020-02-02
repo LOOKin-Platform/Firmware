@@ -12,6 +12,12 @@
 			</arguments>
 		</buildCommand>
 		<buildCommand>
+			<name>org.eclipse.cdt.core.cBuilder</name>
+			<triggers>clean,full,incremental,</triggers>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
 			<name>org.eclipse.cdt.managedbuilder.core.ScannerConfigBuilder</name>
 			<triggers>full,incremental,</triggers>
 			<arguments>
@@ -21,6 +27,7 @@
 	<natures>
 		<nature>org.eclipse.cdt.core.cnature</nature>
 		<nature>org.eclipse.cdt.core.ccnature</nature>
+		<nature>com.espressif.idf.core.idfNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.managedBuildNature</nature>
 		<nature>org.eclipse.cdt.managedbuilder.core.ScannerConfigNature</nature>
 	</natures>

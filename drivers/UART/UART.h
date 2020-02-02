@@ -37,6 +37,6 @@ class UART {
 
 	static uint8_t 		UARTPort(uart_port_t);
 	static uart_port_t 	UARTPort(uint8_t);
-	static UARTItem 		UARTGetItem(uart_port_t UARTPort);
+	static UARTItem 	UARTGetItem(uart_port_t UARTPort);
 };
 #endif

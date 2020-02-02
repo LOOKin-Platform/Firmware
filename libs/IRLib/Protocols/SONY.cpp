@@ -38,9 +38,11 @@ class SONY : public IRProto {
 				case 26: Version = 12; break;
 				case 32: Version = 15; break;
 				case 42: Version = 20; break;
-			}
+				default:
+					Version = 0;
+			};
 
-		    if (Version == 0)
+			if (Version == 0)
 		    	return make_pair(0x0, 0x0);
 
 			vector<int32_t> Data = RawData;

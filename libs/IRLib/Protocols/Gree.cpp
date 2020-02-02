@@ -70,7 +70,7 @@ class Gree : public IRProto {
 			Result.push_back(-HeaderSpace);
 
 			for (int i = 0; i < 4; i++) {
-				//ESP_LOGE("RemoteState", "[%d], %02X", i, RemoteState[i]);
+				ESP_LOGE("RemoteState", "[%d], %02X", i, RemoteState[i]);
 				bitset<8> Byte(RemoteState[i]);
 				for (int j = 0; j < 8; j++) {
 					Result.push_back(BitMark);
@@ -84,7 +84,7 @@ class Gree : public IRProto {
 			Result.push_back(BitMark); Result.push_back(-Gap);
 
 			for (int i = 4; i < StateLength; i++) {
-				//ESP_LOGE("RemoteState", "[%d], %02X", i, RemoteState[i]);
+				ESP_LOGE("RemoteState", "[%d], %02X", i, RemoteState[i]);
 				bitset<8> Byte(RemoteState[i]);
 				for (int j = 0; j < 8; j++) {
 					Result.push_back(BitMark);
@@ -122,6 +122,7 @@ class Gree : public IRProto {
 				}
 
 				RemoteState[i] = (uint8_t)(Byte.to_ulong());
+				ESP_LOGE("RemoteStateReaded", "[%d], %02X", i, RemoteState[i]);
 
 				if (i == 3)
 					for (int k = 0; k < 8; k++)
@@ -151,8 +152,8 @@ class Gree : public IRProto {
 			RemoteState[1] = 0x09;
 			RemoteState[2] = 0x20;
 			RemoteState[3] = 0x50;
-			RemoteState[5] = (GetType() == GreeGeneric) ? 0x46 : 0x20;
-			RemoteState[7] = 0x50;
+			RemoteState[5] = (GetType() == GreeGeneric) ? 0x46 	: 0x20;
+			RemoteState[7] = (GetType() == GreeGeneric) ? 0x00	: 0x50;
 
 			Checksum();
 		}
@@ -333,6 +334,12 @@ class Gree : public IRProto {
 		};
 
 		void Checksum() {
+			if (Type == GreeGeneric)
+			{
+				RemoteState[7] = (GetPower()) ? 0x80 : 0x00;
+				return;
+			}
+
 			uint8_t Sum = 10;
 			for (uint8_t i = 0; i < 4 && i < StateLength - 1; i++)
 				Sum += (RemoteState[i] & 0x0FU);

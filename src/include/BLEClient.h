@@ -15,15 +15,14 @@
 #include "Converter.h"
 #include "FreeRTOSTask.h"
 
+#include <esp_log.h>
+#include "BLE2902.h"
+#include "BLEClientGeneric.h"
 #include "BLEDevice.h"
 #include "BLEHIDDevice.h"
-#include "BLEServerGeneric.h"
-#include "BLEClientGeneric.h"
-#include "BLEUtils.h"
 #include "BLEScan.h"
-#include "BLE2902.h"
-
-#include <esp_log.h>
+#include "BLEServerGeneric.h"
+#include "BLEUtils.h"
 
 using namespace std;
 

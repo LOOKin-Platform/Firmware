@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include "sdkconfig.h"
 #include <esp_log.h>
+
 #include "GeneralUtils.h"
 
 class I2C {

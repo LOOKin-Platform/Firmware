@@ -171,7 +171,7 @@ T Converter::InterpretHexAsDec(T Hex) {
 
 	while (Hex) {
 	  uint8_t Digit = Hex & 0xF;
-	  Result = Result + Digit*pow(10,ResultLength++);
+	  Result = Result + Digit * pow(10,ResultLength++);
 	  Hex >>= 4;
 	}
 

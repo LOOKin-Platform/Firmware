@@ -34,6 +34,15 @@ JSON::RootType JSON::GetType() {
 	return Undefined;
 }
 
+bool JSON::IsItemExists(string Key) {
+	if (Root == NULL)
+		return false;
+
+	cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+	return (Value != NULL);
+}
+
+
 string JSON::GetItem(string Key) {
 	string Result;
 

@@ -18,13 +18,14 @@ using namespace std;
 #include <iomanip>
 #include <cctype>
 #include <locale>
+#include <math.h>
 
 #include <esp_log.h>
 #include <tcpip_adapter.h>
 #include <lwip/inet.h>
 
 #include <esp_err.h>
-#include <nvs.h>
+//#include <nvs.h>
 #include <esp_wifi.h>
 #include <esp_heap_caps.h>
 #include <esp_system.h>

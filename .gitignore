@@ -5,8 +5,11 @@ sdkconfig.old
 .piolibdeps
 .clang_complete
 .gcc-flags.json
-
+libs/IRLib/Arduino-IRRemote/
+libs/IRremoteESP8266/
 snippets
+zconf.hash.i
+zconf.hash.s
 docs/
 Doxyfile
 
