@@ -43,6 +43,10 @@ class MQTT_t {
 		static int 			SendMessage (string Payload, string Topic = "",
 				uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
 
+		static string 		StartChunk 	(uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+		static void 		SendChunk 	(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID = 0,uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+		static void 		EndChunk 	(string ChunkHash, int MessageID = 0,uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+
 		static bool 		IsCredentialsSet();
 		static Status_t 	GetStatus();
 

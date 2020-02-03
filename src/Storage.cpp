@@ -212,7 +212,7 @@ uint16_t Storage_t::CurrentVersion() {
 }
 
 
-void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request) {
+void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request,  WebServer_t::QueryTransportType TransportType) {
 	if (Type == QueryType::GET) {
 		if (URLParts.size() == 0) {
 			JSON JSONObject;
@@ -298,10 +298,18 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			uint16_t To = 0x0;
 			vector<Item> Items = GetUpgradeItems(From, To);
 
+			string MQTTChunkHash = "";
+			uint16_t ChunkPartID = 0;
 
-			WebServer_t::SendChunk(Request,
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request,
 					"{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
 					+ Converter::ToHexString(To	,4) + "\", \"Items\":[");
+			else {
+				MQTTChunkHash = MQTT.StartChunk();
+				MQTT.SendChunk("{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
+						+ Converter::ToHexString(To	,4) + "\", \"Items\":[", MQTTChunkHash, ChunkPartID++);
+			}
 
 			vector<Item>::iterator it = Items.begin();
 			// delete write items already in commit
@@ -314,19 +322,35 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				    make_pair("Data"	, it->DataToString() )
 				}));
 
-				WebServer_t::SendChunk(Request, JSONObject.ToString());
+				if (TransportType == WebServer_t::QueryTransportType::WebServer)
+					WebServer_t::SendChunk(Request, JSONObject.ToString());
+				else
+					MQTT.SendChunk(JSONObject.ToString(), MQTTChunkHash, ChunkPartID++);
 
 				Items.erase(Items.begin());
 
-				if (Items.size() > 0)
-					WebServer_t::SendChunk(Request, ",");
+				if (Items.size() > 0) {
+					if (TransportType == WebServer_t::QueryTransportType::WebServer)
+						WebServer_t::SendChunk(Request, ",");
+					else
+						MQTT.SendChunk(",", MQTTChunkHash, ChunkPartID++);
+				}
 			}
 
-			WebServer_t::SendChunk(Request, "]}");
-			WebServer_t::EndChunk(Request);
-			return;
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+			{
+				WebServer_t::SendChunk(Request, "]}");
+				WebServer_t::EndChunk(Request);
+			}
+			else {
+				MQTT.SendChunk("]}", MQTTChunkHash, ChunkPartID++);
+				MQTT.EndChunk(MQTTChunkHash);
+			}
 
 			Result.Body = "";
+
+			if (TransportType == WebServer_t::QueryTransportType::MQTT)
+				Result.ResponseCode = WebServer_t::Response::CODE::IGNORE;
 
 			return;
 		}

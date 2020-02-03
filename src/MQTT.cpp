@@ -150,18 +150,6 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
             if (Status == CONNECTED && ClientHandle != NULL)
             	Status = ERROR;
 
-            /*
-        	ConnectionTries++;
-
-        	if (ConnectionTries >= Settings.MQTT.MaxConnectionTries) {
-                ESP_LOGE(TAG, "Can't Connect to MQTT server");
-
-            	Status = Status_t::ERROR;
-        		MQTT.Stop();
-        	}
-        	else if (ClientHandle != NULL)
-        		::esp_mqtt_client_reconnect(ClientHandle);
-			*/
             break;
         }
 
@@ -198,6 +186,9 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
 				API::Handle(Response, Query, NULL, WebServer_t::QueryTransportType::MQTT);
 
+				if (Response.ResponseCode == WebServer_t::Response::CODE::IGNORE)
+					return ESP_OK;
+
 				Response.Body = Converter::ToString(Response.CodeToInt()) + " " + Response.Body;
 
 				SendMessage(Response.Body,
@@ -228,6 +219,21 @@ int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retai
 
 	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
 }
+
+string MQTT_t::StartChunk(uint8_t QOS, uint8_t Retain) {
+    string ChunkID = Converter::ToHexString((rand() % 0xFFFF) + 1, 4);
+    SendMessage("200 CHUNK " + ChunkID +  " START", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
+    return ChunkID;
+}
+
+void MQTT_t::SendChunk(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID, uint8_t QOS, uint8_t Retain) {
+    SendMessage("200 CHUNK " + ChunkHash +  " " + Converter::ToString(ChunkPartID) + " " + Payload, Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
+}
+
+void MQTT_t::EndChunk (string ChunkHash, int MessageID, uint8_t QOS, uint8_t Retain) {
+    SendMessage("200 CHUNK " + ChunkHash +  " END", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
+}
+
 
 bool MQTT_t::IsCredentialsSet() {
 	return (Username != "" && Password != "");

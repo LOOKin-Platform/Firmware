@@ -31,7 +31,7 @@ class WebServer_t {
 
 		class Response {
 			public:
-				enum CODE	{ OK, INVALID, ERROR };
+				enum CODE	{ OK, INVALID, ERROR, IGNORE };
 				enum TYPE 	{ PLAIN, JSON, HTML };
 
 				string 		Body;
