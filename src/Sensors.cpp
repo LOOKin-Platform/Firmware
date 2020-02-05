@@ -12,20 +12,22 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 	vector<Sensor_t*> Sensors = {};
 
 	switch (Device.Type.Hex) {
-		case Settings.Devices.Duo:
-			Sensors = { new SensorMultiSwitch_t() };
-			break;
 		case Settings.Devices.Plug:
-			Sensors = { new SensorSwitch_t(), new SensorColor_t() };
+			//Sensors = { new SensorSwitch_t()};
+			//Sensors = { new SensorSwitch_t(), new SensorColor_t() };
 			break;
+		case Settings.Devices.Duo:
+			Sensors = {
+				new SensorMultiSwitch_t(),
+				new SensorTouch_t()
+			};
+			break;
+
 		case Settings.Devices.Remote:
-			if (Settings.eFuse.Revision == 1 || Settings.eFuse.DeviceID == 0x00000002)
-				Sensors = { new SensorIR_t() }; //, new SensorTemperature_t() };
-			else
-				Sensors = { new SensorIR_t() };
+			Sensors = { new SensorIR_t() };
 			break;
-		case Settings.Devices.Motion:
-			Sensors = { new SensorMotion_t() };
+		//case Settings.Devices.Motion:
+		//	Sensors = { new SensorMotion_t() };
 			break;
 	}
 

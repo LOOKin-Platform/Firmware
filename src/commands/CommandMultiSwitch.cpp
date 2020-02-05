@@ -27,57 +27,56 @@ class CommandMultiSwitch_t : public Command_t {
 			Events["all"] = 0xFF;
 		}
     
-    void Overheated() override {
+		void Overheated() override {
     	  Execute(0x0, 0);
-    }
+		}
 
-    bool IsOn(string Operand)
-    {
-		return ((Converter::ToLower(Operand) == "on" || Operand == "1" || Operand == "01"));
-    }
+		bool IsOn(string Operand)
+		{
+			return ((Converter::ToLower(Operand) == "on" || Operand == "1" || Operand == "01"));
+		}
 
-    bool IsOff(string Operand)
-    {
-		return ((Converter::ToLower(Operand) == "off" || Operand == "0" || Operand == "00"));
-    }
+		bool IsOff(string Operand)
+		{
+			return ((Converter::ToLower(Operand) == "off" || Operand == "0" || Operand == "00"));
+		}
 
-    bool Execute(uint8_t EventCode, string StringOperand) override {
-    	bool Executed = false;
+		bool Execute(uint8_t EventCode, string StringOperand) override {
+			bool Executed = false;
 
-    	if (EventCode == 0xFF) {
-    		for (gpio_num_t Pin : GPIOS)
-    		{
-    			if (IsOn(StringOperand)) {
-    				GPIO::Write(Pin, 1);
-    				Executed = true;
-    			}
+			if (EventCode == 0xFF) {
+				for (gpio_num_t Pin : GPIOS)
+					Executed = SetPin(Pin, StringOperand);
+			}
 
-    			if (IsOff(StringOperand)) {
-    				GPIO::Write(Pin, 0);
-    				Executed = true;
-    			}
-    		}
-    	}
+			if (EventCode > 0 && EventCode < GPIOS.size() + 1)
+				Executed = SetPin(GPIOS[EventCode - 1], StringOperand);
 
-    	if (EventCode > 0 && EventCode < GPIOS.size() + 1)
-    	{
+			if (Executed) {
+				if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr)
+					Sensor_t::GetSensorByID(ID + 0x80)->Update();
+				return true;
+			}
+
+			return Executed;
+		}
+
+	private:
+		bool SetPin(gpio_num_t Pin, string StringOperand) {
 			if (IsOn(StringOperand)) {
-				GPIO::Write(GPIOS[EventCode - 1], 1);
-				Executed = true;
+				GPIO::Hold(Pin, 0);
+				GPIO::Write(Pin, 1);
+				GPIO::Hold(Pin, 1);
+				return true;
 			}
 
 			if (IsOff(StringOperand)) {
-				GPIO::Write(GPIOS[EventCode - 1], 0);
-				Executed = true;
+				GPIO::Hold(Pin, 0);
+				GPIO::Write(Pin, 0);
+				GPIO::Hold(Pin, 1);
+				return true;
 			}
-    	}
 
-    	if (Executed) {
-       		if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr)
-				Sensor_t::GetSensorByID(ID + 0x80)->Update();
-    		return true;
-    	}
-
-    	return Executed;
-    }
+			return false;
+		}
 };

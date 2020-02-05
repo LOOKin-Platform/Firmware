@@ -42,7 +42,7 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 
 	switch (Device.Type.Hex) {
 		case Settings.Devices.Plug:
-			Commands = { new CommandSwitch_t()		};
+			Commands = { };//new CommandSwitch_t()		};
 			break;
 		case Settings.Devices.Duo:
 			Commands = { new CommandMultiSwitch_t()	};

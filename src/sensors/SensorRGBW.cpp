@@ -3,6 +3,9 @@
 *    SensorColor_t implementation
 *
 */
+
+#include "Sensor.h"
+
 class SensorColor_t : public Sensor_t {
 	public:
 		SensorColor_t() {
