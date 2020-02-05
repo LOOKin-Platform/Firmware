@@ -6,11 +6,11 @@
 
 #include "API.h"
 
-void API::Handle(WebServer_t::Response &Response, Query_t &Query, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType) {
-	return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody, Request, TransportType);
+void API::Handle(WebServer_t::Response &Response, Query_t &Query, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType, int MsgID) {
+	return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody, Request, TransportType, MsgID);
 }
 
-void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType) {
+void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType, int MsgID) {
 
 	if (URLParts.size() == 0) {
 		if (!Params.count("summary")) {
@@ -79,7 +79,7 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 		if (APISection == "device")		Device.HandleHTTPRequest	(Response, Type, URLParts, Params, Request, TransportType);
 		if (APISection == "network")	Network.HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "automation")	Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-		if (APISection == "storage")	Storage.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request);
+		if (APISection == "storage")	Storage.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request, TransportType, MsgID);
 		if (APISection == "sensors")	Sensor_t::HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "commands")	Command_t::HandleHTTPRequest(Response, Type, URLParts, Params);
 		if (APISection == "log")		Log::HandleHTTPRequest		(Response, Type, URLParts, Params);

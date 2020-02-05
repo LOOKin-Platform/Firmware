@@ -212,7 +212,7 @@ uint16_t Storage_t::CurrentVersion() {
 }
 
 
-void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request,  WebServer_t::QueryTransportType TransportType) {
+void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request,  WebServer_t::QueryTransportType TransportType, int MsgID) {
 	if (Type == QueryType::GET) {
 		if (URLParts.size() == 0) {
 			JSON JSONObject;
@@ -302,13 +302,16 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			uint16_t ChunkPartID = 0;
 
 			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				httpd_resp_set_type	(Request, HTTPD_TYPE_JSON);
+
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
 				WebServer_t::SendChunk(Request,
 					"{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
 					+ Converter::ToHexString(To	,4) + "\", \"Items\":[");
 			else {
-				MQTTChunkHash = MQTT.StartChunk();
+				MQTTChunkHash = MQTT.StartChunk(MsgID);
 				MQTT.SendChunk("{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
-						+ Converter::ToHexString(To	,4) + "\", \"Items\":[", MQTTChunkHash, ChunkPartID++);
+						+ Converter::ToHexString(To	,4) + "\", \"Items\":[", MQTTChunkHash, ChunkPartID++, MsgID);
 			}
 
 			vector<Item>::iterator it = Items.begin();
@@ -323,18 +326,11 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				}));
 
 				if (TransportType == WebServer_t::QueryTransportType::WebServer)
-					WebServer_t::SendChunk(Request, JSONObject.ToString());
+					WebServer_t::SendChunk(Request, JSONObject.ToString() + ((Items.size() > 1) ? "," : ""));
 				else
-					MQTT.SendChunk(JSONObject.ToString(), MQTTChunkHash, ChunkPartID++);
+					MQTT.SendChunk(JSONObject.ToString() + ((Items.size() > 1) ? "," : ""), MQTTChunkHash, ChunkPartID++, MsgID);
 
 				Items.erase(Items.begin());
-
-				if (Items.size() > 0) {
-					if (TransportType == WebServer_t::QueryTransportType::WebServer)
-						WebServer_t::SendChunk(Request, ",");
-					else
-						MQTT.SendChunk(",", MQTTChunkHash, ChunkPartID++);
-				}
 			}
 
 			if (TransportType == WebServer_t::QueryTransportType::WebServer)
@@ -343,8 +339,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				WebServer_t::EndChunk(Request);
 			}
 			else {
-				MQTT.SendChunk("]}", MQTTChunkHash, ChunkPartID++);
-				MQTT.EndChunk(MQTTChunkHash);
+				MQTT.SendChunk("]}", MQTTChunkHash, ChunkPartID++, MsgID);
+				MQTT.EndChunk(MQTTChunkHash, MsgID);
 			}
 
 			Result.Body = "";

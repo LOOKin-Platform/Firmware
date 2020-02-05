@@ -112,7 +112,7 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 		default							: httpd_resp_set_type	(Request, HTTPD_TYPE_TEXT); break;
 	}
 
-	httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
+	//httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
 }
 
 /* URI handler structure for GET /uri */

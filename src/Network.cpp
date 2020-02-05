@@ -576,8 +576,11 @@ bool NetworkSync::ReadStorageBody (char Data[], int DataLen, char IP[]) {
 		if (ToVersionUpgrade == 0)
 			return false;
 	}
-	else if (Chunk != ",")
+	else if (Chunk.size() > 0)
 	{
+		if (Chunk.substr(Chunk.size() - 1) == ",")
+			Chunk = Chunk.substr(0, Chunk.size() - 1);
+
 		JSON JSONItem(Chunk);
 
 		Storage_t::Item ItemToSave;

@@ -111,8 +111,8 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
 
 	ESP_LOGI(tag, ">> StartAdvertising");
 
-	string BLEDeviceName = DeviceType_t::ToString(Settings.eFuse.Type);
-	BLEDeviceName = Settings.Bluetooth.DeviceNamePrefix  + Device.IDToString();
+	//string BLEDeviceName = DeviceType_t::ToString(Settings.eFuse.Type);
+	string BLEDeviceName = Settings.Bluetooth.DeviceNamePrefix + Device.IDToString();
 
 	BLEDevice::Init(BLEDeviceName);
 

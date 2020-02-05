@@ -58,7 +58,8 @@ class Storage_t {
 
 		uint16_t						CurrentVersion();
 
-	    void							HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>, string RequestBody, httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer);
+	    void							HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>, string RequestBody, httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer, int MsgID = 0);
+
 	private:
 
 		vector<Item>					*Patch = new vector<Item>();

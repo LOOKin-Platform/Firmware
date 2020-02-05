@@ -184,7 +184,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 				WebServer_t::Response Response;
 				Query_t Query(Payload);
 
-				API::Handle(Response, Query, NULL, WebServer_t::QueryTransportType::MQTT);
+				API::Handle(Response, Query, NULL, WebServer_t::QueryTransportType::MQTT, event->msg_id);
 
 				if (Response.ResponseCode == WebServer_t::Response::CODE::IGNORE)
 					return ESP_OK;
@@ -202,6 +202,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
             break;
+
         default:
             ESP_LOGI(TAG, "Other event id:%d", event->event_id);
             break;
@@ -220,18 +221,18 @@ int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retai
 	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
 }
 
-string MQTT_t::StartChunk(uint8_t QOS, uint8_t Retain) {
+string MQTT_t::StartChunk(int MessageID, uint8_t QOS, uint8_t Retain) {
     string ChunkID = Converter::ToHexString((rand() % 0xFFFF) + 1, 4);
-    SendMessage("200 CHUNK " + ChunkID +  " START", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
+    SendMessage("200 CHUNK " + ChunkID +  " START", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
     return ChunkID;
 }
 
 void MQTT_t::SendChunk(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID, uint8_t QOS, uint8_t Retain) {
-    SendMessage("200 CHUNK " + ChunkHash +  " " + Converter::ToString(ChunkPartID) + " " + Payload, Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
+    SendMessage("200 CHUNK " + ChunkHash +  " " + Converter::ToString(ChunkPartID) + " " + Payload, Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
 }
 
 void MQTT_t::EndChunk (string ChunkHash, int MessageID, uint8_t QOS, uint8_t Retain) {
-    SendMessage("200 CHUNK " + ChunkHash +  " END", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
+    SendMessage("200 CHUNK " + ChunkHash +  " END", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
 }
 
 

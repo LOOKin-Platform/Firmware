@@ -30,8 +30,8 @@ using namespace std;
 
 class API {
 	public:
-		static void Handle(WebServer_t::Response &, Query_t &Query, httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer);
-		static void Handle(WebServer_t::Response &, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody = "", httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer);
+		static void Handle(WebServer_t::Response &, Query_t &Query, httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer, int MsgID = 0);
+		static void Handle(WebServer_t::Response &, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody = "", httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer, int MsgID = 0);
 
 	private:
 		static string GetSetupPage();
