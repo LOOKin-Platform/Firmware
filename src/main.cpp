@@ -64,6 +64,7 @@ void app_main(void) {
 	Log::Add(Log::Events::System::DeviceOn);
 
 	PowerManagement::SetIsActive((Settings.eFuse.Type == 0x81) ? false : true);
+	//PowerManagement::SetIsActive(true);
 
 	Network.WiFiScannedList = WiFi.Scan();
 

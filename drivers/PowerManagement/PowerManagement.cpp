@@ -17,6 +17,11 @@ void PowerManagement::SetIsActive(bool Value) {
 
 	IsActive = Value;
 
+	if (IsActive)
+		Log::Add(Log::Events::System::PowerManageOn);
+	else
+		Log::Add(Log::Events::System::PowerManageOff);
+
 	SetWiFiOptions();
 	SetBLEOptions();
 	SetPMOptions();

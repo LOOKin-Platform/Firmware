@@ -117,6 +117,10 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 
 		if (APISection == "network" && URLParts[0] == "currentssid" && URLParts.size() == 1)
 			return;
+
+		// ECO mode test
+		if (APISection == "eco" && URLParts.size() > 0)
+			PowerManagement::SetIsActive(URLParts[0] == "on");
 	}
 
 	if (Response.Body == "" && Response.ResponseCode == WebServer_t::Response::CODE::OK) {

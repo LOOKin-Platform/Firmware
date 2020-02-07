@@ -94,6 +94,8 @@ class Log {
 					// Cистемные события 0x0000..0x00FF - сохраняются в NVS
 					DeviceOn 		= 0x0001,
 					DeviceStarted 	= 0x0002,
+					PowerManageOn	= 0x0003,
+					PowerManageOff	= 0x0004,
 					DeviceRollback	= 0x00f0,
 					OTASucceed		= 0x0040,
 					OTAVerifyFailed	= 0x0041,

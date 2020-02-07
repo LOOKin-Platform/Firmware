@@ -276,6 +276,8 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
 		case Events::System::OTAFailed		:
 		case Events::System::OTAVerifyFailed: Execute(0		, 0 	, 0		, CONST		, 2);	break;
 
+		case Events::System::PowerManageOn	: Execute(0		, 255	, 255	, CONST		, 5);	break;
+
 		case Events::Commands::IRExecuted	:
 		case Events::Sensors ::IRReceived	:
 			Execute(60, 0, 0, STROBE, 2);	break;

@@ -12,9 +12,6 @@ class PingPeriodicHandler {
 uint32_t PingPeriodicHandler::PingRestartCounter = 0;
 
 void IRAM_ATTR PingPeriodicHandler::Pool() {
-	if (Device.Type.IsBattery())
-		return;
-
 	if (WiFi.GetMode() != WIFI_MODE_STA_STR)
 		return;
 

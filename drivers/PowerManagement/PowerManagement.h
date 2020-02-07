@@ -12,6 +12,8 @@
 #include <esp_log.h>
 #include "BLEDevice.h"
 
+#include "Log.h"
+
 struct PowerManagementLock {
 	esp_pm_lock_handle_t CPU;
 	esp_pm_lock_handle_t APB;

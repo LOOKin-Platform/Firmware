@@ -45,8 +45,6 @@ void IRAM_ATTR EnergyPeriodicHandler::Pool() {
 		else
 			Device.PowerMode = DevicePowerMode::BATTERY;
 
-		//Device.PowerMode = DevicePowerMode::BATTERY;
-
 		Device.CurrentVoltage = (Device.PowerMode == DevicePowerMode::CONST) ? ConstValue : BatteryValue;
 	}
 
