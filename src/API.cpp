@@ -119,8 +119,10 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			return;
 
 		// ECO mode test
-		if (APISection == "eco" && URLParts.size() > 0)
+		if (APISection == "eco" && URLParts.size() > 0) {
 			PowerManagement::SetIsActive(URLParts[0] == "on");
+			Response.SetSuccess();
+		}
 	}
 
 	if (Response.Body == "" && Response.ResponseCode == WebServer_t::Response::CODE::OK) {

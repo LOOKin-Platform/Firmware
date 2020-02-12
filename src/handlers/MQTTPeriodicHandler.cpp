@@ -18,7 +18,7 @@ void MQTTPeriodicHandler::ClearCounter() {
 void IRAM_ATTR MQTTPeriodicHandler::Pool() {
 	return;
 
-	if (Device.Type.IsBattery())
+	if (Device.Type.IsBattery() && Device.SensorMode == true)
 		return;
 
 	if (WiFi.GetMode() != WIFI_MODE_STA_STR)

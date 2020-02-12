@@ -168,8 +168,6 @@ int32_t IRLib::RawPopItem() {
 	int32_t Item = RawData.front();
 	RawData.erase(RawData.begin());
 
-	ESP_LOGE("RawPopItemBit", "%d", Item);
-
 	return Item;
 }
 

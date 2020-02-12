@@ -46,7 +46,9 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
     Log::Add(Log::Events::System::OTAStarted);
 
-    esp_err_t ret = esp_https_ota(&config);
+	PowerManagement::AddLock("OTA");
+
+	esp_err_t ret = esp_https_ota(&config);
 
     if (ret == ESP_OK)
     {
@@ -56,6 +58,8 @@ esp_err_t OTA::PerformUpdate(string URL) {
     else
     {
 		Device.Status = DeviceStatus::RUNNING;
+		PowerManagement::ReleaseLock("OTA");
+
 		Attempts++;
 
 		if (Attempts < Settings.OTA.MaxAttempts)
@@ -137,6 +141,7 @@ void OTA::ReadStarted(char IP[]) {
 	}
 	else {
 		ESP_LOGE(tag, "OTA Init failed");
+		PowerManagement::ReleaseLock("OTA");
 		Device.Status = DeviceStatus::RUNNING;
 	}
 }
@@ -170,6 +175,8 @@ void OTA::ReadFinished(char IP[]) {
 
 		ESP_LOGE(tag, "esp_ota_end failed!");
 		Device.Status = DeviceStatus::RUNNING;
+		PowerManagement::ReleaseLock("OTA");
+
 		return;
 	}
 
@@ -187,4 +194,5 @@ void OTA::ReadFinished(char IP[]) {
 
 void OTA::Aborted(char IP[]) {
 	Device.Status = DeviceStatus::RUNNING;
+	PowerManagement::ReleaseLock("OTA");
 }
