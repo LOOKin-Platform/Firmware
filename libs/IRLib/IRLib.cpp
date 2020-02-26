@@ -26,7 +26,7 @@ IRLib::IRLib(vector<int32_t> Raw) {
 	LoadDataFromRaw();
 }
 
-IRLib::IRLib(string ProntoHex) {
+IRLib::IRLib(string &ProntoHex) {
 	Converter::FindAndRemove(ProntoHex, " ");
 
 	FillProtocols();
@@ -69,6 +69,7 @@ void IRLib::LoadDataFromRaw() {
 		pair<uint32_t, uint16_t> Result = Protocol->GetData(RawData);
 		this->Uint32Data= Result.first;
 		this->MiscData	= Result.second;
+		//this->RawData.clear();
 	}
 }
 
@@ -212,7 +213,7 @@ bool IRLib::IsProntoHex() {
 	return true;
 }
 
-void IRLib::FillFromProntoHex(string SrcString) {
+void IRLib::FillFromProntoHex(string &SrcString) {
 	if (SrcString.size() < 20) {
 		ESP_LOGE(tag, "Too small ProntoHEX data. Skipped");
 		return;

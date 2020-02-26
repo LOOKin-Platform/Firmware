@@ -37,7 +37,7 @@ class Command_t {
 
 		virtual ~Command_t() = default;
 
-		virtual bool				Execute(uint8_t EventCode, string StringOperand = "0") { return true; };
+		virtual bool				Execute(uint8_t EventCode, string &StringOperand) { return true; };
 		virtual void				Overheated() {};
 
 		uint8_t						GetEventCode(string Action);
@@ -47,7 +47,7 @@ class Command_t {
 		static uint8_t				GetDeviceTypeHex();
 
 		static vector<Command_t*>	GetCommandsForDevice();
-		static void					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+		static void					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string> &, map<string,string> &);
 };
 
 extern Storage_t Storage;

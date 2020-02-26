@@ -284,7 +284,7 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.refresh_connection_after_ms
 								= 0;
 
-	Config.buffer_size			= 0;
+	Config.buffer_size			= 2560;
 	Config.task_stack			= 0;
 	Config.task_prio			= 0;
 

@@ -48,7 +48,7 @@ class CommandIR_t : public Command_t {
 
 		LastSignal_t LastSignal;
 
-		bool Execute(uint8_t EventCode, string StringOperand) override {
+		bool Execute(uint8_t EventCode, string &StringOperand) override {
 			uint16_t Misc 		= 0x0;
 			uint32_t Operand 	= 0x0;
 
@@ -81,15 +81,6 @@ class CommandIR_t : public Command_t {
 
 				if (Operand == 0x0 && Misc == 0x0)
 					return false;
-
-				/*
-				string s = "";
-				for (auto& item : IRSignal.GetRawDataForSending()) {
-					s += Converter::ToString(item) + " ";
-				}
-				ESP_LOGE("OUTPUT:", "%s", s.c_str());
-				*/
-
 
 				RMT::TXSetItems(IRSignal.GetRawDataForSending());
 				TXSend(IRSignal.GetProtocolFrequency());
@@ -158,14 +149,16 @@ class CommandIR_t : public Command_t {
 				if (StringOperand == "0")
 					return false;
 
-				IRLib IRSignal(StringOperand);
+				IRLib *IRSignal = new IRLib(StringOperand);
 
-				LastSignal.Protocol	= IRSignal.Protocol;
-				LastSignal.Data 	= IRSignal.Uint32Data;
-				LastSignal.Misc		= IRSignal.MiscData;
+				LastSignal.Protocol	= IRSignal->Protocol;
+				LastSignal.Data 	= IRSignal->Uint32Data;
+				LastSignal.Misc		= IRSignal->MiscData;
 
-				RMT::TXSetItems(IRSignal.GetRawDataForSending());
-				TXSend(IRSignal.Frequency);
+				RMT::TXSetItems(IRSignal->GetRawDataForSending());
+				TXSend(IRSignal->Frequency);
+
+				delete IRSignal;
 				return true;
 			}
 
@@ -224,7 +217,7 @@ class CommandIR_t : public Command_t {
 		}
 
     void TXSend(uint16_t Frequency) {
-    	InOperation = false;
+    	InOperation = true;
 
 		RMT::TXSend(TXChannel, Frequency);
 		Log::Add(Log::Events::Commands::IRExecuted);

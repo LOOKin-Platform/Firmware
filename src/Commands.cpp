@@ -58,7 +58,7 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 	return Commands;
 }
 
-void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> &URLParts, map<string,string> &Params) {
     // Вывести список всех комманд
 	if (URLParts.size() == 0 && Type == QueryType::GET) {
 		vector<string> Vector = vector<string>();
@@ -118,7 +118,8 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			Command = Command_t::GetCommandByID(Converter::UintFromHexString<uint8_t>(CommandName));
 
 		if (Command != nullptr) {
-			if (Command->Execute(Command->GetEventCode(Action), Converter::StringURLDecode(Operand)))
+			Operand = Converter::StringURLDecode(Operand);
+			if (Command->Execute(Command->GetEventCode(Action), Operand))
 				Result.SetSuccess();
 			else
 				Result.SetFail();
@@ -134,12 +135,16 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		string Action = URLParts[1];
 		string Operand = URLParts[2];
 
+		URLParts.clear();
+
 		Command_t* Command = Command_t::GetCommandByName(CommandName);
 		if (Command == nullptr)
 			Command = Command_t::GetCommandByID(Converter::UintFromHexString<uint8_t>(CommandName));
 
 		if (Command != nullptr) {
-			if (Command->Execute(Command->GetEventCode(Action), Converter::StringURLDecode(Operand)))
+			Operand = Converter::StringURLDecode(Operand);
+
+			if (Command->Execute(Command->GetEventCode(Action), Operand))
 				Result.SetSuccess();
 			else
 				Result.SetFail();

@@ -28,7 +28,8 @@ class CommandMultiSwitch_t : public Command_t {
 		}
     
 		void Overheated() override {
-    	  Execute(0x0, 0);
+			string Operand = "0";
+			Execute(0x0, Operand);
 		}
 
 		bool IsOn(string Operand)
@@ -41,7 +42,7 @@ class CommandMultiSwitch_t : public Command_t {
 			return ((Converter::ToLower(Operand) == "off" || Operand == "0" || Operand == "00"));
 		}
 
-		bool Execute(uint8_t EventCode, string StringOperand) override {
+		bool Execute(uint8_t EventCode, string &StringOperand) override {
 			bool Executed = false;
 
 			if (EventCode == 0xFF) {

@@ -51,8 +51,10 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			Result += "], ";
 
 			Result += "\"Commands\" : ";
-			for (int i = 0; i < Commands.size(); i++)
-				Command_t::HandleHTTPRequest(Response, Type, { }, Params);
+			for (int i = 0; i < Commands.size(); i++) {
+				vector<string> URLTempParts = vector<string>();
+				Command_t::HandleHTTPRequest(Response, Type, URLTempParts, Params);
+			}
 			Result += Response.Body + "}";// ",";
 
 			/*
@@ -86,20 +88,6 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 
 		// обработка алиасов комманд
 		if (URLParts.size() == 0 && Params.size() == 0) {
-			if (APISection == "on")
-				switch (Device.Type.Hex) {
-				case Settings.Devices.Plug:
-					Command_t::HandleHTTPRequest(Response, Type, { "switch", "on" }, map<string,string>() );
-					break;
-				}
-
-			if (APISection == "off")
-				switch (Device.Type.Hex) {
-				case Settings.Devices.Plug:
-					Command_t::HandleHTTPRequest(Response, Type, { "switch", "off" }, map<string,string>() );
-					break;
-				}
-
 			if (APISection == "status")
 				switch (Device.Type.Hex) {
 					case Settings.Devices.Plug:
@@ -108,6 +96,10 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 					case Settings.Devices.Remote:
 						Sensor_t::HandleHTTPRequest(Response, Type, { "ir" }, map<string,string>());
 						break;
+					case Settings.Devices.Duo:
+						Sensor_t::HandleHTTPRequest(Response, Type, { "multiswitch" }, map<string,string>());
+						break;
+
 				}
 		}
 

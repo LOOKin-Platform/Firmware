@@ -27,7 +27,7 @@ class IRLib {
 
 		vector<int32_t> RawData 	= vector<int32_t>();
 
-		IRLib(string ProntoHex);
+		IRLib(string &ProntoHex);
 		IRLib(vector<string> 	Raw);
 		IRLib(vector<int32_t> 	Raw	= vector<int32_t>());
 
@@ -59,7 +59,7 @@ class IRLib {
 		IRProto*		GetProtocolByID(uint8_t);
 
 		bool 			IsProntoHex();
-		void 			FillFromProntoHex(string);
+		void 			FillFromProntoHex(string &);
 		string 			ProntoHexConstruct();
 
 		static vector<IRProto *> Protocols;

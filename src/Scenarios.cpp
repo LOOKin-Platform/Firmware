@@ -90,8 +90,10 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 					if (Command.DeviceID == Settings.eFuse.DeviceID) {
 						// выполнить локальную команду
 						Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
-						if (CommandToExecute!=nullptr)
-							CommandToExecute->Execute(Command.EventCode, Converter::ToString((uint32_t)Command.Operand));
+						if (CommandToExecute!=nullptr) {
+							string Operand =  Converter::ToString((uint32_t)Command.Operand);
+							CommandToExecute->Execute(Command.EventCode, Operand);
+						}
 					}
 					else {
 						// отправить команду по HTTP
