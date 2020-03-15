@@ -125,6 +125,8 @@ class WiFi_t {
 		void 				Stop();
 
 		WiFi_t();
+
+		void 				ClearDNSServers();
 		void 				AddDNSServer(string ip);
 		void 				Dump();
 

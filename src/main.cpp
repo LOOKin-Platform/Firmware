@@ -20,6 +20,8 @@
 
 #include "handlers/Pooling.cpp"
 
+//#include "DS18B20test.c"
+
 using namespace std;
 
 extern "C" {
@@ -75,7 +77,6 @@ void app_main(void) {
 	Automation.Init();
 	MQTT.Init();
 
-
 	// Remote temporary hack
 	if (Settings.eFuse.Type == 0x81) {
 		GPIO::Setup(GPIO_NUM_22);
@@ -86,8 +87,6 @@ void app_main(void) {
 	Commands		= Command_t::GetCommandsForDevice();
 
 	WiFi.SetSTAHostname(WIFI_AP_NAME);
-	WiFi.AddDNSServer("8.8.8.8");
-	WiFi.AddDNSServer("8.8.4.4");
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
 	//Wireless.StartInterfaces();

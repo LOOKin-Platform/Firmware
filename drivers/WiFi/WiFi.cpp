@@ -160,6 +160,10 @@ void WiFi_t::Stop() {
 	m_WiFiRunning = false;
 }
 
+void WiFi_t::ClearDNSServers() {
+	m_dnsCount = 0;
+}
+
 /**
  * @brief Add a reference to a DNS server.
  *

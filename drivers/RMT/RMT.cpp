@@ -181,6 +181,8 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 0, 0));
 	//ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASE));
 
+	//rmt_set_pin(Channel, RMT_MODE_TX, gpio);
+
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].Frequency 		= Frequency;
 

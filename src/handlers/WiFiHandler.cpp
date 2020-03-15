@@ -247,6 +247,10 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			WiFi.IsIPCheckSuccess 		= true;
 			Wireless.IsFirstWiFiStart 	= false;
 
+			//WiFi.ClearDNSServers();
+			//WiFi.AddDNSServer("8.8.8.8");
+			//WiFi.AddDNSServer("8.8.4.4");
+
 			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
 
 			WebServer.Start();
