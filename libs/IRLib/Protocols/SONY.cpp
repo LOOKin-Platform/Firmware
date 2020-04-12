@@ -53,8 +53,8 @@ class SONY : public IRProto {
     		bitset<7> CommandBlock;
 
 			for (int i = 0; i < 7; i++)
-				if (TestValue(Data[i*2 + 1], -SONY_BIT_MARK))
-					CommandBlock[i] = (TestValue(Data[i*2],SONY_ONE_SPACE)) ? 1 : 0;
+				if (TestValue(Data[i*2 + 1], -SONY_BIT_MARK) || TestValue(Data[i*2 + 1], -Settings.SensorsConfig.IR.SignalEndingLen))
+					CommandBlock[i] = (TestValue(Data[i*2], SONY_ONE_SPACE)) ? 1 : 0;
 
 			Command = (uint8_t)CommandBlock.to_ulong();
 			Data.erase(Data.begin(), Data.begin() + 7*2);
@@ -63,7 +63,7 @@ class SONY : public IRProto {
 	    	bitset<8> DeviceBlock;
 
 			for (int i = 0; i < DataFieldSize; i++)
-				if (TestValue(Data[i*2 + 1], -SONY_BIT_MARK))
+				if (TestValue(Data[i*2 + 1], -SONY_BIT_MARK) || TestValue(Data[i*2 + 1], -Settings.SensorsConfig.IR.SignalEndingLen))
 					DeviceBlock[i] = (TestValue(Data[i*2], SONY_ONE_SPACE)) ? 1 : 0;
 
 			Device = (uint8_t)DeviceBlock.to_ulong();
@@ -74,7 +74,7 @@ class SONY : public IRProto {
 	    		bitset<8> ExtendedBlock;
 
 				for (int i=0; i < 8; i++)
-					if (TestValue(Data[i*2 + 1], -SONY_BIT_MARK))
+					if (TestValue(Data[i*2 + 1], -SONY_BIT_MARK) || TestValue(Data[i*2 + 1], -Settings.SensorsConfig.IR.SignalEndingLen))
 						ExtendedBlock[i] = (TestValue(Data[i*2], SONY_ONE_SPACE)) ? 1 : 0;
 
 				Extended = (uint8_t)ExtendedBlock.to_ulong();
