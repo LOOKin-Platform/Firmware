@@ -21,7 +21,7 @@ typedef void (*UARTReadCallback)(string);
 class UART {
   public:
 	struct UARTItem {
-		TaskHandle_t 		Handle 		= 0;
+		TaskHandle_t 			Handle 		= 0;
 		UARTReadCallback		Callback 	= nullptr;
 		uint16_t				BufferSize	= 1024;
 	};

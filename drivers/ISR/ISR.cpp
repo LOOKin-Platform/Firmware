@@ -62,12 +62,12 @@ ISR::HardwareTimer::HardwareTimer(timer_group_t TimerGroup, timer_idx_t TimerInd
 		return;
 
 	timer_config_t config = {
-            .alarm_en = true,
-            .counter_en = false,
-            .intr_type = TIMER_INTR_LEVEL,
-            .counter_dir = TIMER_COUNT_UP,
-            .auto_reload = true,
-            .divider = 80   /* 1 us per tick */
+            .alarm_en 		= TIMER_ALARM_EN,
+            .counter_en 	= TIMER_PAUSE,
+            .intr_type 		= TIMER_INTR_LEVEL,
+            .counter_dir 	= TIMER_COUNT_UP,
+            .auto_reload 	= TIMER_AUTORELOAD_EN,
+            .divider 		= 80   /* 1 us per tick */
     };
 
     timer_init(TimerGroup, TimerIndex, &config);

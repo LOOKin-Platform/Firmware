@@ -248,6 +248,7 @@ esp_mqtt_client_config_t MQTT_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
 	Config.uri 			= Settings.MQTT.Server.c_str();
+
 	Config.event_handle = mqtt_event_handler;
 	Config.transport 	= MQTT_TRANSPORT_OVER_SSL;
 
@@ -255,6 +256,7 @@ esp_mqtt_client_config_t MQTT_t::CreateConfig() {
     Config.password		= Password.c_str();
     Config.client_id	= Username.c_str();
 
+    Config.protocol_ver	= MQTT_PROTOCOL_V_3_1_1;
     return Config;
 }
 
@@ -271,6 +273,7 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.client_id 			= NULL;
 	Config.lwt_topic			= NULL;
 	Config.lwt_msg				= NULL;
+	Config.lwt_msg_len 			= 0;
 
 	Config.cert_pem				= NULL;
 	Config.client_cert_pem 		= NULL;
@@ -279,17 +282,24 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.client_cert_len		= 0;
 	Config.client_key_len		= 0;
 	Config.psk_hint_key			= NULL;
+	Config.clientkey_password 	= NULL;
+	Config.clientkey_password_len = 0;
 
 	Config.disable_clean_session= false;
 	Config.refresh_connection_after_ms
 								= 0;
 
 	Config.buffer_size			= 2560;
+	Config.out_buffer_size		= 0; // if 0 then used buffer_size
 	Config.task_stack			= 0;
 	Config.task_prio			= 0;
 
+	Config.protocol_ver 		= MQTT_PROTOCOL_V_3_1;
+
 	Config.user_context			= NULL;
 	Config.use_global_ca_store 	= false;
+
+	Config.alpn_protos			= NULL;
 
 	return Config;
 }

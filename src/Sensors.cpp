@@ -18,8 +18,8 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 			break;
 		case Settings.Devices.Duo:
 			Sensors = {
-				new SensorMultiSwitch_t(),
-				new SensorTouch_t()
+				//new SensorMultiSwitch_t(),
+				//new SensorTouch_t()
 			};
 			break;
 
@@ -97,8 +97,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 
 						JSONObject.SetObject(Value.first,
 						{
-								{ "Value"   , Sensor->FormatValue(Value.first)},
-								{ "Updated" , Converter::ToString(SensorValue.Updated)}
+							{ "Value"   , Sensor->FormatValue(Value.first)},
+							{ "Updated" , Converter::ToString(SensorValue.Updated)}
 						});
 					}
 			}
@@ -128,8 +128,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 							JSON JSONObject;
 
 							JSONObject.SetObject(Value.first, {
-									{ "Value"   , Sensor->FormatValue(Value.first) },
-									{ "Updated" , Converter::ToString(Value.second.Updated)}
+								{ "Value"   , Sensor->FormatValue(Value.first) },
+								{ "Updated" , Converter::ToString(Value.second.Updated)}
 							});
 
 							Result.Body = JSONObject.ToString();

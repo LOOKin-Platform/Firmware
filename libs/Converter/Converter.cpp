@@ -269,7 +269,7 @@ void Converter::NormalizeHexString(string &Src, uint8_t Length) {
 }
 
 
-uint32_t Converter::IPToUint32(tcpip_adapter_ip_info_t IP) {
+uint32_t Converter::IPToUint32(esp_netif_ip_info_t IP) {
   uint32_t BigEndian    = inet_addr(inet_ntoa(IP));
   uint32_t LittleEndian = ((BigEndian>>24)&0xff) | // move byte 3 to byte 0
                           ((BigEndian<<8)&0xff0000) | // move byte 1 to byte 2

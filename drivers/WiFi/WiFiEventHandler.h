@@ -37,7 +37,6 @@
 #ifndef MAIN_WIFIEVENTHANDLER_H_
 #define MAIN_WIFIEVENTHANDLER_H_
 #include <esp_event.h>
-#include <esp_event_loop.h>
 
 /**
  * @brief %WiFi state event handler.
@@ -77,22 +76,23 @@
  * }
  * @endcode
  */
+
 class WiFiEventHandler {
 	public:
 		WiFiEventHandler();
 		virtual ~WiFiEventHandler();
-		system_event_cb_t getEventHandler();
-		virtual esp_err_t apStaConnected();
-		virtual esp_err_t apStaDisconnected();
-		virtual esp_err_t apStart();
-		virtual esp_err_t apStop();
-		virtual esp_err_t staConnected();
-		virtual esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo);
-		virtual esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip);
-		virtual esp_err_t staStart();
-		virtual esp_err_t staStop();
-		virtual esp_err_t wifiReady();
-		virtual esp_err_t ConnectionTimeout();
+		esp_event_handler_t getEventHandler();
+		virtual esp_err_t 	apStaConnected();
+		virtual esp_err_t 	apStaDisconnected();
+		virtual esp_err_t 	apStart();
+		virtual esp_err_t 	apStop();
+		virtual esp_err_t 	staConnected();
+		virtual esp_err_t 	staDisconnected(system_event_sta_disconnected_t DisconnectedInfo);
+		virtual esp_err_t 	staGotIp(system_event_sta_got_ip_t event_sta_got_ip);
+		virtual esp_err_t 	staStart();
+		virtual esp_err_t 	staStop();
+		virtual esp_err_t 	wifiReady();
+		virtual esp_err_t 	ConnectionTimeout();
 
 		/**
 		 * Get the next WiFi event handler in the chain, if there is one.
@@ -112,7 +112,7 @@ class WiFiEventHandler {
 
 	private:
 		WiFiEventHandler *nextHandler = nullptr;
-		static esp_err_t eventHandler(void *ctx, system_event_t *event);
+		static void EventHandler(void *, esp_event_base_t, int32_t, void *);
 };
 
 #endif /* MAIN_WIFIEVENTHANDLER_H_ */

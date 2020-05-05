@@ -11,18 +11,10 @@
 
 static char 	tag[]				= "WiFi";
 
-string	WiFi_t::STAHostName 		= "LOOK.in Device";
-bool	WiFi_t::m_WiFiNetworkSwitch = false;
+string		WiFi_t::STAHostName 		= "LOOK.in Device";
+bool		WiFi_t::m_WiFiNetworkSwitch = false;
+esp_netif_t*	WiFi_t::NetIf				= nullptr;
 
-/*
-static void setDNSServer(char *ip) {
-	ip_addr_t dnsserver;
-	ESP_LOGD(tag, "Setting DNS[%d] to %s", 0, ip);
-	inet_pton(AF_INET, ip, &dnsserver);
-	ESP_LOGD(tag, "ip of DNS is %.8x", *(uint32_t *)&dnsserver);
-	dns_setserver(0, &dnsserver);
-}
-*/
 
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
 	m_eventLoopStarted  = false;
@@ -35,63 +27,78 @@ WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
 /**
  * @brief Primary event handler interface.
  */
-esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
+
+void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
 	// This is the common event handler that we have provided for all event processing.  It is called for every event
 	// that is received by the WiFi subsystem.  The "ctx" parameter is an instance of the current WiFi object that we are
 	// processing.  We can then retrieve the specific/custom event handler from within it and invoke that.  This then makes this
 	// an indirection vector to the real caller.
 
-	WiFi_t *pWiFi = (WiFi_t *)ctx;   // retrieve the WiFi object from the passed in context.
+	WiFi_t *pWiFi = (WiFi_t *)arg;   // retrieve the WiFi object from the passed in context.
 
 	// If the event we received indicates that we now have an IP address or that a connection was disconnected then unlock the mutex that
 	// indicates we are waiting for a connection complete.
 
-	if (event->event_id == SYSTEM_EVENT_STA_START) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_STA_START");
-		::tcpip_adapter_set_hostname(TCPIP_ADAPTER_IF_STA, STAHostName.c_str());
 		pWiFi->m_WiFiRunning = true;
-	}
+    }
 
-	if (event->event_id == SYSTEM_EVENT_STA_STOP) {
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_STOP) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_STA_STOP");
 		pWiFi->m_WiFiRunning = false;
-	}
+    }
 
-	if (event->event_id == SYSTEM_EVENT_STA_CONNECTED) {
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_CONNECTED) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_STA_CONNECTED");
+
+		if (WiFi_t::NetIf != nullptr)
+			::esp_netif_set_hostname(WiFi_t::NetIf, STAHostName.c_str());
+
+
+		esp_ip_addr_t GoogleDNS;
+		inet_pton(AF_INET, "8.8.8.8", &GoogleDNS);
+		esp_netif_dns_info_t DNSInfo;
+		DNSInfo.ip = GoogleDNS;
+
+		::esp_netif_set_dns_info(WiFi_t::NetIf, ESP_NETIF_DNS_FALLBACK, &DNSInfo);
+
+
 		pWiFi->m_apConnectionStatus = ESP_OK;
 		pWiFi->m_WiFiRunning = true;
 
 		pWiFi->m_connectFinished.Give();
-	}
+    }
 
-	if (event->event_id == SYSTEM_EVENT_STA_GOT_IP)
+	if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP)
 	{
-		ESP_LOGI(tag, "SYSTEM_EVENT_STA_GOT_IP");
+		ESP_LOGI(tag, "IP_EVENT_STA_GOT_IP");
 		pWiFi->m_apConnectionStatus = ESP_OK;
 		pWiFi->m_WiFiRunning = true;
 
 		pWiFi->m_connectFinished.Give();
 	}
 
-	if (event->event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
-		ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED, Reason: %d", event->event_info.disconnected.reason);
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
 
-		pWiFi->m_apConnectionStatus = event->event_info.disconnected.reason;
+		ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED, Reason: %d", event_id);
+
+        wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
+		pWiFi->m_apConnectionStatus = disconnected->reason;
 		pWiFi->m_WiFiRunning = false;
 	}
 
-	if (event->event_id == SYSTEM_EVENT_AP_START) {
+	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_START) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_AP_START");
 		pWiFi->m_WiFiRunning = true;
 	}
 
-	if (event->event_id == SYSTEM_EVENT_AP_STOP) {
+	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_STOP) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_AP_STOP");
 		pWiFi->m_WiFiRunning = false;
 	}
 
-	if (event->event_id == SYSTEM_EVENT_SCAN_DONE)
+	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_SCAN_DONE)
 	{
 		ESP_LOGI(tag, "SYSTEM_EVENT_SCAN_DONE");
 		::esp_wifi_disconnect();
@@ -99,36 +106,25 @@ esp_err_t WiFi_t::eventHandler(void* ctx, system_event_t* event) {
 	}
 
 	// Invoke the event handler.
-	esp_err_t rc;
 	if (pWiFi->m_pWifiEventHandler != nullptr)
-		rc = pWiFi->m_pWifiEventHandler->getEventHandler()(pWiFi->m_pWifiEventHandler, event);
-	else
-		rc = ESP_OK;
-
-	return rc;
+		pWiFi->m_pWifiEventHandler->getEventHandler()(pWiFi->m_pWifiEventHandler, event_base, event_id, event_data);
 } // eventHandler
 
 /**
  * @brief Initialize WiFi.
  */
 void WiFi_t::Init() {
-	// If we have already started the event loop, then change the handler otherwise
-	// start the event loop.
-	if (m_eventLoopStarted) {
-		esp_event_loop_set_cb(WiFi_t::eventHandler, this);   // Returns the old handler.
-	}
-	else {
-		esp_err_t errRc = ::esp_event_loop_init(WiFi_t::eventHandler, this);  // Initialze the event handler.
-		if (errRc != ESP_OK) {
-			ESP_LOGE(tag, "esp_event_loop_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-			abort();
-		}
+	if (!m_eventLoopStarted) {
+		::esp_event_loop_create_default();
+	    ::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID		, &eventHandler, this);
+	    ::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this);
+
 		m_eventLoopStarted = true;
 	}
 
 	if (!m_initCalled) {
 		NVS::Init();
-		::tcpip_adapter_init();
+	    ESP_ERROR_CHECK(esp_netif_init());
 
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 		esp_err_t errRc = ::esp_wifi_init(&cfg);
@@ -159,36 +155,6 @@ void WiFi_t::Stop() {
 	::esp_wifi_stop();
 	m_WiFiRunning = false;
 }
-
-void WiFi_t::ClearDNSServers() {
-	m_dnsCount = 0;
-}
-
-/**
- * @brief Add a reference to a DNS server.
- *
- * Here we define a server that will act as a DNS server.  We can add two DNS
- * servers in total.  The first will be the primary, the second will be the backup.
- * The public Google DNS servers are "8.8.8.8" and "8.8.4.4".
- *
- * For example:
- *
- * @code{.cpp}
- * wifi.addDNSServer("8.8.8.8");
- * wifi.addDNSServer("8.8.4.4");
- * @endcode
- *
- * @param [in] ip The IP address of the DNS Server.
- * @return N/A.
- */
-void WiFi_t::AddDNSServer(string ip) {
-	ip_addr_t dnsserver;
-	ESP_LOGD(tag, "Setting DNS[%d] to %s", m_dnsCount, ip.c_str());
-	inet_pton(AF_INET, ip.c_str(), &dnsserver);
-	::dns_setserver(m_dnsCount, &dnsserver);
-	m_dnsCount++;
-} // addDNSServer
-
 
 /**
  * @brief Perform a WiFi scan looking for access points.
@@ -317,6 +283,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
 		::esp_wifi_disconnect();
 		m_WiFiNetworkSwitch = true;
+		esp_netif_destroy(NetIf);
 		FreeRTOS::Sleep(1000);
 	}
 
@@ -325,20 +292,23 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 	}
 
+    NetIf = ::esp_netif_create_default_wifi_sta();
+
 	m_WiFiRunning = true;
 
 	m_apConnectionStatus = UINT8_MAX;
 	Init();
 
 	if (ip != 0 && gw != 0 && Netmask != 0) {
-		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA); // Don't run a DHCP client
 
-		tcpip_adapter_ip_info_t ipInfo;
+		//!::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA); // Don't run a DHCP client
+
+		esp_netif_ip_info_t ipInfo;
 		ipInfo.ip.addr = ip;
 		ipInfo.gw.addr = gw;
 		ipInfo.netmask.addr = Netmask;
 
-		::tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
+		::esp_netif_set_ip_info(NetIf, &ipInfo);
 	}
 
 	errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
@@ -355,7 +325,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	sta_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
 	sta_config.sta.bssid_set = 0;
 	sta_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
-	sta_config.sta.listen_interval = 10;
+	sta_config.sta.listen_interval = 5;
 
 	if (Channel > 0)
 		sta_config.sta.channel = Channel;
@@ -402,6 +372,7 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 
 	m_WiFiNetworkSwitch = false;
 
+
     m_connectFinished.Give();
 	if (GetMode() == WIFI_MODE_STA_STR)
 		::esp_wifi_disconnect();
@@ -413,8 +384,11 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 
 	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
 		::esp_wifi_disconnect();
+		esp_netif_destroy(NetIf);
 		FreeRTOS::Sleep(1000);
 	}
+
+	NetIf = esp_netif_create_default_wifi_ap();
 
 	errRc = ::esp_wifi_stop();
 	if (errRc != ESP_OK)
@@ -450,26 +424,17 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 		abort();
 	}
 
+	//!
+	/*
 	errRc = tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "tcpip_adapter_dhcps_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 	}
+	*/
 
 	ESP_LOGD(tag, "<< startAP");
 
 } // startAP
-
-/**
- * @brief Dump diagnostics to the log.
- */
-void WiFi_t::Dump() {
-	ESP_LOGD(tag, "WiFi Dump");
-	ESP_LOGD(tag, "---------");
-	char ipAddrStr[30];
-	ip_addr_t ip = *(::dns_getserver(0));
-	inet_ntop(AF_INET, &ip, ipAddrStr, sizeof(ipAddrStr));
-	ESP_LOGD(tag, "DNS Server[0]: %s", ipAddrStr);
-} // dump
 
 /**
  * @brief Set STA hostname
@@ -477,15 +442,6 @@ void WiFi_t::Dump() {
 void WiFi_t::SetSTAHostname(string HostName) {
 	STAHostName = HostName;
 }
-/**
- * @brief Get the AP IP Info.
- * @return The AP IP Info.
- */
-tcpip_adapter_ip_info_t WiFi_t::getApIpInfo() {
-	tcpip_adapter_ip_info_t ipInfo;
-	tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_AP, &ipInfo);
-	return ipInfo;
-} // getApIpInfo
 
 /**
  * @brief Get the MAC address of the AP interface.
@@ -542,14 +498,14 @@ string WiFi_t::GetMode() {
 
 
 /**
- * @brief Get the STA IP Info.
- * @return The STA IP Info.
+ * @brief Get the IP Info.
+ * @return The IP Info.
  */
-tcpip_adapter_ip_info_t WiFi_t::getStaIpInfo() {
-	tcpip_adapter_ip_info_t ipInfo;
-	tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
-	return ipInfo;
-} // getStaIpInfo
+esp_netif_ip_info_t WiFi_t::GetIPInfo() {
+	esp_netif_ip_info_t IPInfo;
+	esp_netif_get_ip_info(WiFi_t::NetIf, &IPInfo);
+	return IPInfo;
+} // GetIPInfo
 
 /**
  * @brief Get if STA in network switch mode
@@ -557,6 +513,27 @@ tcpip_adapter_ip_info_t WiFi_t::getStaIpInfo() {
  */
 bool WiFi_t::GetWiFiNetworkSwitch() {
 	return m_WiFiNetworkSwitch;
+}
+
+
+void WiFi_t::DHCPStop(uint16_t Pause) {
+	esp_netif_dhcp_status_t DHCPStatus;
+	::esp_netif_dhcpc_get_status(WiFi_t::NetIf, &DHCPStatus);
+
+	if (DHCPStatus == ESP_NETIF_DHCP_STARTED) {
+		::esp_netif_dhcpc_stop(WiFi_t::NetIf);
+
+		if (Pause > 0)
+			FreeRTOS::Sleep(Pause);
+	}
+}
+
+void WiFi_t::DHCPStart() {
+	esp_netif_dhcp_status_t DHCPStatus;
+	::esp_netif_dhcpc_get_status(WiFi_t::NetIf, &DHCPStatus);
+
+	if (DHCPStatus != ESP_NETIF_DHCP_STARTED)
+		::esp_netif_dhcpc_start(WiFi_t::NetIf);
 }
 
 /**
@@ -647,16 +624,16 @@ void WiFi_t::SetIPInfo(uint32_t ip, uint32_t gw, uint32_t netmask) {
 	this->Netmask = netmask;
 
 	if(ip != 0 && gw != 0 && netmask != 0) {
-		tcpip_adapter_ip_info_t ipInfo;
+		esp_netif_ip_info_t ipInfo;
 		ipInfo.ip.addr      = ip;
 		ipInfo.gw.addr      = gw;
 		ipInfo.netmask.addr = netmask;
-		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
-		::tcpip_adapter_set_ip_info(TCPIP_ADAPTER_IF_STA, &ipInfo);
+		//!::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
+		::esp_netif_set_ip_info(NetIf, &ipInfo);
 	}
 	else {
 		ip = 0;
-		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+		//!::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
 	}
 } // setIPInfo
 

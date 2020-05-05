@@ -166,7 +166,7 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 	rmt_config_t config;
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = Channel;
-	config.gpio_num                  = Pin;
+	config.gpio_num                  = Pin; //GPIO_NUM_4
 	config.mem_block_num             = 4;
 	config.clk_div                   = 80;
 	config.tx_config.loop_en         = 0;
@@ -181,7 +181,15 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 0, 0));
 	//ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASE));
 
-	//rmt_set_pin(Channel, RMT_MODE_TX, gpio);
+	/*
+	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_36);
+	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_39);
+	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_34);
+	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_35);
+	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_9);
+	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_10);
+	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_1);
+	 */
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].Frequency 		= Frequency;

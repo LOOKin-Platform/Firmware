@@ -7,7 +7,6 @@
 
 #include "WiFiEventHandler.h"
 #include <esp_event.h>
-#include <esp_event_loop.h>
 #include <esp_wifi.h>
 #include <esp_err.h>
 #include <esp_log.h>
@@ -24,53 +23,58 @@ static char tag[] = "WiFiEventHandler";
  * @return ESP_OK if the event was handled otherwise an error.
  */
 
-esp_err_t WiFiEventHandler::eventHandler(void *ctx, system_event_t *event) {
-	WiFiEventHandler *pWiFiEventHandler = (WiFiEventHandler *)ctx;
-	if (ctx == nullptr) {
+void WiFiEventHandler::EventHandler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+{
+	if (event_handler_arg == nullptr) {
 		ESP_LOGD(tag, "No context");
-		return ESP_OK;
+		return;
 	}
-	esp_err_t rc = ESP_OK;
-	switch(event->event_id) {
-		case SYSTEM_EVENT_AP_START:
-			rc =  pWiFiEventHandler->apStart();
-			break;
-		case SYSTEM_EVENT_AP_STOP:
-			rc =  pWiFiEventHandler->apStop();
-			break;
-		case SYSTEM_EVENT_STA_CONNECTED:
-			rc =  pWiFiEventHandler->staConnected();
-			break;
-		case SYSTEM_EVENT_STA_DISCONNECTED:
-			rc =  pWiFiEventHandler->staDisconnected(event->event_info.disconnected);
-			break;
-		case SYSTEM_EVENT_STA_GOT_IP:
-			rc = pWiFiEventHandler->staGotIp(event->event_info.got_ip);
-			break;
-		case SYSTEM_EVENT_STA_START:
-			::esp_wifi_connect();
-			rc =  pWiFiEventHandler->staStart();
-			break;
-		case SYSTEM_EVENT_STA_STOP:
-			rc =  pWiFiEventHandler->staStop();
-			break;
-		case SYSTEM_EVENT_WIFI_READY:
-			rc =  pWiFiEventHandler->wifiReady();
-			break;
-		default:
-			break;
+
+	WiFiEventHandler *pWiFiEventHandler = (WiFiEventHandler *)event_handler_arg;
+
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_START) {
+		::esp_wifi_connect();
+		pWiFiEventHandler->staStart();
+    }
+
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_STOP)
+		pWiFiEventHandler->staStop();
+
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_CONNECTED)
+		pWiFiEventHandler->staConnected();
+
+	if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
+		ip_event_got_ip_t* IPInfo = (ip_event_got_ip_t*) event_data;
+		pWiFiEventHandler->staGotIp(*IPInfo);
 	}
+
+    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+		wifi_event_sta_disconnected_t* DisconnectedInfo = (wifi_event_sta_disconnected_t*) event_data;
+		pWiFiEventHandler->staDisconnected(*DisconnectedInfo);
+	}
+
+	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_START)
+		pWiFiEventHandler->apStart();
+
+	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_STOP)
+		pWiFiEventHandler->apStop();
+
+	//if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_SCAN_DONE)
+
+
+	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_WIFI_READY)
+		pWiFiEventHandler->wifiReady();
+
+
 	if (pWiFiEventHandler->nextHandler != nullptr) {
 		printf("Found a next handler\n");
-		rc = eventHandler(pWiFiEventHandler->nextHandler, event);
+		EventHandler(pWiFiEventHandler->nextHandler, event_base, event_id, event_data);
 	} else {
 		//printf("NOT Found a next handler\n");
 	}
-	return rc;
 }
 
-WiFiEventHandler::WiFiEventHandler() {
-}
+WiFiEventHandler::WiFiEventHandler() {}
 
 
 /**
@@ -78,8 +82,8 @@ WiFiEventHandler::WiFiEventHandler() {
  * Retrieve the event handler function to be passed to the ESP-IDF event handler system.
  * @return The event handler function.
  */
-system_event_cb_t WiFiEventHandler::getEventHandler() {
-	return eventHandler;
+esp_event_handler_t WiFiEventHandler::getEventHandler() {
+	return EventHandler;
 } // getEventHandler
 
 

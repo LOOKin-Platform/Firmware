@@ -45,7 +45,7 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 			Commands = { };//new CommandSwitch_t()		};
 			break;
 		case Settings.Devices.Duo:
-			Commands = { new CommandMultiSwitch_t()	};
+			Commands = { };//new CommandMultiSwitch_t()	};
 			break;
 		case Settings.Devices.Remote:
 			Commands = { new CommandIR_t() 			};

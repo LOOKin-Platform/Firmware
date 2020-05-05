@@ -24,7 +24,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.36";
+		const	string 						FirmwareVersion = "1.37";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -76,7 +76,7 @@ class Settings_t {
         	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
 
         	const esp_power_level_t			PublicModePower			= ESP_PWR_LVL_P6;
-        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_P3;//ESP_PWR_LVL_N0; - не работает на части мобильных телефонов?
+        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_P6;//ESP_PWR_LVL_P3 и ESP_PWR_LVL_N0; - не работает на части мобильных телефонов?
 		} Bluetooth;
 
 		struct MQTT_t {

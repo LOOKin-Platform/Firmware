@@ -15,7 +15,6 @@
 #include <string.h>
 
 #include <esp_event.h>
-#include <esp_event_loop.h>
 #include <esp_log.h>
 #include <esp_system.h>
 #include <esp_wifi.h>
@@ -105,7 +104,6 @@ class WiFi_t {
 		uint32_t      		gw;
 		uint32_t            Netmask;
 		WiFiEventHandler*	m_pWifiEventHandler;
-		uint8_t             m_dnsCount = 0;
 		bool                m_eventLoopStarted;
 		bool                m_initCalled;
 		bool				m_WiFiRunning;
@@ -115,7 +113,7 @@ class WiFi_t {
 		FreeRTOS::Semaphore m_scanFinished 		= FreeRTOS::Semaphore("ScanFinished");
 
 		static bool			m_WiFiNetworkSwitch;
-		static esp_err_t    eventHandler(void* ctx, system_event_t* event);
+		static void 		eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 		static string		STAHostName;
 
 	public:
@@ -125,10 +123,6 @@ class WiFi_t {
 		void 				Stop();
 
 		WiFi_t();
-
-		void 				ClearDNSServers();
-		void 				AddDNSServer(string ip);
-		void 				Dump();
 
 		static string 		GetApMac();
 		static string 		GetApSSID();
@@ -140,10 +134,12 @@ class WiFi_t {
 		static string 		GetSSID();
 
 		static void			SetSTAHostname(string);
-		static tcpip_adapter_ip_info_t getApIpInfo();
-		static tcpip_adapter_ip_info_t getStaIpInfo();
+		esp_netif_ip_info_t	GetIPInfo();
 
 		static bool 		GetWiFiNetworkSwitch();
+
+		static void 		DHCPStop	(uint16_t Pause = 0);
+		static void 		DHCPStart	();
 
 		vector<WiFiAPRecord> Scan();
 		uint8_t ConnectAP(const string& SSID, const string& Password, const uint8_t& Channel = 0, bool WaitForConnection = true);
@@ -160,6 +156,8 @@ class WiFi_t {
 	    bool	IsIPCheckSuccess = false;
 
 	    bool	IsConnectedSTA();
+
+	    static esp_netif_t* NetIf;
 };
 
 #endif /* DRIVERS_WIFI_H_ */

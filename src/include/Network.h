@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <esp_netif_ip_addr.h>
+
 #include "WebServer.h"
 #include "WiFi.h"
 #include "Memory.h"
@@ -47,7 +49,7 @@ class Network_t {
 		vector<WiFiSettingsItem>	WiFiSettings 	= {};
 		vector<WiFiAPRecord>		WiFiScannedList = {};
 		vector<NetworkDevice_t>		Devices			= {};
-		tcpip_adapter_ip_info_t		IP;
+		esp_netif_ip_info_t			IP;
 
 		Network_t();
 
@@ -58,7 +60,7 @@ class Network_t {
 		void					DeviceInfoReceived(string ID, string Type, string PowerMode, string IP, string ScenariosVersion, string StorageVersion);
 
 		bool					WiFiConnect(string SSID = "", bool DontUseCache = false, bool IsHidden = false);
-		void					UpdateWiFiIPInfo(string SSID, tcpip_adapter_ip_info_t Data);
+		void					UpdateWiFiIPInfo(string SSID, esp_netif_ip_info_t Data);
 
 		void					AddWiFiNetwork(string SSID, string Password);
 		bool 					RemoveWiFiNetwork(string SSID);

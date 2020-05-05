@@ -4,7 +4,7 @@
 #include <esp_log.h>
 #include <DateTime.h>
 #include <esp_ping.h>
-#include <ping/ping.h>
+#include "ping/ping_sock.h"
 
 #include <netdb.h>
 #include <mdns.h>
@@ -103,34 +103,34 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 	}
 }
 
-esp_err_t IRAM_ATTR pingResults(ping_target_id_t msgType, esp_ping_found * pf) {
-	if (pf->recv_count > 0) {
+static void GatewayPingSuccess(esp_ping_handle_t hdl, void *args)
+{
+	esp_netif_ip_info_t GatewayIP = WiFi.GetIPInfo();
+
+	if (string(inet_ntoa(GatewayIP.gw)) == string("0.0.0.0"))
+		IsIPCheckSuccess = false;
+	else
 		IsIPCheckSuccess = true;
-		IsCorrectIPData.Give();
-	}
 
-	tcpip_adapter_ip_info_t GatewayIP = WiFi.getStaIpInfo();
+	IsCorrectIPData.Give();
+}
 
-	if (string(inet_ntoa(GatewayIP.gw)) == string("0.0.0.0") && pf->send_count > 0)
-		return ESP_FAIL;
+static void GatewayPingEnd(esp_ping_handle_t hdl, void *args)
+{
+    uint32_t ReceivedCount;
 
-	ESP_LOGI(HandlerTag, "ping to %s. Received %d, Sended %d", inet_ntoa(GatewayIP.gw) ,pf->recv_count, pf->send_count);
+    esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &ReceivedCount, sizeof(ReceivedCount));
 
-	if (pf->send_count == Settings.WiFi.PingAfterConnect.Count && pf->recv_count == 0) {
+	if (ReceivedCount == 0) {
 		IsIPCheckSuccess = false;
 		IsCorrectIPData.Give();
 
 		ESP_LOGI(HandlerTag, "gateway does not ping. Waiting for 5s and restart dhcp");
 		FreeRTOS::Sleep(5000);
 
-		::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
-
-		FreeRTOS::Sleep(1000);
-
-		::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+		WiFi_t::DHCPStop(1000);
+		WiFi_t::DHCPStart();
 	}
-
-	return ESP_OK;
 }
 
 void IPDidntGetCallback(FreeRTOS::Timer *pTimer) {
@@ -222,22 +222,37 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
-			tcpip_adapter_ip_info_t StaIPInfo = WiFi.getStaIpInfo();
+			esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
 
 			IsIPCheckSuccess = false;
 			WiFi.IsIPCheckSuccess = false;
 
 			IsCorrectIPData.Take("CorrectTCPIP");
 
-			esp_ping_set_target(PING_TARGET_IP_ADDRESS		, &StaIPInfo.gw.addr, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_IP_ADDRESS_COUNT, &Settings.WiFi.PingAfterConnect.Count, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_RCV_TIMEO		, &Settings.WiFi.PingAfterConnect.Timeout, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_DELAY_TIME		, &Settings.WiFi.PingAfterConnect.Delay, sizeof(uint32_t));
-			esp_ping_set_target(PING_TARGET_RES_FN			, (void *)pingResults, 0);
-			ping_init();
+			ip_addr_t ServerIP;
+			ServerIP.u_addr.ip4.addr = StaIPInfo.gw.addr;
+			ServerIP.type = IPADDR_TYPE_V4;
+
+			esp_ping_config_t ping_config 	= ESP_PING_DEFAULT_CONFIG();
+			ping_config.target_addr 		= ServerIP;          // target IP address
+			ping_config.count 				= Settings.WiFi.PingAfterConnect.Count;    // ping in infinite mode, esp_ping_stop can stop it
+			ping_config.timeout_ms			= Settings.WiFi.PingAfterConnect.Timeout;
+			ping_config.interval_ms			= Settings.WiFi.PingAfterConnect.Delay;
+
+			esp_ping_callbacks_t cbs;
+			cbs.on_ping_success = GatewayPingSuccess;
+			cbs.on_ping_timeout = NULL;
+			cbs.on_ping_end 	= GatewayPingEnd;
+			cbs.cb_args 		= NULL;  // arguments that will feed to all callback functions, can be NULL
+
+			esp_ping_handle_t PingHandler;
+			esp_ping_new_session(&ping_config, &cbs, &PingHandler);
+			esp_ping_start(PingHandler);
 
 			IsCorrectIPData.Wait("CorrectTCPIP");
-			ping_deinit();
+
+			esp_ping_stop(PingHandler);
+			esp_ping_delete_session(PingHandler);
 
 			IPDidntGetTimer->Stop();
 

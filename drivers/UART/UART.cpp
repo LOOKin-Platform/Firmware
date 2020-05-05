@@ -55,7 +55,7 @@ void UART::Stop(uart_port_t UARTPortNum) {
 }
 
 void UART::ReadTask(void *TaskData) {
-	uart_port_t Port = UARTPort((uint32_t)TaskData);
+	uart_port_t Port = UARTPort((uint8_t)((uint32_t)TaskData));
 	UARTItem Item = UARTGetItem(Port);
 
 	uint8_t *data = (uint8_t *) malloc(Item.BufferSize);
@@ -81,7 +81,7 @@ uint8_t UART::UARTPort(uart_port_t UARTPort) {
 	}
 }
 
-uart_port_t 	UART::UARTPort(uint8_t UARTPortNum) {
+uart_port_t UART::UARTPort(uint8_t UARTPortNum) {
 	switch (UARTPortNum) {
 		case 0 : return UART_NUM_0;
 		case 1 : return UART_NUM_1;

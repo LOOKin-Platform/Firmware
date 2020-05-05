@@ -130,12 +130,24 @@ void Settings_t::eFuse_t::ReadData() {
 	Produced.Factory	= (uint16_t)((eFuseData4 << 16) >> 24);
 	Produced.Destination= (uint16_t)((eFuseData4 << 24) >> 24);
 
+	// workaround for 00000001 remote device
+	if (Type == 0 && DeviceID == 0x2 && Revision == 0x8100 && Produced.Year == 700)
+	{
+		Revision		= 0;
+		Model			= 0;
+		Type 			= 0x81;
+		DeviceID 		= 0x00000001;
+		Produced.Day 	= 0x1;
+		Produced.Month 	= 0x6;
+		Produced.Year	= 2018;
+	}
+
 	// Type verification
 	if (Type == 0x0 || Type == Settings.Memory.Empty8Bit) {
 		Type = Device.GetTypeFromNVS();
 
 		if (Type == 0x0 || Type == 0xFF) {
-			Type = 0x02;
+			Type = 0x81;
 			Device.SetTypeToNVS(Type);
 		}
 	}

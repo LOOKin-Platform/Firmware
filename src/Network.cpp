@@ -125,7 +125,6 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 		for (auto &WiFiScannedItem : WiFiScannedList) {
 			ESP_LOGI("WiFiConnect", "%s %s", Converter::ToLower(WiFiScannedItem.getSSID()).c_str() , Converter::ToLower(SSID).c_str());
 			if (Converter::ToLower(WiFiScannedItem.getSSID()) == Converter::ToLower(SSID)) {
-				ESP_LOGI("WiFiConnect","!");
 				Log::Add(Log::Events::WiFi::STAConnecting);
 				WiFi.ConnectAP(WiFiScannedItem.getSSID(), Password, WiFiScannedItem.getChannel());
 
@@ -144,7 +143,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 
 					if (IP != 0 && Gateway != 0 && Netmask !=0) {
 						WiFi.SetIPInfo(IP, Gateway, Netmask);
-						WiFi.AddDNSServer(inet_ntoa(Gateway));
+						//!WiFi.AddDNSServer(inet_ntoa(Gateway));
 					}
 				}
 
@@ -161,7 +160,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 						if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
 							ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
 							WiFi.SetIPInfo(item.IP, item.Gateway, item.Netmask);
-							WiFi.AddDNSServer(inet_ntoa(item.Gateway));
+							//!WiFi.AddDNSServer(inet_ntoa(item.Gateway));
 						}
 
 						Log::Add(Log::Events::WiFi::STAConnecting);
@@ -173,7 +172,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 	return false;
 }
 
-void Network_t::UpdateWiFiIPInfo(string SSID, tcpip_adapter_ip_info_t Data) {
+void Network_t::UpdateWiFiIPInfo(string SSID, esp_netif_ip_info_t Data) {
 	if (Data.ip.addr != 0 && Data.gw.addr != 0 && Data.netmask.addr != 0)
 		for (auto& Item : WiFiSettings )
 			if (Item.SSID == SSID) {
@@ -479,13 +478,8 @@ string Network_t::ModeToString() {
 }
 
 string Network_t::IPToString() {
-	if ((WiFi_t::GetMode() == "WIFI_MODE_AP"))
-		IP = WiFi.getApIpInfo();
-
-	if ((WiFi_t::GetMode() == "WIFI_MODE_STA"))
-		IP = WiFi.getStaIpInfo();
-
-	return inet_ntoa(IP);
+	esp_netif_ip_info_t IP = WiFi.GetIPInfo();
+	return inet_ntoa(IP.ip);
 }
 
 vector<string> Network_t::GetSavedWiFiList() {

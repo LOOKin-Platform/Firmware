@@ -57,10 +57,13 @@ void app_main(void) {
 
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 
+	/*
 	if (!Log::VerifyLastBoot()) {
 		Log::Add(Log::Events::System::DeviceRollback);
+		ESP_LOGE(tag, "Failed start, device rollback started");
 		OTA::Rollback();
 	}
+	*/
 
 	Settings.eFuse.ReadData();
 	Log::Add(Log::Events::System::DeviceOn);
@@ -87,9 +90,8 @@ void app_main(void) {
 	Commands		= Command_t::GetCommandsForDevice();
 
 	WiFi.SetSTAHostname(WIFI_AP_NAME);
-	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
-	//Wireless.StartInterfaces();
+	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
 	Log::Add(Log::Events::System::DeviceStarted);
 

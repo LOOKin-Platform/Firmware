@@ -21,7 +21,7 @@ using namespace std;
 #include <math.h>
 
 #include <esp_log.h>
-#include <tcpip_adapter.h>
+#include <esp_netif_ip_addr.h>
 #include <lwip/inet.h>
 
 #include <esp_err.h>
@@ -79,7 +79,7 @@ class Converter {
 		static void				StringMove(string &Destination, string &Src);
 		static void				NormalizeHexString(string &src, uint8_t Length);
 
-		static uint32_t			IPToUint32(tcpip_adapter_ip_info_t);
+		static uint32_t			IPToUint32(esp_netif_ip_info_t);
 
 		static uint8_t			ReverseBits(uint8_t);
 

@@ -108,7 +108,6 @@ void BLEServer_t::SetScanPayload(string Payload) {
 
 
 void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
-
 	ESP_LOGI(tag, ">> StartAdvertising");
 
 	//string BLEDeviceName = DeviceType_t::ToString(Settings.eFuse.Type);
