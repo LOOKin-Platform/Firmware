@@ -190,6 +190,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			WebServer.Stop();
 			MQTT.Stop();
+			//::mdns_free();
 
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;

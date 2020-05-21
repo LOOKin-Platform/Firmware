@@ -9,11 +9,11 @@
 #include "Settings.h"
 #include "PowerManagement.h"
 
-static char 	tag[]				= "WiFi";
+static char 	tag[]					= "WiFi";
 
 string		WiFi_t::STAHostName 		= "LOOK.in Device";
 bool		WiFi_t::m_WiFiNetworkSwitch = false;
-esp_netif_t*	WiFi_t::NetIf				= nullptr;
+esp_netif_t*	WiFi_t::NetIf			= nullptr;
 
 
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
@@ -283,6 +283,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
 		::esp_wifi_disconnect();
 		m_WiFiNetworkSwitch = true;
+		DHCPStop();
 		esp_netif_destroy(NetIf);
 		FreeRTOS::Sleep(1000);
 	}
@@ -301,7 +302,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 	if (ip != 0 && gw != 0 && Netmask != 0) {
 
-		//!::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA); // Don't run a DHCP client
+		DHCPStop();
 
 		esp_netif_ip_info_t ipInfo;
 		ipInfo.ip.addr = ip;
@@ -310,6 +311,8 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 		::esp_netif_set_ip_info(NetIf, &ipInfo);
 	}
+
+	DHCPStart();
 
 	errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
 	if (errRc != ESP_OK) {
@@ -384,9 +387,11 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 
 	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
 		::esp_wifi_disconnect();
-		esp_netif_destroy(NetIf);
 		FreeRTOS::Sleep(1000);
 	}
+
+	if (NetIf != NULL)
+		esp_netif_destroy(NetIf);
 
 	NetIf = esp_netif_create_default_wifi_ap();
 
@@ -423,14 +428,6 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
 	}
-
-	//!
-	/*
-	errRc = tcpip_adapter_dhcps_start(TCPIP_ADAPTER_IF_AP);
-	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "tcpip_adapter_dhcps_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-	}
-	*/
 
 	ESP_LOGD(tag, "<< startAP");
 
@@ -628,12 +625,12 @@ void WiFi_t::SetIPInfo(uint32_t ip, uint32_t gw, uint32_t netmask) {
 		ipInfo.ip.addr      = ip;
 		ipInfo.gw.addr      = gw;
 		ipInfo.netmask.addr = netmask;
-		//!::tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA);
+		DHCPStop();
 		::esp_netif_set_ip_info(NetIf, &ipInfo);
 	}
 	else {
 		ip = 0;
-		//!::tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+		DHCPStart();
 	}
 } // setIPInfo
 
