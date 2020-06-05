@@ -557,8 +557,6 @@ bool NetworkSync::ReadStorageBody (char Data[], int DataLen, char IP[]) {
 	else
 		Chunk += string(Data, DataLen);
 
-	ESP_LOGE("CHUNK ", "%s", Chunk.c_str());
-
 	if (ToVersionUpgrade == 0) {
 		JSON JSONItem(Chunk + "]}");
 

@@ -104,7 +104,6 @@ class WiFi_t {
 		uint32_t      		gw;
 		uint32_t            Netmask;
 		WiFiEventHandler*	m_pWifiEventHandler;
-		bool                m_eventLoopStarted;
 		bool                m_initCalled;
 		bool				m_WiFiRunning;
 		uint8_t             m_apConnectionStatus;   // ESP_OK = we are connected to an access point.  Otherwise receives wifi_err_reason_t.

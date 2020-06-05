@@ -48,8 +48,8 @@ void PowerManagement::SetWiFiOptions() {
 }
 
 void PowerManagement::SetBLEOptions() {
-	if (BLEDevice::IsRunning())
-		BLEDevice::SetSleep(IsActive);
+	if (BLE::IsRunning())
+		BLE::SetSleep(IsActive);
 }
 
 void PowerManagement::AddLock(string LockName) {

@@ -349,5 +349,8 @@ class Gree : public IRProto {
 				Sum += (RemoteState[i] >> 4);
 
 			RemoteState[StateLength - 1] = (Sum & 0x0FU << 4) | (RemoteState[StateLength - 1] & 0xFU);
+
+			for (int i=0; i < StateLength; i++)
+				ESP_LOGE("!", "RemoteState[%d]: %02X", i, RemoteState[i]);
 		}
 };

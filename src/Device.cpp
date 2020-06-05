@@ -418,7 +418,7 @@ string Device_t::SensorModeToString() {
 }
 
 string Device_t::BluetoothModeToString() {
-	if (!BLEServer.IsRunning())
+	if (!BLE::IsRunning())
 		return "off";
 
 	return (BLEServer.IsInPrivateMode() ? "private" : "public");

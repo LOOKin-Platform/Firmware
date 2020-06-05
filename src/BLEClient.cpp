@@ -6,13 +6,13 @@
 
 #include "BLEClient.h"
 #include "Globals.h"
-#if defined(CONFIG_BT_ENABLED)
 
 static char tag[] = "BLEClient";
 
 BLEClient_t::BLEClient_t() {
 }
 
+/*
 class MyClientCallback: public BLEClientCallbacks {
 	uint32_t RemainingTime;
 
@@ -66,13 +66,11 @@ class SecretCodeClient: public Task {
 class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
 	void onResult(BLEAdvertisedDevice advertisedDevice) {
 
-		/*
-		invalid cast from Const to non-const
+		//invalid cast from Const to non-const
 
-	    if (find(BLEClient.ScanDevicesProcessed.begin(),
-	    		BLEClient.ScanDevicesProcessed.end(), advertisedDevice.GetAddress()) != BLEClient.ScanDevicesProcessed.end())
-	    	return;
-	    */
+	    //if (find(BLEClient.ScanDevicesProcessed.begin(),
+	    //		BLEClient.ScanDevicesProcessed.end(), advertisedDevice.GetAddress()) != BLEClient.ScanDevicesProcessed.end())
+	    //	return;
 
 		bool CorrectDevice = false;
 
@@ -123,5 +121,4 @@ void BLEClient_t::Scan(uint32_t Duration) {
 void BLEClient_t::ScanStop() {
 	pBLEScan->Stop();
 }
-
-#endif /* Bluetooth enabled */
+*/

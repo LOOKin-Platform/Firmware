@@ -10,7 +10,8 @@
 #include <esp_pm.h>
 #include <esp_wifi.h>
 #include <esp_log.h>
-#include "BLEDevice.h"
+
+#include "BLE.h"
 
 #include "Log.h"
 

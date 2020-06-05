@@ -106,12 +106,6 @@ void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 		case ERROR		: ESP_LOGE("Status", "Error");  break;
 	}
 
-	if (ClientHandle == nullptr)
-		ESP_LOGE("ClientHandle", "nullptr");
-	else
-		ESP_LOGE("ClientHandle", "not empty");
-
-
 	if (Status == UNACTIVE && ClientHandle == nullptr)
 		Start();
 	else if (ClientHandle != nullptr)
@@ -119,6 +113,7 @@ void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 		esp_mqtt_client_config_t Config = CreateConfig();
 		::esp_mqtt_set_config(ClientHandle, &Config);
 		::esp_mqtt_client_reconnect(ClientHandle);
+		ESP_LOGE("MQTT", "reconnected");
 	}
 }
 

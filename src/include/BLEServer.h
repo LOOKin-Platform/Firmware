@@ -11,57 +11,39 @@
 #include <string>
 #include <stdio.h>
 
-#include "BLEDevice.h"
-#include "BLEHIDDevice.h"
-#include "BLEServerGeneric.h"
-#include "BLEUtils.h"
-#include "BLE2902.h"
+#include "BLE.h"
+#include "GATT.h"
 
 #include <esp_log.h>
 
 using namespace std;
 
-class ControlFlagCallback		: public BLECharacteristicCallbacks 	{ void OnWrite(BLECharacteristic *pCharacteristic); };
-class WiFiNetworksCallback		: public BLECharacteristicCallbacks 	{ void OnWrite(BLECharacteristic *pCharacteristic); };
-class MQTTCredentialsCallback	: public BLECharacteristicCallbacks 	{ void OnWrite(BLECharacteristic *pCharacteristic); };
-class ServerCallback			: public BLECharacteristicCallbacks 	{ void OnWrite(BLECharacteristic *pCharacteristic); };
-
 class BLEServer_t {
 	public:
 		BLEServer_t();
 
-		void 				SetScanPayload(string Payload = "");
-
 		void 				StartAdvertising(string Payload = "", bool ShoulUsePrivateMode = false);
 		void 				StopAdvertising();
-
-		bool 				IsRunning() { return BLEDevice::IsRunning(); }
 
 		void				SwitchToPublicMode();
 		void				SwitchToPrivateMode();
 
 		bool				IsInPrivateMode();
 
+		static int 			GATTDeviceManufactorerCallback	(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceModelCallback			(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceIDCallback			(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceFirmwareCallback		(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceHardwareModelCallback	(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceControlFlagCallback	(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceWiFiCallback			(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceMQTTCallback			(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+
 	private:
-		bool				IsPrivateMode = false;
+		void				GATTSetup();
 
-
-		BLEServerGeneric	*pServer;
-		BLEAdvertising		*pAdvertising;
-
-		BLEService			*pServiceDevice;
-		BLECharacteristic	*pCharacteristicManufacturer;
-		BLECharacteristic	*pCharacteristicModel;
-		BLECharacteristic	*pCharacteristicID;
-		BLECharacteristic	*pCharacteristicFirmware;
-		BLECharacteristic	*pCharacteristicControlFlag;
-		BLECharacteristic	*pCharacteristicWiFiNetworks;
-		BLECharacteristic	*pCharacteristicMQTTCredentials;
-
-		BLEService			*pServiceActuators;
-
-		map<uint8_t, BLECharacteristic*> SensorsCharacteristics;
-		map<uint8_t, BLECharacteristic*> CommandsCharacteristics;
+		bool				IsPrivateMode 	= false;
+		bool				IsInited		= false;
 };
 
 #endif /* Bluetooth enabled */

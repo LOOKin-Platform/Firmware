@@ -11,13 +11,12 @@
 
 static char 	tag[]					= "WiFi";
 
-string		WiFi_t::STAHostName 		= "LOOK.in Device";
-bool		WiFi_t::m_WiFiNetworkSwitch = false;
+string			WiFi_t::STAHostName 		= "LOOK.in Device";
+bool			WiFi_t::m_WiFiNetworkSwitch = false;
 esp_netif_t*	WiFi_t::NetIf			= nullptr;
 
 
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
-	m_eventLoopStarted  = false;
 	m_initCalled        = false;
 	m_WiFiRunning		= false;
 	//m_pWifiEventHandler = new WiFiEventHandler();
@@ -114,24 +113,24 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
  * @brief Initialize WiFi.
  */
 void WiFi_t::Init() {
-	if (!m_eventLoopStarted) {
-		::esp_event_loop_create_default();
-	    ::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID		, &eventHandler, this);
-	    ::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this);
-
-		m_eventLoopStarted = true;
-	}
-
 	if (!m_initCalled) {
 		NVS::Init();
-	    ESP_ERROR_CHECK(esp_netif_init());
+	    ESP_ERROR_CHECK(::esp_netif_init());
+	    ESP_ERROR_CHECK(::esp_event_loop_create_default());
 
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 		esp_err_t errRc = ::esp_wifi_init(&cfg);
+
+	    esp_netif_create_default_wifi_sta();
+	    esp_netif_create_default_wifi_ap();
+
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 			abort();
 		}
+
+	    ::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID		, &eventHandler, this);
+	    ::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this);
 
 		PowerManagement::SetWiFiOptions();
 
@@ -374,7 +373,6 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 	ESP_LOGD(tag, ">> startAP: ssid: %s", SSID.c_str());
 
 	m_WiFiNetworkSwitch = false;
-
 
     m_connectFinished.Give();
 	if (GetMode() == WIFI_MODE_STA_STR)

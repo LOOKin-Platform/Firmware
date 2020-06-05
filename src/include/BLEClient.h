@@ -16,13 +16,6 @@
 #include "FreeRTOSTask.h"
 
 #include <esp_log.h>
-#include "BLE2902.h"
-#include "BLEClientGeneric.h"
-#include "BLEDevice.h"
-#include "BLEHIDDevice.h"
-#include "BLEScan.h"
-#include "BLEServerGeneric.h"
-#include "BLEUtils.h"
 
 using namespace std;
 
@@ -30,13 +23,13 @@ class BLEClient_t {
 	public:
 		BLEClient_t();
 
-		void Scan(uint32_t Duration);
-		void ScanStop();
+		//void Scan(uint32_t Duration);
+		//void ScanStop();
 
-		vector<BLEAddress>	ScanDevicesProcessed = {};
-		uint32_t			ScanStartTime;
+		//vector<BLEAddress>	ScanDevicesProcessed = {};
+		//uint32_t			ScanStartTime;
 	private:
-		BLEScan				*pBLEScan;
+		//BLEScan				*pBLEScan;
 };
 
 #endif /* BLUETOOTHBCLIENT_H */

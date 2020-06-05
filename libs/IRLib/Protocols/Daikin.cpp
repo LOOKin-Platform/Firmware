@@ -248,8 +248,8 @@ class DaikinGeneric : public DaikinUnit {
 	}
 
 	void SetTemperature(const uint8_t Temperature) override {
-		uint8_t Degrees = max(Temperature, (uint8_t)10);
-		Degrees = min(Degrees, (uint8_t)32);
+		uint8_t Degrees = (std::max)(Temperature, (uint8_t)10);
+		Degrees = (std::min)(Degrees, (uint8_t)32);
 		RemoteState[22] = Degrees << 1;
 	}
 
@@ -404,7 +404,7 @@ class Daikin2 : public DaikinUnit {
 			RemoteState[25] &= 0b10001111;
 			RemoteState[25] |= (u8mode << 4);
 
-			// Redo the temp setting as Cool mode has a different min temp.
+			// Redo the temp setting as Cool mode has a different (std::min) temp.
 			if (Mode == ACOperand::ModeCool)
 				this->SetTemperature(this->GetTemperature());
 		}
@@ -418,8 +418,8 @@ class Daikin2 : public DaikinUnit {
 
 		void SetTemperature(const uint8_t Temperature) override {
 			uint8_t Temp = (GetMode() == ACOperand::GenericMode::ModeCool) ? 18 : 10;
-			Temp = max(Temp, Temperature);
-			Temp = min((uint8_t)32, Temp);
+			Temp = (std::max)(Temp, Temperature);
+			Temp = (std::min)((uint8_t)32, Temp);
 			RemoteState[26] = Temp * 2;
 		}
 
@@ -578,7 +578,7 @@ class Daikin128 : public DaikinUnit {
 		}
 
 		void SetTemperature(const uint8_t Temperature) override {
-			RemoteState[6] = Converter::Uint8ToBcd(min((uint8_t)30, max(Temperature, (uint8_t)16)));
+			RemoteState[6] = Converter::Uint8ToBcd((std::min)((uint8_t)30, (std::max)(Temperature, (uint8_t)16)));
 		}
 
 		uint8_t GetTemperature() override {
@@ -812,8 +812,8 @@ class Daikin160 : public DaikinUnit {
 		}
 
 		void SetTemperature(const uint8_t Temperature) override {
-			uint8_t Degrees = std::max(Temperature, (uint8_t)10);
-			Degrees = std::min(Degrees, (uint8_t)32) * 2 - 20;
+			uint8_t Degrees = (std::max)(Temperature, (uint8_t)10);
+			Degrees = (std::min)(Degrees, (uint8_t)32) * 2 - 20;
 			RemoteState[16] &= ~0b01111110;
 			RemoteState[16] |= Degrees;
 		}
@@ -999,7 +999,7 @@ class Daikin176 : public DaikinUnit {
 		}
 
 		void SetTemperature(const uint8_t Temperature) override {
-			uint8_t Degrees = min((uint8_t)32, max(Temperature, (uint8_t)10));
+			uint8_t Degrees = (std::min)((uint8_t)32, (std::max)(Temperature, (uint8_t)10));
 
 			switch (GetMode()) {
 				case ACOperand::ModeDry:
@@ -1170,8 +1170,8 @@ class Daikin216 : public DaikinUnit {
 		}
 
 		void SetTemperature(const uint8_t Temperature) override {
-			uint8_t Degrees = std::max(Temperature, (uint8_t)10);
-			Degrees = std::min(Degrees, (uint8_t)32);
+			uint8_t Degrees = (std::max)(Temperature, (uint8_t)10);
+			Degrees = (std::min)(Degrees, (uint8_t)32);
 			RemoteState[14] &= ~0b01111110;
 			RemoteState[14] |= (Degrees << 1);
 		}

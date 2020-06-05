@@ -323,15 +323,15 @@ class MitsubishiAC : public IRProto {
 
 		void SetTemperature(const uint8_t Temperature) {
 			if (Type == MitsubishiACType::MAC136) {
-				uint8_t Temp = max((uint8_t)17, Temperature);
-				Temp = std::min((uint8_t)30, Temp);
+				uint8_t Temp = (std::max)((uint8_t)17, Temperature);
+				Temp = (std::min)((uint8_t)30, Temp);
 				RemoteState[6] &= ~0b11110000;
 				RemoteState[6] |= ((Temp - 17) << 4);
 			}
 
 			if (Type == MitsubishiACType::MAC144) {
-				uint8_t Temp = std::max((uint8_t)16, Temperature);
-				Temp = std::min((uint8_t)31, Temp);
+				uint8_t Temp = (std::max)((uint8_t)16, Temperature);
+				Temp = (std::min)((uint8_t)31, Temp);
 				RemoteState[7] = Temp - 16;
 			}
 		}
