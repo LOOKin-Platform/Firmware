@@ -34,8 +34,12 @@ class Settings_t {
 		} OTA;
 
 		struct {
-			const string 					APIUrl 			= "http://api.look-in.club/v1/time";
-		} TimeSync;
+			const string 					BaseURL			= "https://api.look-in.club/v1";
+
+			const string					SyncTime		= BaseURL + "/time";
+			const string					Ping			= BaseURL + "/ping";
+
+		} ServerUrls;
 
 		struct WiFi_t {
 			const uint32_t					IPCountdown 	= 90000;

@@ -26,16 +26,15 @@ string HTTPClient::UserAgent = "";
  * @param [in] ReadFinishedCallback Callback function invoked when reading process is over
  * @param [in] AbortedCallback Callback function invoked when reading failed
  */
-void HTTPClient::Query(string URL, uint16_t Port, QueryType Type, bool ToFront,
+void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
         ReadStarted ReadStartedCallback, ReadBody ReadBodyCallback, ReadFinished ReadFinishedCallback, Aborted AbortedCallback) {
 
 	HTTPClientData_t QueryData;
 
 	strncpy(QueryData.URL   , URL.c_str(), 64);
 
-	QueryData.Port    		= Port;
 	QueryData.Method  		= Type;
-	QueryData.BufferSize 	= 512; //4096
+	QueryData.BufferSize 	= 512;
 
 	QueryData.ReadStartedCallback   = ReadStartedCallback;
 	QueryData.ReadBodyCallback      = ReadBodyCallback;
@@ -121,26 +120,36 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 	if (Queue != 0)
 		while (FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks)) {
-			esp_http_client_config_t config;
-			config.url 		= ClientData.URL;
-			config.port 	= ClientData.Port;
+			esp_http_client_config_t Config;
 
-			config.timeout_ms = 7000;
-			config.buffer_size = ClientData.BufferSize;
+			Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
 
-			string URLString = ClientData.URL;
+			Config.cert_pem					= NULL;
+			Config.client_cert_pem			= NULL;
+			Config.client_key_pem			= NULL;
+
+			Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
+
+			Config.timeout_ms 				= 7000;
+			Config.buffer_size 				= ClientData.BufferSize;
+			Config.buffer_size_tx = ClientData.BufferSize;
+			Config.max_redirection_count 	= 0;
+
 
 			switch (ClientData.Method) {
-				case POST   : config.method = esp_http_client_method_t::HTTP_METHOD_POST; 	break;
-				case DELETE : config.method = esp_http_client_method_t::HTTP_METHOD_DELETE; break;
+				case POST   : Config.method = esp_http_client_method_t::HTTP_METHOD_POST; 	break;
+				case DELETE : Config.method = esp_http_client_method_t::HTTP_METHOD_DELETE; break;
 				case GET    :
-				default     : config.method = esp_http_client_method_t::HTTP_METHOD_GET; 	break;
+				default     : Config.method = esp_http_client_method_t::HTTP_METHOD_GET; 	break;
 			}
 
-			config.user_data 	= (void*)&ClientData;
-			config.event_handler= QueryHandler;
+			Config.user_data 	= (void*)&ClientData;
+			Config.event_handler= QueryHandler;
 
-			esp_http_client_handle_t Handle = esp_http_client_init(&config);
+			string URLString 				= ClientData.URL;
+			Config.url 		= ClientData.URL;
+
+			esp_http_client_handle_t Handle = esp_http_client_init(&Config);
 			esp_http_client_set_header(Handle, "User-Agent", UserAgent.c_str());
 			esp_err_t err = esp_http_client_perform(Handle);
 

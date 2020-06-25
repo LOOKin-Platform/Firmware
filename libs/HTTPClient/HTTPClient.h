@@ -42,7 +42,6 @@ class HTTPClient {
 	 * @brief Struct to hold HTTP query data
 	 */
 		struct HTTPClientData_t {
-			uint16_t  					Port		= 80;                 							/*!< Server port, e. g. 80 */
 			char      					URL[64]		= "\0";               							/*!< Hostname string, e. g. look-in.club */
 			QueryType					Method		= QueryType::GET;								/*!< Query method, e. g. QueryType::POST */
 			int 						BufferSize	= 0;
@@ -56,7 +55,7 @@ class HTTPClient {
 		};
 
 		static void 		Query(HTTPClientData_t, bool = false);
-		static void 		Query(string URL, uint16_t Port = 80, QueryType Type = GET, bool ToFront = false,
+		static void 		Query(string URL, QueryType Type = GET, bool ToFront = false,
 								ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL);
 
 		static esp_err_t	QueryHandler(esp_http_client_event_t *event);

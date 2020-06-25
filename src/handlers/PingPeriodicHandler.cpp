@@ -24,9 +24,9 @@ void IRAM_ATTR PingPeriodicHandler::Pool() {
 		PingRestartCounter = 0;
 
 		if (Time::IsUptime(Time::Unixtime()))
-			Time::ServerSync(Settings.TimeSync.APIUrl);
+			Time::ServerSync(Settings.ServerUrls.SyncTime);
 		else
-			HTTPClient::Query("http://api.look-in.club/v1/ping", 80, QueryType::GET, true, NULL, NULL, NULL, NULL);
+			HTTPClient::Query(Settings.ServerUrls.Ping, QueryType::GET, true, NULL, NULL, NULL, NULL);
 	}
 }
 
