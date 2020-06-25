@@ -47,12 +47,12 @@ void IRLib::FillProtocols() {
 			new SONY(),
 			new NECx(),
 			new Panasonic(),
-			new Samsung36(),
-			new Daikin(),
-			new MitsubishiAC(),
-			new Aiwa(),
-			new Gree(),
-			new HaierAC()
+			new Samsung36()
+//			new Daikin(),
+//			new MitsubishiAC(),
+//			new Aiwa(),
+//			new Gree(),
+//			new HaierAC()
 		};
 }
 

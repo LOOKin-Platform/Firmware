@@ -25,16 +25,19 @@ string HTTPClient::UserAgent = "";
  * @param [in] ReadBodyCallback Callback function invoked while server data reading process
  * @param [in] ReadFinishedCallback Callback function invoked when reading process is over
  * @param [in] AbortedCallback Callback function invoked when reading failed
+ * @param [in] POSTData Post data for sending to server
  */
 void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
-        ReadStarted ReadStartedCallback, ReadBody ReadBodyCallback, ReadFinished ReadFinishedCallback, Aborted AbortedCallback) {
+        ReadStarted ReadStartedCallback, ReadBody ReadBodyCallback, ReadFinished ReadFinishedCallback, Aborted AbortedCallback, string POSTData) {
 
 	HTTPClientData_t QueryData;
 
 	strncpy(QueryData.URL   , URL.c_str(), 64);
 
 	QueryData.Method  		= Type;
-	QueryData.BufferSize 	= 512;
+	QueryData.BufferSize 	= 1024;
+
+	//QueryData.POSTData		= POSTData.c_str();
 
 	QueryData.ReadStartedCallback   = ReadStartedCallback;
 	QueryData.ReadBodyCallback      = ReadBodyCallback;
@@ -151,7 +154,18 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 			esp_http_client_handle_t Handle = esp_http_client_init(&Config);
 			esp_http_client_set_header(Handle, "User-Agent", UserAgent.c_str());
+
+
+			/*
+			string POSTData(ClientData.POSTData);
+			ESP_LOGE("ClientData.POSTData", "%s", ClientData.POSTData.c_str());
+
+			if (ClientData.Method == POST && POSTData != "")
+				esp_http_client_set_post_field(Handle, POSTData.c_str(), POSTData.size());
+			 */
+
 			esp_err_t err = esp_http_client_perform(Handle);
+
 
 			if (err == ESP_OK) {
 				ESP_LOGI(tag, "Performing HTTP request success");

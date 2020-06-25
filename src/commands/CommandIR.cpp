@@ -11,6 +11,9 @@
 
 static rmt_channel_t TXChannel = RMT_CHANNEL_4;
 
+static string 	IRACReadBuffer 	= "";
+static uint16_t	IRACFrequency	= 38000;
+
 class CommandIR_t : public Command_t {
 	public:
 		struct LastSignal_t {
@@ -29,16 +32,20 @@ class CommandIR_t : public Command_t {
 			Events["panasonic"]		= 0x05;
 			Events["samsung36"]		= 0x06;
 
+			/*
 			Events["daikin"]		= 0x08;
 			Events["mitsubishi-ac"] = 0x09;
 			Events["gree"] 			= 0x0A;
 			Events["haier-ac"] 		= 0x0B;
+			*/
+
 
 			Events["aiwa"]			= 0x14;
 
 			Events["repeat"]		= 0xED;
 
 			Events["saved"]			= 0xEE;
+			Events["ac"]			= 0xEF;
 			Events["prontohex"]		= 0xF0;
 			Events["raw"]			= 0xFF;
 
@@ -145,8 +152,34 @@ class CommandIR_t : public Command_t {
 				}
 			}
 
+			if (EventCode == 0xEF) { // ac by codeset
+				ACOperand ACData(Operand);
+
+				ESP_LOGE("ACOperand", "Mode %s", Converter::ToString<uint8_t>(ACData.Mode).c_str());
+				ESP_LOGE("ACOperand", "Temperature %s", Converter::ToString<uint8_t>(ACData.Temperature).c_str());
+				ESP_LOGE("ACOperand", "FanMode %s", Converter::ToString<uint8_t>(ACData.FanMode).c_str());
+				ESP_LOGE("ACOperand", "SwingMode %s", Converter::ToString<uint8_t>(ACData.SwingMode).c_str());
+
+				if (ACData.Codeset == 0) {
+					ESP_LOGE("CommandIR","Can't parse AC codeset");
+					return false;
+				}
+
+				string ttt = Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery();
+				ESP_LOGE("!!!", "%s", ttt.c_str());
+
+				HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
+									QueryType::POST, true,
+									&ACReadStarted,
+									&ACReadBody,
+									&ACReadFinished,
+									&ACReadAborted);
+
+				return true;
+			}
+
 			if (EventCode == 0xF0) {
-				if (StringOperand == "0")
+				if (StringOperand == "0" || InOperation)
 					return false;
 
 				IRLib *IRSignal = new IRLib(StringOperand);
@@ -216,14 +249,75 @@ class CommandIR_t : public Command_t {
 			return false;
 		}
 
-    void TXSend(uint16_t Frequency) {
-    	InOperation = true;
+		void TXSend(uint16_t Frequency) {
+			if ( RMT::TXItemsCount() == 0)
+				return;
 
-		RMT::TXSend(TXChannel, Frequency);
-		Log::Add(Log::Events::Commands::IRExecuted);
+			InOperation = true;
+			ESP_LOGE("ITEMS COUNT", "%d", RMT::TXItemsCount());
 
-		InOperation = false;
-    }
+			RMT::TXSend(TXChannel, Frequency);
+			Log::Add(Log::Events::Commands::IRExecuted);
+
+			InOperation = false;
+		}
+
+		// AC Codeset callbacks
+
+		static void ACReadStarted(char IP[]) {
+			RMT::TXClear();
+
+			IRACFrequency 		= 38000;
+			IRACReadBuffer 		= "";
+		}
+
+		static bool ACReadBody(char Data[], int DataLen, char IP[]) {
+			IRACReadBuffer += string(Data, DataLen);
+
+			size_t FrequencyDelimeterPos = IRACReadBuffer.find(";");
+			if (FrequencyDelimeterPos != std::string::npos) {
+				IRACFrequency 	= Converter::ToUint16(IRACReadBuffer.substr(0, FrequencyDelimeterPos));
+				IRACReadBuffer 	= IRACReadBuffer.substr(FrequencyDelimeterPos+1);
+			}
+
+			if (IRACReadBuffer.find(" ") == string::npos)
+				return true;
+
+			while (IRACReadBuffer.size() > 0)
+			{
+				size_t Pos = IRACReadBuffer.find(" ");
+
+				if (Pos != string::npos) {
+					ESP_LOGE("taf", "%s", IRACReadBuffer.substr(0,Pos).c_str());
+					RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
+					IRACReadBuffer.erase(0, Pos + 1);
+				}
+				else
+					break;
+			}
+
+			return true;
+		};
+
+		static void ACReadFinished(char IP[]) {
+			if (IRACReadBuffer.size() > 0)
+				RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer));
+
+			CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
+			if (CommandIR == nullptr)
+				ESP_LOGE("CommandIR","Can't get IR command");
+			else
+				CommandIR->TXSend(IRACFrequency);
+
+			IRACReadBuffer = "";
+		}
+
+		static void ACReadAborted(char IP[]) {
+			IRACReadBuffer = "";
+
+			RMT::TXClear();
+			ESP_LOGE("CommandIR", "Failed to retrieve ac code from server");
+		}
 };
 
 #endif

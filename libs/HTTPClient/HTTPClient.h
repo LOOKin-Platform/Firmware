@@ -45,6 +45,7 @@ class HTTPClient {
 			char      					URL[64]		= "\0";               							/*!< Hostname string, e. g. look-in.club */
 			QueryType					Method		= QueryType::GET;								/*!< Query method, e. g. QueryType::POST */
 			int 						BufferSize	= 0;
+			char						*POSTData	= nullptr;
 
 			esp_http_client_handle_t	Handle		= NULL;                 									/*!< Client handle */
 
@@ -56,7 +57,7 @@ class HTTPClient {
 
 		static void 		Query(HTTPClientData_t, bool = false);
 		static void 		Query(string URL, QueryType Type = GET, bool ToFront = false,
-								ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL);
+								ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL, string POSTData="");
 
 		static esp_err_t	QueryHandler(esp_http_client_event_t *event);
 		static void			HTTPClientTask(void *);

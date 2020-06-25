@@ -14,6 +14,39 @@
 #include <stdint.h>
 #include "esp_log.h"
 
+#include <string>
+
+#include <Converter.h>
+
+using namespace std;
+
+
+class ACOperand {
+	public:
+		uint16_t		Codeset			= 0x0;
+
+		uint8_t			Mode			= 0x0;
+		uint8_t			Temperature		= 0x0;
+		uint8_t			FanMode			= 0x0;
+		uint8_t			SwingMode		= 0x0;
+
+		ACOperand(uint32_t Operand) {
+			Codeset			= Converter::InterpretHexAsDec<uint16_t>((uint16_t)(Operand >> 16));
+			Mode			= (uint8_t)((Operand << 16) >> 28);
+			Temperature		= (uint8_t)((Operand << 20) >> 28) + 16;
+			FanMode  		= (uint8_t)((Operand << 24) >> 28);
+			SwingMode 		= (uint8_t)((Operand << 28) >> 28);
+		}
+
+		string GetQuery() {
+			string Result = Converter::ToString<uint16_t>(Codeset);
+			while (Result.size() < 4) Result = "0" + Result;
+			Result = "operand=" + Result + Converter::ToString<uint8_t>(Mode) + Converter::ToHexString(Temperature - 16, 1) + Converter::ToString<uint8_t>(FanMode) + Converter::ToString<uint8_t>(SwingMode);
+			return Result;
+		}
+};
+
+/*
 class ACOperand {
 	public:
 		enum GenericMode{ ModeOff 	= 0x0, ModeAuto 	= 0x1, ModeHeat = 0x2	, ModeCool = 0x3, ModeDry 		= 0x4, ModeFan 	= 0x5 };
@@ -71,5 +104,5 @@ class ACOperand {
 			return Result;
 		}
 };
-
+*/
 #endif

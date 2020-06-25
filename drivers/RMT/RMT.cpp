@@ -241,6 +241,8 @@ void RMT::TXAddItem(int32_t Bit) {
  * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
  */
 void RMT::TXAddItemExact(int32_t Bit) {
+	if (Bit == 0) return;
+
 	if (OutputItems.size() == 0 || (OutputItems.back()).duration1 != 0)
 	{
 		rmt_item32_t Item;
@@ -277,6 +279,22 @@ void RMT::TXSetItems(vector<int32_t> Items) {
  */
 void RMT::TXClear() {
 	OutputItems.clear();
+}
+
+/**
+ * @brief Get items count ready for transmit.
+ *
+ * @param [out] Items in Queue
+ *
+ */
+int16_t RMT::TXItemsCount() {
+	int16_t ItemsCount = OutputItems.size() * 2;
+
+	if (ItemsCount > 0)
+		if (OutputItems[OutputItems.size()-1].duration1 == 0 && OutputItems[OutputItems.size()-1].level1)
+			ItemsCount--;
+
+	return ItemsCount;
 }
 
 /**

@@ -38,6 +38,7 @@ class Settings_t {
 
 			const string					SyncTime		= BaseURL + "/time";
 			const string					Ping			= BaseURL + "/ping";
+			const string					GetACCode		= BaseURL + "/ac/codesets";
 
 		} ServerUrls;
 
