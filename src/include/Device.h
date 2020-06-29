@@ -110,6 +110,7 @@ class Device_t {
 		string 				CurrentVoltageToString();
 		string				SensorModeToString();
 		string 				BluetoothModeToString();
+		string				ModelToString();
 };
 
 #endif

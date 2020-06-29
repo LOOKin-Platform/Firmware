@@ -75,6 +75,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 			JSONObject.SetItems(vector<pair<string,string>> ({
 				make_pair("Type"			, TypeToString()),
+				make_pair("Model"			, ModelToString()),
 				make_pair("Status"			, StatusToString()),
 				make_pair("ID"				, IDToString()),
 				make_pair("Name"			, NameToString()),
@@ -97,6 +98,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		// Запрос конкретного параметра
 		if (URLParts.size() == 1) {
 			if (URLParts[0] == "type")			Result.Body = TypeToString();
+			if (URLParts[0] == "model")			Result.Body = ModelToString();
 			if (URLParts[0] == "status")		Result.Body = StatusToString();
 			if (URLParts[0] == "id")			Result.Body = IDToString();
 			if (URLParts[0] == "name")			Result.Body = NameToString();
@@ -423,4 +425,8 @@ string Device_t::BluetoothModeToString() {
 
 	return (BLEServer.IsInPrivateMode() ? "private" : "public");
 
+}
+
+string Device_t::ModelToString() {
+	return Converter::ToString((Settings.eFuse.Model == 0) ? 1 : Settings.eFuse.Model);
 }
