@@ -48,9 +48,6 @@ class CommandIR_t : public Command_t {
 			Events["ac"]			= 0xEF;
 			Events["prontohex"]		= 0xF0;
 			Events["raw"]			= 0xFF;
-
-			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
-				RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
 		}
 
 		LastSignal_t LastSignal;
@@ -253,10 +250,14 @@ class CommandIR_t : public Command_t {
 			if ( RMT::TXItemsCount() == 0)
 				return;
 
+			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO == GPIO_NUM_0)
+				return;
+
 			InOperation = true;
+
 			ESP_LOGE("ITEMS COUNT", "%d", RMT::TXItemsCount());
 
-			RMT::TXSend(TXChannel, Frequency);
+			RMT::TXSend(Settings.GPIOData.GetCurrent().IR.SenderGPIO, Frequency);
 			Log::Add(Log::Events::Commands::IRExecuted);
 
 			InOperation = false;
