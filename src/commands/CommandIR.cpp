@@ -9,7 +9,7 @@
 #include <RMT.h>
 #include "Sensors.h"
 
-static rmt_channel_t TXChannel = RMT_CHANNEL_4;
+static rmt_channel_t TXChannel = RMT_CHANNEL_6;
 
 static string 	IRACReadBuffer 	= "";
 static uint16_t	IRACFrequency	= 38000;
@@ -48,6 +48,9 @@ class CommandIR_t : public Command_t {
 			Events["ac"]			= 0xEF;
 			Events["prontohex"]		= 0xF0;
 			Events["raw"]			= 0xFF;
+
+			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
+				RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
 		}
 
 		LastSignal_t LastSignal;
@@ -250,14 +253,10 @@ class CommandIR_t : public Command_t {
 			if ( RMT::TXItemsCount() == 0)
 				return;
 
-			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO == GPIO_NUM_0)
-				return;
-
 			InOperation = true;
-
 			ESP_LOGE("ITEMS COUNT", "%d", RMT::TXItemsCount());
 
-			RMT::TXSend(Settings.GPIOData.GetCurrent().IR.SenderGPIO, Frequency);
+			RMT::TXSend(TXChannel, Frequency);
 			Log::Add(Log::Events::Commands::IRExecuted);
 
 			InOperation = false;

@@ -36,32 +36,41 @@ typedef void (*IRChannelCallbackEnd)();
  */
 class RMT {
 	public:
-		class IRChannelInfo_t {
-			public:
-				TaskHandle_t			RxHandle 		= NULL;
-				gpio_num_t				Pin				= GPIO_NUM_0;
-				uint16_t				Frequency		= 0;
-				IRChannelCallbackStart 	CallbackStart 	= nullptr;
-				IRChannelCallbackBody 	CallbackBody 	= nullptr;
-				IRChannelCallbackEnd 	CallbackEnd 	= nullptr;
+		struct IRChannelInfo {
+			TaskHandle_t			Handle 			= 0;
+			gpio_num_t				Pin				= GPIO_NUM_0;
+			uint16_t				Frequency		= 0;
+			IRChannelCallbackStart 	CallbackStart 	= nullptr;
+			IRChannelCallbackBody 	CallbackBody 	= nullptr;
+			IRChannelCallbackEnd 	CallbackEnd 	= nullptr;
 		};
 
-		static void 	RxStart(gpio_num_t Pin, IRChannelCallbackStart = nullptr, IRChannelCallbackBody = nullptr, IRChannelCallbackEnd = nullptr);
-		static void 	RxStop (bool SaveData = false);
+		static void		Init();
+		static void		Deinit();
 
+		static void 	SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart = nullptr, IRChannelCallbackBody = nullptr, IRChannelCallbackEnd = nullptr);
+		static void 	ReceiveStart(rmt_channel_t Channel);
+		static void 	ReceiveStop (rmt_channel_t Channel);
+
+		static void 	SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency);
+		static void 	TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency);
 		static void 	TXAddItem(int32_t);
 		static void 	TXAddItemExact(int32_t);
 		static void 	TXSetItems(vector<int32_t>);
 		static void 	TXClear();
+
 		static int16_t 	TXItemsCount();
-		static void IRAM_ATTR TXSend(gpio_num_t Pin, uint16_t Frequency);
 
-		static int32_t 	PrepareBit(bool, uint32_t);
+		static void IRAM_ATTR TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
 
-		static IRChannelInfo_t ChannelInfo;
+		static int32_t PrepareBit(bool, uint32_t);
+
+		static map<rmt_channel_t, IRChannelInfo> ChannelsMap;
 
 		static vector<rmt_item32_t> OutputItems;
 	private:
+		static bool 				IsInited;
+
 		static IRAM_ATTR void RXTask(void *);
 };
 
