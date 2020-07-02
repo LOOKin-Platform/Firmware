@@ -30,10 +30,11 @@ class IRLib {
 		IRLib(string &ProntoHex);
 		IRLib(vector<string> 	Raw);
 		IRLib(vector<int32_t> 	Raw	= vector<int32_t>());
+		void 			LoadFromRawString(string &);
 
 		void 			LoadDataFromRaw();
 		void 			FillRawData();
-		string 			GetProntoHex();
+		string 			GetProntoHex(bool SpaceDelimeter = true);
 		string			GetRawSignal();
 
 		vector<int32_t>	GetRawDataForSending();
@@ -60,7 +61,7 @@ class IRLib {
 
 		bool 			IsProntoHex();
 		void 			FillFromProntoHex(string &);
-		string 			ProntoHexConstruct();
+		string 			ProntoHexConstruct(bool SpaceDelimeter = true);
 
 		static vector<IRProto *> Protocols;
 };

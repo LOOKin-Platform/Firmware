@@ -29,9 +29,10 @@ class NVS {
 
 		void 		Erase();
 		void 		Erase(string key);
+		void 		EraseStartedWith(string Key);
 
 		string 		GetString(string key);
-		void 		SetString(string key, string data);
+		bool 		SetString(string key, string data);
 
 		uint8_t 	GetInt8Bit(string key);
 		void 		SetInt8Bit(string key, uint8_t data);
@@ -54,7 +55,7 @@ class NVS {
 		uint8_t		StringArrayAdd		(string ArrayName, string Item);
 		string 		StringArrayGet		(string ArrayName, uint8_t Index);
 		void 		StringArrayRemove	(string ArrayName, uint8_t Index);
-		void 		StringArrayReplace	(string ArrayName, uint8_t Index, string Item);
+		esp_err_t	StringArrayReplace	(string ArrayName, uint8_t Index, string Item);
 
 		/* General arrays methods */
 

@@ -103,6 +103,10 @@ class Settings_t {
 		} Wireless;
 
 		struct {
+			const uint8_t 					MaxIRItemSignals= 16;
+		} Data;
+
+		struct {
 			const uint8_t 					SystemLogSize	= 16;
 			const uint8_t 					EventsLogSize	= 32;
 		} Log;

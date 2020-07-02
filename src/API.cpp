@@ -78,13 +78,14 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 		string APISection = URLParts[0];
 		URLParts.erase(URLParts.begin(), URLParts.begin() + 1);
 
-		if (APISection == "device")		Device.HandleHTTPRequest	(Response, Type, URLParts, Params, Request, TransportType);
-		if (APISection == "network")	Network.HandleHTTPRequest	(Response, Type, URLParts, Params);
-		if (APISection == "automation")	Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-		if (APISection == "storage")	Storage.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request, TransportType, MsgID);
-		if (APISection == "sensors")	Sensor_t::HandleHTTPRequest	(Response, Type, URLParts, Params);
-		if (APISection == "commands")	Command_t::HandleHTTPRequest(Response, Type, URLParts, Params);
-		if (APISection == "log")		Log::HandleHTTPRequest		(Response, Type, URLParts, Params);
+		if (APISection == "device")		Device		.HandleHTTPRequest	(Response, Type, URLParts, Params, Request, TransportType);
+		if (APISection == "network")	Network		.HandleHTTPRequest	(Response, Type, URLParts, Params);
+		if (APISection == "automation")	Automation	.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody);
+		if (APISection == "storage")	Storage		.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request, TransportType, MsgID);
+		if (APISection == "data")		Data		::HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request, TransportType, MsgID);
+		if (APISection == "sensors")	Sensor_t	::HandleHTTPRequest	(Response, Type, URLParts, Params);
+		if (APISection == "commands")	Command_t	::HandleHTTPRequest	(Response, Type, URLParts, Params);
+		if (APISection == "log")		Log			::HandleHTTPRequest	(Response, Type, URLParts, Params);
 
 		// обработка алиасов комманд
 		if (URLParts.size() == 0 && Params.size() == 0) {

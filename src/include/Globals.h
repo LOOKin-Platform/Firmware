@@ -13,6 +13,7 @@
 #include "Network.h"
 #include "Sensors.h"
 #include "Storage.h"
+#include "Data.h"
 
 #include "WiFi.h"
 #include "WebServer.h"

@@ -16,7 +16,7 @@
 
 class IRProto {
 	public:
-		uint8_t							ID 					= 0x00;
+		uint8_t							ID 					= 0xFF;
 		uint16_t						DefinedFrequency 	= 38500;
 		string 							Name 				= "";
 		virtual bool					IsProtocol(vector<int32_t> &) 							{ return false; }

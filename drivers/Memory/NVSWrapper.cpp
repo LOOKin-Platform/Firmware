@@ -59,6 +59,21 @@ void NVS::Erase(string key) {
 	nvs_erase_key(m_handle, key.c_str());
 } // erase
 
+void NVS::EraseStartedWith(string Key) {
+	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY);
+	while (it != NULL) {
+		nvs_entry_info_t info;
+		nvs_entry_info(it, &info);
+		it = nvs_entry_next(it);
+
+		string ItemKey(info.key);
+		ItemKey = Converter::ToLower(ItemKey);
+
+		if (Converter::StartsWith(ItemKey, Converter::ToLower(Key)))
+			Erase(ItemKey);
+	};
+}
+
 /**
  * @brief Retrieve a string value by key.
  *
@@ -89,9 +104,8 @@ string NVS::GetString(string key) {
  * @param [in] key The key to set from the namespace.
  * @param [in] data The value to set for the key.
  */
-void NVS::SetString(string key, string data) {
-	string ttt = data;
-	nvs_set_str(m_handle, key.c_str(), ttt.c_str());
+bool NVS::SetString(string key, string data) {
+	return nvs_set_str(m_handle, key.c_str(), data.c_str());
 } // set
 
 /**
@@ -287,7 +301,7 @@ void NVS::StringArrayRemove(string ArrayName, uint8_t Index) {
  * @param [in] Index The index of the neccessary array element.
  * @param [in] Item Item to replace item in NVS.
  */
-void NVS::StringArrayReplace(string ArrayName, uint8_t Index, string Item) {
+esp_err_t NVS::StringArrayReplace(string ArrayName, uint8_t Index, string Item) {
 	 return SetString(ArrayName + "_" + Converter::ToString(Index), Item);
 }
 

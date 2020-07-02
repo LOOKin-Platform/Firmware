@@ -39,6 +39,26 @@ void IRLib::ExternFillPostOperations() {
 	LoadDataFromRaw();
 }
 
+void IRLib::LoadFromRawString(string &RawInString) {
+	RawData.clear();
+
+	while (RawInString.size() > 0)
+	{
+		size_t Pos = RawInString.find(" ");
+		string Item = (Pos != string::npos) ? RawInString.substr(0,Pos) : RawInString;
+
+		RawData.push_back(Converter::ToInt32(Item));
+
+		if (Pos == string::npos || RawInString.size() < Pos)
+			RawInString = "";
+		else
+			RawInString.erase(0, Pos+1);
+	}
+
+	FillProtocols();
+	LoadDataFromRaw();
+}
+
 
 void IRLib::FillProtocols() {
 	if (IRLib::Protocols.size() == 0)
@@ -82,8 +102,8 @@ void IRLib::FillRawData() {
 		this->RawData = vector<int32_t>();
 }
 
-string IRLib::GetProntoHex() {
-	return ProntoHexConstruct();
+string IRLib::GetProntoHex(bool SpaceDelimeter) {
+	return ProntoHexConstruct(SpaceDelimeter);
 }
 
 string IRLib::GetRawSignal() {
@@ -239,23 +259,25 @@ void IRLib::FillFromProntoHex(string &SrcString) {
 	}
 }
 
-string IRLib::ProntoHexConstruct() {
+string IRLib::ProntoHexConstruct(bool SpaceDelimeter) {
 	uint8_t	USec	 = (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
 	string	Result = "0000";
 
-	Result += " " + Converter::ToHexString((uint8_t)floor(1000000/(Frequency*0.241246)), 4);
+	string 	Delimeter = (SpaceDelimeter) ? " " : "";
+
+	Result += Delimeter + Converter::ToHexString((uint8_t)floor(1000000/(Frequency*0.241246)), 4);
 
 	if (	ProntoOneTimeBurst == 0 && ProntoRepeatBurst == 0) {
-		Result += " " + Converter::ToHexString(ceil(RawData.size() / 2), 4);
-		Result += " " + Converter::ToHexString(0, 4);
+		Result += Delimeter + Converter::ToHexString(ceil(RawData.size() / 2), 4);
+		Result += Delimeter + Converter::ToHexString(0, 4);
 	}
 	else {
-		Result += " " + Converter::ToHexString(ProntoOneTimeBurst, 4);
-		Result += " " + Converter::ToHexString(ProntoRepeatBurst, 4);
+		Result += Delimeter + Converter::ToHexString(ProntoOneTimeBurst, 4);
+		Result += Delimeter + Converter::ToHexString(ProntoRepeatBurst, 4);
 	}
 
 	for (auto &Bit : RawData)
-		Result += " " + Converter::ToHexString(round(abs(Bit) / USec) , 4);
+		Result += Delimeter + Converter::ToHexString(round(abs(Bit) / USec) , 4);
 
 	return Result;
 }

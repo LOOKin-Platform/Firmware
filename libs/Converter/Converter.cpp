@@ -183,6 +183,8 @@ template uint16_t  	Converter::InterpretHexAsDec<uint16_t>(uint16_t Hex);
 vector<string> Converter::StringToVector(string SourceStr, string Delimeter) {
 	vector<string> Result = vector<string>();
 
+	if (SourceStr == "") return Result;
+
 	size_t pos = 0;
 	while ((pos = SourceStr.find(Delimeter)) != string::npos) {
 		if (SourceStr.substr(0,pos) != "")

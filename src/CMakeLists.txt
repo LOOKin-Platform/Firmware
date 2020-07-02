@@ -14,6 +14,7 @@ set(srcs
 	"Sensors.cpp"
 	"Settings.cpp"
 	"Storage.cpp"
+	"Data.cpp"
 	"WebServer.cpp"
 	"Wireless.cpp")
 

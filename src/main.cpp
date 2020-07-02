@@ -33,10 +33,8 @@ Settings_t 			Settings;
 WiFi_t				WiFi;
 WebServer_t 		WebServer;
 
-#if defined(CONFIG_BT_ENABLED)
 BLEServer_t			BLEServer;
 BLEClient_t			BLEClient;
-#endif /* Bluetooth enabled */
 
 Device_t			Device;
 Network_t			Network;
@@ -79,6 +77,7 @@ void app_main(void) {
 	Network.Init();
 	Automation.Init();
 	MQTT.Init();
+	Data::Init();
 
 	// Remote temporary hack
 	if (Settings.eFuse.Type == 0x81) {

@@ -21,8 +21,22 @@ JSON::JSON(string JSONString) {
 		Root = cJSON_CreateObject();
 }
 
+JSON::JSON(cJSON *cJSONRoot) {
+	Root = cJSONRoot;
+}
+
+cJSON* JSON::GetRoot() {
+	return Root;
+}
+
+void JSON::SetDestructable(bool Value) {
+	IsDestructable = Value;
+}
+
+
 JSON::~JSON() {
-	cJSON_Delete(Root);
+	if (IsDestructable)
+		cJSON_Delete(Root);
 }
 
 JSON::RootType JSON::GetType() {
@@ -42,9 +56,8 @@ bool JSON::IsItemExists(string Key) {
 	return (Value != NULL);
 }
 
-
 string JSON::GetItem(string Key) {
-	string Result;
+	string Result = "";
 
 	if (Root != NULL) {
 		cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
@@ -60,6 +73,20 @@ string JSON::GetItem(string Key) {
 void JSON::SetItem(string Key, string Value) {
 	cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());
 }
+
+JSON JSON::Detach(string Key) {
+	if (Root != NULL) {
+
+		cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+
+		//cJSON *Value = cJSON_DetachItemFromObject(Root, Key.c_str());
+		if (Value != NULL)
+			return JSON(Value);
+	}
+
+	return JSON();
+}
+
 
 void JSON::SetItems(map<string,string> Values, cJSON *Item) {
 	SetItemsTemplated<map<string,string>>(Values, Item);
@@ -77,6 +104,13 @@ void JSON::SetItemsTemplated(T Values, cJSON *Item) {
 }
 template void JSON::SetItemsTemplated<map<string,string>> (map<string,string> Values, cJSON *Item);
 template void JSON::SetItemsTemplated<vector<pair<string,string>>>(vector<pair<string,string>> Values, cJSON *Item);
+
+map<string,string> JSON::GetItemsForKey(string Key, bool CaseSensitive) {
+	if (Root == NULL) return map<string,string>();
+
+	return GetItems(cJSON_GetObjectItem(Root, Key.c_str()), CaseSensitive);
+}
+
 
 map<string,string> JSON::GetItems(cJSON* Parent, bool CaseSensitive) {
 	if (Parent == NULL && Root == NULL)
