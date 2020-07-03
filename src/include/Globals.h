@@ -22,6 +22,8 @@
 #include "Wireless.h"
 #include "MQTT.h"
 
+#include "HomeKit.h"
+
 #include "Settings.h"
 
 extern Settings_t				Settings;
@@ -32,6 +34,7 @@ extern Automation_t				Automation;
 extern vector<Sensor_t*>		Sensors;
 extern vector<Command_t*>		Commands;
 extern Storage_t				Storage;
+extern DataEndpoint_t			*Data;
 
 extern WiFi_t					WiFi;
 extern WebServer_t				WebServer;

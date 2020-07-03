@@ -40,6 +40,7 @@ Device_t			Device;
 Network_t			Network;
 Automation_t		Automation;
 Storage_t			Storage;
+DataEndpoint_t		*Data;
 
 Wireless_t			Wireless;
 
@@ -77,7 +78,9 @@ void app_main(void) {
 	Network.Init();
 	Automation.Init();
 	MQTT.Init();
-	Data::Init();
+
+	Data = DataEndpoint_t::GetForDevice();
+	Data->Init();
 
 	// Remote temporary hack
 	if (Settings.eFuse.Type == 0x81) {
