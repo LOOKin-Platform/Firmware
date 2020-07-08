@@ -38,6 +38,15 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 	Query_t Query(QueryString);
 	API::Handle(Response, Query, Request);
 
+	/*
+	if (Response.Body.size() > 2000)
+	{
+		SendChunk(Request, Response.Body.substr(0, 2000));
+		SendChunk(Request, Response.Body.substr(2000));
+		EndChunk(Request);
+	}
+	else
+	*/
 	SendHTTPData(Response, Request);
 
     return ESP_OK;
@@ -112,7 +121,8 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 		default							: httpd_resp_set_type	(Request, HTTPD_TYPE_TEXT); break;
 	}
 
-	//httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
+	if (Settings.eFuse.DeviceID <= 0x100)
+		httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
 }
 
 /* URI handler structure for GET /uri */
@@ -148,7 +158,7 @@ void WebServer_t::Start() {
     config.uri_match_fn 	= httpd_uri_match_wildcard;
     config.stack_size		= 16384;//20000;
     config.lru_purge_enable = true;
-    //config.task_priority	= tskIDLE_PRIORITY+5;
+    config.task_priority	= tskIDLE_PRIORITY+5;
 
     HTTPServerHandle = NULL;
 

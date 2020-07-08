@@ -115,6 +115,8 @@ class WiFi_t {
 		static void 		eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 		static string		STAHostName;
 
+		static esp_netif_t*	GetNetIf();
+
 	public:
 		void                Init();
 		void 				DeInit();
@@ -155,8 +157,6 @@ class WiFi_t {
 	    bool	IsIPCheckSuccess = false;
 
 	    bool	IsConnectedSTA();
-
-	    static esp_netif_t* NetIf;
 };
 
 #endif /* DRIVERS_WIFI_H_ */

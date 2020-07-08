@@ -9,6 +9,8 @@
 #include <netdb.h>
 #include <mdns.h>
 
+//#include <HomeKit.h>
+
 static char HandlerTag[] = "WiFiHandler";
 
 static FreeRTOS::Timer		*IPDidntGetTimer;
@@ -290,12 +292,15 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		        return ESP_OK;
 		    }
 
+			//HomeKit::Start();
+
 		    mdns_hostname_set(Device.IDToString().c_str());
 		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();
 		    mdns_instance_name_set(InstanceName.c_str());
 
 			BLEServer.SwitchToPublicMode();
 			IsConnectedBefore = true;
+
 
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
 

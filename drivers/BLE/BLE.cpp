@@ -70,6 +70,8 @@ void BLE::SetSleep(bool SleepEnabled) {
  *     o Undirected connectable mode.
  */
 void BLE::Advertise() {
+	ESP_LOGE(Tag,"Advertise()");
+
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
     const char *name;
@@ -284,7 +286,6 @@ void BLE::Start() {
 		ESP_LOGE(Tag, "nimble_port_freertos_init error %d", rc);
 		return;
 	}
-
 }
 
 void BLE::Stop() {
