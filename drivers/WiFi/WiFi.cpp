@@ -9,11 +9,10 @@
 #include "Settings.h"
 #include "PowerManagement.h"
 
-static char 	tag[]					= "WiFi";
+static char 	tag[]						= "WiFi";
 
 string			WiFi_t::STAHostName 		= "LOOK.in Device";
 bool			WiFi_t::m_WiFiNetworkSwitch = false;
-esp_netif_t*	WiFi_t::NetIf			= nullptr;
 
 
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
@@ -51,8 +50,7 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
     if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_CONNECTED) {
 		ESP_LOGI(tag, "SYSTEM_EVENT_STA_CONNECTED");
 
-		if (WiFi_t::NetIf != nullptr)
-			::esp_netif_set_hostname(WiFi_t::NetIf, STAHostName.c_str());
+		::esp_netif_set_hostname(WiFi_t::GetNetIf(), STAHostName.c_str());
 
 
 		esp_ip_addr_t GoogleDNS;
@@ -60,7 +58,7 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
 		esp_netif_dns_info_t DNSInfo;
 		DNSInfo.ip = GoogleDNS;
 
-		::esp_netif_set_dns_info(WiFi_t::NetIf, ESP_NETIF_DNS_FALLBACK, &DNSInfo);
+		::esp_netif_set_dns_info(WiFi_t::GetNetIf(), ESP_NETIF_DNS_FALLBACK, &DNSInfo);
 
 
 		pWiFi->m_apConnectionStatus = ESP_OK;
@@ -153,6 +151,15 @@ void WiFi_t::DeInit() {
 void WiFi_t::Stop() {
 	::esp_wifi_stop();
 	m_WiFiRunning = false;
+}
+
+esp_netif_t * WiFi_t::GetNetIf() {
+	if (WiFi_t::GetMode() == WIFI_MODE_STA_STR)
+		return ::esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
+	else if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+		return ::esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+	else
+		return nullptr;
 }
 
 /**
@@ -283,7 +290,6 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		::esp_wifi_disconnect();
 		m_WiFiNetworkSwitch = true;
 		DHCPStop();
-		esp_netif_destroy(NetIf);
 		FreeRTOS::Sleep(1000);
 	}
 
@@ -291,8 +297,6 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 	}
-
-    NetIf = ::esp_netif_create_default_wifi_sta();
 
 	m_WiFiRunning = true;
 
@@ -308,7 +312,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		ipInfo.gw.addr = gw;
 		ipInfo.netmask.addr = Netmask;
 
-		::esp_netif_set_ip_info(NetIf, &ipInfo);
+		::esp_netif_set_ip_info(WiFi_t::GetNetIf(), &ipInfo);
 	}
 
 	DHCPStart();
@@ -387,11 +391,6 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 		::esp_wifi_disconnect();
 		FreeRTOS::Sleep(1000);
 	}
-
-	if (NetIf != NULL)
-		esp_netif_destroy(NetIf);
-
-	NetIf = esp_netif_create_default_wifi_ap();
 
 	errRc = ::esp_wifi_stop();
 	if (errRc != ESP_OK)
@@ -498,7 +497,7 @@ string WiFi_t::GetMode() {
  */
 esp_netif_ip_info_t WiFi_t::GetIPInfo() {
 	esp_netif_ip_info_t IPInfo;
-	esp_netif_get_ip_info(WiFi_t::NetIf, &IPInfo);
+	esp_netif_get_ip_info(WiFi_t::GetNetIf(), &IPInfo);
 	return IPInfo;
 } // GetIPInfo
 
@@ -513,10 +512,10 @@ bool WiFi_t::GetWiFiNetworkSwitch() {
 
 void WiFi_t::DHCPStop(uint16_t Pause) {
 	esp_netif_dhcp_status_t DHCPStatus;
-	::esp_netif_dhcpc_get_status(WiFi_t::NetIf, &DHCPStatus);
+	::esp_netif_dhcpc_get_status(WiFi_t::GetNetIf(), &DHCPStatus);
 
 	if (DHCPStatus == ESP_NETIF_DHCP_STARTED) {
-		::esp_netif_dhcpc_stop(WiFi_t::NetIf);
+		::esp_netif_dhcpc_stop(WiFi_t::GetNetIf());
 
 		if (Pause > 0)
 			FreeRTOS::Sleep(Pause);
@@ -525,10 +524,10 @@ void WiFi_t::DHCPStop(uint16_t Pause) {
 
 void WiFi_t::DHCPStart() {
 	esp_netif_dhcp_status_t DHCPStatus;
-	::esp_netif_dhcpc_get_status(WiFi_t::NetIf, &DHCPStatus);
+	::esp_netif_dhcpc_get_status(WiFi_t::GetNetIf(), &DHCPStatus);
 
 	if (DHCPStatus != ESP_NETIF_DHCP_STARTED)
-		::esp_netif_dhcpc_start(WiFi_t::NetIf);
+		::esp_netif_dhcpc_start(WiFi_t::GetNetIf());
 }
 
 /**
@@ -624,7 +623,7 @@ void WiFi_t::SetIPInfo(uint32_t ip, uint32_t gw, uint32_t netmask) {
 		ipInfo.gw.addr      = gw;
 		ipInfo.netmask.addr = netmask;
 		DHCPStop();
-		::esp_netif_set_ip_info(NetIf, &ipInfo);
+		::esp_netif_set_ip_info(WiFi_t::GetNetIf(), &ipInfo);
 	}
 	else {
 		ip = 0;

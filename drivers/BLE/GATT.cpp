@@ -61,7 +61,7 @@ void GATT::Start() {
 	if (!IsInited)
 		Init();
 
-	ble_gatts_reset();
+	//ble_gatts_reset();
 
     int rc = ble_gatts_count_cfg(Services);
     if (rc != 0) {

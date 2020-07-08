@@ -77,6 +77,8 @@ void BLEServer_t::GATTSetup() {
 	DeviceServiceCharacteristics[4] = DeviceHarwareModel;
 	DeviceServiceCharacteristics[5] = DeviceControlFlag;
 
+	IsPrivateMode = true;
+
 	if (IsPrivateMode)	DeviceServiceCharacteristics[6] = DeviceWiFi;
 	else				DeviceServiceCharacteristics[6] = {0};
 
@@ -97,6 +99,8 @@ void BLEServer_t::GATTSetup() {
 static char GATTBuffer[128] = "";
 
 void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
+	return;
+
 	ESP_LOGI(tag, ">> StartAdvertising");
 	GATTSetup();
 
@@ -104,9 +108,11 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
 		BLE::Start();
 		IsInited = true;
 	}
-	else {
-		BLE::Advertise();
-	}
+
+	//else {
+	//	BLE::Advertise();
+	//}
+
 
 	// FFFF - Sensors and Commands Information
 	//pServiceActuators = pServer->CreateService((uint16_t)0xFFFF);
@@ -130,13 +136,15 @@ void BLEServer_t::StopAdvertising() {
 	if (!BLE::IsRunning())
 		return;
 
-	BLE::AdvertiseStop();
+	//BLE::AdvertiseStop();
 	//	BLE::Stop();
 
 	ESP_LOGI(tag, "BLE Server stopped advertising");
 }
 
 void BLEServer_t::SwitchToPublicMode() {
+	return;
+
 	ESP_LOGI(tag, "SwitchToPublicMode");
 
 	if (BLE::IsRunning() && IsPrivateMode) {
@@ -147,6 +155,7 @@ void BLEServer_t::SwitchToPublicMode() {
 }
 
 void BLEServer_t::SwitchToPrivateMode() {
+	return;
 	ESP_LOGI(tag, "SwitchToPrivateMode");
 
 	if (BLE::IsRunning() && !IsPrivateMode) {

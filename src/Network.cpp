@@ -387,11 +387,11 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				vector<map<string,string>> NetworkMap = vector<map<string,string>>();
 				for (auto& NetworkDevice: Devices)
 					NetworkMap.push_back({
-					{"Type"     , DeviceType_t::ToString(NetworkDevice.TypeHex)},
-					{"ID"       , Converter::ToHexString(NetworkDevice.ID,8)},
-					{"IP"       , NetworkDevice.IP},
-					{"IsActive" , (NetworkDevice.IsActive == true) ? "1" : "0" }
-				});
+						{"Type"     , DeviceType_t::ToString(NetworkDevice.TypeHex)	},
+						{"ID"       , Converter::ToHexString(NetworkDevice.ID,8)	},
+						{"IP"       , NetworkDevice.IP								},
+						{"IsActive" , (NetworkDevice.IsActive == true) ? "1" : "0" 	}
+					});
 
 				JSON JSONObject;
 				JSONObject.SetObjectsArray("", NetworkMap);

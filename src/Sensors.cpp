@@ -104,6 +104,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 			}
 
 			Result.Body = JSONObject.ToString();
+			return;
 		}
 	}
 
@@ -127,10 +128,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 						if (Converter::ToLower(Value.first) == URLParts[1]) {
 							JSON JSONObject;
 
-							JSONObject.SetObject(Value.first, {
-								{ "Value"   , Sensor->FormatValue(Value.first) },
-								{ "Updated" , Converter::ToString(Value.second.Updated)}
-							});
+							JSONObject.SetItem("Value"	, Sensor->FormatValue(Value.first));
+							JSONObject.SetItem("Updated", Converter::ToString(Value.second.Updated));
 
 							Result.Body = JSONObject.ToString();
 							break;
