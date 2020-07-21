@@ -7,11 +7,19 @@
 #include "Converter.h"
 
 string Converter::ToLower(string Str) {
-  string Result = Str;
-  transform(Result.begin(), Result.end(), Result.begin(), ::tolower);
+	string Result = Str;
+	transform(Result.begin(), Result.end(), Result.begin(), ::tolower);
 
-  return Result;
+	return Result;
 }
+
+string Converter::ToUpper(string Str) {
+	string Result = Str;
+	transform(Result.begin(), Result.end(), Result.begin(), ::toupper);
+
+	return Result;
+}
+
 
 void Converter::FindAndReplace(string& source, string const& find, string const& replace) {
     for(string::size_type i = 0; (i = source.find(find, i)) != string::npos;) {

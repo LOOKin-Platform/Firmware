@@ -301,7 +301,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			BLEServer.SwitchToPublicMode();
 			IsConnectedBefore = true;
 
-
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
 
 			MQTT.Start();

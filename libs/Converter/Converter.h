@@ -35,6 +35,7 @@ using namespace std;
 class Converter {
 	public:
 		static string			ToLower(string);
+		static string			ToUpper(string);
 
 		static void				FindAndReplace(string&, string const&, string const&);
 		static void				FindAndRemove (string &, string);

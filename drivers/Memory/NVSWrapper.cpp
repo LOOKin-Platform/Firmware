@@ -67,9 +67,9 @@ void NVS::EraseStartedWith(string Key) {
 		it = nvs_entry_next(it);
 
 		string ItemKey(info.key);
-		ItemKey = Converter::ToLower(ItemKey);
+		string ItemKeyForComprasion  = Converter::ToLower(ItemKey);
 
-		if (Converter::StartsWith(ItemKey, Converter::ToLower(Key)))
+		if (Converter::StartsWith(ItemKeyForComprasion, Converter::ToLower(Key)))
 			Erase(ItemKey);
 	};
 }
@@ -105,7 +105,12 @@ string NVS::GetString(string key) {
  * @param [in] data The value to set for the key.
  */
 bool NVS::SetString(string key, string data) {
-	return nvs_set_str(m_handle, key.c_str(), data.c_str());
+	esp_err_t Result = nvs_set_str(m_handle, key.c_str(), data.c_str());
+
+	if (Result != ESP_OK)
+		ESP_LOGE("NVSWrapper", "%s", ::esp_err_to_name(Result));
+
+	return (Result == ESP_OK);
 } // set
 
 /**

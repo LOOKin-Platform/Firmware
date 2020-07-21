@@ -45,16 +45,16 @@ class DataRemote_t : public DataEndpoint_t {
 					if (Items.size() == 0)
 						return;
 
-					if (Items.count("t")) 		{ Type 		= Items["t"]; 		Items.erase("t"); }
-					if (Items.count("type")) 	{ Type 		= Items["type"]; 	Items.erase("type"); }
+					if (Items.count("t")) 		{ Type 		= Converter::ToUint8(Items["t"]); 		Items.erase("t"); }
+					if (Items.count("type")) 	{ Type 		= Converter::ToUint8(Items["type"]);	Items.erase("type"); }
 
 					if (Items.count("n")) 		{ Name 		= Items["n"]; 		Items.erase("n"); }
 					if (Items.count("name")) 	{ Name 		= Items["name"]; 	Items.erase("name"); }
 
-					if (Items.count("u")) 		{ Updated 	= Converter::ToUint32(Items["u"]); Items.erase("u"); }
-					if (Items.count("updated")) { Updated 	= Converter::ToUint32(Items["updated"]); Items.erase("updated"); }
+					if (Items.count("u")) 		{ Updated 	= Converter::ToUint32(Items["u"]); 		Items.erase("u"); }
+					if (Items.count("updated")) { Updated 	= Converter::ToUint32(Items["updated"]);Items.erase("updated"); }
 
-					if (Items.count("uuid")) 	{ UUID		= Items["uuid"]; 	Items.erase("uuid"); }
+					if (Items.count("uuid")) 	{ UUID		= Converter::ToUpper(Items["uuid"]); 	Items.erase("uuid"); }
 
 					for (auto& Item : Items)
 						Functions[Item.first] = Item.second;
@@ -75,16 +75,16 @@ class DataRemote_t : public DataEndpoint_t {
 				}
 
 				bool IsCorrect() {
-					if (UUID == "") return false;
-					if (Converter::ToLower(Type) == "tv") return true;
+					if (UUID == "") 	return false;
+					if (Type == 0xFF) 	return false;
 
-					return false;
+					return true;
 				}
 
 				string ToString(bool IsShortened = true) {
 					JSON JSONObject;
 
-					JSONObject.SetItem((IsShortened) ? "t" : "Type", Type);
+					JSONObject.SetItem((IsShortened) ? "t" : "Type", Converter::ToString(Type));
 					JSONObject.SetItem((IsShortened) ? "n" : "Name", Name);
 					JSONObject.SetItem((IsShortened) ? "u" : "Updated", Converter::ToString(Updated));
 
@@ -109,7 +109,7 @@ class DataRemote_t : public DataEndpoint_t {
 				}
 
 				string 		UUID 	= "";
-				string 		Type 	= "";
+				uint8_t 	Type 	= 0xFF;
 				uint32_t	Updated = 0;
 				string 		Name	= "";
 
@@ -144,7 +144,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 						OutputArray.push_back({
 							{ "UUID" 	, 	DeviceItem.UUID							},
-							{ "Type"	, 	DeviceItem.Type 						},
+							{ "Type"	, 	Converter::ToString(DeviceItem.Type)	},
 							{ "Updated" , 	Converter::ToString(DeviceItem.Updated)	}
 						});
 					}
@@ -159,7 +159,9 @@ class DataRemote_t : public DataEndpoint_t {
 
 				if (URLParts.size() == 1)
 				{
-					DataRemote_t::IRDevice DeviceItem = LoadDevice(URLParts[0]);
+					string UUID = Converter::ToUpper(URLParts[0]);
+
+					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 
 					if (DeviceItem.IsCorrect()) {
 						Result.SetSuccess();
@@ -174,7 +176,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 				if (URLParts.size() == 2)
 				{
-					string UUID 	= URLParts[0];
+					string UUID 	= Converter::ToUpper(URLParts[0]);
 					string Function	= URLParts[1];
 
 					JSON JSONObject;
@@ -220,8 +222,8 @@ class DataRemote_t : public DataEndpoint_t {
 					DataRemote_t::IRDevice NewDeviceItem;
 
 					string UUID = "";
-					if (Params.count("uuid")) UUID = Params["uuid"];
-					if (URLParts.size() == 1) UUID = URLParts[0];
+					if (Params.count("uuid")) UUID = Converter::ToUpper(Params["uuid"]);
+					if (URLParts.size() == 1) UUID = Converter::ToUpper(URLParts[0]);
 
 					if (UUID == "")
 					{
@@ -256,7 +258,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 				if (URLParts.size() == 2)
 				{
-					string UUID 	= URLParts[0];
+					string UUID 	= Converter::ToUpper(URLParts[0]);
 					string Function	= URLParts[1];
 
 					JSON JSONObject(RequestBody);
@@ -332,8 +334,10 @@ class DataRemote_t : public DataEndpoint_t {
 				{
 					NVS Memory(DataEndpoint_t::NVSArea);
 
-					RemoveFromIRDevicesList(URLParts[0]);
-					Memory.EraseStartedWith(URLParts[0]);
+					string UUID = Converter::ToUpper(URLParts[0]);
+
+					RemoveFromIRDevicesList(UUID);
+					Memory.EraseStartedWith(UUID);
 				}
 			}
 
@@ -361,7 +365,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return 0;//static_cast<uint8_t>(Error::DeviceAlreadyExists);
 			}
 
-			uint8_t 	RemoveFromIRDevicesList(string UUID) {
+			uint8_t RemoveFromIRDevicesList(string UUID) {
 				std::vector<string>::iterator itr = std::find(IRDevicesList.begin(), IRDevicesList.end(), UUID);
 				if (itr != IRDevicesList.end()) IRDevicesList.erase(itr);
 
@@ -370,6 +374,9 @@ class DataRemote_t : public DataEndpoint_t {
 
 			IRDevice LoadDevice(string UUID) {
 				NVS Memory(DataEndpoint_t::NVSArea);
+
+				UUID = Converter::ToUpper(UUID);
+
 				IRDevice Result(Memory.GetString(UUID), UUID);
 				return Result;
 			}
@@ -377,14 +384,14 @@ class DataRemote_t : public DataEndpoint_t {
 			uint8_t	SaveDevice(IRDevice DeviceItem) {
 				NVS Memory(DataEndpoint_t::NVSArea);
 
-				uint8_t SetResult = Memory.SetString(DeviceItem.UUID, DeviceItem.ToString());
+				bool SetResult = Memory.SetString(DeviceItem.UUID, DeviceItem.ToString());
 
-				if (SetResult != 0) return SetResult;
+				if (SetResult != true) return 1;
 				return AddToDevicesList(DeviceItem.UUID);
 			}
 
-			pair<bool,IRLib>	LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
-				UUID 	= Converter::ToLower(UUID);
+			pair<bool,IRLib> LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
+				UUID 	= Converter::ToUpper(UUID);
 				Function= Converter::ToLower(Function);
 
 				NVS Memory(DataEndpoint_t::NVSArea);
@@ -411,7 +418,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			vector<IRLib> LoadAllFunctionSignals(string UUID, string Function, IRDevice DeviceItem = IRDevice()) {
-				UUID 		= Converter::ToLower(UUID);
+				UUID 		= Converter::ToUpper(UUID);
 				Function	= Converter::ToLower(Function);
 
 				if (!DeviceItem.IsCorrect())
@@ -436,7 +443,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return Result;
 			}
 
-			uint8_t SaveFunction(string UUID, string Function, string Item, uint8_t Index, string DeviceType) {
+			uint8_t SaveFunction(string UUID, string Function, string Item, uint8_t Index, uint8_t DeviceType) {
 				NVS Memory(DataEndpoint_t::NVSArea);
 
 				if (!CheckIsValidKeyForType(DeviceType, Function))
@@ -482,31 +489,82 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			pair<bool, IRLib> DeserializeIRSignal(string Item) {
-				IRLib Result;
-
-				if (Item == "")
-					return make_pair(false, Result);
+				if (Item.size() < 10)
+					return make_pair(false, IRLib());
 
 				if (Item.size() == 10)
 				{
+					IRLib Result;
+
 					Result.Protocol 	= Converter::ToUint8(Item.substr(0, 2));
-					Result.Uint32Data	= Converter::ToUint32(Item.substr(2));
+					Result.Uint32Data	= Converter::UintFromHexString<uint32_t>(Item.substr(2));
+
+					return make_pair(true, Result);
 				}
 
-				return make_pair(true,IRLib(Item));
+				return make_pair(true, IRLib(Item));
 			}
 
-			bool CheckIsValidKeyForType(string Type, string Key) {
+			bool CheckIsValidKeyForType(uint8_t Type, string Key) {
 				vector<string> AvaliableKeys = vector<string>();
 
-				Type = Converter::ToLower(Type);
+				if (Type == 0 || Type == 0x3 || Type == 0x6) {
+					AvaliableKeys.push_back("power");
+					AvaliableKeys.push_back("poweron");
+					AvaliableKeys.push_back("poweroff");
+				}
 
-				if (Type == "tv") {
+				if (Type == 0x2) {
+					AvaliableKeys.push_back("power");
+					AvaliableKeys.push_back("poweron");
+					AvaliableKeys.push_back("poweroff");
+
+					AvaliableKeys.push_back("mute");
+					AvaliableKeys.push_back("volumeup");
+					AvaliableKeys.push_back("volumedown");
+				}
+
+				if (Type == 0x7) {
+					AvaliableKeys.push_back("power");
+					AvaliableKeys.push_back("poweron");
+					AvaliableKeys.push_back("poweroff");
+
+					AvaliableKeys.push_back("swing");
+					AvaliableKeys.push_back("mode");
+				}
+
+				if (Type == 0x5) {
+					AvaliableKeys.push_back("power");
+					AvaliableKeys.push_back("poweron");
+					AvaliableKeys.push_back("poweroff");
+
+					AvaliableKeys.push_back("swing");
+					AvaliableKeys.push_back("mode");
+					AvaliableKeys.push_back("speed");
+				}
+
+				if (Type == 0x4) {
+					AvaliableKeys.push_back("power");
+					AvaliableKeys.push_back("poweron");
+					AvaliableKeys.push_back("poweroff");
+
+					AvaliableKeys.push_back("swing");
+					AvaliableKeys.push_back("mode");
+				}
+
+				if (Type == 0x1) {
 					AvaliableKeys.push_back("power");		// power
-					AvaliableKeys.push_back("volumeup");	// volume up
-					AvaliableKeys.push_back("volumedown");	// volume down
-					AvaliableKeys.push_back("channelup");	// channel up
-					AvaliableKeys.push_back("channeldown");	// channel down
+					AvaliableKeys.push_back("poweron");
+					AvaliableKeys.push_back("poweroff");
+
+					AvaliableKeys.push_back("mode");		// mode
+
+					AvaliableKeys.push_back("mute");		// mute
+					AvaliableKeys.push_back("volup");		// volume up
+					AvaliableKeys.push_back("voldown");		// volume down
+
+					AvaliableKeys.push_back("chup");		// channel up
+					AvaliableKeys.push_back("chdown");		// channel down
 				}
 
 				if(std::find(AvaliableKeys.begin(), AvaliableKeys.end(), Converter::ToLower(Key)) != AvaliableKeys.end())
