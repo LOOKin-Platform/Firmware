@@ -30,6 +30,7 @@ class NVS {
 		void 		Erase();
 		void 		Erase(string key);
 		void 		EraseStartedWith(string Key);
+		void 		EraseNamespace();
 
 		string 		GetString(string key);
 		bool 		SetString(string key, string data);

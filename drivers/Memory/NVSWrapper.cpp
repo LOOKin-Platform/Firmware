@@ -74,6 +74,18 @@ void NVS::EraseStartedWith(string Key) {
 	};
 }
 
+void NVS::EraseNamespace() {
+	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY);
+	while (it != NULL) {
+		nvs_entry_info_t info;
+		nvs_entry_info(it, &info);
+		it = nvs_entry_next(it);
+
+		Erase(info.key);
+	};
+}
+
+
 /**
  * @brief Retrieve a string value by key.
  *

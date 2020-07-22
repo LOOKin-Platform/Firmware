@@ -330,8 +330,13 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			if (Type == QueryType::DELETE) {
-				if (URLParts.size() == 1)
-				{
+				if (URLParts.size() == 0) {
+					NVS Memory(DataEndpoint_t::NVSArea);
+					IRDevicesList.clear();
+					Memory.EraseNamespace();
+				}
+
+				if (URLParts.size() == 1) {
 					NVS Memory(DataEndpoint_t::NVSArea);
 
 					string UUID = Converter::ToUpper(URLParts[0]);
@@ -514,6 +519,21 @@ class DataRemote_t : public DataEndpoint_t {
 					AvaliableKeys.push_back("poweroff");
 				}
 
+				if (Type == 0x1) {
+					AvaliableKeys.push_back("power");		// power
+					AvaliableKeys.push_back("poweron");
+					AvaliableKeys.push_back("poweroff");
+
+					AvaliableKeys.push_back("mode");		// mode
+
+					AvaliableKeys.push_back("mute");		// mute
+					AvaliableKeys.push_back("volup");		// volume up
+					AvaliableKeys.push_back("voldown");		// volume down
+
+					AvaliableKeys.push_back("chup");		// channel up
+					AvaliableKeys.push_back("chdown");		// channel down
+				}
+
 				if (Type == 0x2) {
 					AvaliableKeys.push_back("power");
 					AvaliableKeys.push_back("poweron");
@@ -550,21 +570,6 @@ class DataRemote_t : public DataEndpoint_t {
 
 					AvaliableKeys.push_back("swing");
 					AvaliableKeys.push_back("mode");
-				}
-
-				if (Type == 0x1) {
-					AvaliableKeys.push_back("power");		// power
-					AvaliableKeys.push_back("poweron");
-					AvaliableKeys.push_back("poweroff");
-
-					AvaliableKeys.push_back("mode");		// mode
-
-					AvaliableKeys.push_back("mute");		// mute
-					AvaliableKeys.push_back("volup");		// volume up
-					AvaliableKeys.push_back("voldown");		// volume down
-
-					AvaliableKeys.push_back("chup");		// channel up
-					AvaliableKeys.push_back("chdown");		// channel down
 				}
 
 				if(std::find(AvaliableKeys.begin(), AvaliableKeys.end(), Converter::ToLower(Key)) != AvaliableKeys.end())
