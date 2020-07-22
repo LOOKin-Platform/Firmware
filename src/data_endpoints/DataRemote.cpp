@@ -41,15 +41,26 @@ class DataRemote_t : public DataEndpoint_t {
 
 		class IRDevice {
 			public:
+				string 		UUID 	= "";
+				uint8_t 	Type 	= 0xFF;
+				uint32_t	Updated = 0;
+				string 		Name	= "";
+				uint32_t	Extra 	= 0;
+
+				map<string,string> Functions = map<string,string>();
+
 				void ParseJSONItems(map<string, string> Items) {
 					if (Items.size() == 0)
 						return;
 
-					if (Items.count("t")) 		{ Type 		= Converter::ToUint8(Items["t"]); 		Items.erase("t"); }
-					if (Items.count("type")) 	{ Type 		= Converter::ToUint8(Items["type"]);	Items.erase("type"); }
+					if (Items.count("t")) 		{ Type 		= Converter::UintFromHexString<uint8_t>(Items["t"]); 		Items.erase("t"); }
+					if (Items.count("type")) 	{ Type 		= Converter::UintFromHexString<uint8_t>(Items["type"]);		Items.erase("type"); }
 
 					if (Items.count("n")) 		{ Name 		= Items["n"]; 		Items.erase("n"); }
 					if (Items.count("name")) 	{ Name 		= Items["name"]; 	Items.erase("name"); }
+
+					if (Items.count("e")) 		{ Extra 	= Converter::UintFromHexString<uint32_t>(Items["e"]);  		Items.erase("e"); }
+					if (Items.count("extra")) 	{ Extra 	= Converter::UintFromHexString<uint32_t>(Items["extra"]); 	Items.erase("extra"); }
 
 					if (Items.count("u")) 		{ Updated 	= Converter::ToUint32(Items["u"]); 		Items.erase("u"); }
 					if (Items.count("updated")) { Updated 	= Converter::ToUint32(Items["updated"]);Items.erase("updated"); }
@@ -84,9 +95,12 @@ class DataRemote_t : public DataEndpoint_t {
 				string ToString(bool IsShortened = true) {
 					JSON JSONObject;
 
-					JSONObject.SetItem((IsShortened) ? "t" : "Type", Converter::ToString(Type));
+					JSONObject.SetItem((IsShortened) ? "t" : "Type", Converter::ToHexString(Type, 2));
 					JSONObject.SetItem((IsShortened) ? "n" : "Name", Name);
 					JSONObject.SetItem((IsShortened) ? "u" : "Updated", Converter::ToString(Updated));
+
+					if (Extra > 0)
+						JSONObject.SetItem((IsShortened) ? "e" : "Extra", Converter::ToHexString(Extra,8));
 
 					if (IsShortened) {
 						for (auto& FunctionItem : Functions)
@@ -107,13 +121,6 @@ class DataRemote_t : public DataEndpoint_t {
 
 					return (JSONObject.ToString());
 				}
-
-				string 		UUID 	= "";
-				uint8_t 	Type 	= 0xFF;
-				uint32_t	Updated = 0;
-				string 		Name	= "";
-
-				map<string,string> Functions = map<string,string>();
 		};
 
 		void Init() override {
@@ -143,9 +150,9 @@ class DataRemote_t : public DataEndpoint_t {
 						DataRemote_t::IRDevice DeviceItem(Memory.GetString(IRDeviceUUID), IRDeviceUUID);
 
 						OutputArray.push_back({
-							{ "UUID" 	, 	DeviceItem.UUID							},
-							{ "Type"	, 	Converter::ToString(DeviceItem.Type)	},
-							{ "Updated" , 	Converter::ToString(DeviceItem.Updated)	}
+							{ "UUID" 	, 	DeviceItem.UUID								},
+							{ "Type"	, 	Converter::ToHexString(DeviceItem.Type,2)	},
+							{ "Updated" , 	Converter::ToString(DeviceItem.Updated)		}
 						});
 					}
 
@@ -540,6 +547,18 @@ class DataRemote_t : public DataEndpoint_t {
 				{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
 				{ "swing"	, 0x0A }, { "speed"		, 0x0B }
 			};
+
+			// Типы устройств:
+			// 0x00 Не указано / Прочее
+			// 0x01 TV
+			// 0x02 Медиа-центр
+			// 0x03 Освещение
+			// 0x04 Увлажнитель
+			// 0x05 Очиститель воздуха
+			// 0x06 Робот пылесос
+			// 0x07 Вентилятор
+			// 0xEF Кондиционеры
+
 
 			bool CheckIsValidKeyForType(uint8_t Type, string Key) {
 				vector<string> AvaliableKeys = vector<string>();
