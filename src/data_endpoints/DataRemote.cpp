@@ -349,6 +349,80 @@ class DataRemote_t : public DataEndpoint_t {
 			Result.SetSuccess();
 		}
 
+		pair<bool,IRLib> LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
+			UUID 	= Converter::ToUpper(UUID);
+			Function= Converter::ToLower(Function);
+
+			NVS Memory(DataEndpoint_t::NVSArea);
+
+			IRLib Result;
+
+			if (!DeviceItem.IsCorrect())
+				DeviceItem = LoadDevice(UUID);
+
+			if (DeviceItem.Functions.count(Function) > 0) {
+				string KeyString = UUID + "_" + Function;
+
+				if (DeviceItem.Functions[Function] == "single")
+					return DeserializeIRSignal(Memory.GetString(KeyString));
+				else {
+					if (Index > 0)
+						KeyString += "_" + Converter::ToString(Index);
+
+					return DeserializeIRSignal(Memory.GetString(KeyString));
+				}
+			}
+
+			return make_pair(false, Result);
+		}
+
+		vector<IRLib> LoadAllFunctionSignals(string UUID, string Function, IRDevice DeviceItem = IRDevice()) {
+			UUID 		= Converter::ToUpper(UUID);
+			Function	= Converter::ToLower(Function);
+
+			if (!DeviceItem.IsCorrect())
+				DeviceItem = LoadDevice(UUID);
+
+			vector<IRLib> Result = vector<IRLib>();
+
+			if (DeviceItem.Functions.count(Function) > 0) {
+				if (DeviceItem.Functions[Function] == "single")
+					Result.push_back(LoadFunctionByIndex(UUID, Function, 0, DeviceItem).second);
+				else {
+					string KeyString = UUID + "_" + Function;
+
+					for (int i = 0; i < Settings.Data.MaxIRItemSignals; i++) {
+						pair<bool, IRLib> CurrentSignal = LoadFunctionByIndex(UUID, Function, i, DeviceItem);
+
+						if (CurrentSignal.first) Result.push_back(CurrentSignal.second);
+					}
+				}
+			}
+
+			return Result;
+		}
+
+		string GetFunctionType(string UUID, string Function, IRDevice DeviceItem = IRDevice()) {
+			UUID 		= Converter::ToUpper(UUID);
+			Function	= Converter::ToLower(Function);
+
+			if (!DeviceItem.IsCorrect())
+				DeviceItem = LoadDevice(UUID);
+
+			if (DeviceItem.Functions.count(Function) > 0)
+				return DeviceItem.Functions[Function];
+			else
+				return "single";
+		}
+
+		string GetFunctionNameByID(uint8_t FunctionID) {
+			for (auto& Function : GlobalFunctions)
+				if (Function.second == FunctionID)
+					return Function.first;
+
+			return "";
+		}
+
 		private:
 			vector<string>	IRDevicesList	= vector<string>();
 			map<string,vector<string>> AvaliableFunctions = map<string,vector<string>>();
@@ -393,59 +467,6 @@ class DataRemote_t : public DataEndpoint_t {
 
 				if (SetResult != true) return 1;
 				return AddToDevicesList(DeviceItem.UUID);
-			}
-
-			pair<bool,IRLib> LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
-				UUID 	= Converter::ToUpper(UUID);
-				Function= Converter::ToLower(Function);
-
-				NVS Memory(DataEndpoint_t::NVSArea);
-
-				IRLib Result;
-
-				if (!DeviceItem.IsCorrect())
-					DeviceItem = LoadDevice(UUID);
-
-				if (DeviceItem.Functions.count(Function) > 0) {
-					string KeyString = UUID + "_" + Function;
-
-					if (DeviceItem.Functions[Function] == "single")
-						return DeserializeIRSignal(Memory.GetString(KeyString));
-					else {
-						if (Index > 0)
-							KeyString += "_" + Converter::ToString(Index);
-
-						return DeserializeIRSignal(Memory.GetString(KeyString));
-					}
-				}
-
-				return make_pair(false, Result);
-			}
-
-			vector<IRLib> LoadAllFunctionSignals(string UUID, string Function, IRDevice DeviceItem = IRDevice()) {
-				UUID 		= Converter::ToUpper(UUID);
-				Function	= Converter::ToLower(Function);
-
-				if (!DeviceItem.IsCorrect())
-					DeviceItem = LoadDevice(UUID);
-
-				vector<IRLib> Result = vector<IRLib>();
-
-				if (DeviceItem.Functions.count(Function) > 0) {
-					if (DeviceItem.Functions[Function] == "single")
-						Result.push_back(LoadFunctionByIndex(UUID, Function, 0, DeviceItem).second);
-					else {
-						string KeyString = UUID + "_" + Function;
-
-						for (int i = 0; i < Settings.Data.MaxIRItemSignals; i++) {
-							pair<bool, IRLib> CurrentSignal = LoadFunctionByIndex(UUID, Function, i, DeviceItem);
-
-							if (CurrentSignal.first) Result.push_back(CurrentSignal.second);
-						}
-					}
-				}
-
-				return Result;
 			}
 
 			uint8_t SaveFunction(string UUID, string Function, string Item, uint8_t Index, uint8_t DeviceType) {
@@ -510,6 +531,16 @@ class DataRemote_t : public DataEndpoint_t {
 				return make_pair(true, IRLib(Item));
 			}
 
+			map<string, uint8_t> GlobalFunctions =
+			{
+				{ "power"	, 0x01 }, { "poweron"	, 0x02 }, { "poweroff"	, 0x03 	},
+				{ "mode"	, 0x04 },
+				{ "mute"	, 0x05 }, { "volup"		, 0x06 }, { "voldown"	, 0x07 	},
+				{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
+				{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
+				{ "swing"	, 0x0A }, { "speed"		, 0x0B }
+			};
+
 			bool CheckIsValidKeyForType(uint8_t Type, string Key) {
 				vector<string> AvaliableKeys = vector<string>();
 
@@ -540,8 +571,8 @@ class DataRemote_t : public DataEndpoint_t {
 					AvaliableKeys.push_back("poweroff");
 
 					AvaliableKeys.push_back("mute");
-					AvaliableKeys.push_back("volumeup");
-					AvaliableKeys.push_back("volumedown");
+					AvaliableKeys.push_back("volup");
+					AvaliableKeys.push_back("voldown");
 				}
 
 				if (Type == 0x7) {

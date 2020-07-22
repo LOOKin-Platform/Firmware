@@ -9,6 +9,10 @@
 #include <RMT.h>
 #include "Sensors.h"
 
+#include "Data.h"
+
+extern DataEndpoint_t *Data;
+
 static rmt_channel_t TXChannel = RMT_CHANNEL_6;
 
 static string 	IRACReadBuffer 	= "";
@@ -39,7 +43,6 @@ class CommandIR_t : public Command_t {
 			Events["haier-ac"] 		= 0x0B;
 			*/
 
-
 			Events["aiwa"]			= 0x14;
 
 			Events["repeat"]		= 0xED;
@@ -47,6 +50,8 @@ class CommandIR_t : public Command_t {
 			Events["saved"]			= 0xEE;
 			Events["ac"]			= 0xEF;
 			Events["prontohex"]		= 0xF0;
+
+			Events["localremote"]	= 0xFE;
 			Events["raw"]			= 0xFF;
 
 			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
@@ -152,7 +157,7 @@ class CommandIR_t : public Command_t {
 				}
 			}
 
-			if (EventCode == 0xEF) { // ac by codeset
+			if (EventCode == 0xEF) { // AC by codeset
 				ACOperand ACData(Operand);
 
 				ESP_LOGE("ACOperand", "Mode %s", Converter::ToString<uint8_t>(ACData.Mode).c_str());
@@ -166,7 +171,6 @@ class CommandIR_t : public Command_t {
 				}
 
 				string ttt = Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery();
-				ESP_LOGE("!!!", "%s", ttt.c_str());
 
 				HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
 									QueryType::POST, true,
@@ -178,7 +182,7 @@ class CommandIR_t : public Command_t {
 				return true;
 			}
 
-			if (EventCode == 0xF0) {
+			if (EventCode == 0xF0) { // Send in ProntoHex
 				if (StringOperand == "0" || InOperation)
 					return false;
 
@@ -195,7 +199,61 @@ class CommandIR_t : public Command_t {
 				return true;
 			}
 
-			if (EventCode == 0xFF) {
+			if (EventCode == 0xFE) { // local saved remote
+				if (StringOperand.size() != 8 || InOperation)
+					return false;
+
+				if (Settings.eFuse.Type != Settings.Devices.Remote)
+					return false;
+
+				vector<IRLib> SignalsToSend = vector<IRLib>();
+
+				string  UUID 		= StringOperand.substr(0, 4);
+				string  Function 	= ((DataRemote_t*)Data)->GetFunctionNameByID(Converter::UintFromHexString<uint8_t>(StringOperand.substr(4, 2)));
+				uint8_t SignalID 	= Converter::UintFromHexString<uint8_t>( StringOperand.substr(6,2));
+
+				string FunctionType = ((DataRemote_t*)Data)->GetFunctionType(UUID, Function);
+
+				if (FunctionType != "sequence" && SignalID == 0xFF)
+					SignalID = 0x0;
+
+				if (FunctionType == "sequence")
+					SignalID = 0xFF;
+
+				if (SignalID != 0xFF) {
+					pair<bool,IRLib> SignalToAdd = ((DataRemote_t*)Data)->LoadFunctionByIndex(UUID, Function, SignalID);
+
+					ESP_LOGE("SignalToAdd", "%s", (SignalToAdd.first == true) ? "true" : "false");
+
+					if (SignalToAdd.first)
+						SignalsToSend.push_back(SignalToAdd.second);
+				}
+				else
+					SignalsToSend = ((DataRemote_t*)Data)->LoadAllFunctionSignals(UUID, Function);
+
+				ESP_LOGE("SignalsToSend", "Count %d", SignalsToSend.size());
+
+			    for(auto it = SignalsToSend.begin(); it != SignalsToSend.end();) {
+
+			    	ESP_LOGE("ITERATOR", "Protocol %d", it->Protocol);
+
+					LastSignal.Protocol = it->Protocol;
+					LastSignal.Data		= it->Uint32Data;
+					LastSignal.Misc		= it->MiscData;
+
+					if (Operand == 0x0 && Misc == 0x0)
+						return false;
+
+					RMT::TXSetItems(it->GetRawDataForSending());
+					TXSend(it->GetProtocolFrequency());
+
+			    	it = SignalsToSend.erase(it);
+			    }
+
+				return true;
+			}
+
+			if (EventCode == 0xFF) { // Send RAW Format
 				if (StringOperand == "0" || InOperation)
 					return false;
 

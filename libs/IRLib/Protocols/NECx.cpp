@@ -17,7 +17,7 @@ class NECx : public IRProto {
 		NECx() {
 			ID 					= 0x04;
 			Name 				= "NECx";
-			DefinedFrequency	= 38000;
+			DefinedFrequency	= 38500;
 		};
 
 		bool IsProtocol(vector<int32_t> &RawData) override {
