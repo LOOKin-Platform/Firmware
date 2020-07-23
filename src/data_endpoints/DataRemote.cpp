@@ -306,18 +306,40 @@ class DataRemote_t : public DataEndpoint_t {
 
 					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 
-					if (!DeviceItem.IsCorrect() || DeviceItem.Functions.count(Function) == 0)
+					if (!DeviceItem.IsCorrect())
 					{
 						Result.SetFail();
 						Result.Body = ResponseItemDidntExist;
 						return;
 					}
 
-					DeviceItem.Functions.erase(Function);
-					SaveDevice(DeviceItem);
+					vector<string> FunctionsToDelete = Converter::StringToVector(Function, ",");
+
+					if (!FunctionsToDelete.size()) {
+						Result.SetFail();
+						return;
+					}
 
 					NVS Memory(DataEndpoint_t::NVSArea);
-					Memory.EraseStartedWith(UUID + "_" + Function + "_");
+
+					bool IsOK = false;
+					for (auto& FunctionToDelete : FunctionsToDelete) {
+						if (DeviceItem.Functions.count(Function) != 0)
+						{
+							IsOK = true;
+							DeviceItem.Functions.erase(Function);
+							Memory.EraseStartedWith(UUID + "_" + Function + "_");
+						}
+					}
+
+					SaveDevice(DeviceItem);
+
+					if (!IsOK && FunctionsToDelete.size() == 1)
+					{
+						Result.SetFail();
+						Result.Body = ResponseItemDidntExist;
+						return;
+					}
 				}
 			}
 
