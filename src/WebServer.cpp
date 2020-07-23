@@ -84,6 +84,37 @@ esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
     return ESP_OK;
 }
 
+esp_err_t WebServer_t::PUTHandler(httpd_req_t *Request) {
+	WebServer_t::Response Response;
+    char content[4096];
+
+    string PostData = "";
+
+    if (Request->content_len > 0) {
+        size_t recv_size = MIN(Request->content_len, sizeof(content));
+        int ret = httpd_req_recv(Request, content, recv_size);
+
+        if (ret <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT)
+                httpd_resp_send_408(Request);
+
+            return ESP_FAIL;
+        }
+
+        PostData = content;
+        PostData = PostData.substr(0, recv_size);
+    }
+
+	string QueryString = "PUT " + string(Request->uri) + " \r\n" + PostData;
+
+	Query_t Query(QueryString);
+	API::Handle(Response, Query, Request);
+
+	SendHTTPData(Response, Request);
+
+    return ESP_OK;
+}
+
 esp_err_t WebServer_t::DELETEHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
 
@@ -92,6 +123,37 @@ esp_err_t WebServer_t::DELETEHandler(httpd_req_t *Request) {
 	API::Handle(Response, Query);
 
 	SendHTTPData(Response, Request);
+    return ESP_OK;
+}
+
+esp_err_t WebServer_t::PATCHHandler(httpd_req_t *Request) {
+	WebServer_t::Response Response;
+    char content[4096];
+
+    string PostData = "";
+
+    if (Request->content_len > 0) {
+        size_t recv_size = MIN(Request->content_len, sizeof(content));
+        int ret = httpd_req_recv(Request, content, recv_size);
+
+        if (ret <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT)
+                httpd_resp_send_408(Request);
+
+            return ESP_FAIL;
+        }
+
+        PostData = content;
+        PostData = PostData.substr(0, recv_size);
+    }
+
+	string QueryString = "PUT " + string(Request->uri) + " \r\n" + PostData;
+
+	Query_t Query(QueryString);
+	API::Handle(Response, Query, Request);
+
+	SendHTTPData(Response, Request);
+
     return ESP_OK;
 }
 
@@ -133,7 +195,7 @@ httpd_uri_t uri_get = {
     .user_ctx = NULL
 };
 
-/* URI handler structure for GET /uri */
+/* URI handler structure for POST /uri */
 httpd_uri_t uri_post = {
     .uri      = "/*",
     .method   = HTTP_POST,
@@ -141,11 +203,29 @@ httpd_uri_t uri_post = {
     .user_ctx = NULL
 };
 
-/* URI handler structure for GET /uri */
+
+/* URI handler structure for PUT /uri */
+httpd_uri_t uri_put = {
+    .uri      = "/*",
+    .method   = HTTP_PUT,
+    .handler  = WebServer_t::PUTHandler,
+    .user_ctx = NULL
+};
+
+
+/* URI handler structure for DELETE /uri */
 httpd_uri_t uri_delete = {
     .uri      = "/*",
     .method   = HTTP_DELETE,
     .handler  = WebServer_t::DELETEHandler,
+    .user_ctx = NULL
+};
+
+/* URI handler structure for DELETE /uri */
+httpd_uri_t uri_patch = {
+    .uri      = "/*",
+    .method   = HTTP_PATCH,
+    .handler  = WebServer_t::PATCHHandler,
     .user_ctx = NULL
 };
 
@@ -165,7 +245,9 @@ void WebServer_t::Start() {
     if (httpd_start(&HTTPServerHandle, &config) == ESP_OK) {
         httpd_register_uri_handler(HTTPServerHandle, &uri_get);
         httpd_register_uri_handler(HTTPServerHandle, &uri_post);
+        httpd_register_uri_handler(HTTPServerHandle, &uri_put);
         httpd_register_uri_handler(HTTPServerHandle, &uri_delete);
+        httpd_register_uri_handler(HTTPServerHandle, &uri_patch);
     }
 
 	if (UDPListenerTaskHandle == NULL)

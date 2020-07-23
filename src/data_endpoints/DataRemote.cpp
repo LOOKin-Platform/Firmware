@@ -28,6 +28,7 @@ using namespace std;
 
 class DataRemote_t : public DataEndpoint_t {
 	public:
+
 		enum Error {
 			Ok 					= 0x00,
 			EmptyUUIDDevice 	= 0x01,
@@ -38,6 +39,9 @@ class DataRemote_t : public DataEndpoint_t {
 			UnsupportedFunction	= 0x22,
 			NoFreeSpace 		= 0x91
 		};
+
+		const string ResponseItemDidntExist 	= "{\"success\" : \"false\", \"Message\" : \"Item didn't exists\" }";
+		const string ResponseItemAlreadyExist 	= "{\"success\" : \"false\", \"Message\" : \"Item already exists\" }";
 
 		class IRDevice {
 			public:
@@ -198,8 +202,12 @@ class DataRemote_t : public DataEndpoint_t {
 
 					if (DeviceItem.Functions.count(Converter::ToLower(Function)))
 						JSONObject.SetItem("Type", DeviceItem.Functions[Converter::ToLower(Function)]);
-					else
-						JSONObject.SetItem("Type", "single");
+					else {
+						// JSONObject.SetItem("Type", "single");
+						Result.SetInvalid();
+						Result.Body = ResponseItemDidntExist;
+						return;
+					}
 
 					vector<map<string,string>> OutputItems = vector<map<string,string>>();
 
@@ -225,40 +233,12 @@ class DataRemote_t : public DataEndpoint_t {
 			// POST запрос - сохранение и изменение данных
 			if (Type == QueryType::POST)
 			{
-				if (URLParts.size() < 2) {
-					DataRemote_t::IRDevice NewDeviceItem;
-
+				if (URLParts.size() == 0 || URLParts.size() == 1) {
 					string UUID = "";
 					if (Params.count("uuid")) UUID = Converter::ToUpper(Params["uuid"]);
 					if (URLParts.size() == 1) UUID = Converter::ToUpper(URLParts[0]);
 
-					if (UUID == "")
-					{
-						Result.SetFail();
-						return;
-					}
-
-					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
-
-					if (DeviceItem.IsCorrect())
-						DeviceItem.ParseJSONItems(Params);
-					else
-						DeviceItem = DataRemote_t::IRDevice(Params, UUID);
-
-					if (!DeviceItem.IsCorrect())
-					{
-						Result.SetFail();
-						return;
-					}
-
-					uint8_t ResultCode = SaveDevice(DeviceItem);
-					if (ResultCode == 0)
-						Result.SetSuccess();
-					else
-					{
-						Result.SetFail();
-						Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(ResultCode) + " }";
-					}
+					PUTorPOSTDeviceItem(Type, UUID, Params, Result);
 
 					return;
 				}
@@ -268,71 +248,31 @@ class DataRemote_t : public DataEndpoint_t {
 					string UUID 	= Converter::ToUpper(URLParts[0]);
 					string Function	= URLParts[1];
 
-					JSON JSONObject(RequestBody);
+					PUTorPOSTDeviceFunction(Type, UUID, Function, RequestBody, Result);
+					return;
+				}
+			}
 
-					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
+			// PUT запрос - обновление ранее сохраненных данных
+			if (Type == QueryType::PUT)
+			{
+				if (URLParts.size() == 0 || URLParts.size() == 1) {
+					string UUID = "";
+					if (Params.count("uuid")) UUID = Converter::ToUpper(Params["uuid"]);
+					if (URLParts.size() == 1) UUID = Converter::ToUpper(URLParts[0]);
 
-					if (!DeviceItem.IsCorrect()) {
-						Result.SetFail();
-						Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::DeviceNotFound)) + " }";
-						return;
-					}
+					PUTorPOSTDeviceItem(Type, UUID, Params, Result);
 
-					if (!JSONObject.IsItemExists("signals"))
-					{
-						Result.SetFail();
-						Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::SignalsFieldEmpty)) + " }";
-						return;
-					}
+					return;
+				}
 
-					JSON SignalsJSON = JSONObject.Detach("signals");
-					SignalsJSON.SetDestructable(false);
+				if (URLParts.size() == 2)
+				{
+					string UUID 	= Converter::ToUpper(URLParts[0]);
+					string Function	= URLParts[1];
 
-					if (SignalsJSON.GetType() == JSON::RootType::Array) {
-						cJSON *JSONRoot = SignalsJSON.GetRoot();
-
-						cJSON *Child = JSONRoot->child;
-
-						int Index = 0;
-
-						string SignalType = "single";
-						if (JSONObject.IsItemExists("type")) SignalType = JSONObject.GetItem("type");
-
-						DeviceItem.Functions[Function] =  SignalType;
-
-						if (JSONObject.IsItemExists("updated"))
-							DeviceItem.Updated = Converter::ToUint32(JSONObject.GetItem("updated"));
-
-						uint8_t SaveDeviceResult = SaveDevice(DeviceItem);
-
-						if (SaveDeviceResult)
-						{
-							Result.SetFail();
-							Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(SaveDeviceResult) + " }";
-							return;
-						}
-
-						while(Child) {
-							JSON ChildObject(Child);
-							ChildObject.SetDestructable(false);
-
-							uint8_t SaveFunctionResult = SaveFunction(UUID, Function, SerializeIRSignal(ChildObject), Index++, DeviceItem.Type);
-							if (SaveFunctionResult)
-							{
-								Result.SetFail();
-								Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(SaveFunctionResult) + " }";
-								return;
-							}
-
-							Child = Child->next;
-						}
-					}
-					else
-					{
-						Result.SetFail();
-						Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::SignalsFieldEmpty)) + " }";
-						return;
-					}
+					PUTorPOSTDeviceFunction(Type, UUID, Function, RequestBody, Result);
+					return;
 				}
 			}
 
@@ -348,13 +288,179 @@ class DataRemote_t : public DataEndpoint_t {
 
 					string UUID = Converter::ToUpper(URLParts[0]);
 
+					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
+					if (!DeviceItem.IsCorrect())
+					{
+						Result.SetFail();
+						Result.Body = ResponseItemDidntExist;
+						return;
+					}
+
 					RemoveFromIRDevicesList(UUID);
 					Memory.EraseStartedWith(UUID);
+				}
+
+				if (URLParts.size() == 2) {
+					string UUID 	= Converter::ToUpper(URLParts[0]);
+					string Function	= URLParts[1];
+
+					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
+
+					if (!DeviceItem.IsCorrect() || DeviceItem.Functions.count(Function) == 0)
+					{
+						Result.SetFail();
+						Result.Body = ResponseItemDidntExist;
+						return;
+					}
+
+					DeviceItem.Functions.erase(Function);
+					SaveDevice(DeviceItem);
+
+					NVS Memory(DataEndpoint_t::NVSArea);
+					Memory.EraseStartedWith(UUID + "_" + Function + "_");
 				}
 			}
 
 			Result.SetSuccess();
 		}
+
+		void PUTorPOSTDeviceItem(QueryType Type, string UUID, map<string,string> Params, WebServer_t::Response &Result) {
+			DataRemote_t::IRDevice NewDeviceItem;
+
+			if (UUID == "")
+			{
+				Result.SetFail();
+				return;
+			}
+
+			DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
+
+			if (Type == QueryType::POST && DeviceItem.IsCorrect())
+			{
+				Result.SetFail();
+				Result.Body = ResponseItemAlreadyExist;
+				return;
+			}
+
+			if (Type == QueryType::PUT && !DeviceItem.IsCorrect())
+			{
+				Result.SetFail();
+				Result.Body = ResponseItemDidntExist;
+				return;
+			}
+
+			DeviceItem.ParseJSONItems(Params);
+
+			uint8_t ResultCode = SaveDevice(DeviceItem);
+			if (ResultCode == 0)
+				Result.SetSuccess();
+			else
+			{
+				Result.SetFail();
+				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(ResultCode) + " }";
+			}
+
+			Result.SetSuccess();
+
+			return;
+		}
+
+		void PUTorPOSTDeviceFunction(QueryType Type, string UUID, string Function, string &RequestBody, WebServer_t::Response &Result) {
+			JSON JSONObject(RequestBody);
+
+			DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
+
+			if (!DeviceItem.IsCorrect()) {
+				Result.SetFail();
+				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::DeviceNotFound)) + " }";
+				return;
+			}
+
+			if (!JSONObject.IsItemExists("signals"))
+			{
+				Result.SetFail();
+				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::SignalsFieldEmpty)) + " }";
+				return;
+			}
+
+			if (Type == QueryType::POST && DeviceItem.Functions.count(Function) > 0)
+			{
+				Result.SetFail();
+				Result.Body = ResponseItemAlreadyExist;
+				return;
+			}
+
+			if (Type == QueryType::PUT && DeviceItem.Functions.count(Function) == 0)
+			{
+				Result.SetFail();
+				Result.Body = ResponseItemDidntExist;
+				return;
+			}
+
+			if (!CheckIsValidKeyForType(DeviceItem.Type, Function)) {
+				Result.SetFail();
+				Result.Body = "{\"success\" : \"false\", \"Message\" : \"Invalid function name\" }";
+				return;
+			}
+
+			if (Type == QueryType::PUT) {
+				NVS Memory(DataEndpoint_t::NVSArea);
+				Memory.EraseStartedWith(UUID + "_" + Function + "_");
+			}
+
+			JSON SignalsJSON = JSONObject.Detach("signals");
+			SignalsJSON.SetDestructable(false);
+
+			if (SignalsJSON.GetType() == JSON::RootType::Array) {
+				cJSON *JSONRoot = SignalsJSON.GetRoot();
+
+				cJSON *Child = JSONRoot->child;
+
+				int Index = 0;
+
+				string SignalType = "single";
+				if (JSONObject.IsItemExists("type")) SignalType = JSONObject.GetItem("type");
+
+				DeviceItem.Functions[Function] =  SignalType;
+
+				if (JSONObject.IsItemExists("updated"))
+					DeviceItem.Updated = Converter::ToUint32(JSONObject.GetItem("updated"));
+
+				uint8_t SaveDeviceResult = SaveDevice(DeviceItem);
+
+				if (SaveDeviceResult)
+				{
+					Result.SetFail();
+					Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(SaveDeviceResult) + " }";
+					return;
+				}
+
+				while(Child) {
+					JSON ChildObject(Child);
+					ChildObject.SetDestructable(false);
+
+					uint8_t SaveFunctionResult = SaveFunction(UUID, Function, SerializeIRSignal(ChildObject), Index++, DeviceItem.Type);
+					if (SaveFunctionResult)
+					{
+						Result.SetFail();
+						Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(SaveFunctionResult) + " }";
+						return;
+					}
+
+					Child = Child->next;
+				}
+			}
+			else
+			{
+				Result.SetFail();
+				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::SignalsFieldEmpty)) + " }";
+				return;
+			}
+
+			Result.SetSuccess();
+			return;
+		}
+
 
 		pair<bool,IRLib> LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
 			UUID 	= Converter::ToUpper(UUID);

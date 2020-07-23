@@ -31,62 +31,64 @@ class WebServer_t {
 
 		class Response {
 			public:
-				enum CODE	{ OK, INVALID, ERROR, IGNORE };
-				enum TYPE 	{ PLAIN, JSON, HTML };
+				enum CODE		{ OK, INVALID, ERROR, IGNORE };
+				enum TYPE 		{ PLAIN, JSON, HTML };
 
-				string 		Body;
-				CODE 		ResponseCode;
-				TYPE		ContentType;
+				string 			Body;
+				CODE 			ResponseCode;
+				TYPE			ContentType;
 
 				Response();
 
-				void 		SetSuccess();
-				void 		SetFail();
-				void		SetInvalid();
+				void 			SetSuccess();
+				void 			SetFail();
+				void			SetInvalid();
 
-				void 		Clear();
+				void 			Clear();
 
-				uint16_t	CodeToInt();
+				uint16_t		CodeToInt();
 		};
 
 		WebServer_t();
-		void Start();
-		void Stop();
+		void 					Start();
+		void 					Stop();
 
-	    static esp_err_t GETHandler		(httpd_req_t *);
-	    static esp_err_t POSTHandler	(httpd_req_t *);
-	    static esp_err_t DELETEHandler	(httpd_req_t *);
+	    static esp_err_t 		GETHandler		(httpd_req_t *);
+	    static esp_err_t 		POSTHandler		(httpd_req_t *);
+	    static esp_err_t 		PUTHandler		(httpd_req_t *);
+	    static esp_err_t 		DELETEHandler	(httpd_req_t *);
+	    static esp_err_t 		PATCHHandler	(httpd_req_t *);
 
-	    static void	SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request);
+	    static void				SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request);
 
-	    static void SendChunk(httpd_req_t *Request, string Part);
-	    static void EndChunk(httpd_req_t *Request);
+	    static void 			SendChunk(httpd_req_t *Request, string Part);
+	    static void 			EndChunk(httpd_req_t *Request);
 
-		void UDPSendBroadcastAlive();
-		void UDPSendBroadcastDiscover();
-		void UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1);
-		void UDPSendBroadcast(string);
+		void 					UDPSendBroadcastAlive();
+		void 					UDPSendBroadcastDiscover();
+		void 					UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1);
+		void 					UDPSendBroadcast(string);
 
-		void UDPSendBroacastFromQueue();
-		void UDPSendBroadcastQueueAdd(string Message);
+		void 					UDPSendBroacastFromQueue();
+		void 					UDPSendBroadcastQueueAdd(string Message);
 
-		static string 		SetupPage;
-		string GetSetupPage();
+		static string 			SetupPage;
+		string 					GetSetupPage();
 
-		static bool 		UDPServerStopFlag;
-		static TaskHandle_t	UDPListenerTaskHandle;
+		static bool 			UDPServerStopFlag;
+		static TaskHandle_t		UDPListenerTaskHandle;
 
-		static void 	SetHeaders(WebServer_t::Response &, httpd_req_t *);
+		static void 			SetHeaders(WebServer_t::Response &, httpd_req_t *);
 
-		static string	UDPAliveBody();
-		static string	UDPDiscoverBody(string ID = "");
-		static string	UDPUpdatedBody(uint8_t SensorID, string Value);
+		static string			UDPAliveBody();
+		static string			UDPDiscoverBody(string ID = "");
+		static string			UDPUpdatedBody(uint8_t SensorID, string Value);
 
 	private:
-	    static QueueHandle_t UDPBroadcastQueue;
-	    static httpd_handle_t HTTPServerHandle;
+	    static QueueHandle_t 	UDPBroadcastQueue;
+	    static httpd_handle_t 	HTTPServerHandle;
 
-		static void		UDPListenerTask(void *);
+		static void				UDPListenerTask(void *);
 };
 
 #endif

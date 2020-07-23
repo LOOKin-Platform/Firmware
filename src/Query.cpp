@@ -36,6 +36,8 @@ void Query_t::FillParams(string &Query) {
 	if (Query.substr(0, Pos) == "GET")		Type = GET;
 	if (Query.substr(0, Pos) == "POST")		Type = POST;
 	if (Query.substr(0, Pos) == "DELETE")	Type = DELETE;
+	if (Query.substr(0, Pos) == "PUT")		Type = PUT;
+	if (Query.substr(0, Pos) == "PATCH")	Type = PATCH;
 
 	Query = Query.substr(Pos+1);
 

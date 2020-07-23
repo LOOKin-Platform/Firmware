@@ -25,7 +25,7 @@ using namespace std;
 
 #include "esp_http_client.h"
 
-enum QueryType { NONE, POST, GET, DELETE };
+enum QueryType { NONE, POST, GET, DELETE, PUT, PATCH };
 
 typedef void (*ReadStarted)	(char[]);
 typedef bool (*ReadBody)	(char[], int, char[]);
