@@ -12,17 +12,12 @@
 // The code consists of multiple parts:
 //
 //   1. The definition of the accessory configuration and its internal state.
-//
 //   2. Helper functions to load and save the state of the accessory.
-//
 //   3. The definitions for the HomeKit attribute database.
-//
 //   4. The callbacks that implement the actual behavior of the accessory, in this
 //      case here they merely access the global accessory state variable and write
 //      to the log to make the behavior easily observable.
-//
 //   5. The initialization of the accessory state.
-//
 //   6. Callbacks that notify the server in case their associated value has changed.
 
 #include "App.h"

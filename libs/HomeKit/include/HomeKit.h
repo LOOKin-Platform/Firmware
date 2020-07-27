@@ -7,8 +7,6 @@
 #ifndef LIBSHOMEKIT_H
 #define LIBSHOMEKIT_H
 
-#define HOMEKIT_IP true
-#define HOMEKIT_BLE false
 #define HOMEKIT_HAVE_NFC false
 
 #include <freertos/FreeRTOS.h>
@@ -33,10 +31,8 @@
 #include "HAPPlatformMFiTokenAuth+Init.h"
 #include "HAPPlatformRunLoop+Init.h"
 
-#if HOMEKIT_IP
 #include "HAPPlatformServiceDiscovery+Init.h"
 #include "HAPPlatformTCPStreamManager+Init.h"
-#endif
 
 typedef struct {
 	HAPPlatformKeyValueStore 	keyValueStore;
@@ -49,9 +45,7 @@ typedef struct {
 	HAPPlatformAccessorySetupNFC setupNFC;
 	#endif
 
-	#if HOMEKIT_IP
 	HAPPlatformTCPStreamManager tcpStreamManager;
-	#endif
 
 	HAPPlatformMFiHWAuth 		mfiHWAuth;
 	HAPPlatformMFiTokenAuth 	mfiTokenAuth;

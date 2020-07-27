@@ -27,8 +27,6 @@ static bool clearPairings = false;
 
 PlatfromStruct HomeKit::Platform = {0};
 
-#define PREFERRED_ADVERTISING_INTERVAL (HAPBLEAdvertisingIntervalCreateFromMilliseconds(417.5f))
-
 /**
  * HomeKit accessory server that hosts the accessory.
  */
@@ -38,8 +36,6 @@ static HAPAccessoryServerRef accessoryServer;
  * Initialize global platform objects.
  */
 void HomeKit::InitializePlatform() {
-
-
     // Key-value store.
 	const HAPPlatformKeyValueStoreOptions KeyValueStoreOptions = {
 		.part_name 			= "nvs",
@@ -71,8 +67,6 @@ void HomeKit::InitializePlatform() {
     // Initialise Wi-Fi
     //app_wifi_init();
 
-#if HOMEKIT_IP
-
     const HAPPlatformTCPStreamManagerOptions PlatformTCPStreamManagerOptions = {
     	/* Listen on all available network interfaces. */
     	.port = 0 /* Listen on unused port number from the ephemeral port range. */,
@@ -88,17 +82,6 @@ void HomeKit::InitializePlatform() {
     static HAPPlatformServiceDiscovery serviceDiscovery;
     HAPPlatformServiceDiscoveryCreate(&serviceDiscovery, &PlatformServiceDiscoveryOptions);
     Platform.hapPlatform.ip.serviceDiscovery = &serviceDiscovery;
-#endif
-
-#if (HOMEKIT_BLE)
-    // BLE peripheral manager. Depends on key-value store.
-    static HAPPlatformBLEPeripheralManagerOptions blePMOptions = { 0 };
-    blePMOptions.keyValueStore = &Platform.keyValueStore;
-
-    static HAPPlatformBLEPeripheralManager blePeripheralManager;
-    HAPPlatformBLEPeripheralManagerCreate(&blePeripheralManager, &blePMOptions);
-    platform.hapPlatform.ble.blePeripheralManager = &blePeripheralManager;
-#endif
 
 #if HAVE_MFI_HW_AUTH
     // Apple Authentication Coprocessor provider.
@@ -137,10 +120,8 @@ void HomeKit::DeinitializePlatform() {
     HAPPlatformMFiHWAuthRelease(&Platform.mfiHWAuth);
 #endif
 
-#if HOMEKIT_IP
     // TCP stream manager.
     HAPPlatformTCPStreamManagerRelease(&Platform.tcpStreamManager);
-#endif
 
     HomeKitApp::Deinitialize();
 
@@ -206,7 +187,6 @@ void HomeKit::HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _
     }
 }
 
-#if HOMEKIT_IP
 void HomeKit::InitializeIP() {
     // Prepare accessory server storage.
     static HAPIPSession ipSessions[kHAPIPSessionStorage_MinimumNumElements];
@@ -243,33 +223,6 @@ void HomeKit::InitializeIP() {
     // Connect to Wi-Fi
     //app_wifi_connect();
 }
-#endif
-
-#if HOMEKIT_BLE
-static void InitializeBLE() {
-    static HAPBLEGATTTableElementRef gattTableElements[kAttributeCount];
-    static HAPBLESessionCacheElementRef sessionCacheElements[kHAPBLESessionCache_MinElements];
-    static HAPSessionRef session;
-    static uint8_t procedureBytes[2048];
-    static HAPBLEProcedureRef procedures[1];
-
-    static HAPBLEAccessoryServerStorage bleAccessoryServerStorage = {
-        .gattTableElements = gattTableElements,
-        .numGATTTableElements = HAPArrayCount(gattTableElements),
-        .sessionCacheElements = sessionCacheElements,
-        .numSessionCacheElements = HAPArrayCount(sessionCacheElements),
-        .session = &session,
-        .procedures = procedures,
-        .numProcedures = HAPArrayCount(procedures),
-        .procedureBuffer = { .bytes = procedureBytes, .numBytes = sizeof procedureBytes }
-    };
-
-    platform.hapAccessoryServerOptions.ble.transport = &kHAPAccessoryServerTransport_BLE;
-    platform.hapAccessoryServerOptions.ble.accessoryServerStorage = &bleAccessoryServerStorage;
-    platform.hapAccessoryServerOptions.ble.preferredAdvertisingInterval = PREFERRED_ADVERTISING_INTERVAL;
-    platform.hapAccessoryServerOptions.ble.preferredNotificationDuration = kHAPBLENotification_MinDuration;
-}
-#endif
 
 void HomeKit::Task(void *)
 {
@@ -277,14 +230,7 @@ void HomeKit::Task(void *)
 
     // Initialize global platform objects.
     InitializePlatform();
-
-#if HOMEKIT_IP
     InitializeIP();
-#endif
-
-#if HOMEKIT_BLE
-    InitializeBLE();
-#endif
 
     // Perform Application-specific initalizations such as setting up callbacks
     // and configure any additional unique platform dependencies
