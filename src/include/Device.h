@@ -88,6 +88,8 @@ class Device_t {
 
 		string				IDToString();
 		string				TypeToString();
+		string				ModelToString();
+
 		static uint32_t 	GenerateID();
 
 		static void			OTACallbackSuccessfulStarted();
@@ -110,7 +112,6 @@ class Device_t {
 		string 				CurrentVoltageToString();
 		string				SensorModeToString();
 		string 				BluetoothModeToString();
-		string				ModelToString();
 };
 
 #endif

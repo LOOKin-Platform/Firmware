@@ -292,7 +292,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		        return ESP_OK;
 		    }
 
-			//HomeKit::Start();
+		    if (Settings.eFuse.DeviceID == 0x00000002)
+		    	HomeKit::Start();
 
 		    mdns_hostname_set(Device.IDToString().c_str());
 		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();

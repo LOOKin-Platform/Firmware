@@ -21,6 +21,7 @@
 //   6. Callbacks that notify the server in case their associated value has changed.
 
 #include "App.h"
+#include "Globals.h"
 
 /**
  * Domain used in the key value store for application data.
@@ -37,31 +38,20 @@
 HomeKitApp::AccessoryConfiguration HomeKitApp::BridgeAccessoryConfiguration = {0};
 
 /**
- * HomeKit accessory that provides the Light Bulb service.
+ * HomeKit accessory that provides the Bridge service for Remote.
  *
  * Note: Not constant to enable BCT Manual Name Change.
  */
 
-HAPAccessory HomeKitApp::BridgeAccessory =
-	{
-		.aid 				= 1,
-        .category 			= kHAPAccessoryCategory_Bridges,
-		.name 				= "Test Remote",
-		.manufacturer 		= "LOOK.in",
-		.model 				= "Remote",
-		.serialNumber 		= "test",
-		.firmwareVersion 	= "1",
-		.hardwareVersion 	= "1",
-		.services = (const HAPService* const[])
-		{
-			&accessoryInformationService,
-			&hapProtocolInformationService,
-			&pairingService,
-//			&lightBulbService,
-			NULL
-		},
-		.callbacks = { .identify = IdentifyAccessory }
-	};
+char HomeKitApp::AccessoryName[65] 			= "Accessory";
+char HomeKitApp::AccessoryModel[65]			= "1";
+char HomeKitApp::AccessorySerialNumber[8]	= {"0"};
+char HomeKitApp::AccessoryFirmwareVersion[8]= "2.00";
+char HomeKitApp::AccessoryHardwareVersion[4]= "1";
+
+const HAPAccessory* HomeKitApp::HAPAccessories[8] = {};
+
+HAPAccessory HomeKitApp::BridgeAccessory = {};
 
 vector<HAPAccessory> HomeKitApp::Accessories = vector<HAPAccessory>();
 
@@ -126,11 +116,7 @@ HAP_RESULT_USE_CHECK HAPError HomeKitApp::IdentifyAccessory(
     return kHAPError_None;
 }
 
-HAP_RESULT_USE_CHECK HAPError HomeKitApp::HandleLightBulbOnRead(
-        HAPAccessoryServerRef* server HAP_UNUSED,
-        const HAPBoolCharacteristicReadRequest* request HAP_UNUSED,
-        bool* value,
-        void* _Nullable context HAP_UNUSED) {
+HAP_RESULT_USE_CHECK HAPError HomeKitApp::HandleOnRead(HAPAccessoryServerRef* server HAP_UNUSED, const HAPBoolCharacteristicReadRequest* request HAP_UNUSED, bool* value, void* _Nullable context HAP_UNUSED) {
     *value = BridgeAccessoryConfiguration.state.lightBulbOn;
     HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, *value ? "true" : "false");
 
@@ -138,10 +124,34 @@ HAP_RESULT_USE_CHECK HAPError HomeKitApp::HandleLightBulbOnRead(
 }
 
 HAP_RESULT_USE_CHECK
-HAPError HomeKitApp::HandleLightBulbOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request,  bool value, void* _Nullable context HAP_UNUSED) {
+HAPError HomeKitApp::HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request,  bool value, void* _Nullable context HAP_UNUSED) {
     HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, value ? "true" : "false");
 
-	printf("Write!\n");
+    if (Settings.eFuse.Type == 0x81) {
+		string UUID = Converter::ToHexString((uint16_t)request->accessory->aid, 4);
+
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        string Operand = UUID;
+
+        if (Functions.count("power") > 0) {
+        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("power"),2);
+        	Operand += (Functions["power"] == "toggle") ? ((value) ? "00" : "01" ) : "FF";
+        	IRCommand->Execute(0xFE, Operand);
+        }
+        else {
+        	if (Functions.count("poweron") > 0 && value) {
+            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweron"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand);
+        	}
+        	if (Functions.count("poweroff") > 0 && !value) {
+            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweroff"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand);
+        	}
+        }
+    }
 
     if (BridgeAccessoryConfiguration.state.lightBulbOn != value) {
         BridgeAccessoryConfiguration.state.lightBulbOn = value;
@@ -178,83 +188,81 @@ void HomeKitApp::Release() {
 }
 
 void HomeKitApp::AppAccessoryServerStart() {
+	string RootName = Device.GetName();
+	if (RootName == "") RootName = Device.TypeToString() + " " + Device.IDToString();
 
-	/*
-	const HAPAccessory LightAccessory =
-		{
-			.aid = 1,
-	        .category = kHAPAccessoryCategory_Lighting,
-			.name = "Test Light Bulb",
-			.manufacturer = "Acme",
-			.model = "LightBulb1,1",
-			.serialNumber = "099DB48E9E28",
-			.firmwareVersion = "1",
-			.hardwareVersion = "1",
+	::memcpy(AccessoryName				, RootName.data(), RootName.size());
+	::memcpy(AccessoryModel				, Device.ModelToString().data(), Device.ModelToString().size());
+	::memcpy(AccessorySerialNumber		, Device.IDToString().data(), Device.IDToString().size());
+	::memcpy(AccessoryFirmwareVersion	, Device.FirmwareVersion.data(), Device.FirmwareVersion.size());
+	::memcpy(AccessoryHardwareVersion	, Device.ModelToString().data(), Device.ModelToString().size());
+
+	if (Settings.eFuse.Type == 0x81) {
+		BridgeAccessory = {
+			.aid 				= 1,
+	        .category 			= kHAPAccessoryCategory_Bridges,
+			.name 				= &AccessoryName[0],
+			.manufacturer 		= "LOOK.in",
+			.model 				= &AccessoryModel[0],
+			.serialNumber 		= &AccessorySerialNumber[0],
+			.firmwareVersion 	= &AccessoryFirmwareVersion[0],
+			.hardwareVersion 	= &AccessoryHardwareVersion[0],
 			.services = (const HAPService* const[])
 			{
 				&accessoryInformationService,
 				&hapProtocolInformationService,
 				&pairingService,
-				&lightBulbService,
 				NULL
 			},
 			.callbacks = { .identify = IdentifyAccessory }
 		};
 
-	Accessories.push_back(LightAccessory);
-
-	const HAPAccessory* AccessoryArray = &Accessories[0];
-	 */
-
-
-
-	static const HAPAccessory TestDevice = {
-		.aid = 10,
-		.category = kHAPAccessoryCategory_BridgedAccessory,
-		.name = "qwerty",
-		.manufacturer = "Acme",
-		.model = "LightBulb1,1",
-		.serialNumber = "099DB48E9E28",
-		.firmwareVersion = "1",
-		.hardwareVersion = "1",
-		.services = (const HAPService* const[])
+		uint64_t Index = 1;
+		for (auto &Device : ((DataRemote_t *)Data)->GetAvaliableDevices())
 		{
-			&accessoryInformationService,
-			&hapProtocolInformationService,
-			&pairingService,
-			&lightBulbService,
-			NULL
-		},
-		.callbacks = { .identify = IdentifyAccessory }
-	};
+			const HAPAccessory* AccessoryToAdd = nullptr;
 
-	static const HAPAccessory TestDevice2 = {
-		.aid = 11,
-		.category = kHAPAccessoryCategory_BridgedAccessory,
-		.name = "Qwerty2",
-		.manufacturer = "Acme",
-		.model = "LightBulb1,1",
-		.serialNumber = "099DB48E9E28",
-		.firmwareVersion = "1",
-		.hardwareVersion = "1",
-		.services = (const HAPService* const[])
-		{
-			&accessoryInformationService,
-			&hapProtocolInformationService,
-			&pairingService,
-			&lightBulbService,
-			NULL
-		},
-		.callbacks = { .identify = IdentifyAccessory }
-	};
+			switch (Device.Type) {
+				case 0x03: // light
+					AccessoryToAdd = new HAPAccessory
+					{
+						.aid 			= (uint64_t)Converter::UintFromHexString<uint16_t>(Device.UUID),
+						.category 		= kHAPAccessoryCategory_BridgedAccessory,
+						.name 			= "qwerty2",
+						.manufacturer 	= "n/a",
+						.model	 		= "n/a",
+						.serialNumber 	= "n/a",
+						.firmwareVersion = &AccessoryFirmwareVersion[0],
+						.hardwareVersion = &AccessoryHardwareVersion[0],
+						.services = (const HAPService* const[])
+						{
+							&accessoryInformationService,
+							&hapProtocolInformationService,
+							&pairingService,
+							&LightBulbService,
+							NULL
+						},
+						.callbacks = { .identify = IdentifyAccessory }
+					};
+					break;
+			}
 
-	static const HAPAccessory* const TestArray[] = { &TestDevice, &TestDevice2, 0 };// = { TestDevice};
+			if (AccessoryToAdd != nullptr)
+				HAPAccessories[Index-1] = AccessoryToAdd;
 
-	HAPAccessoryServerStartBridge(	BridgeAccessoryConfiguration.server,
-									&BridgeAccessory,
-									&TestArray[0],
-									true);
-    //HAPAccessoryServerStart(accessoryConfiguration.server, &accessory);
+			Index++;
+		}
+
+		HAPAccessories[Index-1] = {0};
+
+		HAPAccessoryServerStartBridge(	BridgeAccessoryConfiguration.server,
+										&BridgeAccessory,
+										&HAPAccessories[0],
+										true);
+	}
+	//else {
+	//   HAPAccessoryServerStart(accessoryConfiguration.server, &BridgeAccessory);
+	//}
 }
 
 //----------------------------------------------------------------------------------------------------------------------

@@ -14,31 +14,31 @@
 /**
  * IID constants.
  */
-#define kIID_AccessoryInformation                 ((uint64_t) 0x0001)
-#define kIID_AccessoryInformationIdentify         ((uint64_t) 0x0002)
-#define kIID_AccessoryInformationManufacturer     ((uint64_t) 0x0003)
-#define kIID_AccessoryInformationModel            ((uint64_t) 0x0004)
-#define kIID_AccessoryInformationName             ((uint64_t) 0x0005)
-#define kIID_AccessoryInformationSerialNumber     ((uint64_t) 0x0006)
-#define kIID_AccessoryInformationFirmwareRevision ((uint64_t) 0x0007)
-#define kIID_AccessoryInformationHardwareRevision ((uint64_t) 0x0008)
-#define kIID_AccessoryInformationADKVersion       ((uint64_t) 0x0009)
-#define kIID_AccessoryInformationProductData      ((uint64_t) 0x000A)
+#define kIID_AccessoryInformation                 	((uint64_t) 0x0001)
+#define kIID_AccessoryInformationIdentify         	((uint64_t) 0x0002)
+#define kIID_AccessoryInformationManufacturer     	((uint64_t) 0x0003)
+#define kIID_AccessoryInformationModel            	((uint64_t) 0x0004)
+#define kIID_AccessoryInformationName             	((uint64_t) 0x0005)
+#define kIID_AccessoryInformationSerialNumber     	((uint64_t) 0x0006)
+#define kIID_AccessoryInformationFirmwareRevision 	((uint64_t) 0x0007)
+#define kIID_AccessoryInformationHardwareRevision 	((uint64_t) 0x0008)
+#define kIID_AccessoryInformationADKVersion       	((uint64_t) 0x0009)
+#define kIID_AccessoryInformationProductData      	((uint64_t) 0x000A)
 
 #define kIID_HAPProtocolInformation                 ((uint64_t) 0x0010)
 #define kIID_HAPProtocolInformationServiceSignature ((uint64_t) 0x0011)
 #define kIID_HAPProtocolInformationVersion          ((uint64_t) 0x0012)
 
-#define kIID_Pairing                ((uint64_t) 0x0020)
-#define kIID_PairingPairSetup       ((uint64_t) 0x0022)
-#define kIID_PairingPairVerify      ((uint64_t) 0x0023)
-#define kIID_PairingPairingFeatures ((uint64_t) 0x0024)
-#define kIID_PairingPairingPairings ((uint64_t) 0x0025)
+#define kIID_Pairing                				((uint64_t) 0x0020)
+#define kIID_PairingPairSetup       				((uint64_t) 0x0022)
+#define kIID_PairingPairVerify      				((uint64_t) 0x0023)
+#define kIID_PairingPairingFeatures 				((uint64_t) 0x0024)
+#define kIID_PairingPairingPairings 				((uint64_t) 0x0025)
 
-#define kIID_LightBulb                 ((uint64_t) 0x0030)
-#define kIID_LightBulbServiceSignature ((uint64_t) 0x0031)
-#define kIID_LightBulbName             ((uint64_t) 0x0032)
-#define kIID_LightBulbOn               ((uint64_t) 0x0033)
+#define kIID_LightBulb                 				((uint64_t) 0x0030)
+#define kIID_LightBulbServiceSignature 				((uint64_t) 0x0031)
+#define kIID_LightBulbName             				((uint64_t) 0x0032)
+#define kIID_LightBulbOn               				((uint64_t) 0x0033)
 
 HAP_STATIC_ASSERT(kAttributeCount == 9 + 3 + 5 + 4, AttributeCount_mismatch);
 
@@ -397,7 +397,7 @@ const HAPService pairingService = {
 //----------------------------------------------------------------------------------------------------------------------
 
 /**
- * The 'Service Signature' characteristic of the Light Bulb service.
+ * The 'Service Signature' characteristic of the service.
  */
 static const HAPDataCharacteristic lightBulbServiceSignatureCharacteristic = {
     .format = kHAPCharacteristicFormat_Data,
@@ -421,69 +421,106 @@ static const HAPDataCharacteristic lightBulbServiceSignatureCharacteristic = {
 };
 
 /**
- * The 'Name' characteristic of the Light Bulb service.
+ * The 'Name' characteristic of the service.
  */
-static const HAPStringCharacteristic lightBulbNameCharacteristic = {
+static const HAPStringCharacteristic NameCharacteristic =
+{
     .format = kHAPCharacteristicFormat_String,
     .iid = kIID_LightBulbName,
     .characteristicType = &kHAPCharacteristicType_Name,
     .debugDescription = kHAPCharacteristicDebugDescription_Name,
     .manufacturerDescription = NULL,
-    .properties = { .readable = true,
-                    .writable = false,
-                    .supportsEventNotification = false,
-                    .hidden = false,
-                    .requiresTimedWrite = false,
-                    .supportsAuthorizationData = false,
-                    .ip = { .controlPoint = false, .supportsWriteResponse = false },
-                    .ble = { .supportsBroadcastNotification = false,
-                             .supportsDisconnectedNotification = false,
-                             .readableWithoutSecurity = false,
-                             .writableWithoutSecurity = false } },
-    .constraints = { .maxLength = 64 },
-    .callbacks = { .handleRead = HAPHandleNameRead, .handleWrite = NULL }
+    .properties =
+    {
+    	.readable = true,
+		.writable = false,
+		.supportsEventNotification = false,
+		.hidden = false,
+		.requiresTimedWrite = false,
+		.supportsAuthorizationData = false,
+		.ip =
+		{
+			.controlPoint = false,
+			.supportsWriteResponse = false
+		},
+        .ble =
+        {
+        	.supportsBroadcastNotification = false,
+			.supportsDisconnectedNotification = false,
+			.readableWithoutSecurity = false,
+			.writableWithoutSecurity = false
+        }
+    },
+    .constraints =
+    {
+    	.maxLength = 64
+    },
+    .callbacks =
+    {
+    	.handleRead = HAPHandleNameRead,
+		.handleWrite = NULL
+    }
 };
 
 /**
- * The 'On' characteristic of the Light Bulb service.
+ * The 'On' characteristic of the service.
  */
-const HAPBoolCharacteristic lightBulbOnCharacteristic =
+const HAPBoolCharacteristic OnCharacteristic =
 {
-    .format = kHAPCharacteristicFormat_Bool,
-    .iid = kIID_LightBulbOn,
+    .format 			= kHAPCharacteristicFormat_Bool,
+    .iid 				= kIID_LightBulbOn,
     .characteristicType = &kHAPCharacteristicType_On,
-    .debugDescription = kHAPCharacteristicDebugDescription_On,
+    .debugDescription 	= kHAPCharacteristicDebugDescription_On,
     .manufacturerDescription = NULL,
-    .properties = { .readable = true,
-                    .writable = true,
-                    .supportsEventNotification = true,
-                    .hidden = false,
-                    .requiresTimedWrite = false,
-                    .supportsAuthorizationData = false,
-                    .ip = { .controlPoint = false, .supportsWriteResponse = false },
-                    .ble = { .supportsBroadcastNotification = true,
-                             .supportsDisconnectedNotification = true,
-                             .readableWithoutSecurity = false,
-                             .writableWithoutSecurity = false } },
+    .properties =
+    {
+    	.readable = true,
+		.writable = true,
+		.supportsEventNotification 	= true,
+		.hidden = false,
+		.requiresTimedWrite 		= false,
+		.supportsAuthorizationData 	= false,
+		.ip =
+		{
+			.controlPoint 			= false,
+			.supportsWriteResponse	= false
+		},
+		.ble =
+		{
+			.supportsBroadcastNotification = true,
+			.supportsDisconnectedNotification = true,
+			.readableWithoutSecurity = false,
+			.writableWithoutSecurity = false } },
     .callbacks =
     {
-    	.handleRead = HomeKitApp::HandleLightBulbOnRead,
-		.handleWrite = HomeKitApp::HandleLightBulbOnWrite
+    	.handleRead 	= HomeKitApp::HandleOnRead,
+		.handleWrite 	= HomeKitApp::HandleOnWrite
     }
 };
 
 /**
  * The Light Bulb service that contains the 'On' characteristic.
  */
-const HAPService lightBulbService = {
-    .iid = kIID_LightBulb,
-    .serviceType = &kHAPServiceType_LightBulb,
-    .debugDescription = kHAPServiceDebugDescription_LightBulb,
-    .name = "Light Bulb",
-    .properties = { .primaryService = true, .hidden = false, .ble = { .supportsConfiguration = false } },
+const HAPService LightBulbService = {
+    .iid 				= kIID_LightBulb,
+    .serviceType 		= &kHAPServiceType_LightBulb,
+    .debugDescription 	= kHAPServiceDebugDescription_LightBulb,
+    .name 				= "Light Bulb",
+    .properties 		=
+    {
+    	.primaryService = true,
+		.hidden = false,
+		.ble =
+		{
+			.supportsConfiguration = false
+		}
+    },
     .linkedServices = NULL,
-    .characteristics = (const HAPCharacteristic* const[]) { &lightBulbServiceSignatureCharacteristic,
-                                                            &lightBulbNameCharacteristic,
-                                                            &lightBulbOnCharacteristic,
-                                                            NULL }
+    .characteristics = (const HAPCharacteristic* const[])
+	{
+    	&lightBulbServiceSignatureCharacteristic,
+		&NameCharacteristic,
+		&OnCharacteristic,
+		NULL
+	}
 };

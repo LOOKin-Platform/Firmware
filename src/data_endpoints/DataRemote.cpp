@@ -76,6 +76,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 					Converter::FindAndRemove(UUID, "|");
 				}
+
 				IRDevice(string Data = "", string sUUID = "") {
 					if (sUUID 	!= "") 	UUID = sUUID;
 					if (Data 	== "") 	return;
@@ -146,18 +147,16 @@ class DataRemote_t : public DataEndpoint_t {
 
 			if (Type == QueryType::GET) {
 				if (URLParts.size() == 0) {
-
-					NVS Memory(DataEndpoint_t::NVSArea);
 					vector<map<string,string>> OutputArray = vector<map<string,string>>();
 
-					for (auto& IRDeviceUUID: IRDevicesList) {
-						DataRemote_t::IRDevice DeviceItem(Memory.GetString(IRDeviceUUID), IRDeviceUUID);
-
+					for (auto& IRDeviceItem : GetAvaliableDevices())
+					{
 						OutputArray.push_back({
-							{ "UUID" 	, 	DeviceItem.UUID								},
-							{ "Type"	, 	Converter::ToHexString(DeviceItem.Type,2)	},
-							{ "Updated" , 	Converter::ToString(DeviceItem.Updated)		}
+							{ "UUID" 	, 	IRDeviceItem.UUID								},
+							{ "Type"	, 	Converter::ToHexString(IRDeviceItem.Type,2)		},
+							{ "Updated" , 	Converter::ToString(IRDeviceItem.Updated)		}
 						});
+
 					}
 
 					JSON JSONObject;
@@ -324,11 +323,11 @@ class DataRemote_t : public DataEndpoint_t {
 
 					bool IsOK = false;
 					for (auto& FunctionToDelete : FunctionsToDelete) {
-						if (DeviceItem.Functions.count(Function) != 0)
+						if (DeviceItem.Functions.count(FunctionToDelete) != 0)
 						{
 							IsOK = true;
-							DeviceItem.Functions.erase(Function);
-							Memory.EraseStartedWith(UUID + "_" + Function + "_");
+							DeviceItem.Functions.erase(FunctionToDelete);
+							Memory.EraseStartedWith(UUID + "_" + FunctionToDelete + "_");
 						}
 					}
 
@@ -483,6 +482,17 @@ class DataRemote_t : public DataEndpoint_t {
 			return;
 		}
 
+		map<string,string> LoadDeviceFunctions(string UUID) {
+			NVS Memory(DataEndpoint_t::NVSArea);
+
+			IRDevice Result(Memory.GetString(UUID), UUID);
+
+			if (Result.IsCorrect())
+				return Result.Functions;
+
+			return map<string,string>();
+		}
+
 
 		pair<bool,IRLib> LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
 			UUID 	= Converter::ToUpper(UUID);
@@ -558,9 +568,31 @@ class DataRemote_t : public DataEndpoint_t {
 			return "";
 		}
 
+		uint8_t GetFunctionIDByName(string FunctionName) {
+			if (GlobalFunctions.count(FunctionName) == 0)
+				return 0;
+
+			return GlobalFunctions[FunctionName];
+		}
+
+		vector<IRDevice> GetAvaliableDevices() {
+			NVS Memory(DataEndpoint_t::NVSArea);
+
+			vector<IRDevice> Result = vector<IRDevice>();
+
+			for (auto& IRDeviceUUID: IRDevicesList) {
+				DataRemote_t::IRDevice DeviceItem(Memory.GetString(IRDeviceUUID), IRDeviceUUID);
+
+				if (DeviceItem.IsCorrect())
+					Result.push_back(DeviceItem);
+			}
+
+			return Result;
+		}
+
 		private:
-			vector<string>	IRDevicesList	= vector<string>();
-			map<string,vector<string>> AvaliableFunctions = map<string,vector<string>>();
+			vector<string>				IRDevicesList		= vector<string>();
+			map<string,vector<string>> 	AvaliableFunctions 	= map<string,vector<string>>();
 
 			uint8_t	SaveIRDevicesList() {
 				NVS Memory(DataEndpoint_t::NVSArea);
@@ -676,11 +708,11 @@ class DataRemote_t : public DataEndpoint_t {
 				{ "swing"	, 0x0A }, { "speed"		, 0x0B }
 			};
 
-			// Типы устройств:
+			// Device types:
 			// 0x00 Не указано / Прочее
 			// 0x01 TV
 			// 0x02 Медиа-центр
-			// 0x03 Освещение
+			// 0x03 Light
 			// 0x04 Увлажнитель
 			// 0x05 Очиститель воздуха
 			// 0x06 Робот пылесос

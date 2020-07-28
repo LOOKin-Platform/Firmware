@@ -48,13 +48,13 @@ class HomeKitApp {
 		 * Handle read request to the 'On' characteristic of the Light Bulb service.
 		 */
 		static HAP_RESULT_USE_CHECK
-		HAPError HandleLightBulbOnRead(HAPAccessoryServerRef* server, const HAPBoolCharacteristicReadRequest* request, bool* value, void* _Nullable context);
+		HAPError HandleOnRead(HAPAccessoryServerRef* server, const HAPBoolCharacteristicReadRequest* request, bool* value, void* _Nullable context);
 
 		/**
 		 * Handle write request to the 'On' characteristic of the Light Bulb service.
 		 */
 		static HAP_RESULT_USE_CHECK
-		HAPError HandleLightBulbOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request, bool value, void* _Nullable context);
+		HAPError HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request, bool value, void* _Nullable context);
 
 		static void AccessoryNotification(const HAPAccessory*, const HAPService*, const HAPCharacteristic*, void* ctx);
 
@@ -99,6 +99,14 @@ class HomeKitApp {
 		static vector<HAPAccessory> Accessories;
 
 	private:
+		static char AccessoryName[65];
+		static char AccessoryModel[65];
+		static char AccessorySerialNumber[8];
+		static char AccessoryFirmwareVersion[8];
+		static char AccessoryHardwareVersion[4];
+
+		static const HAPAccessory* HAPAccessories[8];
+
 		static HAPAccessory				BridgeAccessory;
 		static AccessoryConfiguration	BridgeAccessoryConfiguration;
 };
