@@ -3,9 +3,6 @@
 // Licensed under the Apache License, Version 2.0 (the “License”);
 // you may not use this file except in compliance with the License.
 // See [CONTRIBUTORS.md] for the list of HomeKit ADK project authors.
-
-// An example that implements the light bulb HomeKit profile. It can serve as a basic implementation for
-// any platform. The accessory logic implementation is reduced to internal state updates and log output.
 //
 // This implementation is platform-independent.
 //
@@ -49,11 +46,11 @@ char HomeKitApp::AccessorySerialNumber[8]	= {"0"};
 char HomeKitApp::AccessoryFirmwareVersion[8]= "2.00";
 char HomeKitApp::AccessoryHardwareVersion[4]= "1";
 
-const HAPAccessory* HomeKitApp::HAPAccessories[8] = {};
+HAPAccessory HomeKitApp::BridgeAccessory 				= {};
 
-HAPAccessory HomeKitApp::BridgeAccessory = {};
+const HAPAccessory* HomeKitApp::BridgedAccessories[MAX_BRIDGED_ACCESSORIES] = {};
+uint8_t 			HomeKitApp::BridgedAccessoriesCount = 0;
 
-vector<HAPAccessory> HomeKitApp::Accessories = vector<HAPAccessory>();
 
 /**
  * Load the accessory state from persistent memory.
@@ -125,7 +122,8 @@ HAP_RESULT_USE_CHECK HAPError HomeKitApp::HandleOnRead(HAPAccessoryServerRef* se
 
 HAP_RESULT_USE_CHECK
 HAPError HomeKitApp::HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request,  bool value, void* _Nullable context HAP_UNUSED) {
-    HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, value ? "true" : "false");
+	printf("tag");
+	HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, value ? "true" : "false");
 
     if (Settings.eFuse.Type == 0x81) {
 		string UUID = Converter::ToHexString((uint16_t)request->accessory->aid, 4);
@@ -184,7 +182,11 @@ void HomeKitApp::Create(HAPAccessoryServerRef* server, HAPPlatformKeyValueStoreR
 }
 
 void HomeKitApp::Release() {
-
+	for (auto& Accessory: BridgedAccessories)
+	{
+		if (Accessory != NULL)
+			delete Accessory;
+	}
 }
 
 void HomeKitApp::AppAccessoryServerStart() {
@@ -217,18 +219,48 @@ void HomeKitApp::AppAccessoryServerStart() {
 			.callbacks = { .identify = IdentifyAccessory }
 		};
 
-		uint64_t Index = 1;
-		for (auto &Device : ((DataRemote_t *)Data)->GetAvaliableDevices())
+		if (BridgedAccessoriesCount > 0)
+		{
+			for (int i = 0; i < BridgedAccessoriesCount; i++)
+				delete BridgedAccessories[i];
+
+			BridgedAccessoriesCount = 0;
+		}
+
+		for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
 		{
 			const HAPAccessory* AccessoryToAdd = nullptr;
 
-			switch (Device.Type) {
+			switch (IRDevice.Type) {
+				case 0x01: // TV
+					AccessoryToAdd = new HAPAccessory
+					{
+						.aid 			= (uint64_t)Converter::UintFromHexString<uint16_t>(IRDevice.UUID),
+						.category 		= kHAPAccessoryCategory_BridgedAccessory,
+						.name 			= "Accessory",
+						.manufacturer 	= "n/a",
+						.model	 		= "n/a",
+						.serialNumber 	= "n/a",
+						.firmwareVersion = &AccessoryFirmwareVersion[0],
+						.hardwareVersion = &AccessoryHardwareVersion[0],
+						.services = (const HAPService* const[])
+						{
+							&accessoryInformationService,
+							&hapProtocolInformationService,
+							&pairingService,
+							&SwitchService,
+							NULL
+						},
+						.callbacks = { .identify = IdentifyAccessory }
+					};
+					break;
+
 				case 0x03: // light
 					AccessoryToAdd = new HAPAccessory
 					{
-						.aid 			= (uint64_t)Converter::UintFromHexString<uint16_t>(Device.UUID),
+						.aid 			= (uint64_t)Converter::UintFromHexString<uint16_t>(IRDevice.UUID),
 						.category 		= kHAPAccessoryCategory_BridgedAccessory,
-						.name 			= "qwerty2",
+						.name 			= "Accessory",
 						.manufacturer 	= "n/a",
 						.model	 		= "n/a",
 						.serialNumber 	= "n/a",
@@ -248,22 +280,25 @@ void HomeKitApp::AppAccessoryServerStart() {
 			}
 
 			if (AccessoryToAdd != nullptr)
-				HAPAccessories[Index-1] = AccessoryToAdd;
-
-			Index++;
+				BridgedAccessories[BridgedAccessoriesCount++] = AccessoryToAdd;
 		}
 
-		HAPAccessories[Index-1] = {0};
+		BridgedAccessories[BridgedAccessoriesCount] = {0};
 
 		HAPAccessoryServerStartBridge(	BridgeAccessoryConfiguration.server,
 										&BridgeAccessory,
-										&HAPAccessories[0],
+										&BridgedAccessories[0],
 										true);
 	}
 	//else {
 	//   HAPAccessoryServerStart(accessoryConfiguration.server, &BridgeAccessory);
 	//}
 }
+
+void HomeKitApp::AppAccessoryServerStop() {
+    ::HAPAccessoryServerStop(BridgeAccessoryConfiguration.server);
+}
+
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -273,14 +308,22 @@ void HomeKitApp::AccessoryServerHandleUpdatedState(HAPAccessoryServerRef* server
 
     switch (HAPAccessoryServerGetState(server)) {
         case kHAPAccessoryServerState_Idle: {
+        	printf("IDLE\n");
+
+        	if (HomeKit::ShouldServerRestartFlag) {
+        		HomeKit::ShouldServerRestartFlag = false;
+            	AppAccessoryServerStart();
+        	}
             HAPLogInfo(&kHAPLog_Default, "Accessory Server State did update: Idle.");
             return;
         }
         case kHAPAccessoryServerState_Running: {
+        	printf("RUNNING\n");
             HAPLogInfo(&kHAPLog_Default, "Accessory Server State did update: Running.");
             return;
         }
         case kHAPAccessoryServerState_Stopping: {
+        	printf("STOPPING\n");
             HAPLogInfo(&kHAPLog_Default, "Accessory Server State did update: Stopping.");
             return;
         }
@@ -297,5 +340,5 @@ void HomeKitApp::Initialize(HAPAccessoryServerOptions* hapAccessoryServerOptions
 }
 
 void HomeKitApp::Deinitialize() {
-    /*no-op*/
+	/*no-op*/
 }

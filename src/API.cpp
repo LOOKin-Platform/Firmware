@@ -87,6 +87,13 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 		if (APISection == "commands")	Command_t	::HandleHTTPRequest	(Response, Type, URLParts, Params);
 		if (APISection == "log")		Log			::HandleHTTPRequest	(Response, Type, URLParts, Params);
 
+	    if (1) {//if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB) {
+	    	if (URLParts.size() == 1 && Params.size() == 0 && HomeKit::IsSupported()) {
+	    		if (APISection == "homekit" && URLParts[0] == "refresh")
+	    			HomeKit::AppServerRestart();
+	    	}
+		}
+
 		// обработка алиасов комманд
 		if (URLParts.size() == 0 && Params.size() == 0) {
 			if (APISection == "status")

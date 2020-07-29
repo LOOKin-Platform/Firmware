@@ -36,14 +36,14 @@ extern const HAPService accessoryInformationService;
 /**
  * Characteristics to expose accessory information and configuration (associated with Accessory Information service).
  */
-extern const HAPBoolCharacteristic accessoryInformationIdentifyCharacteristic;
-extern const HAPStringCharacteristic accessoryInformationManufacturerCharacteristic;
-extern const HAPStringCharacteristic accessoryInformationModelCharacteristic;
-extern const HAPStringCharacteristic accessoryInformationNameCharacteristic;
-extern const HAPStringCharacteristic accessoryInformationSerialNumberCharacteristic;
-extern const HAPStringCharacteristic accessoryInformationFirmwareRevisionCharacteristic;
-extern const HAPStringCharacteristic accessoryInformationHardwareRevisionCharacteristic;
-extern const HAPStringCharacteristic accessoryInformationADKVersionCharacteristic;
+extern const HAPBoolCharacteristic 		accessoryInformationIdentifyCharacteristic;
+extern const HAPStringCharacteristic	accessoryInformationManufacturerCharacteristic;
+extern const HAPStringCharacteristic 	accessoryInformationModelCharacteristic;
+extern const HAPStringCharacteristic 	accessoryInformationNameCharacteristic;
+extern const HAPStringCharacteristic 	accessoryInformationSerialNumberCharacteristic;
+extern const HAPStringCharacteristic 	accessoryInformationFirmwareRevisionCharacteristic;
+extern const HAPStringCharacteristic 	accessoryInformationHardwareRevisionCharacteristic;
+extern const HAPStringCharacteristic 	accessoryInformationADKVersionCharacteristic;
 
 /**
  * HAP Protocol Information service.
@@ -56,14 +56,16 @@ extern const HAPService hapProtocolInformationService;
 extern const HAPService pairingService;
 
 /**
- * Light Bulb service.
+ * Light Bulb.
  */
-extern const HAPService LightBulbService;
+extern const HAPBoolCharacteristic 	LightBulbOnCharacteristic;
+extern const HAPService 			LightBulbService;
 
 /**
- * The 'On' characteristic of the Light Bulb service.
+ * Switch service.
  */
-extern const HAPBoolCharacteristic OnCharacteristic;
+extern const HAPBoolCharacteristic 	SwitchOnCharacteristic;
+extern const HAPService 			SwitchService;
 
 #if __has_feature(nullability)
 #pragma clang assume_nonnull end

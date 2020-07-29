@@ -31,7 +31,7 @@ void FreeRTOS::Sleep(uint32_t ms) {
  */
 TaskHandle_t FreeRTOS::StartTask(void task(void*), string taskName, void *param, int stackSize, uint8_t Priority) {
 	TaskHandle_t TaskHandle = NULL;
-	::xTaskCreate(task, taskName.data(), stackSize, param, Priority, &TaskHandle);
+	::xTaskCreate(task, taskName.data(), stackSize, param, tskIDLE_PRIORITY + Priority, &TaskHandle);
 	return TaskHandle;
 } // startTask
 

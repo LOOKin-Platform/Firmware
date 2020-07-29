@@ -42,8 +42,8 @@ class HTTPClient {
 	 * @brief Struct to hold HTTP query data
 	 */
 		struct HTTPClientData_t {
-			char      					URL[64]		= "\0";               							/*!< Hostname string, e. g. look-in.club */
-			QueryType					Method		= QueryType::GET;								/*!< Query method, e. g. QueryType::POST */
+			char      					URL[64]		= "\0";				/*!< Hostname string, e. g. look-in.club */
+			QueryType					Method		= QueryType::GET;	/*!< Query method, e. g. QueryType::POST */
 			int 						BufferSize	= 0;
 			char						*POSTData	= nullptr;
 

@@ -35,10 +35,18 @@
 #define kIID_PairingPairingFeatures 				((uint64_t) 0x0024)
 #define kIID_PairingPairingPairings 				((uint64_t) 0x0025)
 
+
+
 #define kIID_LightBulb                 				((uint64_t) 0x0030)
 #define kIID_LightBulbServiceSignature 				((uint64_t) 0x0031)
-#define kIID_LightBulbName             				((uint64_t) 0x0032)
-#define kIID_LightBulbOn               				((uint64_t) 0x0033)
+#define kIID_LightBulbOnCharacteristic             	((uint64_t) 0x0032)
+#define kIID_LightBulbNameCharacteristic			((uint64_t) 0x0033)
+
+#define kIID_Switch                 				((uint64_t) 0x0040)
+#define kIID_SwitchServiceSignature 				((uint64_t) 0x0041)
+#define kIID_SwitchOnCharacteristic             	((uint64_t) 0x0042)
+#define kIID_SwitchNameCharacteristic				((uint64_t) 0x0043)
+
 
 HAP_STATIC_ASSERT(kAttributeCount == 9 + 3 + 5 + 4, AttributeCount_mismatch);
 
@@ -212,21 +220,32 @@ const HAPStringCharacteristic accessoryInformationADKVersionCharacteristic = {
 };
 
 const HAPService accessoryInformationService = {
-    .iid = kIID_AccessoryInformation,
-    .serviceType = &kHAPServiceType_AccessoryInformation,
-    .debugDescription = kHAPServiceDebugDescription_AccessoryInformation,
-    .name = NULL,
-    .properties = { .primaryService = false, .hidden = false, .ble = { .supportsConfiguration = false } },
+    .iid 				= kIID_AccessoryInformation,
+    .serviceType 		= &kHAPServiceType_AccessoryInformation,
+    .debugDescription 	= kHAPServiceDebugDescription_AccessoryInformation,
+    .name 				= NULL,
+    .properties 		=
+    {
+    	.primaryService = false,
+		.hidden = false,
+		.ble =
+		{
+			.supportsConfiguration = false
+		}
+    },
     .linkedServices = NULL,
-    .characteristics = (const HAPCharacteristic* const[]) { &accessoryInformationIdentifyCharacteristic,
-                                                            &accessoryInformationManufacturerCharacteristic,
-                                                            &accessoryInformationModelCharacteristic,
-                                                            &accessoryInformationNameCharacteristic,
-                                                            &accessoryInformationSerialNumberCharacteristic,
-                                                            &accessoryInformationFirmwareRevisionCharacteristic,
-                                                            &accessoryInformationHardwareRevisionCharacteristic,
-                                                            &accessoryInformationADKVersionCharacteristic,
-                                                            NULL }
+    .characteristics = (const HAPCharacteristic* const[])
+	{
+    	&accessoryInformationIdentifyCharacteristic,
+		&accessoryInformationManufacturerCharacteristic,
+		&accessoryInformationModelCharacteristic,
+		&accessoryInformationNameCharacteristic,
+		&accessoryInformationSerialNumberCharacteristic,
+		&accessoryInformationFirmwareRevisionCharacteristic,
+		&accessoryInformationHardwareRevisionCharacteristic,
+		&accessoryInformationADKVersionCharacteristic,
+		NULL
+	}
 };
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -387,35 +406,53 @@ const HAPService pairingService = {
     .name = NULL,
     .properties = { .primaryService = false, .hidden = false, .ble = { .supportsConfiguration = false } },
     .linkedServices = NULL,
-    .characteristics = (const HAPCharacteristic* const[]) { &pairingPairSetupCharacteristic,
-                                                            &pairingPairVerifyCharacteristic,
-                                                            &pairingPairingFeaturesCharacteristic,
-                                                            &pairingPairingPairingsCharacteristic,
-                                                            NULL }
+    .characteristics = (const HAPCharacteristic* const[])
+	{
+    	&pairingPairSetupCharacteristic,
+		&pairingPairVerifyCharacteristic,
+		&pairingPairingFeaturesCharacteristic,
+		&pairingPairingPairingsCharacteristic,
+		NULL
+	}
 };
 
 //----------------------------------------------------------------------------------------------------------------------
 
+
+
+
+
+/*
+ *
+ * LIGHT BULB
+ *
+ */
+
 /**
  * The 'Service Signature' characteristic of the service.
  */
-static const HAPDataCharacteristic lightBulbServiceSignatureCharacteristic = {
-    .format = kHAPCharacteristicFormat_Data,
-    .iid = kIID_LightBulbServiceSignature,
-    .characteristicType = &kHAPCharacteristicType_ServiceSignature,
-    .debugDescription = kHAPCharacteristicDebugDescription_ServiceSignature,
-    .manufacturerDescription = NULL,
-    .properties = { .readable = true,
-                    .writable = false,
-                    .supportsEventNotification = false,
-                    .hidden = false,
-                    .requiresTimedWrite = false,
-                    .supportsAuthorizationData = false,
-                    .ip = { .controlPoint = true },
-                    .ble = { .supportsBroadcastNotification = false,
-                             .supportsDisconnectedNotification = false,
-                             .readableWithoutSecurity = false,
-                             .writableWithoutSecurity = false } },
+static const HAPDataCharacteristic LightBulbServiceSignatureCharacteristic = {
+    .format 				= kHAPCharacteristicFormat_Data,
+    .iid 					= kIID_LightBulbServiceSignature,
+    .characteristicType 	= &kHAPCharacteristicType_ServiceSignature,
+    .debugDescription 		= kHAPCharacteristicDebugDescription_ServiceSignature,
+    .manufacturerDescription= NULL,
+    .properties =
+    {
+    	.readable = true,
+		.writable = false,
+		.supportsEventNotification = false,
+		.hidden = false,
+		.requiresTimedWrite = false,
+		.supportsAuthorizationData = false,
+		.ip = { .controlPoint = true },
+		.ble = {
+			.supportsBroadcastNotification 		= false,
+			.supportsDisconnectedNotification 	= false,
+			.readableWithoutSecurity 			= false,
+			.writableWithoutSecurity 			= false
+    	}
+    },
     .constraints = { .maxLength = 2097152 },
     .callbacks = { .handleRead = HAPHandleServiceSignatureRead, .handleWrite = NULL }
 };
@@ -423,13 +460,13 @@ static const HAPDataCharacteristic lightBulbServiceSignatureCharacteristic = {
 /**
  * The 'Name' characteristic of the service.
  */
-static const HAPStringCharacteristic NameCharacteristic =
+static const HAPStringCharacteristic LightBulbNameCharacteristic =
 {
-    .format = kHAPCharacteristicFormat_String,
-    .iid = kIID_LightBulbName,
-    .characteristicType = &kHAPCharacteristicType_Name,
-    .debugDescription = kHAPCharacteristicDebugDescription_Name,
-    .manufacturerDescription = NULL,
+    .format 					= kHAPCharacteristicFormat_String,
+    .iid 						= kIID_LightBulbNameCharacteristic,
+    .characteristicType 		= &kHAPCharacteristicType_Name,
+    .debugDescription 			= kHAPCharacteristicDebugDescription_Name,
+    .manufacturerDescription 	= NULL,
     .properties =
     {
     	.readable = true,
@@ -462,13 +499,11 @@ static const HAPStringCharacteristic NameCharacteristic =
     }
 };
 
-/**
- * The 'On' characteristic of the service.
- */
-const HAPBoolCharacteristic OnCharacteristic =
+
+const HAPBoolCharacteristic LightBulbOnCharacteristic =
 {
     .format 			= kHAPCharacteristicFormat_Bool,
-    .iid 				= kIID_LightBulbOn,
+    .iid 				= kIID_LightBulbOnCharacteristic,
     .characteristicType = &kHAPCharacteristicType_On,
     .debugDescription 	= kHAPCharacteristicDebugDescription_On,
     .manufacturerDescription = NULL,
@@ -498,9 +533,6 @@ const HAPBoolCharacteristic OnCharacteristic =
     }
 };
 
-/**
- * The Light Bulb service that contains the 'On' characteristic.
- */
 const HAPService LightBulbService = {
     .iid 				= kIID_LightBulb,
     .serviceType 		= &kHAPServiceType_LightBulb,
@@ -518,9 +550,146 @@ const HAPService LightBulbService = {
     .linkedServices = NULL,
     .characteristics = (const HAPCharacteristic* const[])
 	{
-    	&lightBulbServiceSignatureCharacteristic,
-		&NameCharacteristic,
-		&OnCharacteristic,
+    	&LightBulbServiceSignatureCharacteristic,
+		&LightBulbNameCharacteristic,
+		&LightBulbOnCharacteristic,
+		NULL
+	}
+};
+
+/*
+ *
+ * SWITCH
+ *
+ */
+
+/**
+ * The 'Service Signature' characteristic of the service.
+ */
+static const HAPDataCharacteristic SwitchServiceSignatureCharacteristic = {
+    .format 				= kHAPCharacteristicFormat_Data,
+    .iid 					= kIID_SwitchServiceSignature,
+    .characteristicType 	= &kHAPCharacteristicType_ServiceSignature,
+    .debugDescription 		= kHAPCharacteristicDebugDescription_ServiceSignature,
+    .manufacturerDescription= NULL,
+    .properties =
+    {
+    	.readable = true,
+		.writable = false,
+		.supportsEventNotification = false,
+		.hidden = false,
+		.requiresTimedWrite = false,
+		.supportsAuthorizationData = false,
+		.ip = { .controlPoint = true },
+		.ble = {
+			.supportsBroadcastNotification 		= false,
+			.supportsDisconnectedNotification 	= false,
+			.readableWithoutSecurity 			= false,
+			.writableWithoutSecurity 			= false
+    	}
+    },
+    .constraints = { .maxLength = 2097152 },
+    .callbacks = { .handleRead = HAPHandleServiceSignatureRead, .handleWrite = NULL }
+};
+
+/**
+ * The 'Name' characteristic of the service.
+ */
+static const HAPStringCharacteristic SwitchNameCharacteristic =
+{
+    .format 					= kHAPCharacteristicFormat_String,
+    .iid 						= kIID_SwitchNameCharacteristic,
+    .characteristicType 		= &kHAPCharacteristicType_Name,
+    .debugDescription 			= kHAPCharacteristicDebugDescription_Name,
+    .manufacturerDescription 	= NULL,
+    .properties =
+    {
+    	.readable = true,
+		.writable = false,
+		.supportsEventNotification = false,
+		.hidden = false,
+		.requiresTimedWrite = false,
+		.supportsAuthorizationData = false,
+		.ip =
+		{
+			.controlPoint = false,
+			.supportsWriteResponse = false
+		},
+        .ble =
+        {
+        	.supportsBroadcastNotification = false,
+			.supportsDisconnectedNotification = false,
+			.readableWithoutSecurity = false,
+			.writableWithoutSecurity = false
+        }
+    },
+    .constraints =
+    {
+    	.maxLength = 64
+    },
+    .callbacks =
+    {
+    	.handleRead = HAPHandleNameRead,
+		.handleWrite = NULL
+    }
+};
+
+
+const HAPBoolCharacteristic SwitchOnCharacteristic =
+{
+    .format 						= kHAPCharacteristicFormat_Bool,
+    .iid 							= kIID_SwitchOnCharacteristic,
+    .characteristicType 			= &kHAPCharacteristicType_On,
+    .debugDescription 				= kHAPCharacteristicDebugDescription_On,
+    .manufacturerDescription 		= NULL,
+    .properties =
+    {
+    	.readable 					= true,
+		.writable					= true,
+		.supportsEventNotification 	= true,
+		.hidden 					= false,
+		.requiresTimedWrite 		= false,
+		.supportsAuthorizationData 	= false,
+		.ip =
+		{
+			.controlPoint 			= false,
+			.supportsWriteResponse	= false
+		},
+		.ble =
+		{
+			.supportsBroadcastNotification 		= true,
+			.supportsDisconnectedNotification 	= true,
+			.readableWithoutSecurity 			= false,
+			.writableWithoutSecurity 			= false
+		}
+    },
+    .callbacks =
+    {
+    	.handleRead 	= HomeKitApp::HandleOnRead,
+		.handleWrite 	= HomeKitApp::HandleOnWrite
+    }
+};
+
+const HAPService SwitchService = {
+    .iid 				= kIID_Switch,
+    .serviceType 		= &kHAPServiceType_Switch,
+    .debugDescription 	= kHAPServiceDebugDescription_Switch,
+    .name 				= "Switch",
+    .properties 		=
+    {
+    	.primaryService = true,
+		.hidden = false,
+		.ble =
+		{
+			.supportsConfiguration = false
+		}
+    },
+    .linkedServices = NULL,
+    .characteristics = (const HAPCharacteristic* const[])
+	{
+    	&SwitchServiceSignatureCharacteristic,
+		&SwitchNameCharacteristic,
+		&SwitchOnCharacteristic,
 		NULL
 	}
 };

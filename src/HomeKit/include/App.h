@@ -4,10 +4,6 @@
 // you may not use this file except in compliance with the License.
 // See [CONTRIBUTORS.md] for the list of HomeKit ADK project authors.
 
-// The most basic HomeKit example: an accessory that represents a light bulb that
-// only supports switching the light on and off. Actions are exposed as individual
-// functions below.
-//
 // This header file is platform-independent.
 
 #ifndef HOMEKITAPP_H
@@ -27,6 +23,8 @@ using namespace std;
 #pragma clang assume_nonnull begin
 #endif
 
+#define MAX_BRIDGED_ACCESSORIES 10
+
 class HomeKitApp {
 	public:
 		// Global accessory configuration
@@ -44,15 +42,9 @@ class HomeKitApp {
 		static HAP_RESULT_USE_CHECK
 		HAPError IdentifyAccessory( HAPAccessoryServerRef* server, const HAPAccessoryIdentifyRequest* request, void* _Nullable context);
 
-		/**
-		 * Handle read request to the 'On' characteristic of the Light Bulb service.
-		 */
 		static HAP_RESULT_USE_CHECK
 		HAPError HandleOnRead(HAPAccessoryServerRef* server, const HAPBoolCharacteristicReadRequest* request, bool* value, void* _Nullable context);
 
-		/**
-		 * Handle write request to the 'On' characteristic of the Light Bulb service.
-		 */
 		static HAP_RESULT_USE_CHECK
 		HAPError HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request, bool value, void* _Nullable context);
 
@@ -72,6 +64,7 @@ class HomeKitApp {
 		 * Start the accessory server for the app.
 		 */
 		static void AppAccessoryServerStart();
+		static void AppAccessoryServerStop();
 
 		/**
 		 * Handle the updated state of the Accessory Server.
@@ -96,8 +89,6 @@ class HomeKitApp {
 		static void Initialize(HAPAccessoryServerOptions*, HAPPlatform*, HAPAccessoryServerCallbacks*);
 		static void Deinitialize();
 
-		static vector<HAPAccessory> Accessories;
-
 	private:
 		static char AccessoryName[65];
 		static char AccessoryModel[65];
@@ -105,10 +96,11 @@ class HomeKitApp {
 		static char AccessoryFirmwareVersion[8];
 		static char AccessoryHardwareVersion[4];
 
-		static const HAPAccessory* HAPAccessories[8];
 
 		static HAPAccessory				BridgeAccessory;
 		static AccessoryConfiguration	BridgeAccessoryConfiguration;
+		static const HAPAccessory* 		BridgedAccessories[MAX_BRIDGED_ACCESSORIES];
+		static uint8_t 					BridgedAccessoriesCount;
 };
 
 #if __has_feature(nullability)

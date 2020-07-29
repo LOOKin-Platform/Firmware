@@ -19,8 +19,7 @@
 #include "App.h"
 #include "DB.h"
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
+#include <FreeRTOSWrapper.h>
 
 #include "HAP.h"
 #include "HAPPlatform+Init.h"
@@ -33,6 +32,10 @@
 
 #include "HAPPlatformServiceDiscovery+Init.h"
 #include "HAPPlatformTCPStreamManager+Init.h"
+
+#include "Globals.h"
+
+#define APP_SERVER_REBOOT_SIGNAL 0x20
 
 typedef struct {
 	HAPPlatformKeyValueStore 	keyValueStore;
@@ -53,6 +56,8 @@ typedef struct {
 
 class HomeKit {
 	public:
+		static bool IsSupported();
+
 		static void InitializePlatform();
 		static void DeinitializePlatform();
 
@@ -61,10 +66,19 @@ class HomeKit {
 		static void HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _Nullable context);
 
 		static void Start();
+		static void Stop();
+		static void AppServerRestart();
+
+		static bool ShouldServerRestartFlag;
 
 	private:
 		static void Task(void *);
 		static PlatfromStruct Platform;
+
+		static void StopSheduleCallback(void* _Nullable context, size_t contextSize);
+
+
+		static TaskHandle_t TaskHandle;
 };
 
 #endif //LIBSHOMEKIT_H

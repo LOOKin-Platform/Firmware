@@ -194,6 +194,10 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			MQTT.Stop();
 			//::mdns_free();
 
+		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
+		    	if (HomeKit::IsSupported())
+		    		HomeKit::Stop();
+
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;
 
@@ -292,8 +296,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		        return ESP_OK;
 		    }
 
-		    if (Settings.eFuse.DeviceID == 0x00000002)
-		    	HomeKit::Start();
+		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
+		    	if (HomeKit::IsSupported())
+		    		HomeKit::Start();
 
 		    mdns_hostname_set(Device.IDToString().c_str());
 		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();

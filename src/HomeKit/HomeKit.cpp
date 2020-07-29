@@ -18,12 +18,13 @@ static const char *Tag 	= "HomeKit";
 // software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
 // CONDITIONS OF ANY KIND, either express or implied.
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-
 #include <signal.h>
 static bool requestedFactoryReset = false;
 static bool clearPairings = false;
+
+bool HomeKit::ShouldServerRestartFlag = false;
+
+TaskHandle_t HomeKit::TaskHandle = NULL;
 
 PlatfromStruct HomeKit::Platform = {0};
 
@@ -31,6 +32,18 @@ PlatfromStruct HomeKit::Platform = {0};
  * HomeKit accessory server that hosts the accessory.
  */
 static HAPAccessoryServerRef accessoryServer;
+
+
+bool HomeKit::IsSupported() {
+	if (Settings.eFuse.Type == 0x81 && Settings.eFuse.Model > 1)
+		return true;
+
+	if (Settings.eFuse.DeviceID == 0x00000002)
+		return true;
+
+	return false;
+}
+
 
 /**
  * Initialize global platform objects.
@@ -174,7 +187,9 @@ void HomeKit::HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _
         // Restart accessory server.
         HomeKitApp::AppAccessoryServerStart();
         return;
-    } else if (HAPAccessoryServerGetState(server) == kHAPAccessoryServerState_Idle && clearPairings) {
+    }
+    else if (HAPAccessoryServerGetState(server) == kHAPAccessoryServerState_Idle && clearPairings)
+    {
         HAPError err;
         err = HAPRemoveAllPairings(&Platform.keyValueStore);
         if (err) {
@@ -182,7 +197,9 @@ void HomeKit::HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _
             HAPFatalError();
         }
         HomeKitApp::AppAccessoryServerStart();
-    } else {
+    }
+    else
+    {
         HomeKitApp::AccessoryServerHandleUpdatedState(server, context);
     }
 }
@@ -256,14 +273,31 @@ void HomeKit::Task(void *)
 
     // Cleanup.
     HomeKitApp::Release();
-
     HAPAccessoryServerRelease(&accessoryServer);
-
     DeinitializePlatform();
 }
 
 void HomeKit::Start()
 {
-    xTaskCreate(HomeKit::Task, "main_task", 6 * 1024, NULL, tskIDLE_PRIORITY+7, NULL);
+	TaskHandle = FreeRTOS::StartTask(HomeKit::Task, "HomeKit task", nullptr, 6 * 1024, 7);
 }
 
+void HomeKit::Stop() {
+	/* no-op */
+}
+
+void HomeKit::AppServerRestart() {
+	if (ShouldServerRestartFlag) return;
+
+	ShouldServerRestartFlag = true;
+
+	int AppServerRebootSignal = APP_SERVER_REBOOT_SIGNAL;
+	HAPPlatformRunLoopScheduleCallback(HomeKit::StopSheduleCallback, &AppServerRebootSignal, sizeof(AppServerRebootSignal));
+}
+
+void HomeKit::StopSheduleCallback(void* _Nullable context, size_t contextSize) {
+    int Signal = *((int*) context);
+
+    if (Signal == APP_SERVER_REBOOT_SIGNAL)
+    	HomeKitApp::AppAccessoryServerStop();
+}
