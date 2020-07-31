@@ -35,14 +35,14 @@ class BLEServer_t {
 		static int 			GATTDeviceIDCallback			(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
 		static int 			GATTDeviceFirmwareCallback		(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
 		static int 			GATTDeviceHardwareModelCallback	(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
-		static int 			GATTDeviceControlFlagCallback	(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
+		static int 			GATTDeviceStatusCallback		(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
 		static int 			GATTDeviceWiFiCallback			(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
 		static int 			GATTDeviceMQTTCallback			(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg);
 
 	private:
 		void				GATTSetup();
 
-		bool				IsPrivateMode 	= false;
+		static bool			IsPrivateMode;
 		bool				IsInited		= false;
 };
 

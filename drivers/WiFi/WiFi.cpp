@@ -6,7 +6,6 @@
  */
 #include "WiFi.h"
 
-#include "Settings.h"
 #include "PowerManagement.h"
 
 static char 	tag[]						= "WiFi";

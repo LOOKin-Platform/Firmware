@@ -346,7 +346,6 @@ class CommandIR_t : public Command_t {
 				size_t Pos = IRACReadBuffer.find(" ");
 
 				if (Pos != string::npos) {
-					ESP_LOGE("taf", "%s", IRACReadBuffer.substr(0,Pos).c_str());
 					RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
 					IRACReadBuffer.erase(0, Pos + 1);
 				}

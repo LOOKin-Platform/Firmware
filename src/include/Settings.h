@@ -9,11 +9,12 @@
 #include <map>
 #include "esp_efuse.h"
 #include "soc/efuse_reg.h"
+#include "esp_bt.h"
+
 
 #include "driver/ledc.h"
 #include "driver/adc.h"
 #include "driver/timer.h"
-#include "esp_bt.h"
 
 #include "Converter.h"
 
@@ -24,7 +25,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "1.37";
+		const	string 						FirmwareVersion = "2.00";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -34,7 +35,7 @@ class Settings_t {
 		} OTA;
 
 		struct {
-			const string 					BaseURL			= "https://api.look-in.club/v1";
+			const string 					BaseURL			= "http://api.look-in.club/v1";
 
 			const string					SyncTime		= BaseURL + "/time";
 			const string					Ping			= BaseURL + "/ping";

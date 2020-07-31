@@ -20,6 +20,8 @@
 #include "HTTPClient.h"
 #include "FreeRTOSWrapper.h"
 
+#include "Settings.h"
+
 using namespace std;
 
 #define BUFFSIZE      1024

@@ -9,6 +9,7 @@
 
 #include "Converter.h"
 #include "ACOperand.cpp"
+#include "Settings.h"
 
 #include <algorithm>
 

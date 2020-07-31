@@ -21,12 +21,19 @@ cmake_minimum_required(VERSION 3.5)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
+#if(DEFINED ENV{HOMEKITADK_PATH})
+#  set(HOMEKITADK_PATH "~/Documents/LOOK.in/Firmware/Toolchain/esp-apple-homekit-adk")
+#endif(DEFINED ENV{HOMEKITADK_PATH})
+
+
 set(EXTRA_COMPONENT_DIRS $ENV{HOMEKITADK_PATH} "drivers libs src")
 #set(EXTRA_COMPONENT_DIRS "drivers libs src" ${HOMEKIT_PATH}/components ${HOMEKIT_PATH}/components/homekit ${HOMEKITADK_PATH})
 
 if(CONFIG_HAP_MFI_HW_AUTH)
-    add_definitions(-DHAVE_MFI_HW_AUTH=1)
+	 add_definitions(-DHAVE_MFI_HW_AUTH=1)
 endif()
+
+add_definitions(-DPLATFORMS="IP")
 
 #set(SRC_DIRS . src drivers libs src/handlers src/ulp)
 #set(EXTRA_COMPONENT_DIRS . src drivers libs src/handlers src/ulp)

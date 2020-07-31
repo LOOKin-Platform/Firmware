@@ -33,7 +33,7 @@
  */
 class Task {
 	public:
-		Task(std::string taskName="Task", uint16_t stackSize=10000, uint8_t priority=5);
+		Task(std::string taskName="Task", uint16_t stackSize=4096, uint8_t priority=5);
 		virtual ~Task();
 		void SetStackSize(uint16_t stackSize);
 		void SetPriority(uint8_t priority);

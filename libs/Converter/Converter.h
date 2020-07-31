@@ -30,7 +30,7 @@ using namespace std;
 #include <esp_heap_caps.h>
 #include <esp_system.h>
 
-#include "Settings.h"
+//#include "Settings.h"
 
 class Converter {
 	public:
