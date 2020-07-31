@@ -61,19 +61,19 @@ class Log {
 
 		class Indicator_t {
 			public:
-				enum MODE { NONE, CONST, BLINKING, STROBE };
+				enum 						MODE { NONE, CONST, BLINKING, STROBE };
 
-				static void Display(uint16_t);
-				static void Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration = 0);
+				static void 				Display(uint16_t);
+				static void 				Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration = 0);
 			private:
-				static bool		IsInited;
-				static constexpr float Brightness = 0.03;
-				static uint32_t	tDuration;
-				static uint32_t	tExpired;
-				static MODE		tBlinking;
+				static bool					IsInited;
+				static constexpr float 		Brightness = 0.03;
+				static uint32_t				tDuration;
+				static uint32_t				tExpired;
+				static MODE					tBlinking;
 
-				static uint8_t	tRed, tGreen, tBlue;
-			    static ISR::HardwareTimer IndicatorTimer;
+				static uint8_t				tRed, tGreen, tBlue;
+			    static esp_timer_handle_t 	IndicatorTimer;
 
 			    static void IndicatorCallback(void *);
 		} Indicator;

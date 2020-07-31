@@ -7,7 +7,9 @@
 #include "Log.h"
 
 static char tag[] = "Log";
+
 vector<Log::Item> Log::Items = vector<Log::Item>();
+esp_timer_handle_t Log::Indicator_t::IndicatorTimer = NULL;
 
 Log::Log() {}
 
@@ -306,8 +308,6 @@ uint32_t	Log::Indicator_t::tExpired	= 0;
 Log::Indicator_t::MODE
 			Log::Indicator_t::tBlinking = CONST;
 
-ISR::HardwareTimer Log::Indicator_t::IndicatorTimer = ISR::HardwareTimer();
-
 void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration) {
 	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
 
@@ -316,12 +316,17 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 		if (GPIO.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
 		if (GPIO.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
 
-		IndicatorTimer = ISR::HardwareTimer(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex, TIMER_ALARM, &IndicatorCallback);
-		IndicatorTimer.Pause();
+		const esp_timer_create_args_t TimerArgs = {
+			.callback 			= &IndicatorCallback,
+			.arg 				= NULL,
+			.dispatch_method 	= ESP_TIMER_TASK,
+			.name				= "IndicatorTimer"
+		};
+
+		::esp_timer_create(&TimerArgs, &IndicatorTimer);
+
 		IsInited = true;
 	}
-
-	IndicatorTimer.Stop();
 
 	tRed 		= (uint8_t)(Red 	* Brightness);
 	tGreen 		= (uint8_t)(Green 	* Brightness);
@@ -335,7 +340,7 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	if (GPIO.Green.GPIO != GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Green	, tGreen, 	0);
 	if (GPIO.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Blue 	, tBlue	, 	0);
 
-	IndicatorTimer.Start();
+	::esp_timer_start_periodic(IndicatorTimer, TIMER_ALARM);
 }
 
 /**
@@ -345,7 +350,10 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
 	ISR::HardwareTimer::CallbackPrefix(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex);
 
-	if (tBlinking == NONE) return;
+	if (tBlinking == NONE) {
+		::esp_timer_stop(IndicatorTimer);
+		return;
+	}
 
 	tExpired += TIMER_ALARM;
 
