@@ -100,12 +100,7 @@ void app_main(void) {
 	BLEServer.StartAdvertising("", true);
 	//BLEClient.Scan(60);
 
-	static Pooling_t Pooling = Pooling_t();
-	Pooling.Start();
-
-	while (1) {
-		FreeRTOS::Sleep(1000);
-	}
+	Pooling_t::Pool();
 
 	/*
 	if (Sleep::GetWakeUpReason() != ESP_SLEEP_WAKEUP_EXT0) {
