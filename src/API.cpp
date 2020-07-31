@@ -26,36 +26,93 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			}
 		}
 		else {
-			string Result = "{ \"Device\":";
+			string MQTTChunkHash = "";
+			uint16_t ChunkPartID = 0;
+
+			string ResultData = "{ \"Device\":";
 			Device.HandleHTTPRequest(Response, Type, URLParts, Params);
-			Result += Response.Body + ",";
+			ResultData += Response.Body + ",";
 
-			Result += "\"Network\" : ";
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				httpd_resp_set_type	(Request, HTTPD_TYPE_JSON);
+
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request, ResultData);
+			else {
+				MQTTChunkHash = MQTT.StartChunk(MsgID);
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+			}
+
+			ResultData = "\"Network\" : ";
 			Network.HandleHTTPRequest(Response, Type, URLParts, Params);
-			Result += Response.Body + ",";
+			ResultData += Response.Body + ",";
 
-			Result += "\"Automation\" : ";
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request, ResultData);
+			else
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+
+
+			ResultData = "\"Automation\" : ";
 			Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-			Result += Response.Body;
+			ResultData += Response.Body + ",";
+
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request, ResultData);
+			else
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+
+			ResultData = "\"Automation\" : ";
+			Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
+			ResultData += Response.Body + ",";
+
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request, ResultData);
+			else
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
 
 			Storage.HandleHTTPRequest(Response, Type, { "version" }, Params, RequestBody);
-			Result += ", \"Storage\" : { \"Version\" : \"" + Response.Body  + "\"";
-			Result += "}";
+			ResultData = "\"Storage\" : { \"Version\" : \"" + Response.Body  + "\"" + "}, ";
 
-			Result += ", \"Sensors\" : [";
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request, ResultData);
+			else
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+
+			ResultData = "\"Sensors\" : [";
 			for (int i = 0; i < Sensors.size(); i++) {
-				Result += " { \"" + Sensors[i]->Name + "\":" + Sensors[i]->EchoSummaryJSON() + "}";
+				ResultData += " { \"" + Sensors[i]->Name + "\":" + Sensors[i]->EchoSummaryJSON() + "}";
 				if (i < Sensors.size() - 1)
-					Result += ",";
+					ResultData += ",";
 			}
-			Result += "], ";
+			ResultData += "] ,";
 
-			Result += "\"Commands\" : ";
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request, ResultData);
+			else
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+
+
+			ResultData = "\"Commands\" : [";
 			for (int i = 0; i < Commands.size(); i++) {
-				vector<string> URLTempParts = vector<string>();
-				Command_t::HandleHTTPRequest(Response, Type, URLTempParts, Params);
+				ResultData += "\"" + Commands[i]->Name + "\"";
+
+				if (i < Commands.size() - 1)
+					ResultData += ",";
 			}
-			Result += Response.Body + "}";// ",";
+
+			ResultData += "]";
+			ResultData += "}";
+
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Request, ResultData);
+			else
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+
+			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::EndChunk(Request);
+			else
+				MQTT.EndChunk(MQTTChunkHash, MsgID);
 
 			/*
 			Result += "\"Log\" : ";
@@ -65,9 +122,6 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			Result += "}";
 			*/
 
-			Response.ResponseCode	= WebServer_t::Response::CODE::OK;
-			Response.ContentType	= WebServer_t::Response::TYPE::JSON;
-			Response.Body			= Result;
 			return;
 		}
 
@@ -91,6 +145,8 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 	    	if (URLParts.size() == 1 && Params.size() == 0 && HomeKit::IsSupported()) {
 	    		if (APISection == "homekit" && URLParts[0] == "refresh")
 	    			HomeKit::AppServerRestart();
+					Response.SetSuccess();
+					return;
 	    	}
 		}
 
