@@ -75,6 +75,8 @@ class HomeKit {
 		static void Task(void *);
 		static PlatfromStruct Platform;
 
+		static char MDNSName[9];
+
 		static void StopSheduleCallback(void* _Nullable context, size_t contextSize);
 
 

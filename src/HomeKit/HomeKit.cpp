@@ -24,7 +24,9 @@ static bool clearPairings = false;
 
 bool HomeKit::ShouldServerRestartFlag = false;
 
-TaskHandle_t HomeKit::TaskHandle = NULL;
+TaskHandle_t 	HomeKit::TaskHandle 	= NULL;
+char 			HomeKit::MDNSName[9] 	= "lookin\0";
+
 
 PlatfromStruct HomeKit::Platform = {0};
 
@@ -90,7 +92,10 @@ void IRAM_ATTR HomeKit::InitializePlatform() {
     HAPPlatformTCPStreamManagerCreate(&Platform.tcpStreamManager, &PlatformTCPStreamManagerOptions);
 
     // Service discovery.
-    const HAPPlatformServiceDiscoveryOptions PlatformServiceDiscoveryOptions = { 0 };
+	::memcpy(MDNSName, Device.IDToString().data(), Device.IDToString().size());
+    const HAPPlatformServiceDiscoveryOptions PlatformServiceDiscoveryOptions = {
+    	.hostName = MDNSName
+    };
 
     static HAPPlatformServiceDiscovery serviceDiscovery;
     HAPPlatformServiceDiscoveryCreate(&serviceDiscovery, &PlatformServiceDiscoveryOptions);

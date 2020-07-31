@@ -290,15 +290,15 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Wireless.IsEventDrivenStart = false;
 
+		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
+		    	if (HomeKit::IsSupported())
+		    		HomeKit::Start();
+
 		    esp_err_t err = mdns_init();
 		    if (err) {
 		        ESP_LOGE("!", "MDNS Init failed: %d", err);
 		        return ESP_OK;
 		    }
-
-		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-		    	if (HomeKit::IsSupported())
-		    		HomeKit::Start();
 
 		    mdns_hostname_set(Device.IDToString().c_str());
 		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();

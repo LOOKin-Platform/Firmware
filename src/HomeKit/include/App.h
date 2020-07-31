@@ -98,7 +98,7 @@ class HomeKitApp {
 	private:
 		static char AccessoryName[65];
 		static char AccessoryModel[65];
-		static char AccessorySerialNumber[8];
+		static char AccessorySerialNumber[9];
 		static char AccessoryFirmwareVersion[8];
 		static char AccessoryHardwareVersion[4];
 
