@@ -34,7 +34,7 @@ PlatfromStruct HomeKit::Platform = {0};
 static HAPAccessoryServerRef accessoryServer;
 
 
-bool HomeKit::IsSupported() {
+bool IRAM_ATTR HomeKit::IsSupported() {
 	if (Settings.eFuse.Type == 0x81 && Settings.eFuse.Model > 1)
 		return true;
 
@@ -48,7 +48,7 @@ bool HomeKit::IsSupported() {
 /**
  * Initialize global platform objects.
  */
-void HomeKit::InitializePlatform() {
+void IRAM_ATTR HomeKit::InitializePlatform() {
     // Key-value store.
 	const HAPPlatformKeyValueStoreOptions KeyValueStoreOptions = {
 		.part_name 			= "nvs",
@@ -127,7 +127,7 @@ void HomeKit::InitializePlatform() {
 /**
  * Deinitialize global platform objects.
  */
-void HomeKit::DeinitializePlatform() {
+void IRAM_ATTR HomeKit::DeinitializePlatform() {
 #if HAVE_MFI_HW_AUTH
     // Apple Authentication Coprocessor provider.
     HAPPlatformMFiHWAuthRelease(&Platform.mfiHWAuth);
@@ -151,7 +151,7 @@ void RestorePlatformFactorySettings(void) {
 /**
  * Either simply passes State handling to app, or processes Factory Reset
  */
-void HomeKit::HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _Nullable context) {
+void IRAM_ATTR HomeKit::HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _Nullable context) {
     if (HAPAccessoryServerGetState(server) == kHAPAccessoryServerState_Idle && requestedFactoryReset) {
         HAPPrecondition(server);
 
@@ -204,7 +204,7 @@ void HomeKit::HandleUpdatedState(HAPAccessoryServerRef* _Nonnull server, void* _
     }
 }
 
-void HomeKit::InitializeIP() {
+void IRAM_ATTR HomeKit::InitializeIP() {
     // Prepare accessory server storage.
     static HAPIPSession ipSessions[kHAPIPSessionStorage_MinimumNumElements];
     static uint8_t ipInboundBuffers[HAPArrayCount(ipSessions)][kHAPIPSession_MinimumInboundBufferSize];
@@ -241,7 +241,7 @@ void HomeKit::InitializeIP() {
     //app_wifi_connect();
 }
 
-void HomeKit::Task(void *)
+void IRAM_ATTR HomeKit::Task(void *)
 {
     HAPAssert(HAPGetCompatibilityVersion() == HAP_COMPATIBILITY_VERSION);
 
@@ -277,16 +277,16 @@ void HomeKit::Task(void *)
     DeinitializePlatform();
 }
 
-void HomeKit::Start()
+void IRAM_ATTR HomeKit::Start()
 {
 	TaskHandle = FreeRTOS::StartTask(HomeKit::Task, "HomeKit task", nullptr, 6 * 1024, 7);
 }
 
-void HomeKit::Stop() {
+void IRAM_ATTR HomeKit::Stop() {
 	/* no-op */
 }
 
-void HomeKit::AppServerRestart() {
+void IRAM_ATTR HomeKit::AppServerRestart() {
 	if (ShouldServerRestartFlag) return;
 
 	ShouldServerRestartFlag = true;
@@ -295,7 +295,7 @@ void HomeKit::AppServerRestart() {
 	HAPPlatformRunLoopScheduleCallback(HomeKit::StopSheduleCallback, &AppServerRebootSignal, sizeof(AppServerRebootSignal));
 }
 
-void HomeKit::StopSheduleCallback(void* _Nullable context, size_t contextSize) {
+void IRAM_ATTR HomeKit::StopSheduleCallback(void* _Nullable context, size_t contextSize) {
     int Signal = *((int*) context);
 
     if (Signal == APP_SERVER_REBOOT_SIGNAL)

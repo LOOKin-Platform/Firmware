@@ -47,6 +47,10 @@
 #define kIID_SwitchOnCharacteristic             	((uint64_t) 0x0042)
 #define kIID_SwitchNameCharacteristic				((uint64_t) 0x0043)
 
+#define kIID_Fan                 					((uint64_t) 0x0050)
+#define kIID_FanServiceSignature 					((uint64_t) 0x0051)
+#define kIID_FanActiveCharacteristic             	((uint64_t) 0x0052)
+#define kIID_FanNameCharacteristic					((uint64_t) 0x0053)
 
 HAP_STATIC_ASSERT(kAttributeCount == 9 + 3 + 5 + 4, AttributeCount_mismatch);
 
@@ -693,3 +697,146 @@ const HAPService SwitchService = {
 		NULL
 	}
 };
+
+/*
+ *
+ * FAN
+ *
+ */
+
+/**
+ * The 'Service Signature' characteristic of the service.
+ */
+static const HAPDataCharacteristic FanServiceSignatureCharacteristic = {
+    .format 				= kHAPCharacteristicFormat_Data,
+    .iid 					= kIID_FanServiceSignature,
+    .characteristicType 	= &kHAPCharacteristicType_ServiceSignature,
+    .debugDescription 		= kHAPCharacteristicDebugDescription_ServiceSignature,
+    .manufacturerDescription= NULL,
+    .properties =
+    {
+    	.readable = true,
+		.writable = false,
+		.supportsEventNotification = false,
+		.hidden = false,
+		.requiresTimedWrite = false,
+		.supportsAuthorizationData = false,
+		.ip = { .controlPoint = true },
+		.ble = {
+			.supportsBroadcastNotification 		= false,
+			.supportsDisconnectedNotification 	= false,
+			.readableWithoutSecurity 			= false,
+			.writableWithoutSecurity 			= false
+    	}
+    },
+    .constraints = { .maxLength = 2097152 },
+    .callbacks = { .handleRead = HAPHandleServiceSignatureRead, .handleWrite = NULL }
+};
+
+/**
+ * The 'Name' characteristic of the service.
+ */
+static const HAPStringCharacteristic FanNameCharacteristic =
+{
+    .format 					= kHAPCharacteristicFormat_String,
+    .iid 						= kIID_FanNameCharacteristic,
+    .characteristicType 		= &kHAPCharacteristicType_Name,
+    .debugDescription 			= kHAPCharacteristicDebugDescription_Name,
+    .manufacturerDescription 	= NULL,
+    .properties =
+    {
+    	.readable = true,
+		.writable = false,
+		.supportsEventNotification = false,
+		.hidden = false,
+		.requiresTimedWrite = false,
+		.supportsAuthorizationData = false,
+		.ip =
+		{
+			.controlPoint = false,
+			.supportsWriteResponse = false
+		},
+        .ble =
+        {
+        	.supportsBroadcastNotification = false,
+			.supportsDisconnectedNotification = false,
+			.readableWithoutSecurity = false,
+			.writableWithoutSecurity = false
+        }
+    },
+    .constraints =
+    {
+    	.maxLength = 64
+    },
+    .callbacks =
+    {
+    	.handleRead = HAPHandleNameRead,
+		.handleWrite = NULL
+    }
+};
+
+
+const HAPUInt8Characteristic FanActiveCharacteristic =
+{
+    .format 									= kHAPCharacteristicFormat_UInt8,
+    .iid 										= kIID_FanActiveCharacteristic,
+    .characteristicType 						= &kHAPCharacteristicType_Active,
+    .debugDescription 							= kHAPCharacteristicDebugDescription_Active,
+    .manufacturerDescription 					= NULL,
+    .properties =
+    {
+    	.readable 								= true,
+		.writable								= true,
+		.supportsEventNotification 				= true,
+		.hidden 								= false,
+		.requiresTimedWrite 					= false,
+		.supportsAuthorizationData 				= false,
+		.ip =
+		{
+			.controlPoint 						= false,
+			.supportsWriteResponse				= false
+		},
+		.ble =
+		{
+			.supportsBroadcastNotification		= false,
+			.supportsDisconnectedNotification 	= false,
+			.readableWithoutSecurity 			= false,
+			.writableWithoutSecurity 			= false
+		}
+    },
+    .constraints = {
+        .minimumValue 							= 0,
+        .maximumValue 							= 1,
+        .stepValue 								= 1
+    },
+    .callbacks =
+    {
+    	.handleRead 							= HomeKitApp::HandleActiveRead,
+		.handleWrite 							= HomeKitApp::HandleActiveWrite
+    }
+};
+
+const HAPService FanService = {
+    .iid 				= kIID_Fan,
+    .serviceType 		= &kHAPServiceType_Fan,
+    .debugDescription 	= kHAPServiceDebugDescription_Fan,
+    .name 				= "Fan",
+    .properties 		=
+    {
+    	.primaryService = true,
+		.hidden 		= false,
+		.ble 			=
+		{
+			.supportsConfiguration = false
+		}
+    },
+    .linkedServices 	= NULL,
+    .characteristics 	= (const HAPCharacteristic* const[])
+	{
+    	&FanServiceSignatureCharacteristic,
+		&FanNameCharacteristic,
+		&FanActiveCharacteristic,
+		NULL
+	}
+};
+

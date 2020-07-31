@@ -55,7 +55,7 @@ uint8_t 			HomeKitApp::BridgedAccessoriesCount = 0;
 /**
  * Load the accessory state from persistent memory.
  */
-void HomeKitApp::LoadAccessoryState() {
+void IRAM_ATTR HomeKitApp::LoadAccessoryState() {
     HAPPrecondition(BridgeAccessoryConfiguration.keyValueStore);
 
     HAPError err;
@@ -88,7 +88,7 @@ void HomeKitApp::LoadAccessoryState() {
 /**
  * Save the accessory state to persistent memory.
  */
-void HomeKitApp::SaveAccessoryState() {
+void IRAM_ATTR HomeKitApp::SaveAccessoryState() {
     HAPPrecondition(BridgeAccessoryConfiguration.keyValueStore);
 
     HAPError err;
@@ -105,7 +105,7 @@ void HomeKitApp::SaveAccessoryState() {
 }
 
 
-HAP_RESULT_USE_CHECK HAPError HomeKitApp::IdentifyAccessory(
+HAP_RESULT_USE_CHECK HAPError IRAM_ATTR HomeKitApp::IdentifyAccessory(
         HAPAccessoryServerRef* server HAP_UNUSED,
         const HAPAccessoryIdentifyRequest* request HAP_UNUSED,
         void* _Nullable context HAP_UNUSED) {
@@ -113,21 +113,11 @@ HAP_RESULT_USE_CHECK HAPError HomeKitApp::IdentifyAccessory(
     return kHAPError_None;
 }
 
-HAP_RESULT_USE_CHECK HAPError HomeKitApp::HandleOnRead(HAPAccessoryServerRef* server HAP_UNUSED, const HAPBoolCharacteristicReadRequest* request HAP_UNUSED, bool* value, void* _Nullable context HAP_UNUSED) {
-    *value = BridgeAccessoryConfiguration.state.lightBulbOn;
-    HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, *value ? "true" : "false");
 
-    return kHAPError_None;
-}
-
-HAP_RESULT_USE_CHECK
-HAPError HomeKitApp::HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request,  bool value, void* _Nullable context HAP_UNUSED) {
-	printf("tag");
-	HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, value ? "true" : "false");
+bool IRAM_ATTR HomeKitApp::HandlePowerAction(uint16_t AccessoryID, bool Value) {
+	string UUID = Converter::ToHexString(AccessoryID, 4);
 
     if (Settings.eFuse.Type == 0x81) {
-		string UUID = Converter::ToHexString((uint16_t)request->accessory->aid, 4);
-
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
@@ -136,20 +126,42 @@ HAPError HomeKitApp::HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolC
 
         if (Functions.count("power") > 0) {
         	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("power"),2);
-        	Operand += (Functions["power"] == "toggle") ? ((value) ? "00" : "01" ) : "FF";
+        	Operand += (Functions["power"] == "toggle") ? ((Value) ? "00" : "01" ) : "FF";
         	IRCommand->Execute(0xFE, Operand);
+        	return true;
         }
         else {
-        	if (Functions.count("poweron") > 0 && value) {
+        	if (Functions.count("poweron") > 0 && Value) {
             	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweron"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand);
+            	return true;
+
         	}
-        	if (Functions.count("poweroff") > 0 && !value) {
+        	if (Functions.count("poweroff") > 0 && !Value) {
             	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweroff"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand);
+            	return true;
         	}
         }
     }
+
+    return false;
+}
+
+
+HAP_RESULT_USE_CHECK HAPError IRAM_ATTR HomeKitApp::HandleOnRead(HAPAccessoryServerRef* server HAP_UNUSED, const HAPBoolCharacteristicReadRequest* request HAP_UNUSED, bool* value, void* _Nullable context HAP_UNUSED) {
+	*value = BridgeAccessoryConfiguration.state.lightBulbOn;
+    HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, *value ? "true" : "false");
+
+    return kHAPError_None;
+}
+
+HAP_RESULT_USE_CHECK
+HAPError IRAM_ATTR HomeKitApp::HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request,  bool value, void* _Nullable context HAP_UNUSED) {
+	printf("tag");
+	HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, value ? "true" : "false");
+
+	HandlePowerAction((uint16_t)request->accessory->aid, value);
 
     if (BridgeAccessoryConfiguration.state.lightBulbOn != value) {
         BridgeAccessoryConfiguration.state.lightBulbOn = value;
@@ -162,14 +174,47 @@ HAPError HomeKitApp::HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolC
     return kHAPError_None;
 }
 
+HAP_RESULT_USE_CHECK HAPError IRAM_ATTR HomeKitApp::HandleActiveRead(HAPAccessoryServerRef* server HAP_UNUSED, const HAPUInt8CharacteristicReadRequest* request HAP_UNUSED, uint8_t* value, void* _Nullable context HAP_UNUSED) {
 
-void HomeKitApp::AccessoryNotification( const HAPAccessory* accessory, const HAPService* service, const HAPCharacteristic* characteristic, void* ctx) {
+	if (BridgeAccessoryConfiguration.state.FanActive > 0)
+		BridgeAccessoryConfiguration.state.FanActive = 1;
+	else
+		BridgeAccessoryConfiguration.state.FanActive = 0;
+
+	*value = BridgeAccessoryConfiguration.state.FanActive;
+    HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, *value ? "true" : "false");
+
+    return kHAPError_None;
+}
+
+
+HAP_RESULT_USE_CHECK
+HAPError IRAM_ATTR HomeKitApp::HandleActiveWrite(HAPAccessoryServerRef* server, const HAPUInt8CharacteristicWriteRequest* request,  uint8_t value, void* _Nullable context HAP_UNUSED) {
+	HAPLogInfo(&kHAPLog_Default, "%s: %s", __func__, (value > 0) ? "true" : "false");
+
+	HandlePowerAction((uint16_t)request->accessory->aid, value);
+
+    printf("FanActive: %d  value: %d \n", BridgeAccessoryConfiguration.state.FanActive, value);
+
+    if (BridgeAccessoryConfiguration.state.FanActive != value) {
+        BridgeAccessoryConfiguration.state.FanActive = value;
+
+        SaveAccessoryState();
+
+        HAPAccessoryServerRaiseEvent(server, request->characteristic, request->service, request->accessory);
+    }
+
+    return kHAPError_None;
+}
+
+
+void IRAM_ATTR HomeKitApp::AccessoryNotification( const HAPAccessory* accessory, const HAPService* service, const HAPCharacteristic* characteristic, void* ctx) {
     HAPLogInfo(&kHAPLog_Default, "Accessory Notification");
 
     HAPAccessoryServerRaiseEvent(BridgeAccessoryConfiguration.server, characteristic, service, accessory);
 }
 
-void HomeKitApp::Create(HAPAccessoryServerRef* server, HAPPlatformKeyValueStoreRef keyValueStore) {
+void IRAM_ATTR HomeKitApp::Create(HAPAccessoryServerRef* server, HAPPlatformKeyValueStoreRef keyValueStore) {
     HAPPrecondition(server);
     HAPPrecondition(keyValueStore);
 
@@ -189,7 +234,7 @@ void HomeKitApp::Release() {
 	}
 }
 
-void HomeKitApp::AppAccessoryServerStart() {
+void IRAM_ATTR HomeKitApp::AppAccessoryServerStart() {
 	string RootName = Device.GetName();
 	if (RootName == "") RootName = Device.TypeToString() + " " + Device.IDToString();
 
@@ -277,6 +322,29 @@ void HomeKitApp::AppAccessoryServerStart() {
 						.callbacks = { .identify = IdentifyAccessory }
 					};
 					break;
+
+				case 0x07: // Fan
+					AccessoryToAdd = new HAPAccessory
+					{
+						.aid 			= (uint64_t)Converter::UintFromHexString<uint16_t>(IRDevice.UUID),
+						.category 		= kHAPAccessoryCategory_BridgedAccessory,
+						.name 			= "Accessory",
+						.manufacturer 	= "n/a",
+						.model	 		= "n/a",
+						.serialNumber 	= "n/a",
+						.firmwareVersion = &AccessoryFirmwareVersion[0],
+						.hardwareVersion = &AccessoryHardwareVersion[0],
+						.services = (const HAPService* const[])
+						{
+							&accessoryInformationService,
+							&hapProtocolInformationService,
+							&pairingService,
+							&FanService,
+							NULL
+						},
+						.callbacks = { .identify = IdentifyAccessory }
+					};
+					break;
 			}
 
 			if (AccessoryToAdd != nullptr)
@@ -295,21 +363,19 @@ void HomeKitApp::AppAccessoryServerStart() {
 	//}
 }
 
-void HomeKitApp::AppAccessoryServerStop() {
+void IRAM_ATTR HomeKitApp::AppAccessoryServerStop() {
     ::HAPAccessoryServerStop(BridgeAccessoryConfiguration.server);
 }
 
 
 //----------------------------------------------------------------------------------------------------------------------
 
-void HomeKitApp::AccessoryServerHandleUpdatedState(HAPAccessoryServerRef* server, void* _Nullable context) {
+void IRAM_ATTR HomeKitApp::AccessoryServerHandleUpdatedState(HAPAccessoryServerRef* server, void* _Nullable context) {
     HAPPrecondition(server);
     HAPPrecondition(!context);
 
     switch (HAPAccessoryServerGetState(server)) {
         case kHAPAccessoryServerState_Idle: {
-        	printf("IDLE\n");
-
         	if (HomeKit::ShouldServerRestartFlag) {
         		HomeKit::ShouldServerRestartFlag = false;
             	AppAccessoryServerStart();
@@ -318,12 +384,10 @@ void HomeKitApp::AccessoryServerHandleUpdatedState(HAPAccessoryServerRef* server
             return;
         }
         case kHAPAccessoryServerState_Running: {
-        	printf("RUNNING\n");
             HAPLogInfo(&kHAPLog_Default, "Accessory Server State did update: Running.");
             return;
         }
         case kHAPAccessoryServerState_Stopping: {
-        	printf("STOPPING\n");
             HAPLogInfo(&kHAPLog_Default, "Accessory Server State did update: Stopping.");
             return;
         }

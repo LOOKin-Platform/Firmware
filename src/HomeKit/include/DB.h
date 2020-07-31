@@ -67,6 +67,12 @@ extern const HAPService 			LightBulbService;
 extern const HAPBoolCharacteristic 	SwitchOnCharacteristic;
 extern const HAPService 			SwitchService;
 
+/**
+ * Fan service.
+ */
+extern const HAPUInt8Characteristic FanActiveCharacteristic;
+extern const HAPService 			FanService;
+
 #if __has_feature(nullability)
 #pragma clang assume_nonnull end
 #endif

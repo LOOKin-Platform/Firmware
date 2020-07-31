@@ -30,7 +30,8 @@ class HomeKitApp {
 		// Global accessory configuration
 		typedef struct {
 			struct {
-				bool lightBulbOn;
+				bool 	lightBulbOn;
+				uint8_t FanActive;
 			} state;
 			HAPAccessoryServerRef* server;
 			HAPPlatformKeyValueStoreRef keyValueStore;
@@ -42,11 +43,16 @@ class HomeKitApp {
 		static HAP_RESULT_USE_CHECK
 		HAPError IdentifyAccessory( HAPAccessoryServerRef* server, const HAPAccessoryIdentifyRequest* request, void* _Nullable context);
 
-		static HAP_RESULT_USE_CHECK
-		HAPError HandleOnRead(HAPAccessoryServerRef* server, const HAPBoolCharacteristicReadRequest* request, bool* value, void* _Nullable context);
 
-		static HAP_RESULT_USE_CHECK
-		HAPError HandleOnWrite(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request, bool value, void* _Nullable context);
+		static bool HandlePowerAction(uint16_t AccessoryID, bool Value);
+
+
+		static HAP_RESULT_USE_CHECK HAPError HandleOnRead		(HAPAccessoryServerRef* server, const HAPBoolCharacteristicReadRequest* request, bool* value, void* _Nullable context);
+		static HAP_RESULT_USE_CHECK HAPError HandleOnWrite		(HAPAccessoryServerRef* server, const HAPBoolCharacteristicWriteRequest* request, bool value, void* _Nullable context);
+
+		static HAP_RESULT_USE_CHECK HAPError HandleActiveRead	(HAPAccessoryServerRef* server, const HAPUInt8CharacteristicReadRequest* request, uint8_t* value, void* _Nullable context);
+		static HAP_RESULT_USE_CHECK HAPError HandleActiveWrite	(HAPAccessoryServerRef* server, const HAPUInt8CharacteristicWriteRequest* request, uint8_t value , void* _Nullable context);
+
 
 		static void AccessoryNotification(const HAPAccessory*, const HAPService*, const HAPCharacteristic*, void* ctx);
 
