@@ -7,7 +7,6 @@
 #include "Globals.h"
 #include "BLEServer.h"
 #include "Converter.h"
-#include "FreeRTOSTask.h"
 #include "PowerManagement.h"
 
 static char tag[] = "BLEServer";
@@ -18,7 +17,7 @@ static const ble_uuid_any_t DeviceServiceModelUUID 				= GATT::UUIDStruct("2A24"
 static const ble_uuid_any_t DeviceServiceIDUUID 				= GATT::UUIDStruct("2A25");
 static const ble_uuid_any_t DeviceServiceFirmwareUUID 			= GATT::UUIDStruct("2A26");
 static const ble_uuid_any_t DeviceServiceDeviceHarwareModelUUID	= GATT::UUIDStruct("2A27");
-static const ble_uuid_any_t DeviceServiceControlFlagUUID		= GATT::UUIDStruct("3000");
+static const ble_uuid_any_t DeviceServiceStatusUUID				= GATT::UUIDStruct("3000");
 static const ble_uuid_any_t DeviceServiceWiFiUUID 				= GATT::UUIDStruct("4000");
 static const ble_uuid_any_t DeviceServiceMQTTUUID 				= GATT::UUIDStruct("5000");
 
@@ -33,6 +32,8 @@ struct ble_gatt_chr_def DeviceHarwareModel;
 struct ble_gatt_chr_def DeviceControlFlag;
 struct ble_gatt_chr_def DeviceWiFi;
 struct ble_gatt_chr_def DeviceMQTT;
+
+bool BLEServer_t::IsPrivateMode = false;
 
 BLEServer_t::BLEServer_t() {
 	DeviceManufactorer.uuid 		= &DeviceServiceManufacturerUUID.u;
@@ -55,9 +56,9 @@ BLEServer_t::BLEServer_t() {
 	DeviceHarwareModel.access_cb 	= GATTDeviceHardwareModelCallback;
 	DeviceHarwareModel.flags 		= BLE_GATT_CHR_F_READ;
 
-	DeviceControlFlag.uuid 			= &DeviceServiceControlFlagUUID.u;
-	DeviceControlFlag.access_cb 	= GATTDeviceControlFlagCallback;
-	DeviceControlFlag.flags 		= BLE_GATT_CHR_F_WRITE;
+	DeviceControlFlag.uuid 			= &DeviceServiceStatusUUID.u;
+	DeviceControlFlag.access_cb 	= GATTDeviceStatusCallback;
+	DeviceControlFlag.flags 		= BLE_GATT_CHR_F_READ;
 
 	DeviceWiFi.uuid 				= &DeviceServiceWiFiUUID.u;
 	DeviceWiFi.access_cb 			= GATTDeviceWiFiCallback;
@@ -76,14 +77,9 @@ void BLEServer_t::GATTSetup() {
 	DeviceServiceCharacteristics[3] = DeviceFirmware;
 	DeviceServiceCharacteristics[4] = DeviceHarwareModel;
 	DeviceServiceCharacteristics[5] = DeviceControlFlag;
-
-	IsPrivateMode = true;
-
-	if (IsPrivateMode)	DeviceServiceCharacteristics[6] = DeviceWiFi;
-	else				DeviceServiceCharacteristics[6] = {0};
-
-	if (IsPrivateMode)	DeviceServiceCharacteristics[7] = DeviceMQTT;
-	else				DeviceServiceCharacteristics[7] = {0};
+	DeviceServiceCharacteristics[6] = DeviceWiFi;
+	DeviceServiceCharacteristics[7] = DeviceMQTT;
+	DeviceServiceCharacteristics[8] = {0};
 
 	ble_gatt_svc_def DeviceService;
 	DeviceService.type = BLE_GATT_SVC_TYPE_PRIMARY;
@@ -99,77 +95,45 @@ void BLEServer_t::GATTSetup() {
 static char GATTBuffer[128] = "";
 
 void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
-	return;
-
 	ESP_LOGI(tag, ">> StartAdvertising");
 	GATTSetup();
 
 	if (!IsInited) {
-		BLE::Start();
+		BLE::SetDeviceName(Settings.Bluetooth.DeviceNamePrefix + Device.IDToString());
 		IsInited = true;
 	}
 
-	//else {
-	//	BLE::Advertise();
-	//}
-
-
-	// FFFF - Sensors and Commands Information
-	//pServiceActuators = pServer->CreateService((uint16_t)0xFFFF);
-
-	/*
-	for (auto& Sensor : Sensors) {
-		BLECharacteristic* pCharacteristicSensor = pServiceActuators->createCharacteristic(BLEUUID((uint16_t)Sensor->ID), BLECharacteristic::PROPERTY_READ);
-		pCharacteristicSensor->SetValue(Converter::ToHexString(Sensor->GetValue().Value,2));
-	}
-
-	for (auto& Command : Commands) {
-		BLECharacteristic* pCharacteristicCommand = pServiceActuators->createCharacteristic(BLEUUID((uint16_t)Command->ID), BLECharacteristic::PROPERTY_WRITE);
-		pCharacteristicCommand->setCallbacks(new ServerCallback());
-	}
-	*/
+	BLE::Start();
 
 	ESP_LOGI(tag, "<< StartAdvertising");
 }
 
 void BLEServer_t::StopAdvertising() {
-	if (!BLE::IsRunning())
-		return;
-
-	//BLE::AdvertiseStop();
-	//	BLE::Stop();
+	if (BLE::IsRunning())
+		BLE::AdvertiseStop();
 
 	ESP_LOGI(tag, "BLE Server stopped advertising");
 }
 
 void BLEServer_t::SwitchToPublicMode() {
-	return;
+	if (!IsPrivateMode) return;
 
-	ESP_LOGI(tag, "SwitchToPublicMode");
-
-	if (BLE::IsRunning() && IsPrivateMode) {
-		StopAdvertising();
-		FreeRTOS::Sleep(1000);
-		StartAdvertising();
-	}
+	BLE::SetPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_DEFAULT);
+	IsPrivateMode = false;
 }
 
 void BLEServer_t::SwitchToPrivateMode() {
-	return;
-	ESP_LOGI(tag, "SwitchToPrivateMode");
+	if (IsPrivateMode) return;
 
-	if (BLE::IsRunning() && !IsPrivateMode) {
-		StopAdvertising();
-		FreeRTOS::Sleep(1000);
-		StartAdvertising("", true);
-	}
+	BLE::SetPower(Settings.Bluetooth.PrivateModePower, ESP_BLE_PWR_TYPE_DEFAULT);
+	IsPrivateMode = true;
 }
 
 bool BLEServer_t::IsInPrivateMode() {
 	return IsPrivateMode;
 }
 
-int BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -178,7 +142,7 @@ int BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, uint16_t a
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int BLEServer_t::GATTDeviceModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -187,7 +151,7 @@ int BLEServer_t::GATTDeviceModelCallback(uint16_t conn_handle, uint16_t attr_han
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int BLEServer_t::GATTDeviceIDCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceIDCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -196,7 +160,7 @@ int BLEServer_t::GATTDeviceIDCallback(uint16_t conn_handle, uint16_t attr_handle
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -204,7 +168,7 @@ int BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint16_t attr_
     return os_mbuf_append(ctxt->om, Settings.FirmwareVersion.c_str(), Settings.FirmwareVersion.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -213,29 +177,20 @@ int BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle, uint16_t 
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int BLEServer_t::GATTDeviceControlFlagCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceStatusCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
-	if (ctxt->op != BLE_GATT_ACCESS_OP_WRITE_CHR)
-	    return BLE_ATT_ERR_UNLIKELY;
-
-    uint16_t om_len = OS_MBUF_PKTLEN(ctxt->om);
-
-    /* read sent data */
-    int rc = ble_hs_mbuf_to_flat(ctxt->om, &GATTBuffer, sizeof GATTBuffer, &om_len);
-    string ControlFlag(GATTBuffer, om_len);
-
-	if (ControlFlag.size() > 0) {
-		if (ControlFlag == "1") {
-			ESP_LOGI(tag, "Received signal to switch on WiFi for interval");
-			Network.WiFiConnect();
-		}
+	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
+		string Result = (IsPrivateMode) ? "private" : "public";
+	    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 	}
 
-    return (rc == 0) ? 0 : BLE_ATT_ERR_UNLIKELY;
+    return BLE_ATT_ERR_UNLIKELY;
 }
 
-int BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
+    if (!IsPrivateMode) return BLE_ATT_ERR_UNLIKELY;
+
 	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
 	    string Result = Converter::VectorToString(Network.GetSavedWiFiList(), ",");
 	    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
@@ -285,8 +240,10 @@ int BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t attr_hand
     return BLE_ATT_ERR_UNLIKELY;
 }
 
-int BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int IRAM_ATTR BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
+    if (!IsPrivateMode) return BLE_ATT_ERR_UNLIKELY;
+
 	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
 	    string Result = MQTT.GetClientID();
 	    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
@@ -297,6 +254,7 @@ int BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_hand
 	    int rc = ble_hs_mbuf_to_flat(ctxt->om, &GATTBuffer, sizeof GATTBuffer, &om_len);
 	    string MQTTData(GATTBuffer, om_len);
 
+		ESP_LOGE(tag,"%s", MQTTData.c_str());
 		if (MQTTData.length() > 0) {
 			vector<string> Parts = Converter::StringToVector(MQTTData," ");
 
@@ -313,6 +271,7 @@ int BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_hand
 	    return (rc == 0) ? 0 : BLE_ATT_ERR_UNLIKELY;
 	}
 
-    return BLE_ATT_ERR_UNLIKELY;}
+    return BLE_ATT_ERR_UNLIKELY;
+}
 
 

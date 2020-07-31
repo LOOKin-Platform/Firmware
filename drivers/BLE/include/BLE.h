@@ -23,6 +23,8 @@
 #include "modlog/modlog.h"
 
 #include "GATT.h"
+#include "FreeRTOSWrapper.h"
+
 
 #undef min
 #undef max

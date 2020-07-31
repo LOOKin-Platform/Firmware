@@ -41,8 +41,9 @@ class GATT {
 	public:
 		GATT();
 
+		static void			Setup();
 		static void 		Start();
-		static void			Stop();
+		static void 		Stop();
 
 		static void 		SvrRegisterCB(struct ble_gatt_register_ctxt *ctxt, void *arg);
 

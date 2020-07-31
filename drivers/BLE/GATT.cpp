@@ -56,12 +56,11 @@ void GATT::SetServices(ble_gatt_svc_def *sServices) {
 	GATT::Services = sServices;
 }
 
-
-void GATT::Start() {
+void GATT::Setup() {
 	if (!IsInited)
 		Init();
 
-	//ble_gatts_reset();
+	ble_gatts_reset();
 
     int rc = ble_gatts_count_cfg(Services);
     if (rc != 0) {
@@ -76,12 +75,15 @@ void GATT::Start() {
     }
 }
 
-void GATT::Stop() {
-
+void GATT::Start() {
+	::ble_gatts_start();
 }
 
+void GATT::Stop() {
+	::ble_gatts_stop();
+}
 
-ble_uuid_any_t GATT::UUIDStruct(string UUID) {
+ble_uuid_any_t IRAM_ATTR GATT::UUIDStruct(string UUID) {
 	ble_uuid_any_t Result;
 
 	UUID.erase(std::remove(UUID.begin(), UUID.end(), '-'), UUID.end());

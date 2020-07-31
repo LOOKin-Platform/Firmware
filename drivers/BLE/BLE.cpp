@@ -2,9 +2,9 @@
 #include "BLE.h"
 
 bool 	BLE::IsInited 			= false;
-string 	BLE::DeviceName 		= "";
-bool 	BLE::IsRunningValue 	= "";
-bool	BLE::IsAdvertiseValue	= false;
+string 	BLE::DeviceName 			= "LOOKin_device";
+bool 	BLE::IsRunningValue 		= "";
+bool	BLE::IsAdvertiseValue		= false;
 
 static char Tag[] = "BLE";
 
@@ -62,16 +62,12 @@ void BLE::SetSleep(bool SleepEnabled) {
 		::esp_bt_sleep_disable();
 }
 
-
-
 /**
  * Enables advertising with the following parameters:
  *     o General discoverable mode.
  *     o Undirected connectable mode.
  */
 void BLE::Advertise() {
-	ESP_LOGE(Tag,"Advertise()");
-
     struct ble_gap_adv_params adv_params;
     struct ble_hs_adv_fields fields;
     const char *name;
@@ -91,15 +87,14 @@ void BLE::Advertise() {
      *     o Discoverability in forthcoming advertisement (general)
      *     o BLE-only (BR/EDR unsupported).
      */
-    fields.flags = BLE_HS_ADV_F_DISC_GEN |
-                   BLE_HS_ADV_F_BREDR_UNSUP;
+    fields.flags = BLE_HS_ADV_F_DISC_GEN | BLE_HS_ADV_F_BREDR_UNSUP;
 
     /* Indicate that the TX power level field should be included; have the
      * stack fill this value automatically.  This is done by assigning the
      * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
      */
-    fields.tx_pwr_lvl_is_present = 1;
-    fields.tx_pwr_lvl = BLE_HS_ADV_TX_PWR_LVL_AUTO;
+    fields.tx_pwr_lvl_is_present 	= 1;
+    fields.tx_pwr_lvl 				= BLE_HS_ADV_TX_PWR_LVL_AUTO;
 
     name = ble_svc_gap_device_name();
     fields.name = (uint8_t *)name;
@@ -122,8 +117,8 @@ void BLE::Advertise() {
     memset(&adv_params, 0, sizeof adv_params);
     adv_params.conn_mode 	= BLE_GAP_CONN_MODE_UND;
     adv_params.disc_mode 	= BLE_GAP_DISC_MODE_GEN;
-    adv_params.itvl_min		= 500;
-    adv_params.itvl_max		= 1000;
+    adv_params.itvl_min		= 0;//500;
+    adv_params.itvl_max		= 0;//1000;
 
     rc = ble_gap_adv_start(OwnAddrType, NULL, BLE_HS_FOREVER, &adv_params, BLE::GAPEvent, NULL);
     if (rc != 0) {
@@ -261,16 +256,16 @@ void BLE::Start() {
 	if (!IsInited) return;
 
     /* Initialize the NimBLE host configuration. */
-	ble_hs_cfg.reset_cb 			= BLE::OnReset;
+	ble_hs_cfg.reset_cb 				= BLE::OnReset;
 	ble_hs_cfg.sync_cb 				= BLE::OnSync;
-	ble_hs_cfg.gatts_register_cb	= BLE::SvrRegisterCB;
+	ble_hs_cfg.gatts_register_cb		= BLE::SvrRegisterCB;
 	ble_hs_cfg.store_status_cb 		= ble_store_util_status_rr;
 
 	ble_hs_cfg.sm_io_cap 			= 3;	// BLE_SM_IO_CAP_NO_IO;
     ble_hs_cfg.sm_mitm 				= 0; 	// MITM security = false
     ble_hs_cfg.sm_sc 				= 0; 	// Enable/disable Security Manager Secure Connection 4.2 feature.
 
-    GATT::Start();
+    GATT::Setup();
 
 	int rc = ble_svc_gap_device_name_set(DeviceName.c_str());
 
@@ -291,6 +286,8 @@ void BLE::Start() {
 void BLE::Stop() {
 	::ble_gap_adv_stop();
 	::nimble_port_stop();
+
+	Deinit();
 }
 
 void BLE::SetDeviceName(string Name) {
