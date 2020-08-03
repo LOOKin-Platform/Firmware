@@ -16,8 +16,8 @@
 #include "Converter.h"
 #include "Memory.h"
 
-static char tag[] 			= "Time";
-static string NVSTimeArea 	= "Time";
+const char tag[] 			= "Time";
+const char NVSTimeArea[] 	= "Time";
 
 uint32_t    Time::Offset = 0;
 int8_t      Time::TimezoneOffset = 0;

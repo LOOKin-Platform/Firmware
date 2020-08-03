@@ -170,7 +170,6 @@ void WebServer_t::EndChunk(httpd_req_t *Request) {
 	::httpd_resp_sendstr_chunk(Request, NULL);
 }
 
-
 void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Request) {
 	switch (Response.ResponseCode) {
 		case Response::CODE::INVALID  	: httpd_resp_set_status	(Request, HTTPD_400); break;
@@ -236,9 +235,9 @@ void WebServer_t::Start() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     config.uri_match_fn 	= httpd_uri_match_wildcard;
-    config.stack_size		= 4096;//12288;//16384;//20000;
+    config.stack_size		= 20000;//4096;//12288;//16384;//20000;
     config.lru_purge_enable = true;
-    config.task_priority	= tskIDLE_PRIORITY+5;
+    config.task_priority	= tskIDLE_PRIORITY + 5;
 
     HTTPServerHandle = NULL;
 
@@ -251,7 +250,7 @@ void WebServer_t::Start() {
     }
 
 	if (UDPListenerTaskHandle == NULL)
-		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 4096);
+		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 2048);
 }
 
 void WebServer_t::Stop() {

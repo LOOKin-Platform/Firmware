@@ -42,7 +42,7 @@ HomeKitApp::AccessoryConfiguration HomeKitApp::BridgeAccessoryConfiguration = {0
 
 char HomeKitApp::AccessoryName[65] 			= "Accessory";
 char HomeKitApp::AccessoryModel[65]			= "1";
-char HomeKitApp::AccessorySerialNumber[9]	= "00000000\0";
+char HomeKitApp::AccessorySerialNumber[9]	= {"0"};
 char HomeKitApp::AccessoryFirmwareVersion[8]= "2.00";
 char HomeKitApp::AccessoryHardwareVersion[4]= "1";
 

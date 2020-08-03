@@ -6,7 +6,7 @@
 
 #include "HomeKit.h"
 
-static const char *Tag 	= "HomeKit";
+const char Tag[] 	= "HomeKit";
 // Copyright (c) 2015-2019 The HomeKit ADK Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the “License”);

@@ -7,8 +7,8 @@
 #include "Automation.h"
 #include "Globals.h"
 
-static char tag[] = "Automation";
-static string NVSAutomationArea = "Automation";
+const char tag[] 				= "Automation";
+const char NVSAutomationArea[] 	= "Automation";
 
 Automation_t::Automation_t() {
 	TimeChangedHandle = NULL;

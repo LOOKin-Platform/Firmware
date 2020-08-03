@@ -195,8 +195,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			//::mdns_free();
 
 		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-		    	if (HomeKit::IsSupported())
-		    		HomeKit::Stop();
+		    	//if (HomeKit::IsSupported())
+		    	//	HomeKit::Stop();
 
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;
@@ -291,8 +291,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			Wireless.IsEventDrivenStart = false;
 
 		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-		    	if (HomeKit::IsSupported())
-		    		HomeKit::Start();
+		    	//if (HomeKit::IsSupported())
+		    	//	HomeKit::Start();
 
 		    esp_err_t err = mdns_init();
 		    if (err) {

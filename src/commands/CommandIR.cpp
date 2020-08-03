@@ -312,7 +312,6 @@ class CommandIR_t : public Command_t {
 				return;
 
 			InOperation = true;
-			ESP_LOGE("ITEMS COUNT", "%d", RMT::TXItemsCount());
 
 			RMT::TXSend(TXChannel, Frequency);
 			Log::Add(Log::Events::Commands::IRExecuted);

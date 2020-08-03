@@ -24,6 +24,7 @@ class Query_t {
 		string              RequestBody;
 		map<string,string>  Params;
 
+		Query_t(QueryType Type, const char &Data);
 		Query_t(string &);
 		static string       UrlDecode(string);
 

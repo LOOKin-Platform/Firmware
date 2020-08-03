@@ -6,8 +6,8 @@
 #include "Globals.h"
 #include "Network.h"
 
-static char tag[] 				= "Network_t";
-static string NVSNetworkArea 	= "Network";
+const char tag[] 				= "Network_t";
+const char NVSNetworkArea[]		= "Network";
 
 Network_t::Network_t() {}
 
@@ -507,7 +507,7 @@ string		NetworkSync::SourceIP 				= "";
 string		NetworkSync::Chunk 					= "";
 uint16_t	NetworkSync::ToVersionUpgrade		= 0;
 
-static string			SourceIP;
+static string SourceIP;
 
 void NetworkSync::Start() {
 	ESP_LOGE("MAP RECEIVED", "UDP Timer");

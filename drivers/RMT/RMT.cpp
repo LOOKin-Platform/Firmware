@@ -39,6 +39,7 @@ void RMT::Deinit() {
 
 void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart CallbackStart,
 							IRChannelCallbackBody CallbackBody, IRChannelCallbackEnd CallbackEnd) {
+
 	Init();
 
 	rmt_config_t config;

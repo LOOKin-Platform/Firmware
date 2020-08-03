@@ -79,7 +79,6 @@ class HomeKit {
 
 		static void StopSheduleCallback(void* _Nullable context, size_t contextSize);
 
-
 		static TaskHandle_t TaskHandle;
 };
 
