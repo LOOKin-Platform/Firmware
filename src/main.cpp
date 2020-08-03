@@ -64,6 +64,19 @@ void app_main(void) {
 	}
 	*/
 
+
+
+
+
+
+//	NVS Memory("hap");
+//	Memory.EraseStartedWith("hap");
+//	Network.AddWiFiNetwork("testo", "prostomesto#9");
+
+
+
+
+
 	Settings.eFuse.ReadData();
 	Log::Add(Log::Events::System::DeviceOn);
 

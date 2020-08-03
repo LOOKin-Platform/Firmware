@@ -19,6 +19,11 @@ using namespace std;
 
 #include <esp_log.h>
 
+
+Query_t::Query_t(QueryType sType, const char &Data) {
+	Type = sType;
+}
+
 Query_t::Query_t(string &buf) {
 	Type              = NONE;
     RequestedUrl      = "";
