@@ -9,8 +9,6 @@
 #include <netdb.h>
 #include <mdns.h>
 
-//#include <HomeKit.h>
-
 static char HandlerTag[] = "WiFiHandler";
 
 static FreeRTOS::Timer		*IPDidntGetTimer;
@@ -194,9 +192,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			MQTT.Stop();
 			//::mdns_free();
 
-		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-		    	//if (HomeKit::IsSupported())
-		    	//	HomeKit::Stop();
 
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;
@@ -289,10 +284,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			Log::Add(Log::Events::WiFi::STAGotIP, Converter::IPToUint32(event_sta_got_ip.ip_info));
 
 			Wireless.IsEventDrivenStart = false;
-
-		    //if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-		    	//if (HomeKit::IsSupported())
-		    	//	HomeKit::Start();
 
 		    esp_err_t err = mdns_init();
 		    if (err) {
