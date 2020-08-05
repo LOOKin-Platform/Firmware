@@ -40,10 +40,18 @@ void IRAM_ATTR EnergyPeriodicHandler::Pool() {
 		uint16_t ConstValue 		= Converter::VoltageFromADC(ConstValueSrc, 51, 100 );
 		uint16_t BatteryValue 		= Converter::VoltageFromADC(BatteryValueSrc, 100, 51 );
 
-		if (ConstValue > 5000)
+		if (ConstValue > 5000) {
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::BATTERY)
+				PowerManagement::SetIsActive(false);
+
 			Device.PowerMode = DevicePowerMode::CONST;
-		else
+		}
+		else {
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::CONST)
+				PowerManagement::SetIsActive(true);
+
 			Device.PowerMode = DevicePowerMode::BATTERY;
+		}
 
 		Device.CurrentVoltage = (Device.PowerMode == DevicePowerMode::CONST) ? ConstValue : BatteryValue;
 	}
