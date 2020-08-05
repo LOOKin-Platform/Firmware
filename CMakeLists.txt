@@ -2,40 +2,7 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
-#if(DEFINED ENV{HOMEKIT_PATH})
-#  set(HOMEKIT_PATH $ENV{HOMEKIT_PATH})
-#else()
-#  set(HOMEKIT_PATH ~/Documents/LOOK.in/Firmware/Toolchain/esp-homekit-sdk)
-#endif(DEFINED ENV{HOMEKIT_PATH})
-
-#if(DEFINED ENV{IDF_PATH})
-#  set(IDF_PATH $ENV{IDF_PATH})
-#else()
-#  set(IDF_PATH ${HOMEKIT_PATH}/esp-idf)
-#endif(DEFINED ENV{IDF_PATH})
-
-#set(EXTRA_COMPONENT_DIRS )
-
-
-# Add HomeKit ADK
-
+set(EXTRA_COMPONENT_DIRS "drivers libs src")
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-
-#if(DEFINED ENV{HOMEKITADK_PATH})
-#  set(HOMEKITADK_PATH "~/Documents/LOOK.in/Firmware/Toolchain/esp-apple-homekit-adk")
-#endif(DEFINED ENV{HOMEKITADK_PATH})
-
-
-set(EXTRA_COMPONENT_DIRS $ENV{HOMEKITADK_PATH} "drivers libs src")
-#set(EXTRA_COMPONENT_DIRS "drivers libs src" ${HOMEKIT_PATH}/components ${HOMEKIT_PATH}/components/homekit ${HOMEKITADK_PATH})
-
-if(CONFIG_HAP_MFI_HW_AUTH)
-	 add_definitions(-DHAVE_MFI_HW_AUTH=1)
-endif()
-
-add_definitions(-DPLATFORMS="IP")
-
-#set(SRC_DIRS . src drivers libs src/handlers src/ulp)
-#set(EXTRA_COMPONENT_DIRS . src drivers libs src/handlers src/ulp)
 
 project(firmware)

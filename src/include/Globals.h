@@ -22,7 +22,7 @@
 #include "Wireless.h"
 #include "MQTT.h"
 
-#include "HomeKit.h"
+//#include "HomeKit.h"
 
 #include "Settings.h"
 

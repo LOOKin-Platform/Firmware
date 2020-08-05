@@ -51,6 +51,7 @@ MQTT_t				MQTT;
 
 const char tag[] = "Main";
 
+
 void app_main(void) {
 	NVS::Init();
 
