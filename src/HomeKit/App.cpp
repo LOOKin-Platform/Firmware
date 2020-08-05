@@ -127,19 +127,19 @@ bool IRAM_ATTR HomeKitApp::HandlePowerAction(uint16_t AccessoryID, bool Value) {
         if (Functions.count("power") > 0) {
         	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("power"),2);
         	Operand += (Functions["power"] == "toggle") ? ((Value) ? "00" : "01" ) : "FF";
-        	IRCommand->Execute(0xFE, Operand);
+        	IRCommand->Execute(0xFE, Operand.c_str());
         	return true;
         }
         else {
         	if (Functions.count("poweron") > 0 && Value) {
             	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweron"), 2) + "FF";
-        		IRCommand->Execute(0xFE, Operand);
+        		IRCommand->Execute(0xFE, Operand.c_str());
             	return true;
 
         	}
         	if (Functions.count("poweroff") > 0 && !Value) {
             	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweroff"), 2) + "FF";
-        		IRCommand->Execute(0xFE, Operand);
+        		IRCommand->Execute(0xFE, Operand.c_str());
             	return true;
         	}
         }
