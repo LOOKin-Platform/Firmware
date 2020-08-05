@@ -18,7 +18,7 @@ using namespace std;
 #include "esp_spi_flash.h"
 #include <esp_attr.h>
 
-#include "../../../src/include/Settings.h"
+#include "Settings.h"
 
 /**
  * @brief Interface to direct functions interacting with memory.
@@ -26,6 +26,7 @@ using namespace std;
 
 class SPIFlash {
 	public:
+
 		static esp_err_t 	EraseSector(uint32_t);
 		static void			EraseRange(uint32_t Start, uint32_t Length);
 

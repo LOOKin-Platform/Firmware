@@ -58,9 +58,15 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 	return Commands;
 }
 
-void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> &URLParts, map<string,string> &Params) {
+void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
     // Вывести список всех комманд
-	if (URLParts.size() == 0 && Type == QueryType::GET) {
+
+	map<string, string> Params = Query.GetParams();
+
+	if (strlen(Query.GetBody()) > 0)
+		Params = JSON(Query.GetBody()).GetItems();
+
+	if (Query.GetURLPartsCount() == 1 && Query.Type == QueryType::GET) {
 		vector<string> Vector = vector<string>();
 		for (auto& Command : Commands)
 			Vector.push_back(Command->Name);
@@ -69,8 +75,8 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
     }
 
     // Запрос списка действий конкретной команды
-    if (URLParts.size() == 1 && Type == QueryType::GET) {
-		Command_t* Command = Command_t::GetCommandByName(URLParts[0]);
+	if (Query.GetURLPartsCount() == 2 && Query.Type == QueryType::GET) {
+		Command_t* Command = Command_t::GetCommandByName(Query.GetStringURLPartByNumber(1));
 
 		if (Command!=nullptr)
 			if (Command->Events.size() > 0) {
@@ -79,7 +85,7 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			for (auto& Event: Command->Events)
 				Vector.push_back(Event.first);
 
-		Result.Body = JSON::CreateStringFromVector(Vector);
+			Result.Body = JSON::CreateStringFromVector(Vector);
 		}
     }
 
@@ -89,10 +95,12 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 	POST /switch/on
 	POST command=switch&action=on
 	*/
-	if (URLParts.size() == 2 || (URLParts.size() == 0 && Params.size() > 0 && Type != QueryType::DELETE)) {
+	if (Query.GetURLPartsCount() == 3 ||
+			(Query.GetURLPartsCount() == 1 && Params.size() > 0 && Query.Type != QueryType::DELETE))
+	{
 		string CommandName = "";
 
-		if (URLParts.size() > 0) CommandName = URLParts[0];
+		if (Query.GetURLPartsCount() > 1) CommandName = Query.GetStringURLPartByNumber(1);
 
 		if (Params.find("command") != Params.end()) {
 			CommandName = Params[ "command" ];
@@ -100,7 +108,9 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 
 		string Action = "";
-		if (URLParts.size() > 1) Action = URLParts[1];
+
+		if (Query.GetURLPartsCount() > 2)
+			Action = Query.GetStringURLPartByNumber(2);
 
 		if (Params.find("action") != Params.end()) {
 			Action = Params[ "action" ];
@@ -119,7 +129,7 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 		if (Command != nullptr) {
 			Operand = Converter::StringURLDecode(Operand);
-			if (Command->Execute(Command->GetEventCode(Action), Operand))
+			if (Command->Execute(Command->GetEventCode(Action), Operand.c_str()))
 				Result.SetSuccess();
 			else
 				Result.SetFail();
@@ -130,21 +140,22 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
     GET /switch/on/FFFFFF
     POST /switch/on/FFFFFF
     */
-    if (URLParts.size() == 3 && Type != QueryType::DELETE) {
-		string CommandName = URLParts[0];
-		string Action = URLParts[1];
-		string Operand = URLParts[2];
-
-		URLParts.clear();
+    if (Query.GetURLPartsCount() == 4 && Query.Type != QueryType::DELETE) {
+		string CommandName 	= Query.GetStringURLPartByNumber(1);
+		string Action 		= Query.GetStringURLPartByNumber(2);
 
 		Command_t* Command = Command_t::GetCommandByName(CommandName);
 		if (Command == nullptr)
 			Command = Command_t::GetCommandByID(Converter::UintFromHexString<uint8_t>(CommandName));
 
 		if (Command != nullptr) {
-			Operand = Converter::StringURLDecode(Operand);
+			const char* OperandPointer = Query.GetLastURLPartPointer();
+			if (OperandPointer == NULL) {
+				Result.SetFail();
+				return;
+			}
 
-			if (Command->Execute(Command->GetEventCode(Action), Operand))
+			if (Command->Execute(Command->GetEventCode(Action), OperandPointer))
 				Result.SetSuccess();
 			else
 				Result.SetFail();

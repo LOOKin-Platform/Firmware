@@ -60,13 +60,13 @@ class CommandIR_t : public Command_t {
 
 		LastSignal_t LastSignal;
 
-		bool Execute(uint8_t EventCode, string &StringOperand) override {
+		bool Execute(uint8_t EventCode, const char* StringOperand) override {
 			uint16_t Misc 		= 0x0;
 			uint32_t Operand 	= 0x0;
 
-			if (StringOperand.size() > 8)
+			if (strlen(StringOperand) > 8)
 			{
-				string ConverterOperand = (StringOperand.size() < 20) ? StringOperand : "";
+				string ConverterOperand = (strlen(StringOperand) < 20) ? string(StringOperand) : "";
 
 				while (ConverterOperand.size() < 12)
 					ConverterOperand = "0" + ConverterOperand;
@@ -81,7 +81,6 @@ class CommandIR_t : public Command_t {
 				Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
 
 			if (EventCode > 0x0 && EventCode < 0xED) { // /commands/ir/nec || /commands/ir/sirc ...
-
 				IRLib IRSignal;
 				IRSignal.Protocol 	= EventCode;
 				IRSignal.Uint32Data = Operand;
@@ -183,7 +182,7 @@ class CommandIR_t : public Command_t {
 			}
 
 			if (EventCode == 0xF0) { // Send in ProntoHex
-				if (StringOperand == "0" || InOperation)
+				if (::strcmp(StringOperand, "0") == 0 || InOperation)
 					return false;
 
 				IRLib *IRSignal = new IRLib(StringOperand);
@@ -200,7 +199,7 @@ class CommandIR_t : public Command_t {
 			}
 
 			if (EventCode == 0xFE) { // local saved remote
-				if (StringOperand.size() != 8 || InOperation)
+				if (strlen(StringOperand) != 8 || InOperation)
 					return false;
 
 				if (Settings.eFuse.Type != Settings.Devices.Remote)
@@ -208,9 +207,11 @@ class CommandIR_t : public Command_t {
 
 				vector<IRLib> SignalsToSend = vector<IRLib>();
 
-				string  UUID 		= StringOperand.substr(0, 4);
-				string  Function 	= ((DataRemote_t*)Data)->GetFunctionNameByID(Converter::UintFromHexString<uint8_t>(StringOperand.substr(4, 2)));
-				uint8_t SignalID 	= Converter::UintFromHexString<uint8_t>( StringOperand.substr(6,2));
+				string  SavedRemoteOperand(StringOperand,8);
+
+				string  UUID 		= SavedRemoteOperand.substr(0, 4);
+				string  Function 	= ((DataRemote_t*)Data)->GetFunctionNameByID(Converter::UintFromHexString<uint8_t>(SavedRemoteOperand.substr(4, 2)));
+				uint8_t SignalID 	= Converter::UintFromHexString<uint8_t>( SavedRemoteOperand.substr(6,2));
 
 				string FunctionType = ((DataRemote_t*)Data)->GetFunctionType(UUID, Function);
 
@@ -230,8 +231,6 @@ class CommandIR_t : public Command_t {
 				}
 				else
 					SignalsToSend = ((DataRemote_t*)Data)->LoadAllFunctionSignals(UUID, Function);
-
-				ESP_LOGE("SignalsToSend", "Count %d", SignalsToSend.size());
 
 			    for(auto it = SignalsToSend.begin(); it != SignalsToSend.end();) {
 
@@ -254,41 +253,46 @@ class CommandIR_t : public Command_t {
 			}
 
 			if (EventCode == 0xFF) { // Send RAW Format
-				if (StringOperand == "0" || InOperation)
+				if (::strcmp(StringOperand, "0") == 0 || InOperation)
 					return false;
 
 				uint16_t	Frequency = 38000;
-				size_t 		FrequencyDelimeterPos = StringOperand.find(";");
 
-				if (FrequencyDelimeterPos != std::string::npos) {
-					Frequency = Converter::ToUint16(StringOperand.substr(0,FrequencyDelimeterPos));
-					StringOperand = StringOperand.substr(FrequencyDelimeterPos+1);
+				char *FrequencyDelimeterPointer = strstr(StringOperand, ":");
+				if (FrequencyDelimeterPointer != NULL) {
+					size_t FrequencyDelimeterPos =  FrequencyDelimeterPointer - StringOperand;
+					Frequency = Converter::ToUint16(string(Frequency, FrequencyDelimeterPos));
+					StringOperand += FrequencyDelimeterPos + 1;
 				}
 
-				if (StringOperand.find(" ") == string::npos)
+				if (::strstr(StringOperand," ") == NULL &&  ::strstr(StringOperand,"%20") == NULL)
 					return false;
 
 				IRLib *IRSignal = new IRLib();
 
-				while (StringOperand.size() > 0)
-				{
-					size_t Pos = StringOperand.find(" ");
-					string Item = (Pos != string::npos) ? StringOperand.substr(0,Pos) : StringOperand;
+				string 	SignalItem = "";
+				char	SignalChar[1];
 
-					IRSignal->RawData.push_back(Converter::ToInt32(Item));
+				for (int i = 0; i < strlen(StringOperand) - 1; i++) {
+					memcpy(SignalChar, StringOperand + i, 1);
 
-					if (Pos == string::npos || StringOperand.size() < Pos)
-						StringOperand = "";
+					if ((string(SignalChar) == string(" ")) || (string(SignalChar) == string("%")))
+					{
+						if (string(SignalChar) == string("%")) i+=2;
+						IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
+						SignalItem = "";
+					}
 					else
-						StringOperand.erase(0, Pos+1);
+						SignalItem += string(SignalChar,1);
 				}
+				IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
 
 				IRSignal->ExternFillPostOperations();
 
 				LastSignal.Protocol = IRSignal->Protocol;
 				LastSignal.Data 	= IRSignal->Uint32Data;
 				LastSignal.Misc		= IRSignal->MiscData;
-
+				ESP_LOGE("!", "6");
 				if (LastSignal.Protocol != 0xFF)
 					RMT::TXSetItems(IRSignal->GetRawDataForSending());
 				else {

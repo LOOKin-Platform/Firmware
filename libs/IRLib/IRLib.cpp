@@ -26,6 +26,14 @@ IRLib::IRLib(vector<int32_t> Raw) {
 	LoadDataFromRaw();
 }
 
+IRLib::IRLib(const char *ProntoHex) {
+	//	Converter::FindAndRemove(ProntoHex, " ");
+
+	FillProtocols();
+	FillFromProntoHex(ProntoHex);
+	LoadDataFromRaw();
+}
+
 IRLib::IRLib(string &ProntoHex) {
 	Converter::FindAndRemove(ProntoHex, " ");
 
@@ -242,20 +250,64 @@ void IRLib::FillFromProntoHex(string &SrcString) {
 	//uint8_t	Learned = Converter::UintFromHexString<uint8_t>(SrcString.substr(0,4));
 	Frequency = (uint16_t)(1000000/((Converter::UintFromHexString<uint16_t>(SrcString.substr(4,4)))* 0.241246));
 
-	uint8_t OneTimeBurstLength 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(8,4));
-	uint8_t BurstPairLength 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(12,4));
+	uint8_t ProntoOneTimeBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(8,4));
+	uint8_t ProntoRepeatBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(12,4));
 	uint8_t USec					= (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
 
 	SrcString = SrcString.substr(16);
-
-	ProntoOneTimeBurst 	= OneTimeBurstLength;
-	ProntoRepeatBurst	= BurstPairLength;
 
 	RawData.clear();
 	while (SrcString.size() >= 8) {
 		RawData.push_back(+USec * Converter::UintFromHexString<uint16_t>(SrcString.substr(0,4)));
 		RawData.push_back(-USec * Converter::UintFromHexString<uint16_t>(SrcString.substr(4,4)));
 		SrcString = SrcString.substr(8);
+	}
+}
+
+void IRLib::FillFromProntoHex(const char *SrcString) {
+	if (strlen(SrcString) < 24) {
+		ESP_LOGE(tag, "Too small ProntoHEX data. Skipped");
+		return;
+	}
+
+	RawData.clear();
+
+	uint16_t 	SymbolCounter 	= 0;
+	string 		Group 			= "";
+	bool		Sign			= true;
+	uint8_t		USec 			= 0;
+	char		SignalChar[1];
+
+	for (int i = 0; i < strlen(SrcString); i++) {
+		memcpy(SignalChar, SrcString + i, 1);
+
+		if (string(SignalChar) == string(" "))
+			continue;
+		else if (string(SignalChar) ==  string("%")) {
+			i+=2;
+			continue;
+		}
+
+		Group += string(SignalChar);
+
+		if (SymbolCounter == 7) {
+			Frequency 	= (uint16_t)(1000000/((Converter::UintFromHexString<uint16_t>(Group))* 0.241246));
+			USec 		= (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
+		}
+		else if (SymbolCounter == 11)
+			ProntoOneTimeBurst	= Converter::UintFromHexString<uint8_t>(Group);
+		else if (SymbolCounter == 15)
+			ProntoRepeatBurst 	= Converter::UintFromHexString<uint8_t>(Group);
+
+		if ((SymbolCounter+1)%4 == 0) {
+			uint16_t SignalPart = USec * Converter::UintFromHexString<uint16_t>(Group);
+
+			RawData.push_back((Sign) ? +SignalPart : -SignalPart);
+			Group = "";
+			Sign = !Sign;
+		}
+
+		SymbolCounter++;
 	}
 }
 

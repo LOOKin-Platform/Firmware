@@ -92,7 +92,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 						Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
 						if (CommandToExecute!=nullptr) {
 							string Operand =  Converter::ToString((uint32_t)Command.Operand);
-							CommandToExecute->Execute(Command.EventCode, Operand);
+							CommandToExecute->Execute(Command.EventCode, Operand.c_str());
 						}
 					}
 					else {
@@ -265,7 +265,7 @@ string Scenario_t::SerializeScene(Scenario_t Scenario) {
 	return JSONObject.ToString();
 }
 
-Scenario_t Scenario_t::DeserializeScene(string JSONString) {
+Scenario_t Scenario_t::DeserializeScene(const char* JSONString) {
 	JSON JSONObject(JSONString);
 
 	if (!JSONObject.GetItem("type").empty()) {

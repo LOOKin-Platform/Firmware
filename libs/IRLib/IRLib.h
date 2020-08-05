@@ -13,6 +13,7 @@
 #include <Converter.h>
 
 #include "Protocol.h"
+#include <cstring>
 
 using namespace std;
 
@@ -27,6 +28,7 @@ class IRLib {
 
 		vector<int32_t> RawData 	= vector<int32_t>();
 
+		IRLib(const char *);
 		IRLib(string &ProntoHex);
 		IRLib(vector<string> 	Raw);
 		IRLib(vector<int32_t> 	Raw	= vector<int32_t>());
@@ -61,6 +63,8 @@ class IRLib {
 
 		bool 			IsProntoHex();
 		void 			FillFromProntoHex(string &);
+		void 			FillFromProntoHex(const char *);
+
 		string 			ProntoHexConstruct(bool SpaceDelimeter = true);
 
 		static vector<IRProto *> Protocols;

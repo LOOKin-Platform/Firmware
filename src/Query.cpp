@@ -19,92 +19,246 @@ using namespace std;
 
 #include <esp_log.h>
 
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
-Query_t::Query_t(QueryType sType, const char &Data) {
-	Type = sType;
+Query_t::Query_t(const char *Data, WebServer_t::QueryTransportType sTransport)
+{
+	Transport 	= sTransport;
+	URL 		= Data;
+
+	ProcessData();
+
+	if (URL != NULL && strlen(URL) > 6)
+	{
+		if (strstr(URL,"GET") == URL)
+			Type = QueryType::GET;
+		else if (strstr(URL, "POST") == URL)
+			Type = QueryType::POST;
+		else if (strstr(URL, "PUT") == URL)
+			Type = QueryType::PUT;
+		else if (strstr(URL, "PATCH") == URL)
+			Type = QueryType::PATCH;
+		else if (strstr(URL, "DELETE") == URL)
+			Type = QueryType::DELETE;
+	}
+
+	//Dump();
 }
 
-Query_t::Query_t(string &buf) {
-	Type              = NONE;
-    RequestedUrl      = "";
-    RequestBody       = "";
+Query_t::Query_t(httpd_req_t *sRequest, QueryType sType)
+{
+	Type 	= sType;
+	Request = sRequest;
 
-    FillParams(buf);
+	if (Request != NULL)
+		URL = Request->uri;
+
+	ProcessData();
+
+	//Dump();
 }
 
-void Query_t::FillParams(string &Query) {
-	size_t Pos = Query.find(" ");
+Query_t::~Query_t() {
+	if (IsolatedBody != NULL)
+		delete[] IsolatedBody;
+}
 
-	if (Pos > 6 || Pos == string::npos)
+void IRAM_ATTR Query_t::ProcessData() {
+	if (URL == NULL)
 		return;
 
-	if (Query.substr(0, Pos) == "GET")		Type = GET;
-	if (Query.substr(0, Pos) == "POST")		Type = POST;
-	if (Query.substr(0, Pos) == "DELETE")	Type = DELETE;
-	if (Query.substr(0, Pos) == "PUT")		Type = PUT;
-	if (Query.substr(0, Pos) == "PATCH")	Type = PATCH;
+	PartsData.clear();
 
-	Query = Query.substr(Pos+1);
+	if (Transport == WebServer_t::QueryTransportType::WebServer && Request != NULL) {
+	    if (Request->content_len > 0) {
+	    	IsolatedBody =  new char[Request->content_len];
 
-	Pos = Query.find(" ");
+	    	char Buffer[512];
 
-	if (Pos == string::npos)
-		Pos = Query.length();
+	    	size_t ReadedContentLen = 0;
+	    	while (ReadedContentLen < Request->content_len) {
+	    		int ret = ::httpd_req_recv(Request, Buffer, sizeof(Buffer));
 
-	vector<string> QueryParts = Converter::StringToVector(Query.substr(0, Pos), "?");
+	    		if (ret > 0) {
+		    	    memcpy(&IsolatedBody[ReadedContentLen], Buffer, ret);
+	    			ReadedContentLen += ret;
+		    	    IsolatedBody[ReadedContentLen] = '\0';
+	    		}
+	    		else
+	    		{
+	    			ESP_LOGE("Query", "ret error");
 
-	if (QueryParts.size() > 0) {
-		RequestedUrl      = QueryParts[0];
+	    			if (ret == HTTPD_SOCK_ERR_TIMEOUT)
+	    				httpd_resp_send_408(Request);
 
-		// разбиваем строку запроса на массив пути с переводом в нижний регистр
-		for (string& part : Converter::StringToVector(QueryParts[0], "/")) {
-			transform(part.begin(), part.end(), part.begin(), ::tolower);
-			if (part != "") RequestedUrlParts.push_back( Converter::StringURLDecode(part) );
-		}
+	    			delete[] IsolatedBody;
+
+	    			break;
+	    		}
+	    	}
+	    }
 	}
 
-	string ParamStr = "";
-	// Параметры для GET запросов требуется получать из URL
-	if (Type == GET && QueryParts.size() > 1) {
-		ParamStr = QueryParts[1];
-		Converter::Trim(ParamStr);
+	const char *Next 			= URL;
+	const char *ParamsPtr 		= ::strstr(URL, "?");
 
-		if (!ParamStr.empty()) {
-			vector<string> Param;
+	uint8_t NewLineLength		= 2;
+	const char *BodyPtr			= ::strstr(URL, "\r\n");
 
-			for (string& ParamPair : Converter::StringToVector(ParamStr, "&")) {
-				Param = Converter::StringToVector(ParamPair, "=");
+	if (BodyPtr == NULL)
+	{
+		BodyPtr					= ::strstr(URL, "\n");
+		NewLineLength 			= 1;
+	}
+
+	uint16_t LastOffset 		= 0;
+	uint16_t ParamsOffset		= (ParamsPtr == NULL) 	? 0 : (uint16_t)(ParamsPtr 	- URL);
+	uint16_t BodyOffset			= (BodyPtr == NULL) 	? 0 : (uint16_t)(BodyPtr 	- URL);
+
+	while ((Next = strstr(Next, "/")) != NULL)
+	{
+		uint16_t CurrentOffset = (uint16_t)(Next - URL);
+		if ( CurrentOffset > ParamsOffset && ParamsOffset != 0) {
+			Next = ParamsPtr;
+			break;
+		} else if ( CurrentOffset > BodyOffset && BodyOffset != 0) {
+			Next = BodyPtr;
+			break;
+		}
+
+		if (Next != URL) {
+			ESP_LOGE("SECOND", "%d", (uint16_t)(Next - URL) - LastOffset - 1);
+			PartsData.push_back(pair<uint16_t, uint16_t>(LastOffset + 1, (uint16_t)(Next - URL) - LastOffset - 1));
+		}
+
+		LastOffset = (uint16_t)(Next - URL);
+
+	    ++Next;
+	}
+
+	if (LastOffset <= strlen(URL)) {
+		uint16_t ParamLength = strlen(URL) - LastOffset - 1;
+		if (BodyOffset 		> 0) 	ParamLength = BodyOffset 	- LastOffset - 1;
+		if (ParamsOffset 	> 0)	ParamLength = ParamsOffset 	- LastOffset - 1;
+
+		//ESP_LOGE("LastOffset + 1"	, "%d", LastOffset + 1);
+		//ESP_LOGE("Offset"			, "%d", ParamLength);
+
+		PartsData.push_back(pair<uint16_t, uint16_t>(LastOffset + 1, ParamLength));
+	}
+
+	if (PartsData.size() > 0 && PartsData.back().second == 0)
+		PartsData.pop_back();
+
+	if (PartsData.size() > 0 && Type == QueryType::NONE)
+		PartsData.erase(PartsData.begin(),PartsData.begin()+1);
+
+	if (BodyOffset > 0)
+		BodyPointer = BodyPtr + NewLineLength;
+}
+
+
+httpd_req_t* Query_t::GetRequest()
+{
+	return Request;
+}
+
+bool Query_t::CheckURLPart(string Needle, uint8_t Number) {
+	if (Number >= PartsData.size()) return false;
+
+	if (PartsData[Number].first + Needle.size() > strlen(URL))
+		return false;
+
+	string Haystack(URL + PartsData[Number].first, Needle.size());
+
+	if (Converter::ToLower(Needle) == Converter::ToLower(Haystack))
+		return true;
+
+	return false;
+}
+
+string Query_t::GetStringURLPartByNumber(uint8_t Number) {
+	if (Number >= PartsData.size())
+		return "";
+
+	if (PartsData[Number].first + PartsData[Number].second > strlen(URL))
+		return "";
+
+	char Param[PartsData[Number].second];
+	memcpy(Param, URL + PartsData[Number].first, PartsData[Number].second);
+
+	string Result(Param, PartsData[Number].second);
+	Converter::Trim(Result);
+
+	return Result;
+}
+
+const char* Query_t::GetLastURLPartPointer() {
+	if (PartsData.size() == 0)
+		return NULL;
+
+	return URL + PartsData[PartsData.size() - 1].first;
+}
+
+
+uint8_t Query_t::GetURLPartsCount() {
+	return PartsData.size();
+}
+
+const char* IRAM_ATTR Query_t::GetBody() {
+	if (IsolatedBody != NULL)
+		return IsolatedBody;
+
+	if (BodyPointer != NULL && BodyPointer != URL)
+		return BodyPointer;
+
+	const char *Result = "";
+	return Result;
+}
+
+map<string,string> Query_t::GetParams() {
+	map<string,string> Result = map<string, string>();
+
+	// check URI first
+	const char * pch = strrchr( URL, '?');
+
+	if (pch != NULL)
+	{
+		int32_t ParamsStringLength = (BodyPointer != NULL && BodyPointer != URL) ? BodyPointer - pch - 2 : strlen(URL) - (pch - URL) - 1;
+
+		ESP_LOGE("ParamsStringLength", "%d", ParamsStringLength);
+
+		if (ParamsStringLength <= 0) ParamsStringLength = 0;
+
+		string ParamsString = string(pch + 1, (uint16_t)ParamsStringLength);
+
+		ESP_LOGE("ParamsString", "%s", ParamsString.c_str());
+
+		Converter::Trim(ParamsString);
+
+		if (!ParamsString.empty()) {
+			for (string& ParamPair : Converter::StringToVector(ParamsString, "&")) {
+				vector<string> Param = Converter::StringToVector(ParamPair, "=");
 
 				if (Param.size() == 2)
-					Params[Converter::ToLower(Param[0])] = Converter::StringURLDecode(Param[1]);
+					Result[Converter::ToLower(Param[0])] = Converter::StringURLDecode(Param[1]);
 				else
-					Params[Converter::ToLower(Param[0])] = "";
+					Result[Converter::ToLower(Param[0])] = "";
 			}
 		}
 	}
-	else { 	// Для всех остальных типов запросов - из тела запроса в JSON форме
-		Pos = Query.rfind("\r\n");
 
-		if (Pos != string::npos) {
-			Query = Query.substr(Pos+2);
-			Converter::StringMove(RequestBody, Query);
-		}
-		else {
-			Pos = Query.rfind('\n');
-			if (Pos != string::npos) {
-				Query = Query.substr(Pos+1);
-				Converter::StringMove(RequestBody, Query);
-			}
-		}
-
-		if (RequestBody.size() > 2) {
-			JSON JSONItem(RequestBody);
-
-			if (JSONItem.GetType() == JSON::RootType::Object)
-				Params = JSONItem.GetItems();
-		}
-		else
-			Params = map<string,string>();
-
-	}
+	return Result;
 }
+
+void Query_t::Dump() {
+	ESP_LOGD("URL"	, "%s", URL);
+	ESP_LOGD("Body"	, "%s", GetBody());
+
+	for (auto& Item : PartsData)
+		ESP_LOGD("PartsData", "%d %d", Item.first, Item.second);
+
+	for (auto& Item : GetParams())
+		ESP_LOGD("GetParams", "%s %s", Item.first.c_str(), Item.second.c_str());
+}
+

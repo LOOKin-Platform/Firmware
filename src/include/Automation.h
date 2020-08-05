@@ -11,6 +11,8 @@
 #include <vector>
 
 #include "Scenarios.h"
+#include "Query.h"
+
 #include "JSON.h"
 #include "Converter.h"
 #include "WiFi.h"
@@ -46,7 +48,8 @@ class Automation_t {
 		bool			SetVersionMap(string SSID, uint32_t Version);
 		string			SerializeVersionMap();
 
-		void			HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string>, map<string,string>, string = "");
+		void			HandleHTTPRequest(WebServer_t::Response &, Query_t &);
+		JSON 			RootInfo();
 
 	private:
 		TaskHandle_t 	TimeChangedHandle;

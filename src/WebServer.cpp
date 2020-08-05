@@ -33,51 +33,19 @@ WebServer_t::WebServer_t() {
 esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
 
-	string QueryString = "GET " + string(Request->uri) + " ";
+	Query_t Query(Request, QueryType::GET);
+	API::Handle(Response, Query);
 
-	Query_t Query(QueryString);
-	API::Handle(Response, Query, Request);
-
-	/*
-	if (Response.Body.size() > 2000)
-	{
-		SendChunk(Request, Response.Body.substr(0, 2000));
-		SendChunk(Request, Response.Body.substr(2000));
-		EndChunk(Request);
-	}
-	else
-	*/
 	SendHTTPData(Response, Request);
 
     return ESP_OK;
 }
 
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
 esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
-    char content[4096];
 
-    string PostData = "";
-
-    if (Request->content_len > 0) {
-        size_t recv_size = MIN(Request->content_len, sizeof(content));
-        int ret = httpd_req_recv(Request, content, recv_size);
-
-        if (ret <= 0) {
-            if (ret == HTTPD_SOCK_ERR_TIMEOUT)
-                httpd_resp_send_408(Request);
-
-            return ESP_FAIL;
-        }
-
-        PostData = content;
-        PostData = PostData.substr(0, recv_size);
-    }
-
-	string QueryString = "POST " + string(Request->uri) + " \r\n" + PostData;
-
-	Query_t Query(QueryString);
-	API::Handle(Response, Query, Request);
+	Query_t Query(Request, QueryType::POST);
+	API::Handle(Response, Query);
 
 	SendHTTPData(Response, Request);
 
@@ -86,29 +54,9 @@ esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
 
 esp_err_t WebServer_t::PUTHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
-    char content[4096];
 
-    string PostData = "";
-
-    if (Request->content_len > 0) {
-        size_t recv_size = MIN(Request->content_len, sizeof(content));
-        int ret = httpd_req_recv(Request, content, recv_size);
-
-        if (ret <= 0) {
-            if (ret == HTTPD_SOCK_ERR_TIMEOUT)
-                httpd_resp_send_408(Request);
-
-            return ESP_FAIL;
-        }
-
-        PostData = content;
-        PostData = PostData.substr(0, recv_size);
-    }
-
-	string QueryString = "PUT " + string(Request->uri) + " \r\n" + PostData;
-
-	Query_t Query(QueryString);
-	API::Handle(Response, Query, Request);
+	Query_t Query(Request, QueryType::PUT);
+	API::Handle(Response, Query);
 
 	SendHTTPData(Response, Request);
 
@@ -118,39 +66,19 @@ esp_err_t WebServer_t::PUTHandler(httpd_req_t *Request) {
 esp_err_t WebServer_t::DELETEHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
 
-	string QueryString = "DELETE " + string(Request->uri) + " ";
-	Query_t Query(QueryString);
+	Query_t Query(Request, QueryType::DELETE);
 	API::Handle(Response, Query);
 
 	SendHTTPData(Response, Request);
+
     return ESP_OK;
 }
 
 esp_err_t WebServer_t::PATCHHandler(httpd_req_t *Request) {
 	WebServer_t::Response Response;
-    char content[4096];
 
-    string PostData = "";
-
-    if (Request->content_len > 0) {
-        size_t recv_size = MIN(Request->content_len, sizeof(content));
-        int ret = httpd_req_recv(Request, content, recv_size);
-
-        if (ret <= 0) {
-            if (ret == HTTPD_SOCK_ERR_TIMEOUT)
-                httpd_resp_send_408(Request);
-
-            return ESP_FAIL;
-        }
-
-        PostData = content;
-        PostData = PostData.substr(0, recv_size);
-    }
-
-	string QueryString = "PUT " + string(Request->uri) + " \r\n" + PostData;
-
-	Query_t Query(QueryString);
-	API::Handle(Response, Query, Request);
+	Query_t Query(Request, QueryType::PATCH);
+	API::Handle(Response, Query);
 
 	SendHTTPData(Response, Request);
 
@@ -235,7 +163,7 @@ void WebServer_t::Start() {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     config.uri_match_fn 	= httpd_uri_match_wildcard;
-    config.stack_size		= 20000;//4096;//12288;//16384;//20000;
+    config.stack_size		= 8192;//4096;//12288;//16384;//20000;
     config.lru_purge_enable = true;
     config.task_priority	= tskIDLE_PRIORITY + 5;
 
@@ -250,7 +178,7 @@ void WebServer_t::Start() {
     }
 
 	if (UDPListenerTaskHandle == NULL)
-		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 2048);
+		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 3072);
 }
 
 void WebServer_t::Stop() {

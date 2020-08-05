@@ -26,6 +26,8 @@
 #include "Memory.h"
 #include "DateTime.h"
 
+#include "Query.h"
+
 #include "OTA.h"
 #include "Converter.h"
 
@@ -72,7 +74,8 @@ class Device_t {
 
 		Device_t();
 		void    			Init();
-		void    			HandleHTTPRequest(WebServer_t::Response &, QueryType Type, vector<string> URLParts, map<string,string> Params, httpd_req_t *Request = NULL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer);
+		void    			HandleHTTPRequest(WebServer_t::Response &, Query_t &);
+		JSON				RootInfo();
 
 		string				GetName();
 		void				SetName(string);

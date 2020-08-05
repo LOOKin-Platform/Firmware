@@ -71,7 +71,7 @@ class Sensor_t {
 		static Sensor_t*			GetSensorByID(uint8_t);
 		static uint8_t				GetDeviceTypeHex();
 
-		static void HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+		static void HandleHTTPRequest(WebServer_t::Response &, Query_t &);
 
 	private:
 		bool 						IsInited	= false;

@@ -6,13 +6,12 @@
 
 #include "API.h"
 
-void API::Handle(WebServer_t::Response &Response, Query_t &Query, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType, int MsgID) {
-	return API::Handle(Response, Query.Type, Query.RequestedUrlParts, Query.Params, Query.RequestBody, Request, TransportType, MsgID);
-}
+void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
+	ESP_LOGE("GetURLPartsCount", "%d", Query.GetURLPartsCount());
 
-void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string> &URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType, int MsgID) {
+	if (Query.GetURLPartsCount() == 0) {
+		map<string,string> Params = Query.GetParams();
 
-	if (URLParts.size() == 0) {
 		if (!Params.count("summary")) {
 			if (WiFi.GetMode() == WIFI_MODE_STA_STR) {
 				Response.ResponseCode	= WebServer_t::Response::CODE::OK;
@@ -24,60 +23,49 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 				Response.ContentType	= WebServer_t::Response::TYPE::HTML;
 				Response.Body			= GetSetupPage();
 			}
+
+			return;
 		}
 		else {
 			string MQTTChunkHash = "";
 			uint16_t ChunkPartID = 0;
 
 			string ResultData = "{ \"Device\":";
-			Device.HandleHTTPRequest(Response, Type, URLParts, Params);
-			ResultData += Response.Body + ",";
+			ResultData += Device.RootInfo().ToString() + ",";
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				httpd_resp_set_type	(Request, HTTPD_TYPE_JSON);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				httpd_resp_set_type	(Query.GetRequest(), HTTPD_TYPE_JSON);
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request, ResultData);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
 			else {
-				MQTTChunkHash = MQTT.StartChunk(MsgID);
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+				MQTTChunkHash = MQTT.StartChunk(Query.MQTTMessageID);
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 			}
 
 			ResultData = "\"Network\" : ";
-			Network.HandleHTTPRequest(Response, Type, URLParts, Params);
-			ResultData += Response.Body + ",";
+			ResultData += Network.RootInfo().ToString() + ",";
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request, ResultData);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
 			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
 
 			ResultData = "\"Automation\" : ";
-			Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-			ResultData += Response.Body + ",";
+			ResultData += Automation.RootInfo().ToString() + ",";
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request, ResultData);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
 			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
-			ResultData = "\"Automation\" : ";
-			Automation.HandleHTTPRequest(Response, Type, URLParts, Params, RequestBody);
-			ResultData += Response.Body + ",";
+			ResultData = "\"Storage\" : { \"Version\" : \"" + Storage.VersionToString() + "\"" + "}, ";
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request, ResultData);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
 			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
-
-			Storage.HandleHTTPRequest(Response, Type, { "version" }, Params, RequestBody);
-			ResultData = "\"Storage\" : { \"Version\" : \"" + Response.Body  + "\"" + "}, ";
-
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request, ResultData);
-			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
 			ResultData = "\"Sensors\" : [";
 			for (int i = 0; i < Sensors.size(); i++) {
@@ -87,10 +75,10 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			}
 			ResultData += "] ,";
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request, ResultData);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
 			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
 
 			ResultData = "\"Commands\" : [";
@@ -104,15 +92,15 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 			ResultData += "]";
 			ResultData += "}";
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request, ResultData);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
 			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, MsgID);
+				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::EndChunk(Request);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::EndChunk(Query.GetRequest());
 			else
-				MQTT.EndChunk(MQTTChunkHash, MsgID);
+				MQTT.EndChunk(MQTTChunkHash, Query.MQTTMessageID);
 
 			/*
 			Result += "\"Log\" : ";
@@ -128,54 +116,41 @@ void API::Handle(WebServer_t::Response &Response, QueryType Type, vector<string>
 		return;
 	}
 
-	if (URLParts.size() > 0) {
-		string APISection = URLParts[0];
-		URLParts.erase(URLParts.begin(), URLParts.begin() + 1);
+	if (Query.GetURLPartsCount() > 0) {
 
-		if (APISection == "device")		Device		.HandleHTTPRequest	(Response, Type, URLParts, Params, Request, TransportType);
-		if (APISection == "network")	Network		.HandleHTTPRequest	(Response, Type, URLParts, Params);
-		if (APISection == "automation")	Automation	.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody);
-		if (APISection == "storage")	Storage		.HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request, TransportType, MsgID);
-		if (APISection == "data")		Data->		HandleHTTPRequest	(Response, Type, URLParts, Params, RequestBody, Request, TransportType, MsgID);
-		if (APISection == "sensors")	Sensor_t	::HandleHTTPRequest	(Response, Type, URLParts, Params);
-		if (APISection == "commands")	Command_t	::HandleHTTPRequest	(Response, Type, URLParts, Params);
-		if (APISection == "log")		Log			::HandleHTTPRequest	(Response, Type, URLParts, Params);
+		map<string,string> Params = map<string,string>();
+		vector<string> URLParts = vector<string>();
 
+		if (Query.CheckURLPart("device"		, 0)) 	Device 		.HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("network"	, 0))	Network		.HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("automation"	, 0))	Automation	.HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("storage"	, 0))	Storage		.HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("data"		, 0))	Data->		HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("sensors"	, 0))	Sensor_t	::HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("commands"	, 0))	Command_t	::HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("log"		, 0))	Log			::HandleHTTPRequest	(Response, Query);
+
+		/*
 	    if (1) {//if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB) {
-	    	if (URLParts.size() == 1 && Params.size() == 0 && HomeKit::IsSupported()) {
-	    		if (APISection == "homekit" && URLParts[0] == "refresh")
+	    	if (Query.GetURLPartsCount() == 1 && Params.size() == 0 && HomeKit::IsSupported()) {
+	    		if (Query.CheckURLPart("homekit", 0) && Query.CheckURLPart("refresh", 1))
 	    			HomeKit::AppServerRestart();
 					Response.SetSuccess();
 					return;
 	    	}
 		}
-
-		// обработка алиасов комманд
-		if (URLParts.size() == 0 && Params.size() == 0) {
-			if (APISection == "status")
-				switch (Device.Type.Hex) {
-					case Settings.Devices.Plug:
-						Sensor_t::HandleHTTPRequest(Response, Type, { "switch" }, map<string,string>());
-						break;
-					case Settings.Devices.Remote:
-						Sensor_t::HandleHTTPRequest(Response, Type, { "ir" }, map<string,string>());
-						break;
-					case Settings.Devices.Duo:
-						Sensor_t::HandleHTTPRequest(Response, Type, { "multiswitch" }, map<string,string>());
-						break;
-
-				}
-		}
+		*/
 
 		// Fixes null string at some APIs
-		if (APISection == "device" && URLParts[0] == "name" && URLParts.size() == 1)
+		if (Query.GetURLPartsCount() == 2 && (Query.CheckURLPart("device", 0)) && (Query.CheckURLPart("name", 1)))
 			return;
 
-		if (APISection == "network" && URLParts[0] == "currentssid" && URLParts.size() == 1)
+		if (Query.GetURLPartsCount() == 2 && (Query.CheckURLPart("network", 0)) && (Query.CheckURLPart("currentssid", 1)))
 			return;
 
 		// ECO mode test
-		if (APISection == "eco" && URLParts.size() > 0) {
+		if (Query.GetURLPartsCount() > 1 && (Query.CheckURLPart("eco", 0)))
+		{
 			PowerManagement::SetIsActive(URLParts[0] == "on");
 			Response.SetSuccess();
 		}

@@ -6,7 +6,7 @@
 
 #include "SPIFlash.h"
 
-static char tag[] = "SPIFlash";
+const char tag[] = "SPIFlash";
 
 /**
  * Erase sector of memory.

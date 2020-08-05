@@ -25,7 +25,8 @@ using namespace std;
 
 class JSON {
   public:
-    JSON(string = "");
+    JSON();
+    JSON(string);
     JSON(cJSON *cJSONRoot);
 
     ~JSON();

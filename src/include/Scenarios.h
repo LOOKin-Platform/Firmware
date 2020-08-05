@@ -70,7 +70,7 @@ class Scenario_t {
 
 		static string		SerializeScene(uint32_t ScanarioID);
 		static string		SerializeScene(Scenario_t);
-		static Scenario_t	DeserializeScene(string);
+		static Scenario_t	DeserializeScene(const char *);
 
 		template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<Settings_t::Scenarios_t::OperandBitLength>, size_t Start, size_t Length);
 		template <size_t SrcSize>     static void AddRangeTo(bitset<Settings_t::Scenarios_t::OperandBitLength> &, bitset<SrcSize>, size_t Position);

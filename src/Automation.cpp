@@ -22,7 +22,7 @@ void Automation_t::Init() {
 	Scenario_t::LoadScenarios();
 	LoadVersionMap();
 
-	TimeChangedHandle = FreeRTOS::StartTask(TimeChangedTask, "TimeChangedTask", NULL, 4096);
+	TimeChangedHandle = FreeRTOS::StartTask(TimeChangedTask, "TimeChangedTask", NULL, 6144);
 }
 
 uint32_t Automation_t::CurrentVersion() {
@@ -72,37 +72,20 @@ void Automation_t::TimeChangedTask(void *) {
 	}
 }
 
-void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts,
-                                                  map<string,string> Params, string RequestBody) {
+void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 	// обработка GET запроса - получение данных
-	if (Type == QueryType::GET) {
-		if (URLParts.size() == 0) {
-			JSON JSONObject;
-			JSONObject.SetItem("Version", Converter::ToHexString(CurrentVersion(), 8));
-
-			vector<map<string,string>> tmpVector = vector<map<string,string>>();
-			for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
-				tmpVector.push_back({
-					{ "SSID"  	, it->first},
-					{ "Version"	, Converter::ToHexString(it->second, 8)}
-				});
-			}
-
-			JSONObject.SetObjectsArray("VersionMap", tmpVector);
-
-			vector<string> SceneIDs;
-			for (auto& Scenario : ScenariosCache)
-				SceneIDs.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
-
-			JSONObject.SetStringArray("Scenarios", SceneIDs);
-			Result.Body = JSONObject.ToString();
+	if (Query.Type == QueryType::GET) {
+		if (Query.GetURLPartsCount() == 1) {
+			Result.Body = RootInfo().ToString();
+			return;
 		}
 
 		// Запрос конкретного параметра или команды секции API
-		if (URLParts.size() == 1) {
-			if (URLParts[0] == "version")   Result.Body = Converter::ToHexString(CurrentVersion(), 8);
-			if (URLParts[0] == "versionmap")Result.Body = SerializeVersionMap();
-			if (URLParts[0] == "scenarios") {
+		if (Query.GetURLPartsCount() == 2) {
+			if (Query.CheckURLPart("version"	,1))	Result.Body = Converter::ToHexString(CurrentVersion(), 8);
+			if (Query.CheckURLPart("versionmap"	,1))	Result.Body = SerializeVersionMap();
+			if (Query.CheckURLPart("scenarios"	,1))
+			{
 				vector<string> Scenarios = vector<string>();
 
 				for (auto& Scenario : ScenariosCache)
@@ -112,11 +95,11 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Ty
 			}
 		}
 
-		if (URLParts.size() == 2) {
-			if (URLParts[0] == "scenarios") {
+		if (Query.GetURLPartsCount() == 3) {
+			if (Query.CheckURLPart("scenarios"	,1)) {
 				Scenario_t Scenario;
 
-				Scenario_t::LoadScenario(Scenario, Converter::UintFromHexString<uint32_t>(URLParts[1]));
+				Scenario_t::LoadScenario(Scenario, Converter::UintFromHexString<uint32_t>(Query.GetStringURLPartByNumber(2)));
 
 				if (!Scenario.IsEmpty())
 					Result.Body = Scenario_t::SerializeScene(Scenario);
@@ -129,8 +112,10 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Ty
 	}
 
 	// POST запрос - сохранение и изменение данных
-	if (Type == QueryType::POST) {
-		if (URLParts.size() == 0) {
+	if (Query.Type == QueryType::POST) {
+		if (Query.GetURLPartsCount() == 1) {
+			map<string,string> Params = JSON(Query.GetBody()).GetItems();
+
 			if (Params.count("version") > 0) {
 				string SSID = (Params.count("SSID") > 0) ? Params["SSID"] : WiFi_t::GetStaSSID();
 
@@ -143,9 +128,9 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Ty
 			}
 		}
 
-		if (URLParts.size() == 1) {
-			if (URLParts[0] == "scenarios") {
-				Scenario_t Scenario = Scenario_t::DeserializeScene(RequestBody);
+		if (Query.GetURLPartsCount() == 2) {
+			if (Query.CheckURLPart("scenarios", 1)) {
+				Scenario_t Scenario = Scenario_t::DeserializeScene(Query.GetBody());
 				bool IsFound = false;
 
 				if (!Scenario.IsEmpty()) {
@@ -174,10 +159,10 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Ty
 	}
 
 	// DELETE запрос - удаление сценариев
-	if (Type == QueryType::DELETE) {
-		if (URLParts.size() == 2) {
-			if (URLParts[0] == "scenarios") {
-				vector<string> ScenariosToDelete = Converter::StringToVector(URLParts[1], ",");
+	if (Query.Type == QueryType::DELETE) {
+		if (Query.GetURLPartsCount() == 3) {
+			if (Query.CheckURLPart("scenarios",1)) {
+				vector<string> ScenariosToDelete = Converter::StringToVector(Query.GetStringURLPartByNumber(2), ",");
 
 				for (auto& ScenarioToDelete : ScenariosToDelete) {
 					uint32_t ScenarioID = Converter::UintFromHexString<uint32_t>(ScenarioToDelete);
@@ -197,6 +182,29 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Ty
 		}
 	}
 }
+
+JSON Automation_t::RootInfo() {
+	JSON JSONObject;
+	JSONObject.SetItem("Version", Converter::ToHexString(CurrentVersion(), 8));
+
+	vector<map<string,string>> tmpVector = vector<map<string,string>>();
+	for (map<string, uint32_t>::iterator it = VersionMap.begin(); it != VersionMap.end(); ++it) {
+		tmpVector.push_back({
+			{ "SSID"  	, it->first},
+			{ "Version"	, Converter::ToHexString(it->second, 8)}
+		});
+	}
+
+	JSONObject.SetObjectsArray("VersionMap", tmpVector);
+
+	vector<string> SceneIDs;
+	for (auto& Scenario : ScenariosCache)
+		SceneIDs.push_back(Converter::ToHexString(Scenario.ScenarioID, 8));
+
+	JSONObject.SetStringArray("Scenarios", SceneIDs);
+	return JSONObject;
+}
+
 
 uint8_t Automation_t::ScenarioCacheItemCount() {
 	return ScenariosCache.size();

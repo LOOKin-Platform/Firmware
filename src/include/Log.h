@@ -78,7 +78,7 @@ class Log {
 			    static void IndicatorCallback(void *);
 		} Indicator;
 
-		static void         HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+		static void         HandleHTTPRequest(WebServer_t::Response &, Query_t &Query);
 
 	private:
 

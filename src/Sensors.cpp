@@ -60,11 +60,11 @@ void Sensor_t::UpdateSensors() {
 		Sensor->Update();
 }
 
-void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 	Sensor_t::UpdateSensors();
 
 	// Echo list of all sensors
-	if (URLParts.size() == 0) {
+	if (Query.GetURLPartsCount() == 1) {
 		vector<string> Vector = vector<string>();
 		for (auto& Sensor : Sensors)
 			Vector.push_back(Sensor->Name);
@@ -73,8 +73,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 	}
 
 	// Запрос значений конкретного сенсора
-	if (URLParts.size() == 1) {
-		Sensor_t* Sensor = Sensor_t::GetSensorByName(URLParts[0]);
+	if (Query.GetURLPartsCount() == 2) {
+		Sensor_t* Sensor = Sensor_t::GetSensorByName(Query.GetStringURLPartByNumber(1));
 
 		if (Sensor == nullptr) {
 			Result.SetInvalid();
@@ -110,22 +110,23 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 
 	// Запрос строковых значений состояния конкретного сенсора
 	// Или - получение JSON дополнительных значений
-	if (URLParts.size() == 2)
+	if (Query.GetURLPartsCount() == 3) {
 		for (Sensor_t* Sensor : Sensors)
-			if (Converter::ToLower(Sensor->Name) == URLParts[0]) {
-				if (URLParts[1] == "value") {
+			if (Query.CheckURLPart(Converter::ToLower(Sensor->Name),1)) {
+				if (Query.CheckURLPart("value",2)) {
 					Result.Body = Sensor->FormatValue();
 					break;
 				}
 
-				if (URLParts[1] == "updated") {
+				if (Query.CheckURLPart("updated",2)) {
 					Result.Body = Converter::ToString(Sensor->Values["Primary"].Updated);
 					break;
 				}
 
 				if (Sensor->Values.size() > 0)
 					for (const auto &Value : Sensor->Values) {
-						if (Converter::ToLower(Value.first) == URLParts[1]) {
+
+						if (Query.CheckURLPart(Converter::ToLower(Value.first), 2)) {
 							JSON JSONObject;
 
 							JSONObject.SetItem("Value"	, Sensor->FormatValue(Value.first));
@@ -136,20 +137,22 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, 
 						}
 					}
 			}
+	}
 
 	// Запрос строковых значений состояния дополнительного поля конкретного сенсора
-	if (URLParts.size() == 3)
+	if (Query.GetURLPartsCount() == 4) {
 		for (Sensor_t* Sensor : Sensors)
-			if (Converter::ToLower(Sensor->Name) == URLParts[0])
+			if (Query.CheckURLPart(Converter::ToLower(Sensor->Name),1))
 				for (const auto &Value : Sensor->Values) {
-					if (Converter::ToLower(Value.first) == URLParts[1])
+					if (Query.CheckURLPart(Converter::ToLower(Value.first),2))
 					{
-						if (URLParts[2] == "value")   Result.Body = Sensor->FormatValue(Value.first);
-						if (URLParts[2] == "updated") Result.Body = Converter::ToString(Value.second.Updated);
+						if (Query.CheckURLPart("value",3)) 		Result.Body = Sensor->FormatValue(Value.first);
+						if (Query.CheckURLPart("updated",3)) 	Result.Body = Converter::ToString(Value.second.Updated);
 
 						break;
 					}
 				}
+	}
 }
 
 // возвращаемое значение - было ли изменено значение в памяти
@@ -173,7 +176,10 @@ string Sensor_t::EchoSummaryJSON() {
 		return SummaryJSON();
 
 	WebServer_t::Response Response;
-	Sensor_t::HandleHTTPRequest	(Response, QueryType::GET, { Name }, map<string,string>());
+
+	Query_t Query(("GET /sensors/" + Name).c_str());
+
+	Sensor_t::HandleHTTPRequest	(Response, Query);
 
 	return Response.Body;
 }

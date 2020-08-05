@@ -75,7 +75,8 @@ class Network_t {
 
 		uint32_t 				KeepWiFiTimer 	= 0;
 
-		void 					HandleHTTPRequest(WebServer_t::Response &, QueryType, vector<string>, map<string,string>);
+		void    				HandleHTTPRequest(WebServer_t::Response &, Query_t &);
+		JSON 					RootInfo();
 
 		uint8_t					PoolingNetworkMapReceivedTimer = Settings.Pooling.NetworkMap.DefaultValue;
 

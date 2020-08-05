@@ -23,14 +23,7 @@ class DataEndpoint_t {
 		static	DataEndpoint_t*	GetForDevice();
 		virtual void 			Init() {};
 
-		virtual void 			HandleHTTPRequest(
-				WebServer_t::Response &,
-				QueryType, vector<string>,
-				map<string,string>,
-				string RequestBody,
-				httpd_req_t *Request = NULL,
-				WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::WebServer,
-				int MsgID = 0) {			ESP_LOGE("!!!!","???");};
+		virtual void 			HandleHTTPRequest(WebServer_t::Response &, Query_t &) { };
 };
 
 #include "../data_endpoints/DataRemote.cpp"

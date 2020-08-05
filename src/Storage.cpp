@@ -212,39 +212,41 @@ uint16_t Storage_t::CurrentVersion() {
 }
 
 
-void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request,  WebServer_t::QueryTransportType TransportType, int MsgID) {
-	if (Type == QueryType::GET) {
-		if (URLParts.size() == 0) {
+void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
+	if (Query.Type == QueryType::GET) {
+		if (Query.GetURLPartsCount() == 1) {
 			JSON JSONObject;
 
-			JSONObject.SetItem("Version" , (LastVersion < 0x2000) ? "0" : Converter::ToHexString(LastVersion, 4));
+			JSONObject.SetItem("Version" , VersionToString());
 			JSONObject.SetItem("Count"	 , Converter::ToString(MemoryStoredItems));
 			JSONObject.SetItem("Freesize", Converter::ToString(GetFreeMemory()));
 			Result.Body = JSONObject.ToString();
 		}
 
-		if (URLParts.size() == 1 && URLParts[0] == "version") {
+		if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("version", 1)) {
 			Result.Body = (LastVersion < 0x2000) ? "0" : Converter::ToHexString(LastVersion, 4);
 			return;
 		}
 
-		if (URLParts.size() == 1 && URLParts[0] == "count") {
+		if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("count", 1)) {
 			Result.Body = Converter::ToString(MemoryStoredItems);
 			return;
 		}
 
-		if (URLParts.size() == 1 && URLParts[0] == "freesize") {
+		if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("freesize", 1)) {
 			Result.Body = Converter::ToString(GetFreeMemory());
 			return;
 		}
 
-		if (URLParts.size() == 1 && URLParts[0] == "types") {
+		if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("types", 1)) {
 			Result.Body = JSON::CreateStringFromIntVector<uint8_t>(GetItemsTypes(), 2);
 			return;
 		}
 
-		if (URLParts.size() == 2 && URLParts[0] == "types") {
-			uint8_t		TypeID 	= Converter::UintFromHexString<uint8_t>(URLParts[1]);
+		if (Query.GetURLPartsCount() == 3 && Query.CheckURLPart("types", 1)) {
+			map<string,string> Params = Query.GetParams();
+
+			uint8_t		TypeID 	= Converter::UintFromHexString<uint8_t>(Query.GetStringURLPartByNumber(2));
 			uint16_t	Items 	= CountItemsForTypeID(TypeID);
 
 			uint16_t	Limit = 64;
@@ -265,7 +267,9 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			return;
 		}
 
-		if (URLParts.size() == 1 && URLParts[0] == "history") {
+		if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("history", 1)) {
+			map<string,string> Params = Query.GetParams();
+
 			uint16_t	Items = VersionHistoryCount();
 
 			uint16_t	Limit = 256;
@@ -287,7 +291,9 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			return;
 		}
 
-		if (URLParts.size() == 2 && URLParts[0] == "history" && URLParts[1] == "upgrade") {
+		if (Query.GetURLPartsCount() == 3 && Query.CheckURLPart("history", 1) && Query.CheckURLPart("upgrade", 2)) {
+			map<string,string> Params = Query.GetParams();
+
 			uint16_t From 	= (Params.count("from") != 0) ? Converter::UintFromHexString<uint16_t>(Params["from"]) : 0x00;
 
 			if (From != 0 && From < 0x2000) {
@@ -301,17 +307,17 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			string MQTTChunkHash = "";
 			uint16_t ChunkPartID = 0;
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				httpd_resp_set_type	(Request, HTTPD_TYPE_JSON);
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				httpd_resp_set_type	(Query.GetRequest(), HTTPD_TYPE_JSON);
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Request,
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+				WebServer_t::SendChunk(Query.GetRequest(),
 					"{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
 					+ Converter::ToHexString(To	,4) + "\", \"Items\":[");
 			else {
-				MQTTChunkHash = MQTT.StartChunk(MsgID);
+				MQTTChunkHash = MQTT.StartChunk(Query.MQTTMessageID);
 				MQTT.SendChunk("{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
-						+ Converter::ToHexString(To	,4) + "\", \"Items\":[", MQTTChunkHash, ChunkPartID++, MsgID);
+						+ Converter::ToHexString(To	,4) + "\", \"Items\":[", MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 			}
 
 			vector<Item>::iterator it = Items.begin();
@@ -325,41 +331,41 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				    make_pair("Data"	, it->DataToString() )
 				}));
 
-				if (TransportType == WebServer_t::QueryTransportType::WebServer)
-					WebServer_t::SendChunk(Request, JSONObject.ToString() + ((Items.size() > 1) ? "," : ""));
+				if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
+					WebServer_t::SendChunk(Query.GetRequest(), JSONObject.ToString() + ((Items.size() > 1) ? "," : ""));
 				else
-					MQTT.SendChunk(JSONObject.ToString() + ((Items.size() > 1) ? "," : ""), MQTTChunkHash, ChunkPartID++, MsgID);
+					MQTT.SendChunk(JSONObject.ToString() + ((Items.size() > 1) ? "," : ""), MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
 				Items.erase(Items.begin());
 			}
 
-			if (TransportType == WebServer_t::QueryTransportType::WebServer)
+			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
 			{
-				WebServer_t::SendChunk(Request, "]}");
-				WebServer_t::EndChunk(Request);
+				WebServer_t::SendChunk(Query.GetRequest(), "]}");
+				WebServer_t::EndChunk(Query.GetRequest());
 			}
 			else {
-				MQTT.SendChunk("]}", MQTTChunkHash, ChunkPartID++, MsgID);
-				MQTT.EndChunk(MQTTChunkHash, MsgID);
+				MQTT.SendChunk("]}", MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
+				MQTT.EndChunk(MQTTChunkHash, Query.MQTTMessageID);
 			}
 
 			Result.Body = "";
 
-			if (TransportType == WebServer_t::QueryTransportType::MQTT)
+			if (Query.Transport == WebServer_t::QueryTransportType::MQTT)
 				Result.ResponseCode = WebServer_t::Response::CODE::IGNORE;
 
 			return;
 		}
 
-		if (URLParts.size() == 2 && URLParts[0] == "history"  && URLParts[1] != "upgrade") {
-			uint16_t VersionID = Converter::UintFromHexString<uint16_t>(URLParts[1]);
+		if (Query.GetURLPartsCount() == 3 && Query.CheckURLPart("history", 1) && !Query.CheckURLPart("upgrade", 2)) {
+			uint16_t VersionID = Converter::UintFromHexString<uint16_t>(Query.GetStringURLPartByNumber(2));
 			Result.Body =  JSON::CreateStringFromIntVector<uint16_t>(GetItemsForVersion(VersionID), 4);
 
 			return;
 		}
 
-		if (URLParts.size() == 1 || (URLParts.size() == 2 && URLParts[1] == "decode")) {
-			uint16_t ItemID = Converter::UintFromHexString<uint16_t>(URLParts[0]);
+		if (Query.GetURLPartsCount() == 2 || (Query.GetURLPartsCount() == 3 && Query.CheckURLPart("decode", 2))) {
+			uint16_t ItemID = Converter::UintFromHexString<uint16_t>(Query.GetStringURLPartByNumber(1));
 
 			if (ItemID > (Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize))
 			{
@@ -377,7 +383,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 
 			map<string,string> OutputMap = map<string,string>();
 
-			if (URLParts.size() == 2) {
+			if (Query.GetURLPartsCount() == 3) {
 				Sensor_t *Sensor = Sensor_t::GetSensorByID(Output.Header.TypeID);
 
 				if (Sensor != nullptr)
@@ -404,22 +410,22 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 	}
 
-	if (Type == QueryType::POST) {
-		if (URLParts.size() == 1 && URLParts[0] == "commit") {
+	if (Query.Type == QueryType::POST) {
+		if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("commit", 1)) {
 			Commit();
 			Result.SetSuccess();
 			return;
 		}
 
-		if (URLParts.size()  == 0) {
-			vector<map<string,string>> Items = vector<map<string,string>>();
+
+		if (Query.GetURLPartsCount() == 1) {
+			map<string, string> Params 			= JSON(Query.GetBody()).GetItems();
+			vector<map<string,string>> Items 	= vector<map<string,string>>();
 
 			if (Params.empty()) {
-				JSON JSONObject(RequestBody);
+				JSON JSONObject(Query.GetBody());
 				if (JSONObject.GetType() == JSON::RootType::Array)
 					Items = JSONObject.GetObjectsArray();
-
-				RequestBody = "";
 			}
 			else
 			{
@@ -489,8 +495,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 	}
 
-	if (Type == QueryType::DELETE) {
-		if (URLParts.size() == 0) {
+	if (Query.Type == QueryType::DELETE) {
+		if (Query.GetURLPartsCount() == 1) {
 
 			SPIFlash::EraseRange(Settings.Storage.Versions.StartAddress, Settings.Storage.Versions.Size);
 			SPIFlash::EraseRange(Settings.Storage.Data.StartAddress, Settings.Storage.Data.Size);
@@ -506,8 +512,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 			Result.SetSuccess();
 		}
 
-		if (URLParts.size() == 1) {
-			vector<string> IDsToDelete = Converter::StringToVector(URLParts[0], ",");
+		if (Query.GetURLPartsCount() == 2) {
+			vector<string> IDsToDelete = Converter::StringToVector(Query.GetStringURLPartByNumber(1) , ",");
 
 			for (auto& IDToDelete : IDsToDelete)
 				Erase(Converter::UintFromHexString<uint16_t>(IDToDelete));
@@ -522,6 +528,11 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 	}
 }
+
+string Storage_t::VersionToString() {
+	return (LastVersion < 0x2000) ? "0" : Converter::ToHexString(LastVersion, 4);
+}
+
 
 uint16_t Storage_t::FindFreeID() {
 	uint16_t Result = 0xFFF;
@@ -667,18 +678,20 @@ void IRAM_ATTR Storage_t::CalculateMemoryItemsData() {
 	}
 }
 
-vector<uint8_t> Storage_t::GetItemsTypes() {
-	vector<uint8_t> Result = vector<uint8_t>();
-
-	uint32_t Address = Settings.Storage.Data.StartAddress;
+vector<uint8_t> IRAM_ATTR Storage_t::GetItemsTypes() {
+	vector<uint8_t> Result 	= vector<uint8_t>();
+	uint32_t 		Address = Settings.Storage.Data.StartAddress;
 
 	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
 		RecordHeader Header;
+
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
 		if (Header.MemoryID != Settings.Memory.Empty16Bit && Header.TypeID != Settings.Memory.Empty8Bit)
-			if(find(Result.begin(), Result.end(), Header.TypeID) == Result.end())
+			if (find(Result.begin(), Result.end(), Header.TypeID) == Result.end()) {
 				Result.push_back(Header.TypeID);
+				ESP_LOGE("Header.TypeID", "%02X", Header.TypeID);
+			}
 
 		Address += Settings.Storage.Data.ItemSize;
 	}

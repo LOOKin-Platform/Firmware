@@ -65,59 +65,37 @@ void Device_t::Init() {
 	}
 }
 
-void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
-		vector<string> URLParts, map<string,string> Params, httpd_req_t *Request,
-		WebServer_t::QueryTransportType TransportType) {
-	if (Type == QueryType::GET) {
+void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
+	if (Query.Type == QueryType::GET) {
 		// Запрос JSON со всеми параметрами
-		if (URLParts.size() == 0) {
-			JSON JSONObject;
-
-			JSONObject.SetItems(vector<pair<string,string>> ({
-				make_pair("Type"			, TypeToString()),
-				make_pair("Model"			, ModelToString()),
-				make_pair("Status"			, StatusToString()),
-				make_pair("ID"				, IDToString()),
-				make_pair("Name"			, NameToString()),
-				make_pair("Time"			, Time::UnixtimeString()),
-				make_pair("Timezone"		, Time::TimezoneStr()),
-				make_pair("PowerMode"		, PowerModeToString()),
-				make_pair("CurrentVoltage"	, CurrentVoltageToString()),
-				make_pair("Firmware"		, FirmwareVersionToString()),
-				make_pair("Temperature"		, TemperatureToString()),
-				make_pair("BluetoothMode"	, BluetoothModeToString())
-
-			}));
-
-			if (Device.Type.Hex == Settings.Devices.Remote)
-				JSONObject.SetItem("SensorMode", SensorModeToString());
-
-			Result.Body = JSONObject.ToString();
+		if (Query.GetURLPartsCount() == 1) {
+			Result.Body = RootInfo().ToString();
+			return;
 		}
 
 		// Запрос конкретного параметра
-		if (URLParts.size() == 1) {
-			if (URLParts[0] == "type")			Result.Body = TypeToString();
-			if (URLParts[0] == "model")			Result.Body = ModelToString();
-			if (URLParts[0] == "status")		Result.Body = StatusToString();
-			if (URLParts[0] == "id")			Result.Body = IDToString();
-			if (URLParts[0] == "name")			Result.Body = NameToString();
-			if (URLParts[0] == "time")			Result.Body = Time::UnixtimeString();
-			if (URLParts[0] == "timezone")		Result.Body = Time::TimezoneStr();
-			if (URLParts[0] == "powermode")		Result.Body = PowerModeToString();
-			if (URLParts[0] == "currentvoltage")Result.Body = CurrentVoltageToString();
-			if (URLParts[0] == "firmware")		Result.Body = FirmwareVersionToString();
-			if (URLParts[0] == "temperature")	Result.Body = TemperatureToString();
-			if (URLParts[0] == "restart")		esp_restart();
+		if (Query.GetURLPartsCount() == 2) {
+			if (Query.CheckURLPart("type"			, 1))	Result.Body = TypeToString();
+			if (Query.CheckURLPart("model"			, 1))	Result.Body = ModelToString();
+			if (Query.CheckURLPart("status"			, 1))	Result.Body = StatusToString();
+			if (Query.CheckURLPart("id"				, 1))	Result.Body = IDToString();
+			if (Query.CheckURLPart("name"			, 1))	Result.Body = NameToString();
+			if (Query.CheckURLPart("time"			, 1))	Result.Body = Time::UnixtimeString();
+			if (Query.CheckURLPart("timezone"		, 1))	Result.Body = Time::TimezoneStr();
+			if (Query.CheckURLPart("powermode"		, 1))	Result.Body = PowerModeToString();
+			if (Query.CheckURLPart("currentvoltage"	, 1))	Result.Body = CurrentVoltageToString();
+			if (Query.CheckURLPart("firmware"		, 1))	Result.Body = FirmwareVersionToString();
+			if (Query.CheckURLPart("temperature"	, 1))	Result.Body = TemperatureToString();
+			if (Query.CheckURLPart("restart"		, 1))	esp_restart();
 
-			if (URLParts[0] == "sensormode" && Device.Type.Hex == Settings.Devices.Remote)
+			if ((Query.CheckURLPart("sensormode", 1)) && Device.Type.Hex == Settings.Devices.Remote)
 				Result.Body = SensorModeToString();
 
 			Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 		}
 
-		if (URLParts.size() == 2) {
-			if (URLParts[0] == "ota" && URLParts[1] == "rollback") {
+		if (Query.GetURLPartsCount() == 3){
+			if ((Query.CheckURLPart("ota", 1)) && (Query.CheckURLPart("rollback", 2))) {
 				if (OTA::Rollback()) {
 					Result.Body = "{\"success\" : \"true\" , \"Description\": \"Device will be restarted shortly\"}";
 				}
@@ -130,12 +108,14 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 	}
 
 	// обработка POST запроса - сохранение и изменение данных
-	if (Type == QueryType::POST) {
-		if (URLParts.size() == 0) {
+	if (Query.Type == QueryType::POST) {
+		map<string,string> Params = JSON(Query.GetBody()).GetItems();
+
+		if (Query.GetURLPartsCount() == 1) {
 			bool isNameSet            	= POSTName(Params);
 			bool isTimeSet            	= POSTTime(Params);
 			bool isTimezoneSet        	= POSTTimezone(Params);
-			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Request, TransportType);
+			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Query.GetRequest(), Query.Transport);
 			bool isSensorModeSet		= POSTSensorMode(Params, Result);
 			bool isBluetoothModeSet		= POSTBluetoothMode(Params);
 
@@ -143,14 +123,14 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.Body = "{\"success\" : \"true\"}";
 		}
 
-		if (URLParts.size() == 2) {
-			if (URLParts[0] == "firmware") {
+		if (Query.GetURLPartsCount() == 3) {
+			if (Query.CheckURLPart("firmware", 1)) {
 				Result.Body = "{\"success\" : \"true\"}";
 
-				if (URLParts[1] == "start")
+				if (Query.CheckURLPart("start", 2))
 					OTA::ReadStarted("");
 
-				if (URLParts[1] == "write") {
+				if (Query.CheckURLPart("write", 2)) {
 					if (Params.count("data") == 0) {
 						Result.ResponseCode = WebServer_t::Response::INVALID;
 						Result.Body = "{\"success\" : \"false\" , \"Error\": \"Writing data failed\"}";
@@ -171,12 +151,38 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 					delete BinaryData;
 				}
 
-				if (URLParts[1] == "finish")
+				if (Query.CheckURLPart("finish", 2))
 					OTA::ReadFinished("");
 			}
 		}
 	}
 }
+
+JSON Device_t::RootInfo() {
+	JSON JSONObject;
+
+	JSONObject.SetItems(vector<pair<string,string>> ({
+		make_pair("Type"			, TypeToString()),
+		make_pair("Model"			, ModelToString()),
+		make_pair("Status"			, StatusToString()),
+		make_pair("ID"				, IDToString()),
+		make_pair("Name"			, NameToString()),
+		make_pair("Time"			, Time::UnixtimeString()),
+		make_pair("Timezone"		, Time::TimezoneStr()),
+		make_pair("PowerMode"		, PowerModeToString()),
+		make_pair("CurrentVoltage"	, CurrentVoltageToString()),
+		make_pair("Firmware"		, FirmwareVersionToString()),
+		make_pair("Temperature"		, TemperatureToString()),
+		make_pair("BluetoothMode"	, BluetoothModeToString())
+
+	}));
+
+	if (Device.Type.Hex == Settings.Devices.Remote)
+		JSONObject.SetItem("SensorMode", SensorModeToString());
+
+	return JSONObject;
+}
+
 
 string Device_t::GetName() {
 	NVS Memory(NVSDeviceArea);

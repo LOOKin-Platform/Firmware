@@ -8,6 +8,10 @@
 
 static char tag[] = "JSON";
 
+JSON::JSON() {
+	Root = cJSON_CreateObject();
+}
+
 JSON::JSON(string JSONString) {
 	Converter::FindAndReplace(JSONString, "\\u", "\\\\u"); 	// UTF16 Hack
 

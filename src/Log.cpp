@@ -399,18 +399,18 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
  * @param [in] URLParts HTTP path devided by /
  * @param [in] Params   Query params
  */
-void Log::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Log::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 	// обработка GET запроса - получение данных
-	if (Type == QueryType::GET) {
+	if (Query.Type == QueryType::GET) {
 
-		if (URLParts.size() == 0)
+		if (Query.GetURLPartsCount() == 1)
 			Result.Body = "{\"System\" : " + GetSystemLogJSON() + ", \"Events\" : " + GetEventsLogJSON() + "}";
 
-		if (URLParts.size() == 1) {
-			if (URLParts[0] == "system")
+		if (Query.GetURLPartsCount() == 2) {
+			if (Query.CheckURLPart("system", 1))
 				Result.Body = GetSystemLogJSON();
 
-			if (URLParts[0] == "events")
+			if (Query.CheckURLPart("events", 1))
 				Result.Body = GetEventsLogJSON();
 		}
 	}

@@ -95,6 +95,10 @@ class Settings_t {
 			const string					DeviceTopicPrefix		= "/devices/";
 		} MQTT;
 
+		struct WebServer_t {
+			const uint16_t					MaxQueryBodyLength		= 4096;
+		};
+
 		struct Wireless_t {
 			map<uint8_t, pair<uint16_t,uint16_t>> AliveIntervals = {
 				{ 0x8, { 294, 6 }}

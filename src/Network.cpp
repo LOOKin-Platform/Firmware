@@ -300,62 +300,38 @@ NetworkDevice_t Network_t::DeserializeNetworkDevice(string Data) {
 	return Result;
 }
 
-void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params) {
+void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 	// обработка GET запроса - получение данных
 
-	if (Type == QueryType::GET) {
+	if (Query.Type == QueryType::GET) {
 		// Запрос JSON со всеми параметрами
-		if (URLParts.size() == 0) {
-			JSON JSONObject;
-
-			JSONObject.SetItems(vector<pair<string,string>>({
-				make_pair("Mode"		, ModeToString()),
-				make_pair("IP"			, IPToString()),
-				make_pair("CurrentSSID"	, WiFiCurrentSSIDToString())
-			}));
-
-			vector<string> WiFiSettingsVector = vector<string>();
-			for (auto &Item : WiFiSettings)
-				WiFiSettingsVector.push_back(Item.SSID);
-
-			JSONObject.SetStringArray("SavedSSID", WiFiSettingsVector);
-
-			vector<map<string,string>> NetworkMap = vector<map<string,string>>();
-			for (auto& NetworkDevice: Devices)
-				NetworkMap.push_back({
-				{"Type"     , DeviceType_t::ToString(NetworkDevice.TypeHex)},
-				{"ID"       , Converter::ToHexString(NetworkDevice.ID,8)},
-				{"IP"       , NetworkDevice.IP},
-				{"IsActive" , (NetworkDevice.IsActive == true) ? "1" : "0" }
-			});
-
-			JSONObject.SetObjectsArray("Map", NetworkMap);
-
-			Result.Body = JSONObject.ToString();
+		if (Query.GetURLPartsCount() == 1) {
+			Result.Body = RootInfo().ToString();
+			return;
 		}
 
 		// Запрос конкретного параметра или команды секции API
-		if (URLParts.size() == 1)
+		if (Query.GetURLPartsCount() == 2) {
 		{
 			// Подключение к заданной точке доступа
-			if (URLParts[0] == "connect") {
+			if (Query.CheckURLPart("connect", 1)) {
 				if (!WiFiConnect()) {
 					Result.ResponseCode = WebServer_t::Response::CODE::ERROR;
 					Result.Body = "{\"success\" : \"false\"}";
 				}
 			}
 
-			if (URLParts[0] == "mode") {
+			if (Query.CheckURLPart("mode", 1)) {
 				Result.Body = ModeToString();
 				Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 			}
 
-			if (URLParts[0] == "ip") {
+			if (Query.CheckURLPart("ip", 1)) {
 				Result.Body = IPToString();
 				Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 			}
 
-			if (URLParts[0] == "currentssid") {
+			if (Query.CheckURLPart("currentssid", 1)) {
 				Result.Body = WiFiCurrentSSIDToString();
 
 				if (Result.Body == "")
@@ -364,7 +340,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 			}
 
-			if (URLParts[0] == "scannedssidlist") {
+			if (Query.CheckURLPart("scannedssidlist", 1)) {
 				vector<string> SSIDList = vector<string>();
 
 				for (auto &WiFiScannedItem : WiFiScannedList)
@@ -374,7 +350,8 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
 
-			if (URLParts[0] == "savedssid") {
+
+			if (Query.CheckURLPart("savedssid", 1)) {
 				vector<string> WiFiSettingsVector = vector<string>();
 				for (auto &Item : WiFiSettings)
 					WiFiSettingsVector.push_back(Item.SSID);
@@ -383,7 +360,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
 
-			if (URLParts[0] == "map") {
+			if (Query.CheckURLPart("map", 1)) {
 				vector<map<string,string>> NetworkMap = vector<map<string,string>>();
 				for (auto& NetworkDevice: Devices)
 					NetworkMap.push_back({
@@ -400,34 +377,38 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
 
-			if (URLParts[0] == "keepwifi") {
+			if (Query.CheckURLPart("keepwifi", 1)) {
 				KeepWiFiTimer = Settings.WiFi.KeepWiFiTime;
 
 				Result.SetSuccess();
 			}
 		}
 
-		if (URLParts.size() == 2) {
-			if (URLParts[0] == "connect") {
+		if (Query.GetURLPartsCount() == 3) {
+
+			if (Query.CheckURLPart("connect", 1)) {
+				map<string,string> Params = Query.GetParams();
+
 				bool IsHidden = (Params.count("hidden") > 0);
 
-				if (!WiFiConnect(URLParts[1], false, IsHidden)) {
+				if (!WiFiConnect(Query.GetStringURLPartByNumber(2), false, IsHidden)) {
 					Result.ResponseCode = WebServer_t::Response::CODE::ERROR;
 					Result.Body = "{\"success\" : \"false\"}";
 					return;
 				}
 			}
 
-			if (URLParts[0] == "remotecontrol") {
-				if (URLParts[1] == "reconnect") {
+
+			if (Query.CheckURLPart("remotecontrol", 1)) {
+				if (Query.CheckURLPart("reconnect", 2))
 					MQTT.Reconnect();
 				}
 			}
 		}
 
-		if (URLParts.size() == 3) {
-			if (URLParts[0] == "remotecontrol" && URLParts[1] == "stop") {
-				if (Converter::ToLower(MQTT.GetClientID()) == URLParts[2]) {
+		if (Query.GetURLPartsCount() == 4) {
+			if (Query.CheckURLPart("remotecontrol",1) && Query.CheckURLPart("stop",2)) {
+				if (Converter::ToLower(MQTT.GetClientID()) == Query.GetStringURLPartByNumber(3)) {
 					MQTT.SetCredentials("","");
 					//MQTT.Stop();
 					Result.Body = "{\"success\" : \"true\"}";
@@ -438,10 +419,10 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 	}
 
 	// POST запрос - сохранение и изменение данных
-	if (Type == QueryType::POST)
-	{
-		if (URLParts.size() == 0)
-		{
+	if (Query.Type == QueryType::POST) {
+		if (Query.GetURLPartsCount() == 1) {
+			map<string, string> Params = JSON(Query.GetBody()).GetItems();
+
 			if (Params["wifissid"] == "" || Params["wifipassword"] == "") {
 				Result.SetFail();
 				return;
@@ -454,10 +435,10 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 	}
 
 	// DELETE запрос - удаление данных
-	if (Type == QueryType::DELETE) {
-		if (URLParts.size() == 2 && URLParts[0] == "savedssid")
+	if (Query.Type == QueryType::DELETE) {
+		if (Query.GetURLPartsCount() == 3 && Query.CheckURLPart("savedssid", 1))
 		{
-			vector<string> SSIDToDelete = Converter::StringToVector(URLParts[1], ",");
+			vector<string> SSIDToDelete = Converter::StringToVector(Query.GetStringURLPartByNumber(2), ",");
 
 			bool IsSuccess = false;
 
@@ -472,6 +453,36 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type,
 		}
 	}
 }
+
+JSON Network_t::RootInfo() {
+	JSON JSONObject;
+
+	JSONObject.SetItems(vector<pair<string,string>>({
+		make_pair("Mode"		, ModeToString()),
+		make_pair("IP"			, IPToString()),
+		make_pair("CurrentSSID"	, WiFiCurrentSSIDToString())
+	}));
+
+	vector<string> WiFiSettingsVector = vector<string>();
+	for (auto &Item : WiFiSettings)
+		WiFiSettingsVector.push_back(Item.SSID);
+
+	JSONObject.SetStringArray("SavedSSID", WiFiSettingsVector);
+
+	vector<map<string,string>> NetworkMap = vector<map<string,string>>();
+	for (auto& NetworkDevice: Devices)
+		NetworkMap.push_back({
+		{"Type"     , DeviceType_t::ToString(NetworkDevice.TypeHex)},
+		{"ID"       , Converter::ToHexString(NetworkDevice.ID,8)},
+		{"IP"       , NetworkDevice.IP},
+		{"IsActive" , (NetworkDevice.IsActive == true) ? "1" : "0" }
+	});
+
+	JSONObject.SetObjectsArray("Map", NetworkMap);
+
+	return JSONObject;
+}
+
 
 string Network_t::ModeToString() {
 	return (WiFi_t::GetMode() == WIFI_MODE_AP_STR) ? "AP" : "Client";

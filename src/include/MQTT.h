@@ -14,6 +14,8 @@ using namespace std;
 #include "FreeRTOSWrapper.h"
 
 #include <string>
+
+#include "Query.h"
 #include "Settings.h"
 
 #define	NVSMQTTArea				"MQTT"

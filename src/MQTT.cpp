@@ -119,41 +119,34 @@ void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 
 esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
-    int msg_id = 0;
+
     string DeviceTopic = Settings.MQTT.DeviceTopicPrefix + Device.IDToString();
 
     // your_context_t *context = event->context;
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
-		{
 			Status = CONNECTED;
 
 			ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
 			ConnectionTries = 0;
 
-			msg_id = esp_mqtt_client_subscribe(client, DeviceTopic.c_str(), Settings.MQTT.DefaultQOS);
-			msg_id = esp_mqtt_client_subscribe(client, string(DeviceTopic + "/UDP").c_str(), Settings.MQTT.DefaultQOS);
+			::esp_mqtt_client_subscribe(client, DeviceTopic.c_str(), Settings.MQTT.DefaultQOS);
+			::esp_mqtt_client_subscribe(client, string(DeviceTopic + "/UDP").c_str(), Settings.MQTT.DefaultQOS);
 
-			msg_id = SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
+			SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
 			break;
-		}
 
         case MQTT_EVENT_DISCONNECTED:
-        {
             ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
 
             if (Status == CONNECTED && ClientHandle != NULL)
             	Status = ERROR;
 
             break;
-        }
 
         case MQTT_EVENT_SUBSCRIBED:
-        {
             ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-            int msg_id = event->msg_id;
             break;
-        }
 
         case MQTT_EVENT_UNSUBSCRIBED:
             ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
@@ -165,21 +158,23 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
         case MQTT_EVENT_DATA:
 		{
-			string Topic	(event->topic, event->topic_len);
-			string Payload	(event->data, event->data_len);
+			string Topic(event->topic, event->topic_len);
 
 			if (Topic == DeviceTopic + "/UDP")
 			{
-				if (Payload == WebServer_t::UDPDiscoverBody())
+				if (string(event->data, event->data_len) == WebServer_t::UDPDiscoverBody())
 					SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
 			}
 
 			if (Topic == DeviceTopic)
 			{
 				WebServer_t::Response Response;
-				Query_t Query(Payload);
+				event->data[event->data_len] = '\0';
+				Query_t Query(event->data);
+				Query.Transport 		= WebServer.QueryTransportType::MQTT;
+				Query.MQTTMessageID 	= event->msg_id;
 
-				API::Handle(Response, Query, NULL, WebServer_t::QueryTransportType::MQTT, event->msg_id);
+				API::Handle(Response, Query);
 
 				if (Response.ResponseCode == WebServer_t::Response::CODE::IGNORE)
 					return ESP_OK;
@@ -189,8 +184,6 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 				SendMessage(Response.Body,
 							Settings.MQTT.DeviceTopicPrefix + Device.IDToString() +
 							"/" + Converter::ToString(event->msg_id));
-
-				ESP_LOGI(TAG, "HTTP");
 			}
 			break;
 		}
@@ -207,6 +200,9 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 }
 
 int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retain) {
+	ESP_LOGD("Payload", "%s", Payload.c_str());
+	ESP_LOGD("Topic", "%s", Topic.c_str());
+
 	if (Status != CONNECTED)
 		return -1;
 
@@ -243,6 +239,7 @@ esp_mqtt_client_config_t MQTT_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
 	Config.uri 			= Settings.MQTT.Server.c_str();
+	Config.port			= 8883;
 
 	Config.event_handle = mqtt_event_handler;
 	Config.transport 	= MQTT_TRANSPORT_OVER_SSL;
@@ -252,6 +249,7 @@ esp_mqtt_client_config_t MQTT_t::CreateConfig() {
     Config.client_id	= Username.c_str();
 
     Config.protocol_ver	= MQTT_PROTOCOL_V_3_1_1;
+
     return Config;
 }
 
@@ -264,6 +262,7 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.keepalive			= 120;
 	Config.disable_auto_reconnect
 								= false;
+//	Config.use_secure_element	= false;
 
 	Config.client_id 			= NULL;
 	Config.lwt_topic			= NULL;
@@ -283,6 +282,8 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.disable_clean_session= false;
 	Config.refresh_connection_after_ms
 								= 0;
+
+    Config.task_stack			= 6144;
 
 	Config.buffer_size			= 2560;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size

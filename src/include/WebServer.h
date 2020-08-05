@@ -20,6 +20,8 @@ using namespace std;
 
 #include "FreeRTOSWrapper.h"
 
+#include "Settings.h"
+
 struct UDPBroacastQueueItem {
 	char		Message[Settings.WiFi.UDPBroadcastQueue.MaxMessageSize + 1];
 	uint32_t	Updated;

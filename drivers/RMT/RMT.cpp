@@ -10,7 +10,7 @@ static char tag[] = "RMT";
 
 bool 									RMT::IsInited = false;
 map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap = {};
-vector<rmt_item32_t> 					RMT::OutputItems = {};
+IRAM_ATTR vector<rmt_item32_t> 			RMT::OutputItems = {};
 
 /**
  * @brief Firstly init RMT driver
@@ -223,7 +223,7 @@ void RMT::TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency) {
  *
  * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
  */
-void RMT::TXAddItem(int32_t Bit) {
+void IRAM_ATTR RMT::TXAddItem(int32_t Bit) {
 	// hack for large pauses between signals
 	if (abs(Bit) >= Settings.SensorsConfig.IR.Threshold && abs(Bit) != Settings.SensorsConfig.IR.SignalEndingLen)
 	{
@@ -241,7 +241,7 @@ void RMT::TXAddItem(int32_t Bit) {
  *
  * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
  */
-void RMT::TXAddItemExact(int32_t Bit) {
+void IRAM_ATTR RMT::TXAddItemExact(int32_t Bit) {
 	if (Bit == 0) return;
 
 	if (OutputItems.size() == 0 || (OutputItems.back()).duration1 != 0)
@@ -267,7 +267,7 @@ void RMT::TXAddItemExact(int32_t Bit) {
  * @param [in] Vector of int32_t items
  *
  */
-void RMT::TXSetItems(vector<int32_t> Items) {
+void IRAM_ATTR RMT::TXSetItems(vector<int32_t> Items) {
 	TXClear();
 
 	for (int32_t &Item : Items)
@@ -309,13 +309,13 @@ int16_t RMT::TXItemsCount() {
  *
  */
 
-void RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
+void IRAM_ATTR RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
 	PowerManagement::AddLock("RMTSend");
 
 	if (OutputItems.size() == 0) return;
 
 	if (OutputItems.back().duration0 > -30000 || OutputItems.back().duration1 > -30000)
-		TXAddItem(-45000);
+		TXAddItem(-Settings.SensorsConfig.IR.SignalEndingLen);
 
 	TXChangeFrequency(Channel, Frequency);
 
@@ -336,7 +336,7 @@ void RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
  * @return int16_t bit representation.
  *
  */
-int32_t RMT::PrepareBit(bool Bit, uint32_t Interval) {
+int32_t IRAM_ATTR RMT::PrepareBit(bool Bit, uint32_t Interval) {
 	Interval = round(Interval / 10) * 10;
 	return (!Bit) ? Interval : -Interval;
 }

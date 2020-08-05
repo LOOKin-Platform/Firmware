@@ -61,7 +61,7 @@ class RMT {
 
 		static int16_t 	TXItemsCount();
 
-		static void IRAM_ATTR TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
+		static void  	TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
 
 		static int32_t PrepareBit(bool, uint32_t);
 

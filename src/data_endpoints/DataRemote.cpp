@@ -137,16 +137,16 @@ class DataRemote_t : public DataEndpoint_t {
 				if (IRDevicesList[i] == "") IRDevicesList.erase(IRDevicesList.begin() + i);
 		}
 
-		void HandleHTTPRequest(WebServer_t::Response &Result, QueryType Type, vector<string> URLParts, map<string,string> Params, string RequestBody, httpd_req_t *Request,  WebServer_t::QueryTransportType TransportType, int MsgID) override {
-			if (URLParts.size() == 1)
-				if (Converter::ToLower(URLParts[0]) == "deviceslist") // Forbidden to use this as UUID
+		void HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) override {
+			if (Query.GetURLPartsCount() == 2)
+				if (Query.CheckURLPart("deviceslist", 1)) // Forbidden to use this as UUID
 				{
 					Result.SetFail();
 					return;
 				}
 
-			if (Type == QueryType::GET) {
-				if (URLParts.size() == 0) {
+			if (Query.Type == QueryType::GET) {
+				if (Query.GetURLPartsCount() == 1) {
 					vector<map<string,string>> OutputArray = vector<map<string,string>>();
 
 					for (auto& IRDeviceItem : GetAvaliableDevices())
@@ -167,9 +167,8 @@ class DataRemote_t : public DataEndpoint_t {
 					return;
 				}
 
-				if (URLParts.size() == 1)
-				{
-					string UUID = Converter::ToUpper(URLParts[0]);
+				if (Query.GetURLPartsCount() == 2) {
+					string UUID = Converter::ToUpper(Query.GetStringURLPartByNumber(1));
 
 					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 
@@ -184,10 +183,9 @@ class DataRemote_t : public DataEndpoint_t {
 					return;
 				}
 
-				if (URLParts.size() == 2)
-				{
-					string UUID 	= Converter::ToUpper(URLParts[0]);
-					string Function	= URLParts[1];
+				if (Query.GetURLPartsCount() == 3) {
+					string UUID 	= Converter::ToUpper(Query.GetStringURLPartByNumber(1));
+					string Function	= Query.GetStringURLPartByNumber(2);
 
 					JSON JSONObject;
 
@@ -230,62 +228,66 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			// POST запрос - сохранение и изменение данных
-			if (Type == QueryType::POST)
+			if (Query.Type == QueryType::POST)
 			{
-				if (URLParts.size() == 0 || URLParts.size() == 1) {
-					string UUID = "";
-					if (Params.count("uuid")) UUID = Converter::ToUpper(Params["uuid"]);
-					if (URLParts.size() == 1) UUID = Converter::ToUpper(URLParts[0]);
+				if (Query.GetURLPartsCount() == 1 || Query.GetURLPartsCount() == 2) {
+					map<string,string> Params = Query.GetParams();
 
-					PUTorPOSTDeviceItem(Type, UUID, Params, Result);
+					string UUID = "";
+					if (Params.count("uuid")) 			UUID = Converter::ToUpper(Params["uuid"]);
+					if (Query.GetURLPartsCount() == 2) 	UUID = Converter::ToUpper(Query.GetStringURLPartByNumber(1));
+
+					PUTorPOSTDeviceItem(Query, UUID, Result);
 
 					return;
 				}
 
-				if (URLParts.size() == 2)
+				if (Query.GetURLPartsCount() == 3)
 				{
-					string UUID 	= Converter::ToUpper(URLParts[0]);
-					string Function	= URLParts[1];
+					string UUID 	= Converter::ToUpper(Query.GetStringURLPartByNumber(1));
+					string Function	= Query.GetStringURLPartByNumber(2);
 
-					PUTorPOSTDeviceFunction(Type, UUID, Function, RequestBody, Result);
+					PUTorPOSTDeviceFunction(Query, UUID, Function, Result);
 					return;
 				}
 			}
 
 			// PUT запрос - обновление ранее сохраненных данных
-			if (Type == QueryType::PUT)
+			if (Query.Type == QueryType::PUT)
 			{
-				if (URLParts.size() == 0 || URLParts.size() == 1) {
-					string UUID = "";
-					if (Params.count("uuid")) UUID = Converter::ToUpper(Params["uuid"]);
-					if (URLParts.size() == 1) UUID = Converter::ToUpper(URLParts[0]);
+				if (Query.GetURLPartsCount() == 1 || Query.GetURLPartsCount() == 2) {
+					map<string,string> Params = Query.GetParams();
 
-					PUTorPOSTDeviceItem(Type, UUID, Params, Result);
+					string UUID = "";
+					if (Params.count("uuid")) 			UUID = Converter::ToUpper(Params["uuid"]);
+					if (Query.GetURLPartsCount() == 2) 	UUID = Converter::ToUpper(Query.GetStringURLPartByNumber(1));
+
+					PUTorPOSTDeviceItem(Query, UUID, Result);
 
 					return;
 				}
 
-				if (URLParts.size() == 2)
+				if (Query.GetURLPartsCount() == 3)
 				{
-					string UUID 	= Converter::ToUpper(URLParts[0]);
-					string Function	= URLParts[1];
+					string UUID 	= Converter::ToUpper(Query.GetStringURLPartByNumber(1));
+					string Function	= Query.GetStringURLPartByNumber(2);
 
-					PUTorPOSTDeviceFunction(Type, UUID, Function, RequestBody, Result);
+					PUTorPOSTDeviceFunction(Query, UUID, Function, Result);
 					return;
 				}
 			}
 
-			if (Type == QueryType::DELETE) {
-				if (URLParts.size() == 0) {
+			if (Query.Type == QueryType::DELETE) {
+				if (Query.GetURLPartsCount() == 1) {
 					NVS Memory(DataEndpoint_t::NVSArea);
 					IRDevicesList.clear();
 					Memory.EraseNamespace();
 				}
 
-				if (URLParts.size() == 1) {
+				if (Query.GetURLPartsCount() == 2) {
 					NVS Memory(DataEndpoint_t::NVSArea);
 
-					string UUID = Converter::ToUpper(URLParts[0]);
+					string UUID = Converter::ToUpper(Query.GetStringURLPartByNumber(1));
 
 					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 					if (!DeviceItem.IsCorrect())
@@ -299,9 +301,9 @@ class DataRemote_t : public DataEndpoint_t {
 					Memory.EraseStartedWith(UUID);
 				}
 
-				if (URLParts.size() == 2) {
-					string UUID 	= Converter::ToUpper(URLParts[0]);
-					string Function	= URLParts[1];
+				if (Query.GetURLPartsCount() == 3) {
+					string UUID 	= Converter::ToUpper(Query.GetStringURLPartByNumber(1));
+					string Function	= Query.GetStringURLPartByNumber(2);
 
 					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 
@@ -345,7 +347,7 @@ class DataRemote_t : public DataEndpoint_t {
 			Result.SetSuccess();
 		}
 
-		void PUTorPOSTDeviceItem(QueryType Type, string UUID, map<string,string> Params, WebServer_t::Response &Result) {
+		void PUTorPOSTDeviceItem(Query_t &Query, string UUID, WebServer_t::Response &Result) {
 			DataRemote_t::IRDevice NewDeviceItem;
 
 			if (UUID == "")
@@ -356,21 +358,21 @@ class DataRemote_t : public DataEndpoint_t {
 
 			DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 
-			if (Type == QueryType::POST && DeviceItem.IsCorrect())
+			if (Query.Type == QueryType::POST && DeviceItem.IsCorrect())
 			{
 				Result.SetFail();
 				Result.Body = ResponseItemAlreadyExist;
 				return;
 			}
 
-			if (Type == QueryType::PUT && !DeviceItem.IsCorrect())
+			if (Query.Type == QueryType::PUT && !DeviceItem.IsCorrect())
 			{
 				Result.SetFail();
 				Result.Body = ResponseItemDidntExist;
 				return;
 			}
 
-			DeviceItem.ParseJSONItems(Params);
+			DeviceItem.ParseJSONItems(JSON(Query.GetBody()).GetItems());
 
 			uint8_t ResultCode = SaveDevice(DeviceItem);
 			if (ResultCode == 0)
@@ -386,8 +388,8 @@ class DataRemote_t : public DataEndpoint_t {
 			return;
 		}
 
-		void PUTorPOSTDeviceFunction(QueryType Type, string UUID, string Function, string &RequestBody, WebServer_t::Response &Result) {
-			JSON JSONObject(RequestBody);
+		void PUTorPOSTDeviceFunction(Query_t &Query, string UUID, string Function, WebServer_t::Response &Result) {
+			JSON JSONObject(Query.GetBody());
 
 			DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 
@@ -404,14 +406,14 @@ class DataRemote_t : public DataEndpoint_t {
 				return;
 			}
 
-			if (Type == QueryType::POST && DeviceItem.Functions.count(Function) > 0)
+			if (Query.Type == QueryType::POST && DeviceItem.Functions.count(Function) > 0)
 			{
 				Result.SetFail();
 				Result.Body = ResponseItemAlreadyExist;
 				return;
 			}
 
-			if (Type == QueryType::PUT && DeviceItem.Functions.count(Function) == 0)
+			if (Query.Type == QueryType::PUT && DeviceItem.Functions.count(Function) == 0)
 			{
 				Result.SetFail();
 				Result.Body = ResponseItemDidntExist;
@@ -424,7 +426,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return;
 			}
 
-			if (Type == QueryType::PUT) {
+			if (Query.Type == QueryType::PUT) {
 				NVS Memory(DataEndpoint_t::NVSArea);
 				Memory.EraseStartedWith(UUID + "_" + Function + "_");
 			}
