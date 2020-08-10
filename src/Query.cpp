@@ -58,12 +58,17 @@ Query_t::Query_t(httpd_req_t *sRequest, QueryType sType)
 	//Dump();
 }
 
-Query_t::~Query_t() {
+void Query_t::Cleanup() {
+
+	// As all Body data used in JSON after it was received JSON lib free all alocated data
+	// So it no need to cleanup IsolatedBody
+	//return;
+
 	if (IsolatedBody != NULL)
-		delete[] IsolatedBody;
+		delete [] IsolatedBody;
 }
 
-void IRAM_ATTR Query_t::ProcessData() {
+void Query_t::ProcessData() {
 	if (URL == NULL)
 		return;
 
@@ -71,16 +76,16 @@ void IRAM_ATTR Query_t::ProcessData() {
 
 	if (Transport == WebServer_t::QueryTransportType::WebServer && Request != NULL) {
 	    if (Request->content_len > 0) {
-	    	IsolatedBody =  new char[Request->content_len];
+	    	IsolatedBody = new char[Request->content_len + 1];
 
 	    	char Buffer[512];
 
 	    	size_t ReadedContentLen = 0;
 	    	while (ReadedContentLen < Request->content_len) {
-	    		int ret = ::httpd_req_recv(Request, Buffer, sizeof(Buffer));
+	    		int ret = ::httpd_req_recv(Request, Buffer, MIN (Request->content_len - ReadedContentLen, sizeof(Buffer)));
 
 	    		if (ret > 0) {
-		    	    memcpy(&IsolatedBody[ReadedContentLen], Buffer, ret);
+		    	    ::memcpy(&IsolatedBody[ReadedContentLen], Buffer, ret);
 	    			ReadedContentLen += ret;
 		    	    IsolatedBody[ReadedContentLen] = '\0';
 	    		}
@@ -127,7 +132,8 @@ void IRAM_ATTR Query_t::ProcessData() {
 		}
 
 		if (Next != URL) {
-			ESP_LOGE("SECOND", "%d", (uint16_t)(Next - URL) - LastOffset - 1);
+			//ESP_LOGE("FIRST", "%d", LastOffset + 1);
+			//ESP_LOGE("SECOND", "%d", (uint16_t)(Next - URL) - LastOffset - 1);
 			PartsData.push_back(pair<uint16_t, uint16_t>(LastOffset + 1, (uint16_t)(Next - URL) - LastOffset - 1));
 		}
 
@@ -226,8 +232,6 @@ map<string,string> Query_t::GetParams() {
 	{
 		int32_t ParamsStringLength = (BodyPointer != NULL && BodyPointer != URL) ? BodyPointer - pch - 2 : strlen(URL) - (pch - URL) - 1;
 
-		ESP_LOGE("ParamsStringLength", "%d", ParamsStringLength);
-
 		if (ParamsStringLength <= 0) ParamsStringLength = 0;
 
 		string ParamsString = string(pch + 1, (uint16_t)ParamsStringLength);
@@ -260,5 +264,15 @@ void Query_t::Dump() {
 
 	for (auto& Item : GetParams())
 		ESP_LOGD("GetParams", "%s %s", Item.first.c_str(), Item.second.c_str());
+
+	switch (Type) {
+		case QueryType::GET		: ESP_LOGE("Type", "GET")	; break;
+		case QueryType::POST	: ESP_LOGE("Type", "POST")	; break;
+		case QueryType::PUT		: ESP_LOGE("Type", "PUT")	; break;
+		case QueryType::PATCH	: ESP_LOGE("Type", "PATCH")	; break;
+		case QueryType::DELETE	: ESP_LOGE("Type", "DELETE"); break;
+		default:
+			ESP_LOGE("Type", "NOT SET"); break;
+	}
 }
 

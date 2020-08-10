@@ -9,6 +9,14 @@
 #include <netdb.h>
 #include <mdns.h>
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+#include "HomeKitADK.h"
+#endif
+
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
+#include "HomeKit.h"
+#endif
+
 static char HandlerTag[] = "WiFiHandler";
 
 static FreeRTOS::Timer		*IPDidntGetTimer;
@@ -135,7 +143,7 @@ static void GatewayPingEnd(esp_ping_handle_t hdl, void *args)
 
 void IPDidntGetCallback(FreeRTOS::Timer *pTimer) {
 	Log::Add(Log::Events::WiFi::STAUndefinedIP);
-	WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+	WiFi.StartAP(Settings.WiFi.APSSID, Settings.WiFi.APPassword);
 }
 
 class MyWiFiEventHandler: public WiFiEventHandler {
@@ -175,13 +183,14 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
 			IPDidntGetTimer->Start();
-
+#endif
 			return ESP_OK;
 		}
 
 		esp_err_t ConnectionTimeout() {
-			WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+			WiFi.StartAP(Settings.WiFi.APSSID, Settings.WiFi.APPassword);
 			return ESP_OK;
 		}
 
@@ -190,8 +199,13 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			WebServer.Stop();
 			MQTT.Stop();
-			//::mdns_free();
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+		    if (HomeKitADK::IsSupported())
+		    	HomeKitADK::Stop();
+#endif
+
+			//::mdns_free();
 
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;
@@ -213,7 +227,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL		||
 				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
-				WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+				WiFi.StartAP(Settings.WiFi.APSSID, Settings.WiFi.APPassword);
 			}
 			else { // Повторно подключится к Wi-Fi, если подключение оборвалось
 				Wireless.IsFirstWiFiStart = true;
@@ -224,6 +238,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
+
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
 			esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
 
 			IsIPCheckSuccess = false;
@@ -261,6 +277,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			if (!IsIPCheckSuccess)
 				return ESP_OK;
 
+
 			WiFi.IsIPCheckSuccess 		= true;
 			Wireless.IsFirstWiFiStart 	= false;
 
@@ -269,8 +286,13 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			//WiFi.AddDNSServer("8.8.4.4");
 
 			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
+#else
+			WiFi.IsIPCheckSuccess = true;
+#endif
 
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
 			WebServer.Start();
+#endif
 
 			Network.IP = event_sta_got_ip.ip_info;
 
@@ -285,6 +307,13 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Wireless.IsEventDrivenStart = false;
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+		    if (HomeKitADK::IsSupported())
+		    	HomeKitADK::Start();
+#endif
+
+
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
 		    esp_err_t err = mdns_init();
 		    if (err) {
 		        ESP_LOGE("!", "MDNS Init failed: %d", err);
@@ -294,6 +323,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		    mdns_hostname_set(Device.IDToString().c_str());
 		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();
 		    mdns_instance_name_set(InstanceName.c_str());
+#endif
 
 			BLEServer.SwitchToPublicMode();
 			IsConnectedBefore = true;

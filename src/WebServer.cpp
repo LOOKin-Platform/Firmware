@@ -35,8 +35,8 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 
 	Query_t Query(Request, QueryType::GET);
 	API::Handle(Response, Query);
-
 	SendHTTPData(Response, Request);
+	Query.Cleanup();
 
     return ESP_OK;
 }
@@ -46,8 +46,8 @@ esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
 
 	Query_t Query(Request, QueryType::POST);
 	API::Handle(Response, Query);
-
 	SendHTTPData(Response, Request);
+	Query.Cleanup();
 
     return ESP_OK;
 }
@@ -57,8 +57,8 @@ esp_err_t WebServer_t::PUTHandler(httpd_req_t *Request) {
 
 	Query_t Query(Request, QueryType::PUT);
 	API::Handle(Response, Query);
-
 	SendHTTPData(Response, Request);
+	Query.Cleanup();
 
     return ESP_OK;
 }
@@ -68,8 +68,8 @@ esp_err_t WebServer_t::DELETEHandler(httpd_req_t *Request) {
 
 	Query_t Query(Request, QueryType::DELETE);
 	API::Handle(Response, Query);
-
 	SendHTTPData(Response, Request);
+	Query.Cleanup();
 
     return ESP_OK;
 }
@@ -79,6 +79,8 @@ esp_err_t WebServer_t::PATCHHandler(httpd_req_t *Request) {
 
 	Query_t Query(Request, QueryType::PATCH);
 	API::Handle(Response, Query);
+
+	Query.Cleanup();
 
 	SendHTTPData(Response, Request);
 
@@ -114,48 +116,35 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 		httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
 }
 
-/* URI handler structure for GET /uri */
-httpd_uri_t uri_get = {
-    .uri      = "/*",
-    .method   = HTTP_GET,
-    .handler  = WebServer_t::GETHandler,
-    .user_ctx = NULL
-};
+httpd_uri_t uri_root_get 			= { .uri = "/"				, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_homekit_get 		= { .uri = "/homekit*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
 
-/* URI handler structure for POST /uri */
-httpd_uri_t uri_post = {
-    .uri      = "/*",
-    .method   = HTTP_POST,
-    .handler  = WebServer_t::POSTHandler,
-    .user_ctx = NULL
-};
+httpd_uri_t uri_device_get 			= { .uri = "/device*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_device_post 		= { .uri = "/device*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
 
+httpd_uri_t uri_network_get 		= { .uri = "/network*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_network_post 		= { .uri = "/network*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
+httpd_uri_t uri_network_delete 		= { .uri = "/network*"		, .method = HTTP_DELETE		, .handler  = WebServer_t::DELETEHandler, .user_ctx = NULL};
 
-/* URI handler structure for PUT /uri */
-httpd_uri_t uri_put = {
-    .uri      = "/*",
-    .method   = HTTP_PUT,
-    .handler  = WebServer_t::PUTHandler,
-    .user_ctx = NULL
-};
+httpd_uri_t uri_automation_get 		= { .uri = "/automation*"	, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_automation_post 	= { .uri = "/automation*"	, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
+httpd_uri_t uri_automation_delete 	= { .uri = "/automation*"	, .method = HTTP_DELETE		, .handler  = WebServer_t::DELETEHandler, .user_ctx = NULL};
 
+httpd_uri_t uri_storage_get 		= { .uri = "/storage*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_storage_post 		= { .uri = "/storage*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
+httpd_uri_t uri_storage_delete 		= { .uri = "/storage*"		, .method = HTTP_DELETE		, .handler  = WebServer_t::DELETEHandler, .user_ctx = NULL};
 
-/* URI handler structure for DELETE /uri */
-httpd_uri_t uri_delete = {
-    .uri      = "/*",
-    .method   = HTTP_DELETE,
-    .handler  = WebServer_t::DELETEHandler,
-    .user_ctx = NULL
-};
+httpd_uri_t uri_data_get 			= { .uri = "/data*"			, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_data_post 			= { .uri = "/data*"			, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
+httpd_uri_t uri_data_delete 		= { .uri = "/data*"			, .method = HTTP_DELETE		, .handler  = WebServer_t::DELETEHandler, .user_ctx = NULL};
+httpd_uri_t uri_data_put 			= { .uri = "/data*"			, .method = HTTP_PUT		, .handler  = WebServer_t::PUTHandler	, .user_ctx = NULL};
 
-/* URI handler structure for DELETE /uri */
-httpd_uri_t uri_patch = {
-    .uri      = "/*",
-    .method   = HTTP_PATCH,
-    .handler  = WebServer_t::PATCHHandler,
-    .user_ctx = NULL
-};
+httpd_uri_t uri_sensors_get 		= { .uri = "/sensors*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
 
+httpd_uri_t uri_commands_get 		= { .uri = "/commands*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_commands_post 		= { .uri = "/commands*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
+
+httpd_uri_t uri_log_get 			= { .uri = "/log*"			, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
 
 void WebServer_t::Start() {
 	ESP_LOGD(tag, "WebServer -> Start");
@@ -167,18 +156,15 @@ void WebServer_t::Start() {
     config.lru_purge_enable = true;
     config.task_priority	= tskIDLE_PRIORITY + 5;
 
-    HTTPServerHandle = NULL;
+    HTTPServerHandle		 = NULL;
 
     if (httpd_start(&HTTPServerHandle, &config) == ESP_OK) {
-        httpd_register_uri_handler(HTTPServerHandle, &uri_get);
-        httpd_register_uri_handler(HTTPServerHandle, &uri_post);
-        httpd_register_uri_handler(HTTPServerHandle, &uri_put);
-        httpd_register_uri_handler(HTTPServerHandle, &uri_delete);
-        httpd_register_uri_handler(HTTPServerHandle, &uri_patch);
+    	RegisterHandlers(HTTPServerHandle);
     }
 
-	if (UDPListenerTaskHandle == NULL)
+	if (UDPListenerTaskHandle == NULL) {
 		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 3072);
+	}
 }
 
 void WebServer_t::Stop() {
@@ -190,6 +176,81 @@ void WebServer_t::Stop() {
     }
 
 	UDPServerStopFlag 	= true;
+}
+
+void WebServer_t::RegisterHandlers(httpd_handle_t ServerHandle) {
+	ESP_LOGE("RegisterHandlers", "start");
+
+	if (ServerHandle == NULL)
+		ESP_LOGE("RegisterHandlers", "empty");
+
+	httpd_register_uri_handler(ServerHandle, &uri_root_get);
+	httpd_register_uri_handler(ServerHandle, &uri_homekit_get);
+
+	httpd_register_uri_handler(ServerHandle, &uri_device_get);
+	httpd_register_uri_handler(ServerHandle, &uri_device_post);
+
+	httpd_register_uri_handler(ServerHandle, &uri_network_get);
+	httpd_register_uri_handler(ServerHandle, &uri_network_post);
+	httpd_register_uri_handler(ServerHandle, &uri_network_delete);
+
+	httpd_register_uri_handler(ServerHandle, &uri_automation_get);
+	httpd_register_uri_handler(ServerHandle, &uri_automation_post);
+	httpd_register_uri_handler(ServerHandle, &uri_automation_delete);
+
+	httpd_register_uri_handler(ServerHandle, &uri_storage_get);
+	httpd_register_uri_handler(ServerHandle, &uri_storage_post);
+	httpd_register_uri_handler(ServerHandle, &uri_storage_delete);
+
+	httpd_register_uri_handler(ServerHandle, &uri_data_get);
+	httpd_register_uri_handler(ServerHandle, &uri_data_post);
+	httpd_register_uri_handler(ServerHandle, &uri_data_delete);
+	httpd_register_uri_handler(ServerHandle, &uri_data_put);
+
+	httpd_register_uri_handler(ServerHandle, &uri_data_get);
+	httpd_register_uri_handler(ServerHandle, &uri_data_post);
+	httpd_register_uri_handler(ServerHandle, &uri_data_delete);
+	httpd_register_uri_handler(ServerHandle, &uri_data_put);
+
+	httpd_register_uri_handler(ServerHandle, &uri_sensors_get);
+
+	httpd_register_uri_handler(ServerHandle, &uri_commands_get);
+	httpd_register_uri_handler(ServerHandle, &uri_commands_post);
+
+
+	httpd_register_uri_handler(ServerHandle, &uri_log_get);
+}
+
+void WebServer_t::UnregisterHandlers(httpd_handle_t ServerHandle) {
+	httpd_unregister_uri_handler(ServerHandle, "/"				, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/homekit*"		, HTTP_GET);
+
+	httpd_unregister_uri_handler(ServerHandle, "/device*"		, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/device*"		, HTTP_POST);
+
+	httpd_unregister_uri_handler(ServerHandle, "/network*"		, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/network*"		, HTTP_POST);
+	httpd_unregister_uri_handler(ServerHandle, "/network*"		, HTTP_DELETE);
+
+	httpd_unregister_uri_handler(ServerHandle, "/automation*"	, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/automation*"	, HTTP_POST);
+	httpd_unregister_uri_handler(ServerHandle, "/automation*"	, HTTP_DELETE);
+
+	httpd_unregister_uri_handler(ServerHandle, "/storage*"		, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/storage*"		, HTTP_POST);
+	httpd_unregister_uri_handler(ServerHandle, "/storage*"		, HTTP_DELETE);
+
+	httpd_unregister_uri_handler(ServerHandle, "/data*"			, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/data*"			, HTTP_POST);
+	httpd_unregister_uri_handler(ServerHandle, "/data*"			, HTTP_DELETE);
+	httpd_unregister_uri_handler(ServerHandle, "/data*"			, HTTP_PUT);
+
+	httpd_unregister_uri_handler(ServerHandle, "/sensors*"		, HTTP_GET);
+
+	httpd_unregister_uri_handler(ServerHandle, "/commands*"		, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/commands*"		, HTTP_POST);
+
+	httpd_unregister_uri_handler(ServerHandle, "/log*"			, HTTP_GET);
 }
 
 void WebServer_t::UDPSendBroadcastAlive() {

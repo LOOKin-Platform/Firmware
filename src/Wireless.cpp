@@ -14,7 +14,7 @@ void Wireless_t::StartInterfaces() {
 
 	if (!WiFi.IsRunning()) {
 		if (!Network.WiFiConnect("", IsFirstWiFiStart)) {
-			WiFi.StartAP(WIFI_AP_NAME, WIFI_AP_PASSWORD);
+			WiFi.StartAP(Settings.WiFi.APSSID, Settings.WiFi.APPassword);
 		}
 	}
 }

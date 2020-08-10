@@ -23,9 +23,8 @@
 #include <lwip/sockets.h>
 #include <nvs.h>
 #include <nvs_flash.h>
+#include <mdns.h>
 
-#include "_mDNS.h"
-//#include "mDNS.h"
 
 #include "Memory.h"
 #include "Converter.h"
@@ -112,7 +111,6 @@ class WiFi_t {
 		FreeRTOS::Semaphore m_scanFinished 		= FreeRTOS::Semaphore("ScanFinished");
 
 		static bool			m_WiFiNetworkSwitch;
-		static void 		eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 		static string		STAHostName;
 
 		static esp_netif_t*	GetNetIf();
@@ -141,6 +139,9 @@ class WiFi_t {
 
 		static void 		DHCPStop	(uint16_t Pause = 0);
 		static void 		DHCPStart	();
+
+		static void 		eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+
 
 		vector<WiFiAPRecord> Scan();
 		uint8_t ConnectAP(const string& SSID, const string& Password, const uint8_t& Channel = 0, bool WaitForConnection = true);

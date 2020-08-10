@@ -85,8 +85,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			JSON JSONObject;
 
 			JSONObject.SetItems(vector<pair<string,string>>({
-				make_pair("Value"	, Sensor->FormatValue()),
-						make_pair("Updated"	, Converter::ToString(Sensor->Values["Primary"].Updated))
+				make_pair("Value", Sensor->FormatValue()), make_pair("Updated", Converter::ToString(Sensor->Values["Primary"].Updated))
 			}));
 
 			// Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
@@ -102,8 +101,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 						});
 					}
 			}
-
 			Result.Body = JSONObject.ToString();
+
 			return;
 		}
 	}

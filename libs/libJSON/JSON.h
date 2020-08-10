@@ -26,6 +26,7 @@ using namespace std;
 class JSON {
   public:
     JSON();
+    JSON(const char *);
     JSON(string);
     JSON(cJSON *cJSONRoot);
 

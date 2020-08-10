@@ -7,7 +7,7 @@
 #include "Storage.h"
 #include "Globals.h"
 
-static char tag[] = "Storage";
+const char tag[] = "Storage";
 
 Storage_t::Storage_t() {
 	AddressToWrite = Settings.Storage.Versions.StartAddress;
@@ -416,7 +416,6 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			Result.SetSuccess();
 			return;
 		}
-
 
 		if (Query.GetURLPartsCount() == 1) {
 			map<string, string> Params 			= JSON(Query.GetBody()).GetItems();

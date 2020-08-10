@@ -1,0 +1,37 @@
+menu "LOOKin configuration"
+
+    choice FIRMWARE_TARGET_SIZE
+        prompt "Target build firmare version"
+        default FIRMWARE_TARGET_SIZE_4MB
+        help
+		  	Please choose SoC size to which firmware need to build
+
+        config FIRMWARE_TARGET_SIZE_4MB
+            bool "First gen 4MB devices"
+
+        config FIRMWARE_TARGET_SIZE_16MB
+            bool "Second gen 16MB devices"
+
+    endchoice #FIRMWARE_TARGET
+    
+    choice FIRMWARE_HOMEKIT_SUPPORT
+        prompt "Apple HomeKit support"
+        default FIRMWARE_HOMEKIT_SUPPORT_NONE
+        help
+		  	Please choose HomeKit supporting
+
+        config FIRMWARE_HOMEKIT_SUPPORT_NONE
+            bool "No HomeKit in firmware"
+
+        config FIRMWARE_HOMEKIT_SUPPORT_ADK
+            bool "Support based on Apple ADK"
+
+        config FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED
+            bool "Using official Espressif SDK without SF or HW authorization"
+
+        config FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
+            bool "Full Apple HomeKit support"
+
+    endchoice #FIRMWARE_TARGET
+
+endmenu

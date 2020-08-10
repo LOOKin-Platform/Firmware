@@ -4,6 +4,8 @@
 *
 */
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+
 #ifndef LIBSHOMEKIT_H
 #define LIBSHOMEKIT_H
 
@@ -83,3 +85,5 @@ class HomeKit {
 };
 
 #endif //LIBSHOMEKIT_H
+
+#endif

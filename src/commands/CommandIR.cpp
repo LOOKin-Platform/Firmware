@@ -233,9 +233,6 @@ class CommandIR_t : public Command_t {
 					SignalsToSend = ((DataRemote_t*)Data)->LoadAllFunctionSignals(UUID, Function);
 
 			    for(auto it = SignalsToSend.begin(); it != SignalsToSend.end();) {
-
-			    	ESP_LOGE("ITERATOR", "Protocol %d", it->Protocol);
-
 					LastSignal.Protocol = it->Protocol;
 					LastSignal.Data		= it->Uint32Data;
 					LastSignal.Misc		= it->MiscData;

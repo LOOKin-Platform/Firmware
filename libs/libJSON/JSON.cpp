@@ -6,10 +6,23 @@
 
 #include "JSON.h"
 
-static char tag[] = "JSON";
+#include <cstring>
+
+const char tag[] = "JSON";
 
 JSON::JSON() {
 	Root = cJSON_CreateObject();
+}
+
+JSON::JSON(const char* JSONString) {
+	if (JSONString != NULL && strlen(JSONString) != 0) {
+		Root = cJSON_ParseWithOpts(JSONString, 0, 1);
+
+		if (Root == NULL)
+			ESP_LOGE(tag, "Parse error");
+	}
+	else
+		Root = cJSON_CreateObject();
 }
 
 JSON::JSON(string JSONString) {

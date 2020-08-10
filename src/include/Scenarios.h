@@ -50,11 +50,11 @@ class Scenario_t {
 		Scenario_t(uint8_t TypeHex = Settings.Scenarios.Types.EmptyHex);
 		~Scenario_t();
 
-		void				SetType(uint8_t TypeHex);
-		uint64_t  			GetDataUint64();
+		void				SetType			(uint8_t TypeHex);
+		uint64_t  			GetDataUint64	();
 		string  			GetDataHexString();
-		void    			SetData(uint64_t);
-		void    			SetData(string);
+		void    			SetData			(uint64_t);
+		void    			SetData			(string);
 
 		bool    			IsEmpty();
 
@@ -65,12 +65,12 @@ class Scenario_t {
 		static void			LoadScenario(Scenario_t &, uint32_t ScenarioID);
 		static void			LoadScenarioByAddress(Scenario_t &, uint32_t Address);
 
-		static bool			SaveScenario(Scenario_t);
-		static void			RemoveScenario(uint32_t ScenarioID);
+		static bool			SaveScenario	(Scenario_t);
+		static void			RemoveScenario	(uint32_t ScenarioID);
 
-		static string		SerializeScene(uint32_t ScanarioID);
-		static string		SerializeScene(Scenario_t);
-		static Scenario_t	DeserializeScene(const char *);
+		static string		SerializeScene	(uint32_t ScanarioID);
+		static string		SerializeScene	(Scenario_t);
+		static Scenario_t	DeserializeScene(const char*);
 
 		template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<Settings_t::Scenarios_t::OperandBitLength>, size_t Start, size_t Length);
 		template <size_t SrcSize>     static void AddRangeTo(bitset<Settings_t::Scenarios_t::OperandBitLength> &, bitset<SrcSize>, size_t Position);

@@ -15,5 +15,4 @@ DataEndpoint_t* DataEndpoint_t::GetForDevice() {
 		case 0x81	: return new DataRemote_t();
 		default		: return new DataEndpoint_t();
 	}
-
 }

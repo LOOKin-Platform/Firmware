@@ -7,6 +7,8 @@
 // Basic light bulb database example. This header file, and the corresponding DB.c implementation in the ADK, is
 // platform-independent.
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+
 #ifndef HOMEKITDB_H
 #define HOMEKITDB_H
 
@@ -79,6 +81,8 @@ extern const HAPService 			FanService;
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
 
 #endif

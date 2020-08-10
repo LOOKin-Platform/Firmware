@@ -55,6 +55,9 @@ class WebServer_t {
 		void 					Start();
 		void 					Stop();
 
+		void RegisterHandlers	(httpd_handle_t);
+		void UnregisterHandlers	(httpd_handle_t);
+
 	    static esp_err_t 		GETHandler		(httpd_req_t *);
 	    static esp_err_t 		POSTHandler		(httpd_req_t *);
 	    static esp_err_t 		PUTHandler		(httpd_req_t *);
@@ -88,7 +91,7 @@ class WebServer_t {
 
 	private:
 	    static QueueHandle_t 	UDPBroadcastQueue;
-	    static httpd_handle_t 	HTTPServerHandle;
+	    static httpd_handle_t	HTTPServerHandle;
 
 		static void				UDPListenerTask(void *);
 };

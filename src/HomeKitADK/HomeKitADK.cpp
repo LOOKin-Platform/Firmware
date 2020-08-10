@@ -4,7 +4,9 @@
 *
 */
 
-#include "HomeKit.h"
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+
+#include "HomeKitADK.h"
 
 const char Tag[] 	= "HomeKit";
 // Copyright (c) 2015-2019 The HomeKit ADK Contributors
@@ -306,3 +308,5 @@ void IRAM_ATTR HomeKit::StopSheduleCallback(void* _Nullable context, size_t cont
     if (Signal == APP_SERVER_REBOOT_SIGNAL)
     	HomeKitApp::AppAccessoryServerStop();
 }
+
+#endif

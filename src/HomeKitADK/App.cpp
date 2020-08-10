@@ -17,6 +17,8 @@
 //   5. The initialization of the accessory state.
 //   6. Callbacks that notify the server in case their associated value has changed.
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+
 #include "App.h"
 #include "Globals.h"
 
@@ -406,3 +408,5 @@ void HomeKitApp::Initialize(HAPAccessoryServerOptions* hapAccessoryServerOptions
 void HomeKitApp::Deinitialize() {
 	/*no-op*/
 }
+
+#endif

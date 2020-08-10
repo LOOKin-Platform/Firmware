@@ -231,7 +231,8 @@ class DataRemote_t : public DataEndpoint_t {
 			if (Query.Type == QueryType::POST)
 			{
 				if (Query.GetURLPartsCount() == 1 || Query.GetURLPartsCount() == 2) {
-					map<string,string> Params = Query.GetParams();
+					JSON JSONObject(Query.GetBody());
+					map<string,string> Params = JSONObject.GetItems();
 
 					string UUID = "";
 					if (Params.count("uuid")) 			UUID = Converter::ToUpper(Params["uuid"]);
@@ -256,7 +257,8 @@ class DataRemote_t : public DataEndpoint_t {
 			if (Query.Type == QueryType::PUT)
 			{
 				if (Query.GetURLPartsCount() == 1 || Query.GetURLPartsCount() == 2) {
-					map<string,string> Params = Query.GetParams();
+					JSON JSONObject(Query.GetBody());
+					map<string,string> Params = JSONObject.GetItems();
 
 					string UUID = "";
 					if (Params.count("uuid")) 			UUID = Converter::ToUpper(Params["uuid"]);

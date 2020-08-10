@@ -20,12 +20,9 @@
 
 using namespace std;
 
-#define WIFI_AP_NAME		"LOOK.in_" + Device.TypeToString() + "_" + Device.IDToString()
-#define WIFI_AP_PASSWORD    Device.IDToString()
-
 class Settings_t {
 	public:
-		const	string 						FirmwareVersion = "2.00";
+		const char* 						FirmwareVersion = "2.00";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -57,6 +54,9 @@ class Settings_t {
 
 			uint32_t						STAModeInterval = 300;	// Interval to check if any existed clients nearby, sec
 			uint32_t						STAModeReconnect= 60;	// Interval to check if any existed clients nearby after loosing connection, sec
+
+			string							APSSID			= "";
+			string							APPassword		= "";
 
 			struct UDPBroadcastQueue_t {
 				static constexpr uint8_t	Size			= 10;

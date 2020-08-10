@@ -6,6 +6,8 @@
 
 // This header file is platform-independent.
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+
 #ifndef HOMEKITAPP_H
 #define HOMEKITAPP_H
 
@@ -111,6 +113,8 @@ class HomeKitApp {
 
 #if __has_feature(nullability)
 #pragma clang assume_nonnull end
+#endif
+
 #endif
 
 #endif

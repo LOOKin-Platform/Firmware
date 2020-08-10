@@ -6,9 +6,15 @@
 
 #include "API.h"
 
-void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
-	ESP_LOGE("GetURLPartsCount", "%d", Query.GetURLPartsCount());
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+#include "HomeKitADK.h"
+#endif
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
+#include "HomeKit.h"
+#endif
+
+void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 	if (Query.GetURLPartsCount() == 0) {
 		map<string,string> Params = Query.GetParams();
 
@@ -117,10 +123,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 	}
 
 	if (Query.GetURLPartsCount() > 0) {
-
-		map<string,string> Params = map<string,string>();
-		vector<string> URLParts = vector<string>();
-
 		if (Query.CheckURLPart("device"		, 0)) 	Device 		.HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("network"	, 0))	Network		.HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("automation"	, 0))	Automation	.HandleHTTPRequest	(Response, Query);
@@ -130,17 +132,16 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 		if (Query.CheckURLPart("commands"	, 0))	Command_t	::HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("log"		, 0))	Log			::HandleHTTPRequest	(Response, Query);
 
-		/*
-	    if (1) {//if (!CONFIG_ESPTOOLPY_FLASHSIZE_4MB) {
-	    	if (Query.GetURLPartsCount() == 1 && Params.size() == 0 && HomeKit::IsSupported()) {
-	    		if (Query.CheckURLPart("homekit", 0) && Query.CheckURLPart("refresh", 1))
-	    			HomeKit::AppServerRestart();
-					Response.SetSuccess();
-					return;
-	    	}
-		}
-		*/
-
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+    	if (Query.GetURLPartsCount() == 2)
+    	{
+    		if (Query.CheckURLPart("homekit", 0) && Query.CheckURLPart("refresh", 1)) {
+    			HomeKit::AppServerRestart();
+				Response.SetSuccess();
+				return;
+    		}
+    	}
+#endif
 		// Fixes null string at some APIs
 		if (Query.GetURLPartsCount() == 2 && (Query.CheckURLPart("device", 0)) && (Query.CheckURLPart("name", 1)))
 			return;
@@ -151,7 +152,7 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 		// ECO mode test
 		if (Query.GetURLPartsCount() > 1 && (Query.CheckURLPart("eco", 0)))
 		{
-			PowerManagement::SetIsActive(URLParts[0] == "on");
+			PowerManagement::SetIsActive(Query.GetStringURLPartByNumber(1) == "on");
 			Response.SetSuccess();
 		}
 	}

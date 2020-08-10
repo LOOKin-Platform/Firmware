@@ -7,6 +7,8 @@
 // This file contains the accessory attribute database that defines the accessory information service, HAP Protocol
 // Information Service, the Pairing service and finally the service signature exposed by the light bulb.
 
+#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
+
 #include "DB.h"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -839,4 +841,6 @@ const HAPService FanService = {
 		NULL
 	}
 };
+
+#endif
 

@@ -176,6 +176,8 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
 				API::Handle(Response, Query);
 
+				Query.Cleanup();
+
 				if (Response.ResponseCode == WebServer_t::Response::CODE::IGNORE)
 					return ESP_OK;
 

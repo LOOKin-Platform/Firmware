@@ -27,7 +27,6 @@ class Query_t {
 
 		Query_t(const char  *Data	, WebServer_t::QueryTransportType Transport = WebServer_t::QueryTransportType::MQTT);
 		Query_t(httpd_req_t *Request, QueryType Type);
-		~Query_t();
 
 		bool				CheckURLPart(string Needle, uint8_t Number);
 		uint8_t				GetURLPartsCount();
@@ -39,7 +38,7 @@ class Query_t {
 		map<string,string>  GetParams();
 		httpd_req_t* 		GetRequest();
 
-
+		void 				Cleanup();
 	private:
 		void				ProcessData();
 		void				Dump();
