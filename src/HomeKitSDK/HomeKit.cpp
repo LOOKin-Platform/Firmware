@@ -10,7 +10,7 @@ string			HomeKit::SSID		= "";
 string			HomeKit::Password	= "";
 
 
-vector<HomeKit::AccessoryData_t> HomeKit::Accessories = vector<HomeKit::AccessoryData_t>();
+vector<hap_acc_t*> HomeKit::BridgedAccessories = vector<hap_acc_t*>();
 
 #define NUM_BRIDGED_ACCESSORIES 2
 
@@ -73,12 +73,16 @@ void HomeKit::Start() {
 
 
 void HomeKit::Stop() {
-
+	::hap_stop();
 }
 
 void HomeKit::AppServerRestart() {
+	FillAccessories();
+	return;
+}
 
-
+void HomeKit::ResetData() {
+	::hap_reset_homekit_data();
 }
 
 
@@ -175,35 +179,45 @@ void HomeKit::FillAccessories() {
 	hap_serv_t 	*service;
 
 	if (Settings.eFuse.Type == 0x81) {
-		string BridgeNameString = Device.GetName();
-		if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
 
-		static AccessoryData_t AccessoryData(BridgeNameString, Device.ModelToString(), Device.IDToString());
+		if (BridgedAccessories.size() == 0) {
+			string BridgeNameString = Device.GetName();
+			if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
 
-		hap_acc_cfg_t cfg = {
-			.name 				= AccessoryData.Name,
-			.model 				= AccessoryData.Model,
-			.manufacturer 		= "LOOK.in",
-			.serial_num 		= AccessoryData.ID,
-			.fw_rev 			= (char*)Settings.FirmwareVersion,
-			.hw_rev 			= NULL,
-			.pv 				= "1.1.0",
-			.cid 				= HAP_CID_BRIDGE,
-			.identify_routine 	= BridgeIdentify,
-		};
+			static AccessoryData_t AccessoryData(BridgeNameString, Device.ModelToString(), Device.IDToString());
 
-		/* Create accessory object */
-		accessory = hap_acc_create(&cfg);
+			hap_acc_cfg_t cfg = {
+				.name 				= AccessoryData.Name,
+				.model 				= AccessoryData.Model,
+				.manufacturer 		= "LOOK.in",
+				.serial_num 		= AccessoryData.ID,
+				.fw_rev 			= (char*)Settings.FirmwareVersion,
+				.hw_rev 			= NULL,
+				.pv 				= "1.1.0",
+				.cid 				= HAP_CID_BRIDGE,
+				.identify_routine 	= BridgeIdentify,
+			};
 
-		/* Product Data as per HAP Spec R15. Please use the actual product data
-		 * value assigned to your Product Plan
-		 */
+			/* Create accessory object */
+			accessory = hap_acc_create(&cfg);
 
-		uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
-		hap_acc_add_product_data(accessory, product_data, sizeof(product_data));
+			/* Product Data as per HAP Spec R15. Please use the actual product data
+			 * value assigned to your Product Plan
+			 */
 
-		/* Add the Accessory to the HomeKit Database */
-		hap_add_accessory(accessory);
+			uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
+			hap_acc_add_product_data(accessory, product_data, sizeof(product_data));
+
+			/* Add the Accessory to the HomeKit Database */
+			hap_add_accessory(accessory);
+		}
+
+		for(auto& BridgeAccessory : BridgedAccessories) {
+			hap_remove_bridged_accessory(BridgeAccessory);
+			hap_acc_delete(BridgeAccessory);
+		}
+
+		BridgedAccessories.clear();
 
 		for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
 		{
@@ -224,6 +238,8 @@ void HomeKit::FillAccessories() {
 
 			uint16_t AID = Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
 			accessory = hap_acc_create(&bridge_cfg);
+
+			BridgedAccessories.push_back(accessory);
 
 			bool ShouldAdd = true;
 

@@ -117,7 +117,7 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 }
 
 httpd_uri_t uri_root_get 			= { .uri = "/"				, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
-httpd_uri_t uri_homekit_get 		= { .uri = "/homekit*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
+httpd_uri_t uri_homekit_post 		= { .uri = "/homekit*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
 
 httpd_uri_t uri_device_get 			= { .uri = "/device*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
 httpd_uri_t uri_device_post 		= { .uri = "/device*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
@@ -185,7 +185,7 @@ void WebServer_t::RegisterHandlers(httpd_handle_t ServerHandle) {
 		ESP_LOGE("RegisterHandlers", "empty");
 
 	httpd_register_uri_handler(ServerHandle, &uri_root_get);
-	httpd_register_uri_handler(ServerHandle, &uri_homekit_get);
+	httpd_register_uri_handler(ServerHandle, &uri_homekit_post);
 
 	httpd_register_uri_handler(ServerHandle, &uri_device_get);
 	httpd_register_uri_handler(ServerHandle, &uri_device_post);
@@ -223,7 +223,7 @@ void WebServer_t::RegisterHandlers(httpd_handle_t ServerHandle) {
 
 void WebServer_t::UnregisterHandlers(httpd_handle_t ServerHandle) {
 	httpd_unregister_uri_handler(ServerHandle, "/"				, HTTP_GET);
-	httpd_unregister_uri_handler(ServerHandle, "/homekit*"		, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/homekit*"		, HTTP_POST);
 
 	httpd_unregister_uri_handler(ServerHandle, "/device*"		, HTTP_GET);
 	httpd_unregister_uri_handler(ServerHandle, "/device*"		, HTTP_POST);

@@ -135,10 +135,17 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 #if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
     	if (Query.GetURLPartsCount() == 2)
     	{
-    		if (Query.CheckURLPart("homekit", 0) && Query.CheckURLPart("refresh", 1)) {
-    			HomeKit::AppServerRestart();
-				Response.SetSuccess();
-				return;
+    		if (Query.CheckURLPart("homekit", 0)) {
+    			if (Query.CheckURLPart("refresh", 1)) {
+    				HomeKit::AppServerRestart();
+    				Response.SetSuccess();
+    				return;
+    			}
+    			else if (Query.CheckURLPart("reset", 1)) {
+    				HomeKit::ResetData();
+    				Response.SetSuccess();
+    				return;
+    			}
     		}
     	}
 #endif

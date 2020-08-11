@@ -28,6 +28,8 @@ class HomeKit {
 
 		static void 	AppServerRestart();
 
+		static void		ResetData();
+
 	private:
 		static int 		BridgeIdentify		(hap_acc_t *ha);
 		static int 		AccessoryIdentify	(hap_acc_t *ha);
@@ -46,5 +48,5 @@ class HomeKit {
 		static string 	SSID;
 		static string 	Password;
 
-		static vector<AccessoryData_t> Accessories;
+		static vector<hap_acc_t*> BridgedAccessories;
 };
