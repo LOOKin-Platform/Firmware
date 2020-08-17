@@ -250,6 +250,17 @@ bool BLE::IsRunning() {
 	return IsRunningValue;
 }
 
+int8_t BLE::GetRSSIForConnection(uint16_t ConnectionHandle) {
+	int8_t RSSI = 0;
+
+	if (::ble_gap_conn_rssi(ConnectionHandle, &RSSI) == 0)
+		return RSSI;
+	else
+		return -128;
+
+}
+
+
 void BLE::Start() {
 	if (!IsInited) Init();
 

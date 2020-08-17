@@ -53,6 +53,8 @@ class BLE {
 
 		static bool		IsRunning();
 
+		static int8_t 	GetRSSIForConnection(uint16_t ConnectionHandle);
+
 		static void 	SetPower(esp_power_level_t powerLevel, esp_ble_power_type_t PowerType);
 
 	private:

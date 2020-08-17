@@ -81,6 +81,8 @@ class Settings_t {
 			const string					SecretCodeServiceUUID   = "997d2872-b4e2-414d-b4be-985263a70411";
         	const string 					SecretCodeUUID    		= "1d9fe7b3-5633-4b98-8af4-1bbf2d7c50ea";
 
+        	const int8_t					RSSILimit				= -100; // Ниже этого значения secure endpoints не работают
+
         	const esp_power_level_t			PublicModePower			= ESP_PWR_LVL_P6;
         	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_P6;//ESP_PWR_LVL_P3 и ESP_PWR_LVL_N0; - не работает на части мобильных телефонов?
 		} Bluetooth;

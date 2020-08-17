@@ -17,7 +17,6 @@ static const ble_uuid_any_t DeviceServiceModelUUID 				= GATT::UUIDStruct("2A24"
 static const ble_uuid_any_t DeviceServiceIDUUID 				= GATT::UUIDStruct("2A25");
 static const ble_uuid_any_t DeviceServiceFirmwareUUID 			= GATT::UUIDStruct("2A26");
 static const ble_uuid_any_t DeviceServiceDeviceHarwareModelUUID	= GATT::UUIDStruct("2A27");
-static const ble_uuid_any_t DeviceServiceStatusUUID				= GATT::UUIDStruct("3000");
 static const ble_uuid_any_t DeviceServiceWiFiUUID 				= GATT::UUIDStruct("4000");
 static const ble_uuid_any_t DeviceServiceMQTTUUID 				= GATT::UUIDStruct("5000");
 
@@ -29,11 +28,8 @@ struct ble_gatt_chr_def DeviceModel;
 struct ble_gatt_chr_def DeviceID;
 struct ble_gatt_chr_def DeviceFirmware;
 struct ble_gatt_chr_def DeviceHarwareModel;
-struct ble_gatt_chr_def DeviceControlFlag;
 struct ble_gatt_chr_def DeviceWiFi;
 struct ble_gatt_chr_def DeviceMQTT;
-
-bool BLEServer_t::IsPrivateMode = false;
 
 BLEServer_t::BLEServer_t() {
 	DeviceManufactorer.uuid 		= &DeviceServiceManufacturerUUID.u;
@@ -56,10 +52,6 @@ BLEServer_t::BLEServer_t() {
 	DeviceHarwareModel.access_cb 	= GATTDeviceHardwareModelCallback;
 	DeviceHarwareModel.flags 		= BLE_GATT_CHR_F_READ;
 
-	DeviceControlFlag.uuid 			= &DeviceServiceStatusUUID.u;
-	DeviceControlFlag.access_cb 	= GATTDeviceStatusCallback;
-	DeviceControlFlag.flags 		= BLE_GATT_CHR_F_READ;
-
 	DeviceWiFi.uuid 				= &DeviceServiceWiFiUUID.u;
 	DeviceWiFi.access_cb 			= GATTDeviceWiFiCallback;
 	DeviceWiFi.flags 				= BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE;
@@ -76,10 +68,9 @@ void BLEServer_t::GATTSetup() {
 	DeviceServiceCharacteristics[2] = DeviceID;
 	DeviceServiceCharacteristics[3] = DeviceFirmware;
 	DeviceServiceCharacteristics[4] = DeviceHarwareModel;
-	DeviceServiceCharacteristics[5] = DeviceControlFlag;
-	DeviceServiceCharacteristics[6] = DeviceWiFi;
-	DeviceServiceCharacteristics[7] = DeviceMQTT;
-	DeviceServiceCharacteristics[8] = {0};
+	DeviceServiceCharacteristics[5] = DeviceWiFi;
+	DeviceServiceCharacteristics[6] = DeviceMQTT;
+	DeviceServiceCharacteristics[7] = {0};
 
 	ble_gatt_svc_def DeviceService;
 	DeviceService.type = BLE_GATT_SVC_TYPE_PRIMARY;
@@ -115,23 +106,6 @@ void BLEServer_t::StopAdvertising() {
 	ESP_LOGI(tag, "BLE Server stopped advertising");
 }
 
-void BLEServer_t::SwitchToPublicMode() {
-	if (!IsPrivateMode) return;
-
-	BLE::SetPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_DEFAULT);
-	IsPrivateMode = false;
-}
-
-void BLEServer_t::SwitchToPrivateMode() {
-	if (IsPrivateMode) return;
-
-	BLE::SetPower(Settings.Bluetooth.PrivateModePower, ESP_BLE_PWR_TYPE_DEFAULT);
-	IsPrivateMode = true;
-}
-
-bool BLEServer_t::IsInPrivateMode() {
-	return IsPrivateMode;
-}
 
 int IRAM_ATTR BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
@@ -177,19 +151,13 @@ int IRAM_ATTR BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle,
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int IRAM_ATTR BLEServer_t::GATTDeviceStatusCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
-		string Result = (IsPrivateMode) ? "private" : "public";
-	    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-	}
-
-    return BLE_ATT_ERR_UNLIKELY;
-}
-
 int IRAM_ATTR BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
-    if (!IsPrivateMode) return BLE_ATT_ERR_UNLIKELY;
+	if (BLE::GetRSSIForConnection(conn_handle) < Settings.Bluetooth.RSSILimit)
+	{
+		ESP_LOGE("RSSI so small:", "%d", BLE::GetRSSIForConnection(conn_handle));
+		return BLE_ATT_ERR_WRITE_NOT_PERMITTED;
+	}
 
 	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
 	    string Result = Converter::VectorToString(Network.GetSavedWiFiList(), ",");
@@ -242,7 +210,11 @@ int IRAM_ATTR BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t
 
 int IRAM_ATTR BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
-    if (!IsPrivateMode) return BLE_ATT_ERR_UNLIKELY;
+	if (BLE::GetRSSIForConnection(conn_handle) < Settings.Bluetooth.RSSILimit)
+	{
+		ESP_LOGE("RSSI so small:", "%d", BLE::GetRSSIForConnection(conn_handle));
+		return BLE_ATT_ERR_WRITE_NOT_PERMITTED;
+	}
 
 	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
 	    string Result = MQTT.GetClientID();

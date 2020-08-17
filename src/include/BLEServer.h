@@ -42,7 +42,6 @@ class BLEServer_t {
 	private:
 		void				GATTSetup();
 
-		static bool			IsPrivateMode;
 		bool				IsInited		= false;
 };
 

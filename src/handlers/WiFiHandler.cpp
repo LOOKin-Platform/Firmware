@@ -325,7 +325,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		    mdns_instance_name_set(InstanceName.c_str());
 #endif
 
-			BLEServer.SwitchToPublicMode();
 			IsConnectedBefore = true;
 
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
