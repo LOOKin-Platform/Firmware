@@ -108,6 +108,8 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 			else
 				MQTT.EndChunk(MQTTChunkHash, Query.MQTTMessageID);
 
+			Response.ResponseCode = WebServer_t::Response::CODE::IGNORE;
+
 			/*
 			Result += "\"Log\" : ";
 			Log::HandleHTTPRequest(Response, Type, { }, Params);

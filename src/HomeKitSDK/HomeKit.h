@@ -1,3 +1,6 @@
+#ifndef HOMEKIT_SDK
+#define HOMEKIT_SDK
+
 #include "FreeRTOSWrapper.h"
 
 #include "Globals.h"
@@ -34,7 +37,11 @@ class HomeKit {
 		static int 		BridgeIdentify		(hap_acc_t *ha);
 		static int 		AccessoryIdentify	(hap_acc_t *ha);
 
-		static bool		On(bool value, uint16_t aid);
+		static bool		On				(bool value, uint16_t aid);
+		static bool		Cursor			(uint8_t Key, uint16_t aid);
+		static bool		ActiveID		(uint8_t NewID, uint16_t aid);
+		static bool		Volume			(uint8_t Value, uint16_t aid);
+
 		static int 		WriteCallback(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv);
 
 		static void 	FillAccessories();
@@ -50,3 +57,5 @@ class HomeKit {
 
 		static vector<hap_acc_t*> BridgedAccessories;
 };
+
+#endif

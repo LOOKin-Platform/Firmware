@@ -295,8 +295,8 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 	//::esp_event_loop_create_default();
 
-    ::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID		, &eventHandler, this);
-    ::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this);
+    //::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID	, &eventHandler, this);
+    //::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this);
 
 	HomeKit::WiFiSetMode(false, SSID, Password);
 	HomeKit::Start();

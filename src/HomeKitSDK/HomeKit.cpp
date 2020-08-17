@@ -1,4 +1,5 @@
 #include "HomeKit.h"
+#include "Custom.cpp"
 
 const char *Tag = "HAP Bridge";
 
@@ -112,7 +113,7 @@ int HomeKit::AccessoryIdentify(hap_acc_t *ha)
 
 bool HomeKit::On(bool Value, uint16_t AccessoryID) {
 	string UUID = Converter::ToHexString(AccessoryID, 4);
-	ESP_LOGE("TAG", "%s", UUID.c_str());
+	ESP_LOGE("ON for UUID", "%s", UUID.c_str());
 
     if (Settings.eFuse.Type == 0x81) {
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
@@ -150,6 +151,104 @@ bool HomeKit::On(bool Value, uint16_t AccessoryID) {
     return false;
 }
 
+bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
+	string UUID = Converter::ToHexString(AccessoryID, 4);
+	ESP_LOGE("Cursor for UUID", "%s", UUID.c_str());
+
+    if (Settings.eFuse.Type == 0x81) {
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        string Operand = UUID;
+
+        if (Value == 8 || Value == 6 || Value == 4 || Value == 7 || Value == 5) {
+        	if (Functions.count("cursor") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("cursor"),2);
+
+        		switch(Value) {
+    				case 8: Operand += "00"; break; // SELECT
+    				case 6: Operand += "01"; break; // LEFT
+    				case 4: Operand += "02"; break; // UP
+    				case 7: Operand += "03"; break; // RIGTH
+    				case 5: Operand += "04"; break; // DOWN
+    				default:
+    					return false;
+        		}
+
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+
+        if (Value == 15) {
+        	if (Functions.count("menu") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("menu"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+    }
+
+    return false;
+}
+
+bool HomeKit::ActiveID(uint8_t NewActiveID, uint16_t AccessoryID) {
+	string UUID = Converter::ToHexString(AccessoryID, 4);
+	ESP_LOGE("ActiveID for UUID", "%s", UUID.c_str());
+
+    if (Settings.eFuse.Type == 0x81) {
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        if (Functions.count("mode") > 0)
+        {
+            string Operand = UUID;
+        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("mode"),2);
+        	Operand += Converter::ToHexString(NewActiveID - 1, 2);
+
+        	IRCommand->Execute(0xFE, Operand.c_str());
+        	return true;
+        }
+    }
+
+    return false;
+}
+
+bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
+	string UUID = Converter::ToHexString(AccessoryID, 4);
+	ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
+
+    if (Settings.eFuse.Type == 0x81) {
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        if (Value == 0 && Functions.count("volup") > 0)
+        {
+            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("volup"),2) + "FF";
+        	IRCommand->Execute(0xFE, Operand.c_str());
+        	IRCommand->Execute(0xED, "");
+        	IRCommand->Execute(0xED, "");
+        	return true;
+        }
+        else if (Value == 1 && Functions.count("voldown") > 0)
+        {
+            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("voldown"),2) + "FF";
+        	IRCommand->Execute(0xFE, Operand.c_str());
+        	IRCommand->Execute(0xED, "");
+        	IRCommand->Execute(0xED, "");
+        	return true;
+        }
+    }
+
+    return false;
+}
+
+
 /* A dummy callback for handling a write on the "On" characteristic of Fan.
  * In an actual accessory, this should control the hardware
  */
@@ -167,7 +266,28 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         	On(write->val.b, AID);
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
-        } else {
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ACTIVE)) {
+        	On(write->val.b, AID);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_REMOTEKEY_UUID)) {
+        	Cursor(write->val.b, AID);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_ACTIVE_IDENTIFIER_UUID)) {
+        	ActiveID(write->val.b, AID);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_VOLUME_SELECTOR_UUID)) {
+        	Volume(write->val.b, AID);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else {
             *(write->status) = HAP_STATUS_RES_ABSENT;
         }
     }
@@ -175,11 +295,9 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
 }
 
 void HomeKit::FillAccessories() {
-	hap_acc_t 	*accessory;
-	hap_serv_t 	*service;
+	hap_acc_t 	*Accessory;
 
 	if (Settings.eFuse.Type == 0x81) {
-
 		if (BridgedAccessories.size() == 0) {
 			string BridgeNameString = Device.GetName();
 			if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
@@ -199,17 +317,17 @@ void HomeKit::FillAccessories() {
 			};
 
 			/* Create accessory object */
-			accessory = hap_acc_create(&cfg);
+			Accessory = hap_acc_create(&cfg);
 
 			/* Product Data as per HAP Spec R15. Please use the actual product data
 			 * value assigned to your Product Plan
 			 */
 
 			uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
-			hap_acc_add_product_data(accessory, product_data, sizeof(product_data));
+			hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
 
 			/* Add the Accessory to the HomeKit Database */
-			hap_add_accessory(accessory);
+			hap_add_accessory(Accessory);
 		}
 
 		for(auto& BridgeAccessory : BridgedAccessories) {
@@ -237,43 +355,78 @@ void HomeKit::FillAccessories() {
 			};
 
 			uint16_t AID = Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
-			accessory = hap_acc_create(&bridge_cfg);
+			Accessory = hap_acc_create(&bridge_cfg);
 
-			BridgedAccessories.push_back(accessory);
-
-			bool ShouldAdd = true;
+		    bool IsCreated = true;
 
 			switch (IRDevice.Type) {
 				case 0x01: // TV
-					service = hap_serv_switch_create(false);
+					hap_serv_t *ServiceTV;
+					ServiceTV = hap_serv_tv_create(false);
+					hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
+
+					hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb	(ServiceTV, WriteCallback);
+					hap_acc_add_serv		(Accessory, ServiceTV);
+
+					if (IRDevice.Functions.count("volup") > 0 || IRDevice.Functions.count("voldown") > 0) {
+						hap_serv_t *ServiceSpeaker;
+						ServiceSpeaker = hap_serv_tv_speaker_create(false);
+						hap_serv_add_char		(ServiceSpeaker, hap_char_name_create(accessory_name));
+
+						hap_serv_set_priv		(ServiceSpeaker, (void *)(uint32_t)AID);
+						hap_serv_set_write_cb	(ServiceSpeaker, WriteCallback);
+						hap_serv_link_serv		(ServiceTV, ServiceSpeaker);
+						hap_acc_add_serv		(Accessory, ServiceSpeaker);
+					}
+
+					for (uint8_t i = 0; i < ((DataRemote_t *)Data)->LoadAllFunctionSignals(IRDevice.UUID, "mode", IRDevice).size(); i++)
+					{
+						char InputSourceName[17];
+					    sprintf(InputSourceName, "Input source %d", i+1);
+
+						hap_serv_t *ServiceInput;
+						ServiceInput = hap_serv_input_source_create(&InputSourceName[0], i+1);
+
+						hap_serv_set_priv(ServiceInput, (void *)(uint32_t)AID);
+						hap_serv_set_write_cb(ServiceInput, WriteCallback);
+						hap_serv_link_serv(ServiceTV, ServiceInput);
+						hap_acc_add_serv(Accessory, ServiceInput);
+					}
+
 					break;
 
 				case 0x03: // light
-					service = hap_serv_lightbulb_create(false);
+					hap_serv_t *ServiceLight;
+					ServiceLight = hap_serv_lightbulb_create(false);
+					hap_serv_add_char(ServiceLight, hap_char_name_create(accessory_name));
+
+					hap_serv_set_priv(ServiceLight, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb(ServiceLight, WriteCallback);
+					hap_acc_add_serv(Accessory, ServiceLight);
+
 					break;
 
 				case 0x07: // Fan
-					service = hap_serv_fan_create(false);
+					hap_serv_t *ServiceFan;
+					ServiceFan = hap_serv_fan_v2_create(false);
+					hap_serv_add_char(ServiceFan, hap_char_name_create(accessory_name));
+
+					hap_serv_set_priv(ServiceFan, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb(ServiceFan, WriteCallback);
+					hap_acc_add_serv(Accessory, ServiceFan);
 					break;
 				default:
-					ShouldAdd = false;
+					IsCreated = false;
+					hap_acc_delete(Accessory);
 			}
 
-			if (!ShouldAdd) {
-				hap_acc_delete(accessory);
-				return;
-			}
-
-
-			hap_serv_add_char(service, hap_char_name_create(accessory_name));
-
-			hap_serv_set_priv(service, (void *)(uint32_t)AID);
-			hap_serv_set_write_cb(service, WriteCallback);
-			hap_acc_add_serv(accessory, service);
-			hap_add_bridged_accessory(accessory, AID);
+		    if (IsCreated) {
+				BridgedAccessories.push_back(Accessory);
+				hap_add_bridged_accessory(Accessory, AID);
+		    }
 		}
 	}
-
 }
 
 
@@ -286,7 +439,6 @@ void HomeKit::Task(void *) {
     /* Initialise the mandatory parameters for Accessory which will be added as
      * the mandatory services internally
      */
-
     //sprintf(accessory_name, "ESP-Fan-%d", i);
 
 
@@ -337,8 +489,6 @@ void HomeKit::Task(void *) {
     WebServer.RegisterHandlers(*hap_platform_httpd_get_handle());
 
     /* The task ends here. The read/write callbacks will be invoked by the HAP Framework */
-
-    IsRunning = false;
 
     vTaskDelete(NULL);
 }

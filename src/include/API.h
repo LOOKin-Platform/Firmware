@@ -30,10 +30,10 @@ using namespace std;
 
 class API {
 	public:
-		static void Handle(WebServer_t::Response &, Query_t &);
+		static void 	Handle(WebServer_t::Response &, Query_t &);
 
 	private:
-		static string GetSetupPage();
+		static string 	GetSetupPage();
 };
 
 #endif

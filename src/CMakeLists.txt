@@ -20,7 +20,8 @@ set(srcs
 	"HomeKitADK/App.cpp"
 	"HomeKitADK/DB.cpp"
 	"HomeKitADK/HomeKitADK.cpp"
-	"HomeKitSDK/HomeKit.cpp")
+	"HomeKitSDK/HomeKit.cpp"
+	"HomeKitSDK/Custom.cpp")
 
 idf_component_register(SRCS "${srcs}"
                       INCLUDE_DIRS "include" "HomeKitADK/include" "HomeKitSDK"

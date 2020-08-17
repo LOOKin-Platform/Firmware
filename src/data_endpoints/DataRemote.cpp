@@ -656,7 +656,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return 0;
 			}
 
-			string SerializeIRSignal (JSON &JSONObject) {
+			string SerializeIRSignal(JSON &JSONObject) {
 				IRLib Signal;
 
 				if (JSONObject.IsItemExists("raw")) { // сигнал передан в виде Raw
@@ -709,7 +709,9 @@ class DataRemote_t : public DataEndpoint_t {
 				{ "mute"	, 0x05 }, { "volup"		, 0x06 }, { "voldown"	, 0x07 	},
 				{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
 				{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
-				{ "swing"	, 0x0A }, { "speed"		, 0x0B }
+				{ "swing"	, 0x0A }, { "speed"		, 0x0B },
+				{ "cursor"	, 0x0C },
+				{ "menu"	, 0x0D }
 			};
 
 			// Device types:
@@ -746,6 +748,9 @@ class DataRemote_t : public DataEndpoint_t {
 
 					AvaliableKeys.push_back("chup");		// channel up
 					AvaliableKeys.push_back("chdown");		// channel down
+
+					AvaliableKeys.push_back("cursor");		// cursor
+					AvaliableKeys.push_back("menu");		// menu
 				}
 
 				if (Type == 0x2) {
@@ -791,9 +796,6 @@ class DataRemote_t : public DataEndpoint_t {
 				else
 					return false;
 			}
-
-			//static string 	SerializeIRSignal(IRLib &);
-
 };
 
 #endif

@@ -88,8 +88,10 @@ esp_err_t WebServer_t::PATCHHandler(httpd_req_t *Request) {
 }
 
 void WebServer_t::SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request) {
-	WebServer_t::SetHeaders(Response, Request);
-	httpd_resp_send(Request, Response.Body.c_str(), HTTPD_RESP_USE_STRLEN);
+	if (Response.ResponseCode != WebServer_t::Response::CODE::IGNORE) {
+		WebServer_t::SetHeaders(Response, Request);
+		httpd_resp_send(Request, Response.Body.c_str(), HTTPD_RESP_USE_STRLEN);
+	}
 }
 
 void WebServer_t::SendChunk(httpd_req_t *Request, string Part) {
