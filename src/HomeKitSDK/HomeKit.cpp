@@ -111,9 +111,14 @@ int HomeKit::AccessoryIdentify(hap_acc_t *ha)
     return HAP_SUCCESS;
 }
 
+static uint32_t VolumeUpdated = 0;
+
 bool HomeKit::On(bool Value, uint16_t AccessoryID) {
 	string UUID = Converter::ToHexString(AccessoryID, 4);
-	ESP_LOGE("ON for UUID", "%s", UUID.c_str());
+	ESP_LOGE("ON", "UUID: %s, Value: %d", UUID.c_str(), Value);
+
+	if (Time::Uptime() - VolumeUpdated < 2)
+		return true;
 
     if (Settings.eFuse.Type == 0x81) {
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
@@ -222,6 +227,8 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
 	string UUID = Converter::ToHexString(AccessoryID, 4);
 	ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
 
+	VolumeUpdated = Time::Uptime();
+
     if (Settings.eFuse.Type == 0x81) {
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
@@ -233,6 +240,7 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
         	IRCommand->Execute(0xFE, Operand.c_str());
         	IRCommand->Execute(0xED, "");
         	IRCommand->Execute(0xED, "");
+
         	return true;
         }
         else if (Value == 1 && Functions.count("voldown") > 0)
