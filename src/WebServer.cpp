@@ -36,9 +36,10 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 	Query_t Query(Request, QueryType::GET);
 	API::Handle(Response, Query);
 	SendHTTPData(Response, Request);
+
 	Query.Cleanup();
 
-    return ESP_OK;
+	return ESP_OK;
 }
 
 esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
@@ -88,7 +89,8 @@ esp_err_t WebServer_t::PATCHHandler(httpd_req_t *Request) {
 }
 
 void WebServer_t::SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request) {
-	if (Response.ResponseCode != WebServer_t::Response::CODE::IGNORE) {
+	if (Response.ResponseCode != WebServer_t::Response::CODE::IGNORE)
+	{
 		WebServer_t::SetHeaders(Response, Request);
 		httpd_resp_send(Request, Response.Body.c_str(), HTTPD_RESP_USE_STRLEN);
 	}
@@ -156,7 +158,7 @@ void WebServer_t::Start() {
     config.uri_match_fn 	= httpd_uri_match_wildcard;
     config.stack_size		= 8192;//4096;//12288;//16384;//20000;
     config.lru_purge_enable = true;
-    config.task_priority	= tskIDLE_PRIORITY + 5;
+    config.task_priority	= tskIDLE_PRIORITY + 7;
 
     HTTPServerHandle		 = NULL;
 

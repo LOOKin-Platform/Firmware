@@ -57,7 +57,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 			else
 				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
-
 			ResultData = "\"Automation\" : ";
 			ResultData += Automation.RootInfo().ToString() + ",";
 
@@ -86,7 +85,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 			else
 				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
-
 			ResultData = "\"Commands\" : [";
 			for (int i = 0; i < Commands.size(); i++) {
 				ResultData += "\"" + Commands[i]->Name + "\"";
@@ -94,7 +92,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 				if (i < Commands.size() - 1)
 					ResultData += ",";
 			}
-
 			ResultData += "]";
 			ResultData += "}";
 
@@ -109,7 +106,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 				MQTT.EndChunk(MQTTChunkHash, Query.MQTTMessageID);
 
 			Response.ResponseCode = WebServer_t::Response::CODE::IGNORE;
-
 			/*
 			Result += "\"Log\" : ";
 			Log::HandleHTTPRequest(Response, Type, { }, Params);

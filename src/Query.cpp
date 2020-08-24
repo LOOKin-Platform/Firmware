@@ -236,8 +236,6 @@ map<string,string> Query_t::GetParams() {
 
 		string ParamsString = string(pch + 1, (uint16_t)ParamsStringLength);
 
-		ESP_LOGE("ParamsString", "%s", ParamsString.c_str());
-
 		Converter::Trim(ParamsString);
 
 		if (!ParamsString.empty()) {
