@@ -303,7 +303,8 @@ NetworkDevice_t Network_t::DeserializeNetworkDevice(string Data) {
 void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 	// обработка GET запроса - получение данных
 
-	if (Query.Type == QueryType::GET) {
+	if (Query.Type == QueryType::GET)
+	{
 		// Запрос JSON со всеми параметрами
 		if (Query.GetURLPartsCount() == 1) {
 			Result.Body = RootInfo().ToString();
@@ -312,7 +313,6 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 
 		// Запрос конкретного параметра или команды секции API
 		if (Query.GetURLPartsCount() == 2) {
-		{
 			// Подключение к заданной точке доступа
 			if (Query.CheckURLPart("connect", 1)) {
 				if (!WiFiConnect()) {
@@ -350,7 +350,6 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
 
-
 			if (Query.CheckURLPart("savedssid", 1)) {
 				vector<string> WiFiSettingsVector = vector<string>();
 				for (auto &Item : WiFiSettings)
@@ -384,7 +383,8 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			}
 		}
 
-		if (Query.GetURLPartsCount() == 3) {
+		if (Query.GetURLPartsCount() == 3)
+		{
 
 			if (Query.CheckURLPart("connect", 1)) {
 				map<string,string> Params = Query.GetParams();
@@ -399,9 +399,13 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			}
 
 
-			if (Query.CheckURLPart("remotecontrol", 1)) {
+			if (Query.CheckURLPart("remotecontrol", 1))
+			{
 				if (Query.CheckURLPart("reconnect", 2))
+				{
 					MQTT.Reconnect();
+					Result.Body = "{\"success\" : \"true\"}";
+					return;
 				}
 			}
 		}
@@ -410,7 +414,6 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			if (Query.CheckURLPart("remotecontrol",1) && Query.CheckURLPart("stop",2)) {
 				if (Converter::ToLower(MQTT.GetClientID()) == Query.GetStringURLPartByNumber(3)) {
 					MQTT.SetCredentials("","");
-					//MQTT.Stop();
 					Result.Body = "{\"success\" : \"true\"}";
 					return;
 				}

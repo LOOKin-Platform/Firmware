@@ -289,7 +289,7 @@ class CommandIR_t : public Command_t {
 				LastSignal.Protocol = IRSignal->Protocol;
 				LastSignal.Data 	= IRSignal->Uint32Data;
 				LastSignal.Misc		= IRSignal->MiscData;
-				ESP_LOGE("!", "6");
+
 				if (LastSignal.Protocol != 0xFF)
 					RMT::TXSetItems(IRSignal->GetRawDataForSending());
 				else {
