@@ -159,6 +159,7 @@ void WebServer_t::Start() {
     config.stack_size		= 8192;//4096;//12288;//16384;//20000;
     config.lru_purge_enable = true;
     config.task_priority	= tskIDLE_PRIORITY + 7;
+    config.max_uri_handlers = 30;
 
     HTTPServerHandle		 = NULL;
 
