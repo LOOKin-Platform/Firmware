@@ -10,7 +10,7 @@ static char tag[] = "RMT";
 
 bool 									RMT::IsInited = false;
 map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap = {};
-IRAM_ATTR vector<rmt_item32_t> 			RMT::OutputItems = {};
+vector<rmt_item32_t> 					RMT::OutputItems = {};
 
 /**
  * @brief Firstly init RMT driver
@@ -20,6 +20,8 @@ IRAM_ATTR vector<rmt_item32_t> 			RMT::OutputItems = {};
 void RMT::Init() {
 	if (IsInited)
 		return;
+
+	OutputItems.reserve(200);
 
 	IsInited = true;
 }
@@ -39,14 +41,13 @@ void RMT::Deinit() {
 
 void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart CallbackStart,
 							IRChannelCallbackBody CallbackBody, IRChannelCallbackEnd CallbackEnd) {
-
 	Init();
 
 	rmt_config_t config;
 	config.rmt_mode                  	= RMT_MODE_RX;
 	config.channel                   	= Channel;
 	config.gpio_num                  	= Pin;
-	config.mem_block_num             	= 6;
+	config.mem_block_num             	= 8;
 	config.clk_div                   	= RMT_CLK_DIV;
 	config.rx_config.filter_en 			= true;
 	config.rx_config.filter_ticks_thresh= 80;
@@ -88,17 +89,27 @@ void RMT::ReceiveStart(rmt_channel_t Channel) {
  *
  */
 void RMT::ReceiveStop(rmt_channel_t Channel) {
+	ESP_ERROR_CHECK(::rmt_rx_stop(Channel));
 
-	 ESP_ERROR_CHECK(::rmt_rx_stop(Channel));
+	if (RMT::ChannelsMap.count(Channel) > 0)
+		if (RMT::ChannelsMap[Channel].Handle == 0) {
+			ESP_LOGE(tag,"Channel task doesn't exist");
+			return;
+		}
 
-	 if (RMT::ChannelsMap.count(Channel) > 0)
-		 if (RMT::ChannelsMap[Channel].Handle == 0) {
-			 ESP_LOGE(tag,"Channel task doesn't exist");
-			 return;
-		 }
+	FreeRTOS::DeleteTask(RMT::ChannelsMap[Channel].Handle);
+	RMT::ChannelsMap[Channel].Handle = 0;
+}
 
-	 FreeRTOS::DeleteTask(RMT::ChannelsMap[Channel].Handle);
-	 RMT::ChannelsMap[Channel].Handle = 0;
+/**
+ * @brief Completely stop RX and uninstall RX driver.
+ *
+ * @param [in] Channel The RMT channel to work with.
+ *
+ */
+void RMT::UnsetRXChannel(rmt_channel_t Channel) {
+	ReceiveStop(Channel);
+	rmt_driver_uninstall(Channel);
 }
 
 void RMT::RXTask(void *TaskData) {
@@ -168,7 +179,7 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = Channel;
 	config.gpio_num                  = Pin; //GPIO_NUM_4
-	config.mem_block_num             = 2;
+	config.mem_block_num             = 8;
 	config.clk_div                   = 80;
 	config.tx_config.loop_en         = 0;
 	config.tx_config.carrier_en      = 1; //?1
@@ -199,6 +210,17 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 }
 
 /**
+ * @brief Completely unset TX channel
+ *
+ * @param [in] Channel The RMT channel to work with.
+ */
+
+void RMT::UnsetTXChannel(rmt_channel_t Channel) {
+	rmt_tx_stop(Channel);
+	rmt_driver_uninstall(Channel);
+}
+
+/**
  * @brief Set TX channel new frequency.
  *
  * @param [in] Pin The GPIO pin on which the signal is sent/received.
@@ -225,7 +247,7 @@ void RMT::TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency) {
  */
 void IRAM_ATTR RMT::TXAddItem(int32_t Bit) {
 	// hack for large pauses between signals
-	if (abs(Bit) >= Settings.SensorsConfig.IR.Threshold && abs(Bit) != Settings.SensorsConfig.IR.SignalEndingLen)
+	if (abs(Bit) >= Settings.SensorsConfig.IR.Threshold)// && abs(Bit) != Settings.SensorsConfig.IR.SignalEndingLen)
 	{
 		uint8_t Parts = (uint8_t)ceil(abs(Bit) / (double)Settings.SensorsConfig.IR.Threshold);
 
@@ -280,6 +302,7 @@ void IRAM_ATTR RMT::TXSetItems(vector<int32_t> Items) {
  */
 void RMT::TXClear() {
 	OutputItems.clear();
+	OutputItems.reserve(200);
 }
 
 /**
@@ -310,20 +333,25 @@ int16_t RMT::TXItemsCount() {
  */
 
 void IRAM_ATTR RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
+	if (Settings.GPIOData.GetCurrent().IR.SenderGPIO == GPIO_NUM_0)
+		return;
+
 	PowerManagement::AddLock("RMTSend");
+
+	SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, Channel, Frequency);
 
 	if (OutputItems.size() == 0) return;
 
-	if (OutputItems.back().duration0 > -30000 || OutputItems.back().duration1 > -30000)
+	if (OutputItems.back().duration0 < 30000 || OutputItems.back().duration1 < 30000)
 		TXAddItem(-Settings.SensorsConfig.IR.SignalEndingLen);
 
-	TXChangeFrequency(Channel, Frequency);
-
-	::rmt_write_items(Channel, &OutputItems[0] , OutputItems.size(), true);
+	::rmt_fill_tx_items(Channel, &OutputItems[0], OutputItems.size(), 0);
+	::rmt_tx_start(Channel, true);
 	::rmt_wait_tx_done(Channel, portMAX_DELAY);
 
 	OutputItems.clear();
 
+	UnsetTXChannel(Channel);
 	PowerManagement::ReleaseLock("RMTSend");
 }
 

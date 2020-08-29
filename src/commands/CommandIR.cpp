@@ -13,7 +13,7 @@
 
 extern DataEndpoint_t *Data;
 
-static rmt_channel_t TXChannel = RMT_CHANNEL_6;
+static rmt_channel_t TXChannel = RMT_CHANNEL_0;
 
 static string 	IRACReadBuffer 	= "";
 static uint16_t	IRACFrequency	= 38000;
@@ -53,9 +53,6 @@ class CommandIR_t : public Command_t {
 
 			Events["localremote"]	= 0xFE;
 			Events["raw"]			= 0xFF;
-
-			if (Settings.GPIOData.GetCurrent().IR.SenderGPIO != GPIO_NUM_0)
-				RMT::SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, TXChannel, 38000);
 		}
 
 		LastSignal_t LastSignal;
@@ -253,7 +250,7 @@ class CommandIR_t : public Command_t {
 				if (::strcmp(StringOperand, "0") == 0 || InOperation)
 					return false;
 
-				uint16_t	Frequency = 38000;
+				uint16_t Frequency = 38000;
 
 				char *FrequencyDelimeterPointer = strstr(StringOperand, ":");
 				if (FrequencyDelimeterPointer != NULL) {
@@ -262,7 +259,7 @@ class CommandIR_t : public Command_t {
 					StringOperand += FrequencyDelimeterPos + 1;
 				}
 
-				if (::strstr(StringOperand," ") == NULL &&  ::strstr(StringOperand,"%20") == NULL)
+				if (::strstr(StringOperand," ") == NULL && ::strstr(StringOperand,"%20") == NULL)
 					return false;
 
 				IRLib *IRSignal = new IRLib();
@@ -270,19 +267,21 @@ class CommandIR_t : public Command_t {
 				string 	SignalItem = "";
 				char	SignalChar[1];
 
-				for (int i = 0; i < strlen(StringOperand) - 1; i++) {
+				for (int i = 0; i < strlen(StringOperand); i++) {
 					memcpy(SignalChar, StringOperand + i, 1);
+					string SignalCharStr(SignalChar,1);
 
-					if ((string(SignalChar) == string(" ")) || (string(SignalChar) == string("%")))
+					if ((SignalCharStr == string(" ")) || (SignalCharStr == string("%")))
 					{
-						if (string(SignalChar) == string("%")) i+=2;
+						if (SignalCharStr == string("%")) i+=2;
+
 						IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
 						SignalItem = "";
 					}
 					else
-						SignalItem += string(SignalChar,1);
+						SignalItem += SignalCharStr;
 				}
-				IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
+				//IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
 
 				IRSignal->ExternFillPostOperations();
 
@@ -312,12 +311,19 @@ class CommandIR_t : public Command_t {
 			if ( RMT::TXItemsCount() == 0)
 				return;
 
-			InOperation = true;
+			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
+				RMT::UnsetRXChannel(RMT_CHANNEL_0);
 
+			InOperation = true;
 			RMT::TXSend(TXChannel, Frequency);
+			InOperation = false;
+
 			Log::Add(Log::Events::Commands::IRExecuted);
 
-			InOperation = false;
+			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
+				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
+				RMT::ReceiveStart(RMT_CHANNEL_0);
+			}
 		}
 
 		// AC Codeset callbacks

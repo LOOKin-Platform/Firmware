@@ -34,6 +34,7 @@ class SensorIR_t : public Sensor_t {
 			SetIsInited(true);
 		}
 
+
 		void Update() override {
 			Values.clear();
 
@@ -133,10 +134,6 @@ class SensorIR_t : public Sensor_t {
 			}
 
 			RepeatCode = "";
-
-			if (Command_t::GetCommandByID(SensorIRID - 0x80) != nullptr)
-				if (Command_t::GetCommandByID(SensorIRID - 0x80)->InOperation)
-					return;
 
 			if ((Time::UptimeU() - SignalDetectionTimeU) < Settings.SensorsConfig.IR.SignalsMaxDelay && SignalDetectionTimeU > 0) {
 				FollowingSignal = IRLib(SensorIRCurrentMessage);

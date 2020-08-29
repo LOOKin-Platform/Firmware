@@ -48,22 +48,25 @@ class RMT {
 		static void		Init();
 		static void		Deinit();
 
-		static void 	SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart = nullptr, IRChannelCallbackBody = nullptr, IRChannelCallbackEnd = nullptr);
-		static void 	ReceiveStart(rmt_channel_t Channel);
-		static void 	ReceiveStop (rmt_channel_t Channel);
+		static void		SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackStart = nullptr, IRChannelCallbackBody = nullptr, IRChannelCallbackEnd = nullptr);
+		static void		ReceiveStart(rmt_channel_t Channel);
+		static void		ReceiveStop (rmt_channel_t Channel);
+		static void		UnsetRXChannel(rmt_channel_t Channel);
 
-		static void 	SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency);
-		static void 	TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency);
-		static void 	TXAddItem(int32_t);
-		static void 	TXAddItemExact(int32_t);
-		static void 	TXSetItems(vector<int32_t>);
-		static void 	TXClear();
+		static void		SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency);
+		static void		UnsetTXChannel(rmt_channel_t Channel);
 
-		static int16_t 	TXItemsCount();
+		static void		TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency);
+		static void		TXAddItem(int32_t);
+		static void		TXAddItemExact(int32_t);
+		static void		TXSetItems(vector<int32_t>);
+		static void		TXClear();
 
-		static void  	TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
+		static int16_t	TXItemsCount();
 
-		static int32_t PrepareBit(bool, uint32_t);
+		static void		TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
+
+		static int32_t	PrepareBit(bool, uint32_t);
 
 		static map<rmt_channel_t, IRChannelInfo> ChannelsMap;
 
