@@ -448,7 +448,7 @@ hap_serv_t *hap_serv_ac_fanswing_create(uint8_t TargetFanState, uint8_t SwingMod
     if (hap_serv_add_char(hs, hap_char_always_active_create(1)) != HAP_SUCCESS) {
         goto err;
     }
-    if (hap_serv_add_char(hs, hap_char_target_fan_state_create(1)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_target_fan_state_create(TargetFanState)) != HAP_SUCCESS) {
         goto err;
     }
     if (hap_serv_add_char(hs, hap_char_ac_fan_rotation_create(FanSpeed)) != HAP_SUCCESS) {

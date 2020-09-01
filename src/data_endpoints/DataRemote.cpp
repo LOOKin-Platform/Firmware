@@ -232,8 +232,8 @@ class DataRemote_t : public DataEndpoint_t {
 					if (Items.count("u")) 		{ Updated 	= Converter::ToUint32(Items["u"]); 		Items.erase("u"); }
 					if (Items.count("updated")) { Updated 	= Converter::ToUint32(Items["updated"]);Items.erase("updated"); }
 
-					if (Items.count("s")) 		{ Updated 	= Converter::ToUint16(Items["s"]); 		Items.erase("s"); }
-					if (Items.count("status"))	{ Updated 	= Converter::ToUint16(Items["status"]);	Items.erase("status"); }
+					if (Items.count("s")) 		{ Status 	= Converter::UintFromHexString<uint16_t>(Items["s"]); 		Items.erase("s"); }
+					if (Items.count("status"))	{ Status 	= Converter::UintFromHexString<uint16_t>(Items["status"]);	Items.erase("status"); }
 
 					if (Items.count("uuid")) 	{ UUID		= Converter::ToUpper(Items["uuid"]); 	Items.erase("uuid"); }
 
@@ -806,6 +806,11 @@ class DataRemote_t : public DataEndpoint_t {
 				if (IRDevicesCache[i].DeviceID == DeviceID)
 				{
 					IRDevicesCache[i].Status = Status;
+
+					IRDevice DeviceItem = LoadDevice(DeviceID);
+					DeviceItem.Status = Status;
+					SaveDevice(DeviceItem);
+
 					break;
 				}
 		}

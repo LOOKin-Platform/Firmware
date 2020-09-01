@@ -586,16 +586,26 @@ void HomeKit::FillAccessories() {
 					hap_acc_add_serv(Accessory, ServiceFan);
 					break;
 
-				case 0xEF: // AC
+				case 0xEF: { // AC
+					ACOperand Operand((uint32_t)IRDevice.Status);
+
+					if 		(Operand.Mode == 3) Operand.Mode = 1;
+					else if (Operand.Mode == 1) Operand.Mode = 3;
+					else if (Operand.Mode  > 3) Operand.Mode = 0x0;
+
+					ESP_LOGE("hap_serv_ac_tempmode_create", "(%d, %d)", Operand.Mode, Operand.Temperature);
+
 					hap_serv_t *ServiceAC;
-					ServiceAC = hap_serv_ac_tempmode_create(0, 0, 20, 20, 0);
+					ServiceAC = hap_serv_ac_tempmode_create(Operand.Mode, Operand.Mode, Operand.Temperature, Operand.Temperature, 0);
 					hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
 					hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
 					hap_serv_set_write_cb(ServiceAC, WriteCallback);
 					hap_acc_add_serv(Accessory, ServiceAC);
 
+					ESP_LOGE("hap_serv_ac_fanswing_create", "(%d, %d, %d)", (Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
+
 					hap_serv_t *ServiceACFan;
-					ServiceACFan = hap_serv_ac_fanswing_create(1, 0, 0);
+					ServiceACFan = hap_serv_ac_fanswing_create((Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
 					hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
 
 					hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)AID);
@@ -603,7 +613,7 @@ void HomeKit::FillAccessories() {
 					hap_serv_link_serv(ServiceAC, ServiceACFan);
 					hap_acc_add_serv(Accessory, ServiceACFan);
 					break;
-
+				}
 				default:
 					IsCreated = false;
 					hap_acc_delete(Accessory);
