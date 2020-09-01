@@ -207,7 +207,7 @@ class CommandIR_t : public Command_t {
 				string  SavedRemoteOperand(StringOperand,8);
 
 				string  UUID 		= SavedRemoteOperand.substr(0, 4);
-				string  Function 	= ((DataRemote_t*)Data)->GetFunctionNameByID(Converter::UintFromHexString<uint8_t>(SavedRemoteOperand.substr(4, 2)));
+				string  Function 	= ((DataRemote_t*)Data)->DevicesHelper.FunctionNameByID(Converter::UintFromHexString<uint8_t>(SavedRemoteOperand.substr(4, 2)));
 				uint8_t SignalID 	= Converter::UintFromHexString<uint8_t>( SavedRemoteOperand.substr(6,2));
 
 				string FunctionType = ((DataRemote_t*)Data)->GetFunctionType(UUID, Function);

@@ -10,8 +10,8 @@ bool 			HomeKit::IsAP 		= false;
 string			HomeKit::SSID		= "";
 string			HomeKit::Password	= "";
 
-
-vector<hap_acc_t*> HomeKit::BridgedAccessories = vector<hap_acc_t*>();
+vector<hap_acc_t*> 		HomeKit::BridgedAccessories = vector<hap_acc_t*>();
+map<uint16_t, uint64_t> HomeKit::LastUpdated 		= map<uint16_t, uint64_t>();
 
 #define NUM_BRIDGED_ACCESSORIES 2
 
@@ -78,6 +78,7 @@ void HomeKit::Stop() {
 }
 
 void HomeKit::AppServerRestart() {
+	LastUpdated.clear();
 	FillAccessories();
 	return;
 }
@@ -111,25 +112,32 @@ int HomeKit::AccessoryIdentify(hap_acc_t *ha)
     return HAP_SUCCESS;
 }
 
-static uint32_t VolumeUpdated = 0;
+bool HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
 
-bool HomeKit::On(bool Value, uint16_t AccessoryID) {
-	string UUID = Converter::ToHexString(AccessoryID, 4);
-	ESP_LOGE("ON", "UUID: %s, Value: %d", UUID.c_str(), Value);
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	if (Iterator > 0) return true;
 
-	if (Time::Uptime() - VolumeUpdated < 2)
-		return true;
+    	ESP_LOGE("ON", "UUID: %04X, Value: %d", AID, Value);
 
-    if (Settings.eFuse.Type == 0x81) {
-        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty())
+        	return false;
+
+        if (IRDeviceItem.DeviceType == 0xEF) { // air conditionair
+
+        }
+
+        ((DataRemote_t*)Data)->StatusUpdateForDevice(IRDeviceItem.DeviceID, 0xE0, Value);
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(IRDeviceItem.DeviceID);
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
-        string Operand = UUID;
+        string Operand = IRDeviceItem.DeviceID;
 
         if (Functions.count("power") > 0)
         {
-        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("power"),2);
+        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("power"),2);
         	Operand += (Functions["power"] == "toggle") ? ((Value) ? "00" : "01" ) : "FF";
         	IRCommand->Execute(0xFE, Operand.c_str());
         	return true;
@@ -138,7 +146,7 @@ bool HomeKit::On(bool Value, uint16_t AccessoryID) {
         {
         	if (Functions.count("poweron") > 0 && Value)
         	{
-            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweron"), 2) + "FF";
+            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweron"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand.c_str());
             	return true;
 
@@ -146,7 +154,7 @@ bool HomeKit::On(bool Value, uint16_t AccessoryID) {
 
         	if (Functions.count("poweroff") > 0 && !Value)
         	{
-            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("poweroff"), 2) + "FF";
+            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweroff"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand.c_str());
             	return true;
         	}
@@ -160,7 +168,7 @@ bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
 	string UUID = Converter::ToHexString(AccessoryID, 4);
 	ESP_LOGE("Cursor for UUID", "%s", UUID.c_str());
 
-    if (Settings.eFuse.Type == 0x81) {
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
@@ -170,7 +178,7 @@ bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
         if (Value == 8 || Value == 6 || Value == 4 || Value == 7 || Value == 5) {
         	if (Functions.count("cursor") > 0)
         	{
-        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("cursor"),2);
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("cursor"),2);
 
         		switch(Value) {
     				case 8: Operand += "00"; break; // SELECT
@@ -190,7 +198,7 @@ bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
         if (Value == 15) {
         	if (Functions.count("menu") > 0)
         	{
-        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("menu"), 2) + "FF";
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("menu"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand.c_str());
         		return true;
         	}
@@ -204,7 +212,7 @@ bool HomeKit::ActiveID(uint8_t NewActiveID, uint16_t AccessoryID) {
 	string UUID = Converter::ToHexString(AccessoryID, 4);
 	ESP_LOGE("ActiveID for UUID", "%s", UUID.c_str());
 
-    if (Settings.eFuse.Type == 0x81) {
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
@@ -212,7 +220,7 @@ bool HomeKit::ActiveID(uint8_t NewActiveID, uint16_t AccessoryID) {
         if (Functions.count("mode") > 0)
         {
             string Operand = UUID;
-        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("mode"),2);
+        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("mode"),2);
         	Operand += Converter::ToHexString(NewActiveID - 1, 2);
 
         	IRCommand->Execute(0xFE, Operand.c_str());
@@ -227,16 +235,14 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
 	string UUID = Converter::ToHexString(AccessoryID, 4);
 	ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
 
-	VolumeUpdated = Time::Uptime();
-
-    if (Settings.eFuse.Type == 0x81) {
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
         if (Value == 0 && Functions.count("volup") > 0)
         {
-            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("volup"),2) + "FF";
+            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("volup"),2) + "FF";
         	IRCommand->Execute(0xFE, Operand.c_str());
         	IRCommand->Execute(0xED, "");
         	IRCommand->Execute(0xED, "");
@@ -245,7 +251,7 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
         }
         else if (Value == 1 && Functions.count("voldown") > 0)
         {
-            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->GetFunctionIDByName("voldown"),2) + "FF";
+            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("voldown"),2) + "FF";
         	IRCommand->Execute(0xFE, Operand.c_str());
         	IRCommand->Execute(0xED, "");
         	IRCommand->Execute(0xED, "");
@@ -255,6 +261,130 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
 
     return false;
 }
+
+bool HomeKit::HeatingCoolingState(uint8_t Value, uint16_t AID) {
+	ESP_LOGE("HeaterCoolerState", "UUID: %04X, Value: %d", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	return false;
+
+        switch (Value)
+        {
+        	case 1: Value = 3; break;
+        	case 2:	Value = 2; break;
+        	case 3: Value = 1; break;
+        	default: break;
+        }
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, Value);
+
+        return true;
+    }
+
+    return false;
+}
+
+bool HomeKit::TargetTemperature(float Value, uint16_t AID) {
+	ESP_LOGE("TargetTemperature", "UUID: %04X, Value: %f", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	return false;
+
+        if (Value > 30) Value = 30;
+        if (Value < 16) Value = 16;
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE1, round(Value));
+        return true;
+    }
+
+    return false;
+}
+
+bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+	ESP_LOGE("RotationSpeed", "UUID: %04X, Value: %f", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	if (Iterator > 0) return true;
+
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // Air Conditionair
+        	return false;
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value));
+
+        hap_val_t ValueForTargetState;
+        ValueForTargetState.u = (Value == 0) ? 1 : 0;
+        hap_char_update_val(hap_serv_get_char_by_uuid(hap_char_get_parent(Char), HAP_CHAR_UUID_TARGET_FAN_STATE), &ValueForTargetState);
+
+        return true;
+    }
+
+    return false;
+}
+
+bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+	ESP_LOGE("TargetFanState", "UUID: %04X, Value: %d", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	if (Iterator > 0) return true;
+
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	return false;
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, (Value) ? 0 : 2);
+
+        hap_val_t ValueForRotationSpeed;
+        ValueForRotationSpeed.f = (Value == false) ? 2.0 : 0.0;
+        hap_char_update_val(hap_serv_get_char_by_uuid(hap_char_get_parent(Char), HAP_CHAR_UUID_ROTATION_SPEED), &ValueForRotationSpeed);
+
+        return true;
+    }
+
+    return false;
+}
+
+bool HomeKit::SwingMode(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+	ESP_LOGE("TargetFanState", "UUID: %04X, Value: %d", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	return false;
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE3, (Value) ? 1 : 0);
+
+        return true;
+    }
+
+    return false;
+}
+
+
+void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value) {
+	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value);
+
+	if (!Result.first) return;
+
+	ESP_LOGE("New Status", "%04X", Result.second);
+
+    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+    if (IRCommand == nullptr) return;
+
+    string Operand = Converter::ToHexString(Codeset,4) + Converter::ToHexString(Result.second,4);
+    IRCommand->Execute(0xEF, Operand.c_str());
+}
+
 
 
 /* A dummy callback for handling a write on the "On" characteristic of Fan.
@@ -270,13 +400,16 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
     hap_write_data_t *write;
     for (i = 0; i < count; i++) {
         write = &write_data[i];
+
+        ESP_LOGI(Tag, "Characteristic: %s, i: %d", hap_char_get_type_uuid(write->hc), i);
+
         if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ON)) {
-        	On(write->val.b, AID);
+        	On(write->val.b, AID, i);
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ACTIVE)) {
-        	On(write->val.b, AID);
+        	On(write->val.b, AID, i);
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
@@ -295,10 +428,38 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_HEATING_COOLING_STATE)) {
+        	HeatingCoolingState(write->val.b, AID);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_TEMPERATURE)) {
+        	TargetTemperature(write->val.f, AID);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ROTATION_SPEED)) {
+        	RotationSpeed(write->val.f, AID, write->hc, i);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_FAN_STATE)) {
+        	TargetFanState(write->val.b, AID, write->hc, i);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_SWING_MODE)) {
+        	SwingMode(write->val.b, AID, write->hc, i);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
         else {
             *(write->status) = HAP_STATUS_RES_ABSENT;
         }
     }
+
+    SetLastUpdatedForAID(AID);
+
     return ret;
 }
 
@@ -424,6 +585,25 @@ void HomeKit::FillAccessories() {
 					hap_serv_set_write_cb(ServiceFan, WriteCallback);
 					hap_acc_add_serv(Accessory, ServiceFan);
 					break;
+
+				case 0xEF: // AC
+					hap_serv_t *ServiceAC;
+					ServiceAC = hap_serv_ac_tempmode_create(0, 0, 20, 20, 0);
+					hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
+					hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb(ServiceAC, WriteCallback);
+					hap_acc_add_serv(Accessory, ServiceAC);
+
+					hap_serv_t *ServiceACFan;
+					ServiceACFan = hap_serv_ac_fanswing_create(1, 0, 0);
+					hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
+
+					hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb(ServiceACFan, WriteCallback);
+					hap_serv_link_serv(ServiceAC, ServiceACFan);
+					hap_acc_add_serv(Accessory, ServiceACFan);
+					break;
+
 				default:
 					IsCreated = false;
 					hap_acc_delete(Accessory);
@@ -500,3 +680,18 @@ void HomeKit::Task(void *) {
 
     vTaskDelete(NULL);
 }
+
+void HomeKit::SetLastUpdatedForAID(uint16_t AID) {
+	LastUpdated[AID] = Time::UptimeU();
+}
+
+uint64_t HomeKit::GetLastUpdatedForAID(uint16_t AID) {
+	return (LastUpdated.count(AID) > 0) ? LastUpdated[AID] : 0;
+}
+
+bool HomeKit::IsRecentAction(uint16_t AID) {
+	ESP_LOGE("IsRecentAction", "%" PRIu64 " %" PRIu64, GetLastUpdatedForAID(AID), Time::UptimeU());
+
+	return (Time::UptimeU() - GetLastUpdatedForAID(AID) < 500);
+}
+

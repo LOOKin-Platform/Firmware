@@ -221,6 +221,77 @@ hap_char_t *hap_char_power_mode_selection_create(uint8_t PowerModeSelectionValue
     return hc;
 }
 
+/* Char: Rotation Speed for 4 positions */
+hap_char_t *hap_char_rotation_speed_create_ac(float rotation_speed)
+{
+    hap_char_t *hc = hap_char_float_create(HAP_CHAR_UUID_ROTATION_SPEED, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, rotation_speed);
+    if (!hc) {
+        return NULL;
+    }
+
+    hap_char_float_set_constraints(hc, 0.0, 100.0, 25);
+    hap_char_add_unit(hc, HAP_CHAR_UNIT_PERCENTAGE);
+
+    return hc;
+}
+
+/* Char: Current Temperature for ac */
+hap_char_t *hap_char_current_temperature_create_ac(float curr_temp)
+{
+    hap_char_t *hc = hap_char_float_create(HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_EV, curr_temp);
+    if (!hc) {
+        return NULL;
+    }
+
+    hap_char_float_set_constraints(hc, 16, 30, 1);
+    hap_char_add_unit(hc, HAP_CHAR_UNIT_CELSIUS);
+
+    return hc;
+}
+
+/* Char: Target Temperature for ac */
+hap_char_t *hap_char_target_temperature_create_ac(float curr_temp)
+{
+    hap_char_t *hc = hap_char_float_create(HAP_CHAR_UUID_TARGET_TEMPERATURE, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, curr_temp);
+    if (!hc) {
+        return NULL;
+    }
+
+    hap_char_float_set_constraints(hc, 16, 30, 1);
+    hap_char_add_unit(hc, HAP_CHAR_UNIT_CELSIUS);
+
+    return hc;
+}
+
+
+/* Char: Status Active (always ON) */
+hap_char_t *hap_char_always_active_create(uint8_t active)
+{
+    hap_char_t *hc = hap_char_uint8_create(HAP_CHAR_UUID_ACTIVE, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, active);
+
+    hap_char_int_set_constraints(hc, 0, 1, 1);
+
+    if (!hc) {
+        return NULL;
+    }
+
+    return hc;
+}
+
+/* Char: Vent Speed for AC */
+hap_char_t *hap_char_ac_fan_rotation_create(float rotation_speed)
+{
+    hap_char_t *hc = hap_char_float_create(HAP_CHAR_UUID_ROTATION_SPEED, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, rotation_speed);
+    if (!hc) {
+        return NULL;
+    }
+
+    hap_char_float_set_constraints(hc, 0.0, 3.0, 1.0);
+    hap_char_add_unit(hc, HAP_CHAR_UNIT_PERCENTAGE);
+
+    return hc;
+}
+
 /* Service: TV */
 hap_serv_t *hap_serv_tv_create(uint8_t active)
 {
@@ -335,6 +406,59 @@ hap_serv_t *hap_serv_input_source_create(char *Name, uint8_t ID)
 
     return hs;
 
+err:
+    hap_serv_delete(hs);
+    return NULL;
+}
+
+hap_serv_t *hap_serv_ac_tempmode_create(uint8_t curr_heating_cooling_state, uint8_t targ_heating_cooling_state,
+										float curr_temp, float targ_temp, uint8_t temp_disp_units)
+{
+    hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_THERMOSTAT);
+    if (!hs) {
+        return NULL;
+    }
+    if (hap_serv_add_char(hs, hap_char_current_heating_cooling_state_create(curr_heating_cooling_state)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_target_heating_cooling_state_create(targ_heating_cooling_state)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_current_temperature_create_ac(curr_temp)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_target_temperature_create_ac(targ_temp)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_temperature_display_units_create(temp_disp_units)) != HAP_SUCCESS) {
+        goto err;
+    }
+    return hs;
+err:
+    hap_serv_delete(hs);
+    return NULL;
+}
+
+hap_serv_t *hap_serv_ac_fanswing_create(uint8_t TargetFanState, uint8_t SwingMode, uint8_t FanSpeed)
+{
+    hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_FAN_V2);
+    if (!hs) {
+        return NULL;
+    }
+    if (hap_serv_add_char(hs, hap_char_always_active_create(1)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_target_fan_state_create(1)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_ac_fan_rotation_create(FanSpeed)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_swing_mode_create(SwingMode)) != HAP_SUCCESS) {
+        goto err;
+    }
+
+    return hs;
 err:
     hap_serv_delete(hs);
     return NULL;

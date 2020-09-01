@@ -121,8 +121,17 @@ void WiFi_t::Init() {
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 		esp_err_t errRc = ::esp_wifi_init(&cfg);
 
+
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
 	    esp_netif_create_default_wifi_sta();
 	    esp_netif_create_default_wifi_ap();
+#endif
+
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED)
+	    esp_netif_create_default_wifi_ap();
+#endif
+
+
 
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));

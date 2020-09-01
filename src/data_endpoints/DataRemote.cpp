@@ -26,8 +26,157 @@
 
 using namespace std;
 
+class DataDeviceItem_t {
+	public:
+		uint8_t DeviceTypeID = 0;
+		virtual vector<uint8_t> GetAvaliableFunctions() { return vector<uint8_t>(); }
+		virtual uint16_t UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value) { return Status; }
+		virtual ~DataDeviceItem_t() {};
+};
+
+class DataDeviceTV_t  : public DataDeviceItem_t {
+	public:
+		DataDeviceTV_t() { DeviceTypeID = 0x01; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0C, 0x0D}; }
+		virtual ~DataDeviceTV_t() {};
+};
+
+class DataDeviceMedia_t  : public DataDeviceItem_t {
+	public:
+		DataDeviceMedia_t() { DeviceTypeID = 0x02; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x05, 0x06, 0x07}; }
+		virtual ~DataDeviceMedia_t() {};
+};
+
+class DataDeviceLight_t  : public DataDeviceItem_t {
+	public:
+		DataDeviceLight_t() { DeviceTypeID = 0x03; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03}; }
+		virtual ~DataDeviceLight_t() {};
+};
+
+class DataDeviceHumidifier_t  : public DataDeviceItem_t {
+	public:
+		DataDeviceHumidifier_t() { DeviceTypeID = 0x04; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x0A}; }
+		virtual ~DataDeviceHumidifier_t() {};
+};
+
+class DataDeviceAirPurifier_t  : public DataDeviceItem_t {
+	public:
+		DataDeviceAirPurifier_t() { DeviceTypeID = 0x05; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x0A, 0x0B}; }
+		virtual ~DataDeviceAirPurifier_t() {};
+};
+
+class DataDeviceRoboCleaner_t  : public DataDeviceItem_t {
+	public:
+		DataDeviceRoboCleaner_t() { DeviceTypeID = 0x06; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03 }; }
+		virtual ~DataDeviceRoboCleaner_t() {};
+};
+
+class DataDeviceFan_t  : public DataDeviceItem_t {
+	public:
+		DataDeviceFan_t() { DeviceTypeID = 0x07; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x0A, 0x0D  }; }
+		virtual ~DataDeviceFan_t() {};
+};
+
+class DataDeviceAC_t : public DataDeviceItem_t {
+	public:
+		DataDeviceAC_t() { DeviceTypeID = 0xEF; }
+
+		uint16_t UpdateStatusForFunction (uint16_t Status, uint8_t FunctionID, uint8_t Value) override
+		{
+			ACOperand Operand((uint32_t)Status);
+
+			switch (FunctionID) {
+				case 0xE0: Operand.Mode 		= Value; break;
+				case 0xE1: Operand.Temperature 	= Value; break;
+				case 0xE2: Operand.FanMode 		= Value; break;
+				case 0xE3: Operand.SwingMode	= Value; break;
+			}
+
+			return (uint16_t)((Operand.ToUint32() << 16) >> 16);
+		}
+
+		virtual ~DataDeviceAC_t() {};
+};
+
+class DataDevice_t {
+	public:
+		DataDevice_t() {
+			DevicesClasses = {
+					new DataDeviceTV_t(), new DataDeviceMedia_t(), new DataDeviceLight_t(),
+					new DataDeviceHumidifier_t(), new DataDeviceAirPurifier_t(),
+					new DataDeviceRoboCleaner_t(), new DataDeviceFan_t(), new DataDeviceAC_t() };
+		}
+
+		~DataDevice_t() {
+			for (auto& DeviceClass : DevicesClasses)
+				delete DeviceClass;
+		}
+
+		uint8_t FunctionIDByName(string FunctionName) {
+			return (GlobalFunctions.count(FunctionName) == 0) ? 0 : GlobalFunctions[FunctionName];
+		}
+
+		string FunctionNameByID(uint8_t FunctionID) {
+			for (auto& Function : GlobalFunctions)
+				if (Function.second == FunctionID)
+					return Function.first;
+			return "";
+		}
+
+		DataDeviceItem_t* GetDeviceForType(uint8_t Type) {
+			for (auto& DeviceClass : DevicesClasses)
+				if (DeviceClass->DeviceTypeID == Type)
+					return DeviceClass;
+
+			return nullptr;
+		}
+
+		bool IsValidKeyForType(uint8_t Type, string Key) {
+			DataDeviceItem_t *DeviceItem = GetDeviceForType(Type);
+
+			if (DeviceItem == nullptr) return false;
+
+			Key = Converter::ToLower(Key);
+
+			for (auto& FunctionID : DeviceItem->GetAvaliableFunctions())
+				if (Key == FunctionNameByID(FunctionID))
+					return true;
+
+			return false;
+		}
+
+		//void SetStatusForType
+
+	private:
+		vector<DataDeviceItem_t *> 	DevicesClasses = vector<DataDeviceItem_t *>();
+
+		map<string, uint8_t> GlobalFunctions =
+		{
+			{ "power"	, 0x01 }, { "poweron"	, 0x02 }, { "poweroff"	, 0x03 	},
+			{ "mode"	, 0x04 },
+			{ "mute"	, 0x05 }, { "volup"		, 0x06 }, { "voldown"	, 0x07 	},
+			{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
+			{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
+			{ "swing"	, 0x0A }, { "speed"		, 0x0B },
+			{ "cursor"	, 0x0C },
+			{ "menu"	, 0x0D },
+			// virtual AC functions
+			{ "acmode"	, 0xE0 }, { "actemp", 0xE1 }, { "acfan", 0xE2 }, { "acswing", 0xE3 }
+		};
+};
+
+
+
 class DataRemote_t : public DataEndpoint_t {
 	public:
+
+		DataDevice_t 	DevicesHelper;
 
 		enum Error {
 			Ok 					= 0x00,
@@ -43,13 +192,27 @@ class DataRemote_t : public DataEndpoint_t {
 		const string ResponseItemDidntExist 	= "{\"success\" : \"false\", \"Message\" : \"Item didn't exists\" }";
 		const string ResponseItemAlreadyExist 	= "{\"success\" : \"false\", \"Message\" : \"Item already exists\" }";
 
+		struct IRDeviceCacheItem_t {
+			string 		DeviceID 	{ ""  };
+			uint8_t		DeviceType 	{ 0x0 };
+			uint16_t	Status 		{ 0x0 };
+			uint16_t	Extra		{ 0x0 };
+			map<uint8_t, vector<pair<uint8_t, uint8_t>>>
+						IRCache		{ map<uint8_t, vector<pair<uint8_t, uint8_t>>>()};
+
+			bool IsEmpty() { return (DeviceID == "" && DeviceType == 0x0); }
+		};
+
+		vector<IRDeviceCacheItem_t> IRDevicesCache = vector<IRDeviceCacheItem_t>();
+
 		class IRDevice {
 			public:
 				string 		UUID 	= "";
 				uint8_t 	Type 	= 0xFF;
 				uint32_t	Updated = 0;
 				string 		Name	= "";
-				uint32_t	Extra 	= 0;
+				uint16_t	Extra 	= 0;
+				uint16_t	Status	= 0;
 
 				map<string,string> Functions = map<string,string>();
 
@@ -63,11 +226,14 @@ class DataRemote_t : public DataEndpoint_t {
 					if (Items.count("n")) 		{ Name 		= Items["n"]; 		Items.erase("n"); }
 					if (Items.count("name")) 	{ Name 		= Items["name"]; 	Items.erase("name"); }
 
-					if (Items.count("e")) 		{ Extra 	= Converter::UintFromHexString<uint32_t>(Items["e"]);  		Items.erase("e"); }
-					if (Items.count("extra")) 	{ Extra 	= Converter::UintFromHexString<uint32_t>(Items["extra"]); 	Items.erase("extra"); }
+					if (Items.count("e")) 		{ Extra 	= Converter::UintFromHexString<uint16_t>(Items["e"]);  		Items.erase("e"); }
+					if (Items.count("extra")) 	{ Extra 	= Converter::UintFromHexString<uint16_t>(Items["extra"]); 	Items.erase("extra"); }
 
 					if (Items.count("u")) 		{ Updated 	= Converter::ToUint32(Items["u"]); 		Items.erase("u"); }
 					if (Items.count("updated")) { Updated 	= Converter::ToUint32(Items["updated"]);Items.erase("updated"); }
+
+					if (Items.count("s")) 		{ Updated 	= Converter::ToUint16(Items["s"]); 		Items.erase("s"); }
+					if (Items.count("status"))	{ Updated 	= Converter::ToUint16(Items["status"]);	Items.erase("status"); }
 
 					if (Items.count("uuid")) 	{ UUID		= Converter::ToUpper(Items["uuid"]); 	Items.erase("uuid"); }
 
@@ -105,7 +271,10 @@ class DataRemote_t : public DataEndpoint_t {
 					JSONObject.SetItem((IsShortened) ? "u" : "Updated", Converter::ToString(Updated));
 
 					if (Extra > 0)
-						JSONObject.SetItem((IsShortened) ? "e" : "Extra", Converter::ToHexString(Extra,8));
+						JSONObject.SetItem((IsShortened) ? "e" : "Extra", Converter::ToHexString(Extra,4));
+
+					if (Status > 0)
+						JSONObject.SetItem((IsShortened) ? "s" : "Status", Converter::ToHexString(Status,4));
 
 					if (IsShortened) {
 						for (auto& FunctionItem : Functions)
@@ -133,8 +302,37 @@ class DataRemote_t : public DataEndpoint_t {
 
 			IRDevicesList = Converter::StringToVector(Memory.GetString("DevicesList"), "|");
 
-			for (int i = 0; i< IRDevicesList.size(); i++)
-				if (IRDevicesList[i] == "") IRDevicesList.erase(IRDevicesList.begin() + i);
+			auto Iterator = IRDevicesList.begin();
+			while (Iterator != IRDevicesList.end())
+			{
+				if (*Iterator == "")
+					Iterator = IRDevicesList.erase(Iterator);
+				else {
+					DataRemote_t::IRDevice DeviceItem(Memory.GetString(*Iterator), *Iterator);
+
+					if (DeviceItem.IsCorrect()) {
+						IRDeviceCacheItem_t CacheItem;
+
+						CacheItem.DeviceID 		= DeviceItem.UUID;
+						CacheItem.DeviceType 	= DeviceItem.Type;
+						CacheItem.Status		= DeviceItem.Status;
+						CacheItem.Extra			= DeviceItem.Extra;
+
+						IRDevicesCache.push_back(CacheItem);
+					}
+
+					++Iterator;
+				}
+			}
+		}
+
+		IRDeviceCacheItem_t GetDeviceFromCache(string UUID) {
+			for(auto& Item : IRDevicesCache)
+				if (Item.DeviceID == UUID)
+					return Item;
+
+			IRDeviceCacheItem_t Result;
+			return Result;
 		}
 
 		void HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) override {
@@ -422,7 +620,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return;
 			}
 
-			if (!CheckIsValidKeyForType(DeviceItem.Type, Function)) {
+			if (!DevicesHelper.IsValidKeyForType(DeviceItem.Type, Function)) {
 				Result.SetFail();
 				Result.Body = "{\"success\" : \"false\", \"Message\" : \"Invalid function name\" }";
 				return;
@@ -564,21 +762,6 @@ class DataRemote_t : public DataEndpoint_t {
 				return "single";
 		}
 
-		string GetFunctionNameByID(uint8_t FunctionID) {
-			for (auto& Function : GlobalFunctions)
-				if (Function.second == FunctionID)
-					return Function.first;
-
-			return "";
-		}
-
-		uint8_t GetFunctionIDByName(string FunctionName) {
-			if (GlobalFunctions.count(FunctionName) == 0)
-				return 0;
-
-			return GlobalFunctions[FunctionName];
-		}
-
 		vector<IRDevice> GetAvaliableDevices() {
 			NVS Memory(DataEndpoint_t::NVSArea);
 
@@ -592,6 +775,39 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			return Result;
+		}
+
+		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value) {
+			uint16_t 	Status 		= 0x0;
+			uint8_t		DeviceType	= 0x0;
+
+			for (auto& IRDeviceCacheItem : IRDevicesCache)
+				if (IRDeviceCacheItem.DeviceID == DeviceID)
+				{
+					Status 		= IRDeviceCacheItem.Status;
+					DeviceType 	= IRDeviceCacheItem.DeviceType;
+					break;
+				}
+
+			if (DeviceType == 0x0) return make_pair(false, Status);
+
+			uint16_t NewStatus = DevicesHelper.GetDeviceForType(DeviceType)->UpdateStatusForFunction(Status, FunctionID, Value);
+
+			if (Status == NewStatus)
+				return make_pair(false, Status);
+
+			StatusSave(DeviceID, NewStatus);
+
+			return make_pair(true, NewStatus);
+		}
+
+		void StatusSave(string DeviceID, uint16_t Status) {
+			for (int i = 0; i< IRDevicesCache.size(); i++)
+				if (IRDevicesCache[i].DeviceID == DeviceID)
+				{
+					IRDevicesCache[i].Status = Status;
+					break;
+				}
 		}
 
 		private:
@@ -643,7 +859,7 @@ class DataRemote_t : public DataEndpoint_t {
 			uint8_t SaveFunction(string UUID, string Function, string Item, uint8_t Index, uint8_t DeviceType) {
 				NVS Memory(DataEndpoint_t::NVSArea);
 
-				if (!CheckIsValidKeyForType(DeviceType, Function))
+				if (!DevicesHelper.IsValidKeyForType(DeviceType, Function))
 					return static_cast<uint8_t>(DataRemote_t::Error::UnsupportedFunction);
 
 				string ValueName = UUID + "_" + Function;
@@ -700,101 +916,6 @@ class DataRemote_t : public DataEndpoint_t {
 				}
 
 				return make_pair(true, IRLib(Item));
-			}
-
-			map<string, uint8_t> GlobalFunctions =
-			{
-				{ "power"	, 0x01 }, { "poweron"	, 0x02 }, { "poweroff"	, 0x03 	},
-				{ "mode"	, 0x04 },
-				{ "mute"	, 0x05 }, { "volup"		, 0x06 }, { "voldown"	, 0x07 	},
-				{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
-				{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
-				{ "swing"	, 0x0A }, { "speed"		, 0x0B },
-				{ "cursor"	, 0x0C },
-				{ "menu"	, 0x0D }
-			};
-
-			// Device types:
-			// 0x00 Не указано / Прочее
-			// 0x01 TV
-			// 0x02 Медиа-центр
-			// 0x03 Light
-			// 0x04 Увлажнитель
-			// 0x05 Очиститель воздуха
-			// 0x06 Робот пылесос
-			// 0x07 Вентилятор
-			// 0xEF Кондиционеры
-
-
-			bool CheckIsValidKeyForType(uint8_t Type, string Key) {
-				vector<string> AvaliableKeys = vector<string>();
-
-				if (Type == 0 || Type == 0x3 || Type == 0x6) {
-					AvaliableKeys.push_back("power");
-					AvaliableKeys.push_back("poweron");
-					AvaliableKeys.push_back("poweroff");
-				}
-
-				if (Type == 0x1) {
-					AvaliableKeys.push_back("power");		// power
-					AvaliableKeys.push_back("poweron");
-					AvaliableKeys.push_back("poweroff");
-
-					AvaliableKeys.push_back("mode");		// mode
-
-					AvaliableKeys.push_back("mute");		// mute
-					AvaliableKeys.push_back("volup");		// volume up
-					AvaliableKeys.push_back("voldown");		// volume down
-
-					AvaliableKeys.push_back("chup");		// channel up
-					AvaliableKeys.push_back("chdown");		// channel down
-
-					AvaliableKeys.push_back("cursor");		// cursor
-					AvaliableKeys.push_back("menu");		// menu
-				}
-
-				if (Type == 0x2) {
-					AvaliableKeys.push_back("power");
-					AvaliableKeys.push_back("poweron");
-					AvaliableKeys.push_back("poweroff");
-
-					AvaliableKeys.push_back("mute");
-					AvaliableKeys.push_back("volup");
-					AvaliableKeys.push_back("voldown");
-				}
-
-				if (Type == 0x7) {
-					AvaliableKeys.push_back("power");
-					AvaliableKeys.push_back("poweron");
-					AvaliableKeys.push_back("poweroff");
-
-					AvaliableKeys.push_back("swing");
-					AvaliableKeys.push_back("mode");
-				}
-
-				if (Type == 0x5) {
-					AvaliableKeys.push_back("power");
-					AvaliableKeys.push_back("poweron");
-					AvaliableKeys.push_back("poweroff");
-
-					AvaliableKeys.push_back("swing");
-					AvaliableKeys.push_back("mode");
-					AvaliableKeys.push_back("speed");
-				}
-
-				if (Type == 0x4) {
-					AvaliableKeys.push_back("power");
-					AvaliableKeys.push_back("poweron");
-					AvaliableKeys.push_back("poweroff");
-
-					AvaliableKeys.push_back("swing");
-					AvaliableKeys.push_back("mode");
-				}
-
-				if(std::find(AvaliableKeys.begin(), AvaliableKeys.end(), Converter::ToLower(Key)) != AvaliableKeys.end())
-				    return true;
-				else
-					return false;
 			}
 };
 
