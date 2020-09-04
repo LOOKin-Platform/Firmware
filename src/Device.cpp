@@ -86,6 +86,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			if (Query.CheckURLPart("currentvoltage"	, 1))	Result.Body = CurrentVoltageToString();
 			if (Query.CheckURLPart("firmware"		, 1))	Result.Body = FirmwareVersionToString();
 			if (Query.CheckURLPart("temperature"	, 1))	Result.Body = TemperatureToString();
+			if (Query.CheckURLPart("homekit"		, 1))	Result.Body = HomeKitToString();
 			if (Query.CheckURLPart("restart"		, 1))	esp_restart();
 
 			if ((Query.CheckURLPart("sensormode", 1)) && Device.Type.Hex == Settings.Devices.Remote)
@@ -171,7 +172,8 @@ JSON Device_t::RootInfo() {
 		make_pair("PowerMode"		, PowerModeToString()),
 		make_pair("CurrentVoltage"	, CurrentVoltageToString()),
 		make_pair("Firmware"		, FirmwareVersionToString()),
-		make_pair("Temperature"		, TemperatureToString())
+		make_pair("Temperature"		, TemperatureToString()),
+		make_pair("HomeKit"			, HomeKitToString())
 	}));
 
 	if (Device.Type.Hex == Settings.Devices.Remote)
@@ -408,4 +410,12 @@ string Device_t::SensorModeToString() {
 
 string Device_t::ModelToString() {
 	return Converter::ToString((Settings.eFuse.Model == 0) ? 1 : Settings.eFuse.Model);
+}
+
+string Device_t::HomeKitToString() {
+	#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE)
+	return "0";
+	#endif
+
+	return "1";
 }

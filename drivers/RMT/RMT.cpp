@@ -345,6 +345,15 @@ void IRAM_ATTR RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
 	if (OutputItems.back().duration0 < 30000 || OutputItems.back().duration1 < 30000)
 		TXAddItem(-Settings.SensorsConfig.IR.SignalEndingLen);
 
+	/*
+	for (auto& Item : OutputItems) {
+		string Output = (Item.level0 ? "+" : "-") + Converter::ToString<uint16_t>(Item.duration0);
+		ESP_LOGE("ITEM", "%s", Output.c_str());
+		Output = (Item.level1 ? "+" : "-") + Converter::ToString<uint16_t>(Item.duration1);
+		ESP_LOGE("ITEM", "%s", Output.c_str());
+	}
+	*/
+
 	::rmt_fill_tx_items(Channel, &OutputItems[0], OutputItems.size(), 0);
 	::rmt_tx_start(Channel, true);
 	::rmt_wait_tx_done(Channel, portMAX_DELAY);

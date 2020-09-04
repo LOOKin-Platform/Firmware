@@ -113,6 +113,7 @@ class Device_t {
 		string 				TemperatureToString();
 		string 				CurrentVoltageToString();
 		string				SensorModeToString();
+		string				HomeKitToString();
 };
 
 #endif

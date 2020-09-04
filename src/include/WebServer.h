@@ -36,11 +36,9 @@ class WebServer_t {
 				enum CODE		{ OK, INVALID, ERROR, IGNORE };
 				enum TYPE 		{ PLAIN, JSON, HTML };
 
-				string 			Body;
-				CODE 			ResponseCode;
-				TYPE			ContentType;
-
-				Response();
+				string 			Body 			= "";
+				CODE 			ResponseCode	= CODE::OK;
+				TYPE			ContentType		= TYPE::JSON ;
 
 				void 			SetSuccess();
 				void 			SetFail();

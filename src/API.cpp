@@ -18,7 +18,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 	if (Query.GetURLPartsCount() == 0) {
 		map<string,string> Params = Query.GetParams();
 
-		if (!Params.count("summary")) {
 			if (WiFi.GetMode() == WIFI_MODE_STA_STR) {
 				Response.ResponseCode	= WebServer_t::Response::CODE::OK;
 				Response.ContentType	= WebServer_t::Response::TYPE::PLAIN;
@@ -31,91 +30,46 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 			}
 
 			return;
+	}
+
+	if (Query.GetURLPartsCount() == 1 && Query.CheckURLPart("summary", 0))
+	{
+		ESP_LOGE("SUMMARY", ">>");
+
+		Response.Body = "{ \"Device\":" + Device.RootInfo().ToString() +  ",";
+		Response.Body += "\"Network\":" + Network.RootInfo().ToString() + ",";
+		Response.Body += "\"Automation\":" + Automation.RootInfo().ToString() + ",";
+		Response.Body += "\"Storage\" : { \"Version\" : \"" + Storage.VersionToString() + "\"" + "}, ";
+		Response.Body += "\"Sensors\" : [";
+		for (int i = 0; i < Sensors.size(); i++) {
+			Response.Body += " { \"" + Sensors[i]->Name + "\":" + Sensors[i]->EchoSummaryJSON() + "}";
+			if (i < Sensors.size() - 1)
+				Response.Body += ",";
 		}
-		else {
-			string MQTTChunkHash = "";
-			uint16_t ChunkPartID = 0;
+		Response.Body += "], ";
 
-			string ResultData = "{ \"Device\":";
-			ResultData += Device.RootInfo().ToString() + ",";
+		Response.Body += "\"Commands\" : [";
 
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				httpd_resp_set_type	(Query.GetRequest(), HTTPD_TYPE_JSON);
+		for (int i = 0; i < Commands.size(); i++)
+		{
+			Response.Body += "\"" + Commands[i]->Name + "\"";
 
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
-			else {
-				MQTTChunkHash = MQTT.StartChunk(Query.MQTTMessageID);
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
-			}
-
-			ResultData = "\"Network\" : ";
-			ResultData += Network.RootInfo().ToString() + ",";
-
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
-			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
-
-			ResultData = "\"Automation\" : ";
-			ResultData += Automation.RootInfo().ToString() + ",";
-
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
-			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
-
-			ResultData = "\"Storage\" : { \"Version\" : \"" + Storage.VersionToString() + "\"" + "}, ";
-
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
-			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
-
-			ResultData = "\"Sensors\" : [";
-			for (int i = 0; i < Sensors.size(); i++) {
-				ResultData += " { \"" + Sensors[i]->Name + "\":" + Sensors[i]->EchoSummaryJSON() + "}";
-				if (i < Sensors.size() - 1)
-					ResultData += ",";
-			}
-			ResultData += "] ,";
-
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
-			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
-
-			ResultData = "\"Commands\" : [";
-			for (int i = 0; i < Commands.size(); i++) {
-				ResultData += "\"" + Commands[i]->Name + "\"";
-
-				if (i < Commands.size() - 1)
-					ResultData += ",";
-			}
-			ResultData += "]";
-			ResultData += "}";
-
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::SendChunk(Query.GetRequest(), ResultData);
-			else
-				MQTT.SendChunk(ResultData, MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
-
-			if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
-				WebServer_t::EndChunk(Query.GetRequest());
-			else
-				MQTT.EndChunk(MQTTChunkHash, Query.MQTTMessageID);
-
-			Response.ResponseCode = WebServer_t::Response::CODE::IGNORE;
-			/*
-			Result += "\"Log\" : ";
-			Log::HandleHTTPRequest(Response, Type, { }, Params);
-			Result += Response.Body + "";
-
-			Result += "}";
-			*/
-
-			return;
+			if (i < Commands.size() - 1)
+				Response.Body += ",";
 		}
+
+		Response.Body += "]";
+		/*
+		Result += "\"Log\" : ";
+		Log::HandleHTTPRequest(Response, Type, { }, Params);
+		Result += Response.Body + "";
+		Result += "}";
+		*/
+
+		Response.Body += "}";
+
+		Response.ResponseCode	= WebServer_t::Response::CODE::OK;
+		//Response.ContentType	= WebServer_t::Response::TYPE::JSON;
 
 		return;
 	}
