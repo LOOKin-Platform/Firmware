@@ -71,6 +71,8 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 		Response.ResponseCode	= WebServer_t::Response::CODE::OK;
 		//Response.ContentType	= WebServer_t::Response::TYPE::JSON;
 
+		ESP_LOGE("SUMMARY", "<<");
+
 		return;
 	}
 

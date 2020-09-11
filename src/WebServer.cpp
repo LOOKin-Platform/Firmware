@@ -35,6 +35,7 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 
 	Query_t Query(Request, QueryType::GET);
 	API::Handle(Response, Query);
+
 	SendHTTPData(Response, Request);
 
 	Query.Cleanup();
@@ -91,8 +92,9 @@ esp_err_t WebServer_t::PATCHHandler(httpd_req_t *Request) {
 void WebServer_t::SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request) {
 	if (Response.ResponseCode != WebServer_t::Response::CODE::IGNORE)
 	{
+		ESP_LOGE("REQUEST", "%s", Response.Body.c_str());
 		WebServer_t::SetHeaders(Response, Request);
-		httpd_resp_send(Request, Response.Body.c_str(), HTTPD_RESP_USE_STRLEN);
+		esp_err_t Err = httpd_resp_send(Request, Response.Body.c_str(), Response.Body.size());
 	}
 }
 
@@ -121,7 +123,7 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 }
 
 httpd_uri_t uri_root_get 			= { .uri = "/"				, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
-httpd_uri_t uri_summary_get 		= { .uri = "/summary*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
+httpd_uri_t uri_summary_get 		= { .uri = "/summary"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
 httpd_uri_t uri_homekit_post 		= { .uri = "/homekit*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
 
 httpd_uri_t uri_device_get 			= { .uri = "/device*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
@@ -230,7 +232,7 @@ void WebServer_t::RegisterHandlers(httpd_handle_t ServerHandle) {
 
 void WebServer_t::UnregisterHandlers(httpd_handle_t ServerHandle) {
 	httpd_unregister_uri_handler(ServerHandle, "/"				, HTTP_GET);
-	httpd_unregister_uri_handler(ServerHandle, "/summary*"		, HTTP_GET);
+	httpd_unregister_uri_handler(ServerHandle, "/summary"		, HTTP_GET);
 	httpd_unregister_uri_handler(ServerHandle, "/homekit*"		, HTTP_POST);
 
 	httpd_unregister_uri_handler(ServerHandle, "/device*"		, HTTP_GET);
