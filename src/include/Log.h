@@ -134,6 +134,11 @@ class Log {
 					IRExecuted		= 0x1507
 				};
 
+				enum Misc {
+					// События Ho 0xXF00...0xXFFF
+					HomeKitIdentify = 0x1F00,
+				};
+
 				// События автоматизации 0xX600...0xX6FF
 
 				// События Storage 0xX700...0xX7FF

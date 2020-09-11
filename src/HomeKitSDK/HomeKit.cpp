@@ -94,6 +94,7 @@ void HomeKit::ResetData() {
  */
 int HomeKit::BridgeIdentify(hap_acc_t *ha) {
     ESP_LOGI(Tag, "Bridge identified");
+    Log::Add(Log::Events::Misc::HomeKitIdentify);
     return HAP_SUCCESS;
 }
 

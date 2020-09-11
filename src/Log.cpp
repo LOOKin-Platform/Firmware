@@ -284,6 +284,8 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
 		case Events::Sensors ::IRReceived	:
 			Execute(60, 0, 0, STROBE, 2);	break;
 
+		case Events::Misc::HomeKitIdentify	: Execute(255	, 255	, 0		, BLINKING	, 3);	break;
+
 		default: break;
 	}
 }
