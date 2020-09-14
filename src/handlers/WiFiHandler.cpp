@@ -68,6 +68,7 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 
 			if (WiFi_t::GetAPClientsCount() == 0) {
 				Wireless.StopWiFi();
+				Network.WiFiScannedList = WiFi.Scan();
 				Wireless.StartInterfaces();
 			}
 			else
