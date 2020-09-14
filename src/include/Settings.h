@@ -36,6 +36,7 @@ class Settings_t {
 
 			const string					SyncTime		= BaseURL + "/time";
 			const string					Ping			= BaseURL + "/ping";
+			const string					FirmwareCheck	= BaseURL + "/firmwares/check";
 			const string					GetACCode		= BaseURL + "/ac/codesets";
 
 		} ServerUrls;
@@ -252,7 +253,7 @@ class Settings_t {
 				const uint16_t				Threshold 		= 9500; 	// Максимальное значени интервала, которое принимается в обработке
 				const uint16_t				SignalEndingLen	= 45000;	// Задержка, добавляемая в конец сигнала
 				const uint16_t				DetectionJoinU	= 40000; 	// Временной интервал в течении которого считается, что сигнал 1 (в микросекундах)
-				const uint32_t				SignalsMaxDelay	= 250000;
+				const uint32_t				SignalsMaxDelay	= 300000;
 			} IR;
 
 			struct {
@@ -285,7 +286,12 @@ class Settings_t {
 			struct IR_t {
 				gpio_num_t			ReceiverGPIO38	= GPIO_NUM_0;
 				gpio_num_t			ReceiverGPIO56	= GPIO_NUM_0;
+
 				gpio_num_t			SenderGPIO		= GPIO_NUM_0;
+
+				vector<gpio_num_t>	SenderGPIOs		= vector<gpio_num_t>();
+				gpio_num_t			SenderGPIOExt	= GPIO_NUM_0;
+
 			};
 
 			struct Temperature_t {
