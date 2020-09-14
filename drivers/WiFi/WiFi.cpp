@@ -131,8 +131,6 @@ void WiFi_t::Init() {
 	    esp_netif_create_default_wifi_ap();
 #endif
 
-
-
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 			abort();

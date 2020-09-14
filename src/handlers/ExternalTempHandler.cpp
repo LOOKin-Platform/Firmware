@@ -1,9 +1,5 @@
-/*
- * DS18B20test.c
- *
- *  Created on: Mar 15, 2020
- *      Author: thecashit
- */
+#ifndef EXTERNALTEMP_HANDLER
+#define EXTERNALTEMP_HANDLER
 
 #include <inttypes.h>
 
@@ -19,15 +15,31 @@
 #define GPIO_DS18B20_0       (GPIO_NUM_15)
 #define MAX_DEVICES          (8)
 #define DS18B20_RESOLUTION   (DS18B20_RESOLUTION_12_BIT)
-#define SAMPLE_PERIOD        (1000)   // milliseconds
 
-void TempTest(void)
-{
+class ExternalTempHandler {
+	public:
+		static void Init();
+		static void Pool();
+	private:
+		static bool IsInited;
+};
+
+void IRAM_ATTR ExternalTempHandler::Pool() {
+	if (Time::Uptime() % 10 != 5 && Time::Uptime() % 10 != 0)
+		return;
+
+	PowerManagement::AddLock("ExternalTempHandler");
+
     // Create a 1-Wire bus, using the RMT timeslot driver
     OneWireBus * owb;
-    owb_rmt_driver_info rmt_driver_info;
-    owb = owb_rmt_initialize(&rmt_driver_info, GPIO_DS18B20_0, RMT_CHANNEL_1, RMT_CHANNEL_0);
+//    owb_rmt_driver_info rmt_driver_info;
+//    owb = owb_rmt_initialize(&rmt_driver_info, GPIO_DS18B20_0, RMT_CHANNEL_6, RMT_CHANNEL_7);
+
+    owb_gpio_driver_info gpio_driver_info;
+    owb = owb_gpio_initialize(&gpio_driver_info, GPIO_DS18B20_0);
+
     owb_use_crc(owb, true);  // enable CRC check for ROM code
+
 
     // Find all connected devices
     printf("Find devices:\n");
@@ -93,39 +105,32 @@ void TempTest(void)
     {
         TickType_t last_wake_time = xTaskGetTickCount();
 
-        while (1)
+        last_wake_time = xTaskGetTickCount();
+
+        ds18b20_convert_all(owb);
+
+        // In this application all devices use the same resolution,
+        // so use the first device to determine the delay
+        ds18b20_wait_for_conversion(devices[0]);
+
+        // Read the results immediately after conversion otherwise it may fail
+        // (using printf before reading may take too long)
+        float readings[MAX_DEVICES] = { 0 };
+        DS18B20_ERROR errors[MAX_DEVICES] = {};
+
+        for (int i = 0; i < num_devices; ++i)
         {
-            last_wake_time = xTaskGetTickCount();
+        	errors[i] = ds18b20_read_temp(devices[i], &readings[i]);
+        }
 
-            ds18b20_convert_all(owb);
+        // Print results in a separate loop, after all have been read
+        ESP_LOGE("DS18B20", "Temperature readings (degrees C): sample %d", ++sample_count);
+        for (int i = 0; i < num_devices; ++i)
+        {
+        	if (errors[i] != DS18B20_OK)
+        		++errors_count[i];
 
-            // In this application all devices use the same resolution,
-            // so use the first device to determine the delay
-            ds18b20_wait_for_conversion(devices[0]);
-
-            // Read the results immediately after conversion otherwise it may fail
-            // (using printf before reading may take too long)
-            float readings[MAX_DEVICES] = { 0 };
-            DS18B20_ERROR errors[MAX_DEVICES] = {};
-
-            for (int i = 0; i < num_devices; ++i)
-            {
-                errors[i] = ds18b20_read_temp(devices[i], &readings[i]);
-            }
-
-            // Print results in a separate loop, after all have been read
-            ESP_LOGE("DS18B20", "Temperature readings (degrees C): sample %d", ++sample_count);
-            for (int i = 0; i < num_devices; ++i)
-            {
-                if (errors[i] != DS18B20_OK)
-                {
-                    ++errors_count[i];
-                }
-
-                ESP_LOGE("DS18B20", "  %d: %.1f    %d errors\n", i, readings[i], errors_count[i]);
-            }
-
-            vTaskDelayUntil(&last_wake_time, SAMPLE_PERIOD / portTICK_PERIOD_MS);
+        	ESP_LOGE("DS18B20", "  %d: %.1f    %d errors\n", i, readings[i], errors_count[i]);
         }
     }
 
@@ -136,3 +141,5 @@ void TempTest(void)
     }
     owb_uninitialize(owb);
 }
+
+#endif

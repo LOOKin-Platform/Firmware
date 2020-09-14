@@ -20,8 +20,6 @@
 
 #include "handlers/Pooling.cpp"
 
-//#include "DS18B20test.c"
-
 using namespace std;
 
 extern "C" {

@@ -30,7 +30,9 @@ void OTA::Update(string URL, OTAStarted Started, OTAFileDoesntExist FileDoesntEx
 
 	IsOTAFileExist			= false;
 	IsFileCheckEnded		= false;
-	Started();
+
+	if (Started != NULL)
+		Started();
 
 	PerformUpdate(URL);
 }

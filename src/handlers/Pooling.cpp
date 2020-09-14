@@ -9,6 +9,7 @@
 #include "MQTTPeriodicHandler.cpp"
 #include "PingPeriodicHandler.cpp"
 #include "NetworkMapHandler.cpp"
+#include "ExternalTempHandler.cpp"
 
 class Pooling_t {
 	public:
@@ -36,6 +37,9 @@ class Pooling_t {
 				MQTTPeriodicHandler		::Pool();
 				PingPeriodicHandler		::Pool();
 				NetworkMapHandler		::Pool();
+
+				if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
+					ExternalTempHandler	::Pool();
 
 				FreeRTOS::Sleep(Settings.Pooling.Interval);
 			}
