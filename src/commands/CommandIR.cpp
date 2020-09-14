@@ -252,10 +252,10 @@ class CommandIR_t : public Command_t {
 
 				uint16_t Frequency = 38000;
 
-				char *FrequencyDelimeterPointer = strstr(StringOperand, ":");
+				char *FrequencyDelimeterPointer = strstr(StringOperand, ";");
 				if (FrequencyDelimeterPointer != NULL) {
 					size_t FrequencyDelimeterPos =  FrequencyDelimeterPointer - StringOperand;
-					Frequency = Converter::ToUint16(string(Frequency, FrequencyDelimeterPos));
+					Frequency = Converter::ToUint16(string(StringOperand, FrequencyDelimeterPos));
 					StringOperand += FrequencyDelimeterPos + 1;
 				}
 
@@ -264,8 +264,8 @@ class CommandIR_t : public Command_t {
 
 				IRLib *IRSignal = new IRLib();
 
-				string 	SignalItem = "";
-				char	SignalChar[1];
+				string 		SignalItem 	= "";
+				char		SignalChar[1];
 
 				for (int i = 0; i < strlen(StringOperand); i++) {
 					memcpy(SignalChar, StringOperand + i, 1);
@@ -308,14 +308,22 @@ class CommandIR_t : public Command_t {
 		}
 
 		void TXSend(uint16_t Frequency) {
-			if ( RMT::TXItemsCount() == 0)
+			if (RMT::TXItemsCount() == 0)
 				return;
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
 				RMT::UnsetRXChannel(RMT_CHANNEL_0);
 
 			InOperation = true;
-			RMT::TXSend(TXChannel, Frequency);
+
+			vector<gpio_num_t> GPIO = Settings.GPIOData.GetCurrent().IR.SenderGPIOs;
+
+			ESP_LOGE("MODEL", "%d, GPIO size %d FREQ %d", Settings.eFuse.Model, GPIO.size(), Frequency);
+
+			if (Settings.GPIOData.GetCurrent().IR.SenderGPIOExt != GPIO_NUM_0)
+				GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
+
+			RMT::TXSend(GPIO, TXChannel, Frequency);
 			InOperation = false;
 
 			Log::Add(Log::Events::Commands::IRExecuted);

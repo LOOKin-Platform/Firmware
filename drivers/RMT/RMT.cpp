@@ -10,7 +10,9 @@ static char tag[] = "RMT";
 
 bool 									RMT::IsInited = false;
 map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap = {};
-vector<rmt_item32_t> 					RMT::OutputItems = {};
+
+rmt_item32_t 							RMT::OutputItems[400] = { 0 };
+uint16_t								RMT::OutputItemsSize = 0;
 
 /**
  * @brief Firstly init RMT driver
@@ -20,8 +22,6 @@ vector<rmt_item32_t> 					RMT::OutputItems = {};
 void RMT::Init() {
 	if (IsInited)
 		return;
-
-	OutputItems.reserve(200);
 
 	IsInited = true;
 }
@@ -61,6 +61,8 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;
 	ChannelsMap[Channel].CallbackBody 	= CallbackBody;
 	ChannelsMap[Channel].CallbackEnd 	= CallbackEnd;
+
+	::rmt_memory_rw_rst(Channel);
 
 	//rtc_gpio_isolate(Pin);
 }
@@ -115,10 +117,9 @@ void RMT::UnsetRXChannel(rmt_channel_t Channel) {
 void RMT::RXTask(void *TaskData) {
 	uint32_t ChannelNum = (uint32_t)TaskData;
 
-    if ((ChannelNum < static_cast<int>(rmt_channel_t::RMT_CHANNEL_0)) ||
-    		(ChannelNum > static_cast<int>(rmt_channel_t::RMT_CHANNEL_0))) {
-    		ESP_LOGE(tag, "Channel number out of range");
-    		return;
+    if (ChannelNum != RMT_CHANNEL_0) {
+    	ESP_LOGE(tag, "Channel number out of range");
+    	return;
     }
 
     rmt_channel_t Channel = static_cast<rmt_channel_t>(ChannelNum);
@@ -172,18 +173,18 @@ void RMT::RXTask(void *TaskData) {
  * @param [in] Frequent output Frequent for IR signal.
  */
 
-void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency) {
+void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency) {
 	Init();
 
 	rmt_config_t config;
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = Channel;
-	config.gpio_num                  = Pin; //GPIO_NUM_4
+	config.gpio_num                  = GPIO[0]; //GPIO_NUM_4
 	config.mem_block_num             = 8;
 	config.clk_div                   = 80;
-	config.tx_config.loop_en         = 0;
-	config.tx_config.carrier_en      = 1; //?1
-	config.tx_config.idle_output_en  = 1;
+	config.tx_config.loop_en         = false;
+	config.tx_config.carrier_en      = true;
+	config.tx_config.idle_output_en  = true;
 	config.tx_config.idle_level      = (rmt_idle_level_t)0;
 	config.tx_config.carrier_freq_hz = Frequency;
 	config.tx_config.carrier_level   = (rmt_carrier_level_t)1;
@@ -191,19 +192,17 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 0, 0));
-	//ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASE));
+	//ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_APB));
+
+	for (int i = 1; i < GPIO.size(); i++)
+		if (GPIO[i] != GPIO_NUM_0)
+			rmt_set_pin(Channel, RMT_MODE_TX, GPIO[i]);
 
 	/*
 	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_36);
-	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_39);
-	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_34);
-	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_35);
-	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_9);
-	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_10);
-	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_1);
 	 */
 
-	ChannelsMap[Channel].Pin 			= Pin;
+	ChannelsMap[Channel].Pin 			= GPIO[0];
 	ChannelsMap[Channel].Frequency 		= Frequency;
 
 	 //::rtc_gpio_isolate(Pin);
@@ -218,26 +217,6 @@ void RMT::SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency
 void RMT::UnsetTXChannel(rmt_channel_t Channel) {
 	rmt_tx_stop(Channel);
 	rmt_driver_uninstall(Channel);
-}
-
-/**
- * @brief Set TX channel new frequency.
- *
- * @param [in] Pin The GPIO pin on which the signal is sent/received.
- * @param [in] Channel The RMT channel to work with.
- * @param [in] Frequent output Frequent for IR signal.
- */
-
-void RMT::TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency) {
-	if (ChannelsMap.count(Channel) > 0) {
-		if (Frequency != ChannelsMap[Channel].Frequency) {
-			if (ChannelsMap[Channel].Pin != GPIO_NUM_0) {
-				rmt_tx_stop(Channel);
-				rmt_driver_uninstall(Channel);
-				RMT::SetTXChannel(ChannelsMap[Channel].Pin, Channel, Frequency);
-			}
-		}
-	}
 }
 
 /**
@@ -266,7 +245,7 @@ void IRAM_ATTR RMT::TXAddItem(int32_t Bit) {
 void IRAM_ATTR RMT::TXAddItemExact(int32_t Bit) {
 	if (Bit == 0) return;
 
-	if (OutputItems.size() == 0 || (OutputItems.back()).duration1 != 0)
+	if (OutputItemsSize == 0 || (OutputItemsSize > 0 && OutputItems[OutputItemsSize - 1].duration1 != 0))
 	{
 		rmt_item32_t Item;
 		Item.level0 	= (Bit > 0 ) ? 1 : 0 ;
@@ -274,12 +253,14 @@ void IRAM_ATTR RMT::TXAddItemExact(int32_t Bit) {
 		Item.level1 	= 0;
 		Item.duration1 	= 0;
 
-		OutputItems.push_back(Item);
+		OutputItems[OutputItemsSize] = Item;
+
+		OutputItemsSize++;
 	}
 	else
 	{
-		OutputItems.back().level1	= (Bit > 0 ) ? 1 : 0 ;
-		OutputItems.back().duration1= abs(Bit);
+		OutputItems[OutputItemsSize - 1].level1	= (Bit > 0 ) ? 1 : 0 ;
+		OutputItems[OutputItemsSize - 1].duration1= abs(Bit);
 	}
 }
 
@@ -301,8 +282,8 @@ void IRAM_ATTR RMT::TXSetItems(vector<int32_t> Items) {
  * @brief Clear any previously written level/duration pairs that have not been sent.
  */
 void RMT::TXClear() {
-	OutputItems.clear();
-	OutputItems.reserve(200);
+	OutputItems[0]  = {0};
+	OutputItemsSize = 0;
 }
 
 /**
@@ -312,10 +293,10 @@ void RMT::TXClear() {
  *
  */
 int16_t RMT::TXItemsCount() {
-	int16_t ItemsCount = OutputItems.size() * 2;
+	int16_t ItemsCount = OutputItemsSize * 2;
 
 	if (ItemsCount > 0)
-		if (OutputItems[OutputItems.size()-1].duration1 == 0 && OutputItems[OutputItems.size()-1].level1)
+		if (OutputItems[OutputItemsSize - 1].duration1 == 0 && OutputItems[OutputItemsSize - 1].level1)
 			ItemsCount--;
 
 	return ItemsCount;
@@ -332,35 +313,43 @@ int16_t RMT::TXItemsCount() {
  *
  */
 
-void IRAM_ATTR RMT::TXSend(rmt_channel_t Channel, uint16_t Frequency) {
-	if (Settings.GPIOData.GetCurrent().IR.SenderGPIO == GPIO_NUM_0)
+void IRAM_ATTR RMT::TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency) {
+	if (GPIO.size() == 0)
+		return;
+
+	if (GPIO[0] == GPIO_NUM_0)
 		return;
 
 	PowerManagement::AddLock("RMTSend");
 
-	SetTXChannel(Settings.GPIOData.GetCurrent().IR.SenderGPIO, Channel, Frequency);
+	SetTXChannel(GPIO, Channel, Frequency);
 
-	if (OutputItems.size() == 0) return;
+	if (OutputItems == 0) return;
 
-	if (OutputItems.back().duration0 < 30000 || OutputItems.back().duration1 < 30000)
+	if (OutputItems[OutputItemsSize - 1].duration0 < 30000 || OutputItems[OutputItemsSize - 1].duration1 < 30000)
 		TXAddItem(-Settings.SensorsConfig.IR.SignalEndingLen);
 
+	OutputItems[OutputItemsSize++] = { 0 };
+
 	/*
-	for (auto& Item : OutputItems) {
-		string Output = (Item.level0 ? "+" : "-") + Converter::ToString<uint16_t>(Item.duration0);
+	for (int i = 0; i < OutputItemsSize; i++) {
+		string Output = (OutputItems[i].level0 ? "+" : "-") + Converter::ToString<uint16_t>(OutputItems[i].duration0);
 		ESP_LOGE("ITEM", "%s", Output.c_str());
-		Output = (Item.level1 ? "+" : "-") + Converter::ToString<uint16_t>(Item.duration1);
+		Output = (OutputItems[i].level1 ? "+" : "-") + Converter::ToString<uint16_t>(OutputItems[i].duration1);
 		ESP_LOGE("ITEM", "%s", Output.c_str());
 	}
 	*/
 
-	::rmt_fill_tx_items(Channel, &OutputItems[0], OutputItems.size(), 0);
-	::rmt_tx_start(Channel, true);
-	::rmt_wait_tx_done(Channel, portMAX_DELAY);
+	rmt_write_items(Channel, OutputItems,  OutputItemsSize, true);
 
-	OutputItems.clear();
+    //::rmt_fill_tx_items(Channel, morse_esp, sizeof(morse_esp) / sizeof(morse_esp[0]), 0);
+	//::rmt_fill_tx_items(Channel, &OutputItems[0], OutputItems.size(), 0);
+	//::rmt_tx_start(Channel, true);
+	//::rmt_wait_tx_done(Channel, portMAX_DELAY);
 
 	UnsetTXChannel(Channel);
+	TXClear();
+
 	PowerManagement::ReleaseLock("RMTSend");
 }
 

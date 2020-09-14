@@ -53,10 +53,9 @@ class RMT {
 		static void		ReceiveStop (rmt_channel_t Channel);
 		static void		UnsetRXChannel(rmt_channel_t Channel);
 
-		static void		SetTXChannel(gpio_num_t Pin, rmt_channel_t Channel, uint16_t Frequency);
+		static void		SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency);
 		static void		UnsetTXChannel(rmt_channel_t Channel);
 
-		static void		TXChangeFrequency(rmt_channel_t Channel, uint16_t Frequency);
 		static void		TXAddItem(int32_t);
 		static void		TXAddItemExact(int32_t);
 		static void		TXSetItems(vector<int32_t>);
@@ -64,13 +63,14 @@ class RMT {
 
 		static int16_t	TXItemsCount();
 
-		static void		TXSend(rmt_channel_t Channel, uint16_t Frequency = 0);
+		static void		TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency = 0);
 
 		static int32_t	PrepareBit(bool, uint32_t);
 
 		static map<rmt_channel_t, IRChannelInfo> ChannelsMap;
 
-		static vector<rmt_item32_t> OutputItems;
+		static rmt_item32_t 		OutputItems[400];
+		static uint16_t				OutputItemsSize;
 	private:
 		static bool 				IsInited;
 
