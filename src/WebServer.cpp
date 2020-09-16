@@ -153,8 +153,8 @@ httpd_uri_t uri_commands_post 		= { .uri = "/commands*"		, .method = HTTP_POST		
 
 httpd_uri_t uri_log_get 			= { .uri = "/log*"			, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
 
-void WebServer_t::Start() {
-	ESP_LOGD(tag, "WebServer -> Start");
+void WebServer_t::HTTPStart() {
+	ESP_LOGD(tag, "HTTPServer -> Start");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
@@ -169,22 +169,31 @@ void WebServer_t::Start() {
     if (httpd_start(&HTTPServerHandle, &config) == ESP_OK) {
     	RegisterHandlers(HTTPServerHandle);
     }
+}
+
+void WebServer_t::HTTPStop() {
+	ESP_LOGD(tag, "HTTPServer -> Stop");
+
+    if (HTTPServerHandle != NULL) {
+        httpd_stop(HTTPServerHandle);
+        HTTPServerHandle = NULL;
+    }
+}
+
+void WebServer_t::UDPStart() {
+	ESP_LOGD(tag, "UDPServer -> Start");
 
 	if (UDPListenerTaskHandle == NULL) {
 		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 3072);
 	}
 }
 
-void WebServer_t::Stop() {
-	ESP_LOGD(tag, "WebServer -> Stop");
-
-    if (HTTPServerHandle != NULL) {
-        httpd_stop(HTTPServerHandle);
-        HTTPServerHandle = NULL;
-    }
+void WebServer_t::UDPStop() {
+	ESP_LOGD(tag, "UDPServer -> Stop");
 
 	UDPServerStopFlag 	= true;
 }
+
 
 void WebServer_t::RegisterHandlers(httpd_handle_t ServerHandle) {
 	ESP_LOGE("RegisterHandlers", "start");

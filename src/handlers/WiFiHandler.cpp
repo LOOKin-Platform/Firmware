@@ -156,7 +156,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	private:
 		esp_err_t apStart() {
 			Log::Add(Log::Events::WiFi::APStart);
-			WebServer.Start();
+			WebServer.HTTPStart();
+			WebServer.UDPStart();
+
 			Wireless.IsFirstWiFiStart = false;
 
 			if (IsConnectedBefore)
@@ -170,7 +172,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t apStop() {
 			Log::Add(Log::Events::WiFi::APStop);
 
-			WebServer.Stop();
+			WebServer.HTTPStop();
+			WebServer.UDPStop();
 
 			Wireless.IsEventDrivenStart = false;
 			return ESP_OK;
@@ -198,7 +201,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
 
-			WebServer.Stop();
+			WebServer.HTTPStop();
+			WebServer.UDPStop();
+
 			MQTT.Stop();
 
 #if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
@@ -292,8 +297,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 #endif
 
 #if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
-			WebServer.Start();
+			WebServer.HTTPStart();
 #endif
+			WebServer.UDPStart();
 
 			Network.IP = event_sta_got_ip.ip_info;
 

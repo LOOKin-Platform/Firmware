@@ -50,8 +50,11 @@ class WebServer_t {
 		};
 
 		WebServer_t();
-		void 					Start();
-		void 					Stop();
+		void 					HTTPStart();
+		void 					HTTPStop();
+
+		void 					UDPStart();
+		void 					UDPStop();
 
 		void RegisterHandlers	(httpd_handle_t);
 		void UnregisterHandlers	(httpd_handle_t);
