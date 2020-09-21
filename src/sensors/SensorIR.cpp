@@ -148,8 +148,10 @@ class SensorIR_t : public Sensor_t {
 
 			bool IsOdd = false;
 
-			if (SensorIRCurrentMessage.size() <= 10) {
-				if (RepeatCode == "" && SensorIRCurrentMessage.size() > 2) {
+			uint64_t Length = NewSignalEnd - NewSignalStart;
+
+			if (SensorIRCurrentMessage.size() <= 10 && Length < 1500) {
+				if (RepeatCode == "" && SensorIRCurrentMessage.size() >= 2) {
 					for (int i=0; i < SensorIRCurrentMessage.size(); i++)
 						RepeatCode += Converter::ToString(SensorIRCurrentMessage[i]) + ((i != SensorIRCurrentMessage.size() - 1) ? " " : "");
 
@@ -158,7 +160,6 @@ class SensorIR_t : public Sensor_t {
 
 				if (SensorIRCurrentMessage.size() < 2)
 					IsOdd = true;
-
 
 				if (IsOdd) {
 					NewSignalEnd = LastSignalEnd;
