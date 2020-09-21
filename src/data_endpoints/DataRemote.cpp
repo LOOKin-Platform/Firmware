@@ -58,14 +58,14 @@ class DataDeviceLight_t  : public DataDeviceItem_t {
 class DataDeviceHumidifier_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceHumidifier_t() { DeviceTypeID = 0x04; }
-		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x0A}; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04 }; }
 		virtual ~DataDeviceHumidifier_t() {};
 };
 
 class DataDeviceAirPurifier_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceAirPurifier_t() { DeviceTypeID = 0x05; }
-		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x0A, 0x0B}; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x0B}; }
 		virtual ~DataDeviceAirPurifier_t() {};
 };
 
@@ -79,7 +79,7 @@ class DataDeviceRoboCleaner_t  : public DataDeviceItem_t {
 class DataDeviceFan_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceFan_t() { DeviceTypeID = 0x07; }
-		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x0A, 0x0D  }; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x0A, 0x0B  }; }
 		virtual ~DataDeviceFan_t() {};
 };
 
@@ -161,7 +161,6 @@ class DataDevice_t {
 			{ "power"	, 0x01 }, { "poweron"	, 0x02 }, { "poweroff"	, 0x03 	},
 			{ "mode"	, 0x04 },
 			{ "mute"	, 0x05 }, { "volup"		, 0x06 }, { "voldown"	, 0x07 	},
-			{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
 			{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
 			{ "swing"	, 0x0A }, { "speed"		, 0x0B },
 			{ "cursor"	, 0x0C },

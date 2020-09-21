@@ -8,11 +8,13 @@
 
 static char tag[] = "RMT";
 
-bool 									RMT::IsInited = false;
-map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap = {};
+bool 									RMT::IsInited 			= false;
+map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap 		= {};
 
-rmt_item32_t 							RMT::OutputItems[400] = { 0 };
-uint16_t								RMT::OutputItemsSize = 0;
+rmt_item32_t 							RMT::OutputItems[400] 	= { 0 };
+uint16_t								RMT::OutputItemsSize 	= 0;
+
+QueueHandle_t 							RMT::RXReceivedTimeQueue= FreeRTOS::Queue::Create(6, sizeof( uint64_t ));
 
 /**
  * @brief Firstly init RMT driver
@@ -56,6 +58,8 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 2500, 0));
 	ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_REF));
+
+	rmt_set_rx_end_callback(&RMT::RXCompleteCallback);
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;
@@ -112,6 +116,16 @@ void RMT::ReceiveStop(rmt_channel_t Channel) {
 void RMT::UnsetRXChannel(rmt_channel_t Channel) {
 	ReceiveStop(Channel);
 	rmt_driver_uninstall(Channel);
+}
+
+
+void IRAM_ATTR RMT::RXCompleteCallback() {
+	if (FreeRTOS::Queue::IsQueueFullFromISR(RXReceivedTimeQueue)) return;
+
+	RXTimeStruct TimeStruct;
+	TimeStruct.Time = Time::UptimeU() - rmt_item32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
+
+	FreeRTOS::Queue::SendToBackFromISR(RXReceivedTimeQueue, &TimeStruct);
 }
 
 void RMT::RXTask(void *TaskData) {
@@ -366,3 +380,18 @@ int32_t IRAM_ATTR RMT::PrepareBit(bool Bit, uint32_t Interval) {
 	Interval = round(Interval / 10) * 10;
 	return (!Bit) ? Interval : -Interval;
 }
+
+uint64_t RMT::GetSignalEndU() {
+	if (FreeRTOS::Queue::Count(RXReceivedTimeQueue) == 0)
+		return 0;
+
+	RXTimeStruct TimeStruct;
+	FreeRTOS::Queue::Receive(RXReceivedTimeQueue, &TimeStruct);
+
+	return TimeStruct.Time;
+}
+
+void RMT::ClearQueue() {
+	FreeRTOS::Queue::Reset(RXReceivedTimeQueue);
+}
+

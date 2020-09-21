@@ -28,8 +28,6 @@ void IRAM_ATTR ExternalTempHandler::Pool() {
 	if (Time::Uptime() % 10 != 5 && Time::Uptime() % 10 != 0)
 		return;
 
-	PowerManagement::AddLock("ExternalTempHandler");
-
     // Create a 1-Wire bus, using the RMT timeslot driver
     OneWireBus * owb;
 //    owb_rmt_driver_info rmt_driver_info;

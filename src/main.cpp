@@ -83,7 +83,7 @@ void app_main(void) {
 	Data->Init();
 
 	// Remote temporary hack
-	if (Settings.eFuse.Type == 0x81) {
+	if (Settings.eFuse.Type == Settings.Devices.Remote) {
 		GPIO::Setup(GPIO_NUM_22);
 		GPIO::Write(GPIO_NUM_22, 0);
 	}

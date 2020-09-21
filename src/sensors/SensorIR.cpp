@@ -10,12 +10,15 @@
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
 
-static IRLib 	LastSignal;
-static IRLib	FollowingSignal;
-static string	RepeatCode;
+static IRLib 				LastSignal;
+static IRLib				FollowingSignal;
+static string				RepeatCode;
 
-static uint32_t SignalDetectionTime = 0x1;
-static uint64_t	SignalDetectionTimeU= 0;
+static uint64_t 			LastSignalEnd 	= 0;
+static uint64_t				NewSignalStart	= 0;
+static uint64_t 			NewSignalEnd	= 0;
+
+static esp_timer_handle_t 	SignalReceivedTimer = NULL;
 
 class SensorIR_t : public Sensor_t {
 	public:
@@ -31,12 +34,23 @@ class SensorIR_t : public Sensor_t {
 				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
 
+			const esp_timer_create_args_t TimerArgs = {
+				.callback 			= &SignalReceivedCallback,
+				.arg 				= NULL,
+				.dispatch_method 	= ESP_TIMER_TASK,
+				.name				= "SignalReceivedTimer"
+			};
+
+			::esp_timer_create(&TimerArgs, &SignalReceivedTimer);
+
 			SetIsInited(true);
 		}
 
 
 		void Update() override {
 			Values.clear();
+
+			uint64_t SignalDetectionTime = NewSignalEnd;
 
 			if (LastSignal.Protocol == IR_PROTOCOL_RAW && LastSignal.RawData.size() == 0) {
 				SetValue(0, "Primary"		, SignalDetectionTime);
@@ -91,7 +105,7 @@ class SensorIR_t : public Sensor_t {
     				return IRLib::CompareIsIdentical(LastSignal, IRSignal);
     			}
 
-				ESP_LOGE("CommandIR","Can't find Data in memory");
+				ESP_LOGE("SensorIR","Can't find Data in memory");
 				return false;
 			}
 
@@ -107,6 +121,9 @@ class SensorIR_t : public Sensor_t {
 
 
 		static void MessageStart() {
+			NewSignalEnd 	= RMT::GetSignalEndU();
+			NewSignalStart	= NewSignalEnd;
+
 			SensorIRCurrentMessage.clear();
 			RepeatCode = "";
 		};
@@ -121,27 +138,50 @@ class SensorIR_t : public Sensor_t {
 			}
 
 			SensorIRCurrentMessage.push_back(Bit);
+			NewSignalStart -= abs(Bit);
+
 			return true;
 		};
 
 		static void MessageEnd() {
-			if (SensorIRCurrentMessage.size() <= 14) {
-				if (RepeatCode == "" && SensorIRCurrentMessage.size() > 2)
+			IRLib Test = IRLib(SensorIRCurrentMessage);
+
+			bool IsOdd = false;
+
+			if (SensorIRCurrentMessage.size() <= 10) {
+				if (RepeatCode == "" && SensorIRCurrentMessage.size() > 2) {
 					for (int i=0; i < SensorIRCurrentMessage.size(); i++)
 						RepeatCode += Converter::ToString(SensorIRCurrentMessage[i]) + ((i != SensorIRCurrentMessage.size() - 1) ? " " : "");
 
-				return;
+					IsOdd = true;
+				}
+
+				if (SensorIRCurrentMessage.size() < 2)
+					IsOdd = true;
+
+
+				if (IsOdd) {
+					NewSignalEnd = LastSignalEnd;
+					RMT::ClearQueue();
+					return;
+				}
 			}
 
 			RepeatCode = "";
 
-			if ((Time::UptimeU() - SignalDetectionTimeU) < Settings.SensorsConfig.IR.SignalsMaxDelay && SignalDetectionTimeU > 0) {
+			uint64_t Pause = (LastSignalEnd > 0) ? NewSignalStart - LastSignalEnd : 0;
+
+			if (Pause > 0 && Pause < Settings.SensorsConfig.IR.DetectionJoinU) {
 				FollowingSignal = IRLib(SensorIRCurrentMessage);
 
 				if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
 					LastSignal.IsRepeated = true;
-				else
+				else {
+					if (LastSignal.RawData.size() > 0)
+						LastSignal.RawData.back() = -(uint32_t)Pause;
+
 					LastSignal.AppendRawSignal(FollowingSignal);
+				}
 
 				FollowingSignal = IRLib();
 			}
@@ -150,16 +190,23 @@ class SensorIR_t : public Sensor_t {
 
 			Log::Add(Log::Events::Sensors::IRReceived);
 
-			SignalDetectionTime = Time::Unixtime();
-			SignalDetectionTimeU= Time::UptimeU();
-
-			//LastSignal.SetFrequency(FrequencyDetectCalculate());
+			LastSignalEnd = NewSignalEnd;
 
 			SensorIRCurrentMessage.empty();
 
+			::esp_timer_stop(SignalReceivedTimer);
+			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionJoinU);
+		};
+
+		static void SignalReceivedCallback(void *Param) {
+			RMT::ClearQueue();
+
+			if (LastSignal.RawData.size() < 8)
+				return;
+
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
-		};
+		}
 
 		string StorageEncode(map<string,string> Data) override {
 			string Result = "";
@@ -227,3 +274,5 @@ class SensorIR_t : public Sensor_t {
 			return Result;
 		}
 };
+
+

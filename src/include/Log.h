@@ -10,7 +10,6 @@
 using namespace std;
 
 #include <string>
-
 #include <esp_log.h>
 
 #include "JSON.h"
