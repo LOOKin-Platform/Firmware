@@ -150,7 +150,7 @@ class SensorIR_t : public Sensor_t {
 
 			uint64_t Length = NewSignalEnd - NewSignalStart;
 
-			if (SensorIRCurrentMessage.size() <= 10 && Length < 1500) {
+			if (SensorIRCurrentMessage.size() <= Settings.SensorsConfig.IR.MinSignalLen && Length < 1500) {
 				if (RepeatCode == "" && SensorIRCurrentMessage.size() >= 2) {
 					for (int i=0; i < SensorIRCurrentMessage.size(); i++)
 						RepeatCode += Converter::ToString(SensorIRCurrentMessage[i]) + ((i != SensorIRCurrentMessage.size() - 1) ? " " : "");
@@ -189,11 +189,14 @@ class SensorIR_t : public Sensor_t {
 			else
 				LastSignal = IRLib(SensorIRCurrentMessage);
 
-			Log::Add(Log::Events::Sensors::IRReceived);
+			SensorIRCurrentMessage.empty();
+
+			ESP_LOGE("Signal received","!");
+
+			if (LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
+				Log::Add(Log::Events::Sensors::IRReceived);
 
 			LastSignalEnd = NewSignalEnd;
-
-			SensorIRCurrentMessage.empty();
 
 			::esp_timer_stop(SignalReceivedTimer);
 			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionJoinU);
@@ -202,7 +205,7 @@ class SensorIR_t : public Sensor_t {
 		static void SignalReceivedCallback(void *Param) {
 			RMT::ClearQueue();
 
-			if (LastSignal.RawData.size() < 8)
+			if (LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
 				return;
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
