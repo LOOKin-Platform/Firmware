@@ -37,8 +37,6 @@ void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
 	QueryData.Method  		= Type;
 	QueryData.BufferSize 	= 1024;
 
-	//QueryData.POSTData		= POSTData.c_str();
-
 	QueryData.ReadStartedCallback   = ReadStartedCallback;
 	QueryData.ReadBodyCallback      = ReadBodyCallback;
 	QueryData.ReadFinishedCallback  = ReadFinishedCallback;
@@ -149,23 +147,16 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			Config.user_data 	= (void*)&ClientData;
 			Config.event_handler= QueryHandler;
 
-			string URLString 				= ClientData.URL;
+			string URLString= ClientData.URL;
 			Config.url 		= ClientData.URL;
 
 			esp_http_client_handle_t Handle = esp_http_client_init(&Config);
 			esp_http_client_set_header(Handle, "User-Agent", UserAgent.c_str());
 
-
-			/*
-			string POSTData(ClientData.POSTData);
-			ESP_LOGE("ClientData.POSTData", "%s", ClientData.POSTData.c_str());
-
-			if (ClientData.Method == POST && POSTData != "")
-				esp_http_client_set_post_field(Handle, POSTData.c_str(), POSTData.size());
-			 */
+			if (ClientData.POSTData != nullptr && strlen(ClientData.POSTData) > 0 && ClientData.Method == POST)
+				::esp_http_client_set_post_field(Handle, ClientData.POSTData, strlen(ClientData.POSTData));
 
 			esp_err_t err = esp_http_client_perform(Handle);
-
 
 			if (err == ESP_OK) {
 				ESP_LOGI(tag, "Performing HTTP request success");

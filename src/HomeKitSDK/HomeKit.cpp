@@ -1,5 +1,5 @@
-#include "HomeKit.h"
 #include "Custom.cpp"
+#include "HomeKit.h"
 
 const char *Tag = "HAP Bridge";
 
@@ -532,7 +532,7 @@ void HomeKit::FillAccessories() {
 			switch (IRDevice.Type) {
 				case 0x01: // TV
 					hap_serv_t *ServiceTV;
-					ServiceTV = hap_serv_tv_create(false);
+					ServiceTV = hap_serv_tv_create(0);
 					hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
 
 					hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
@@ -590,14 +590,10 @@ void HomeKit::FillAccessories() {
 				case 0xEF: { // AC
 					ACOperand Operand((uint32_t)IRDevice.Status);
 
-					if 		(Operand.Mode == 3) Operand.Mode = 1;
-					else if (Operand.Mode == 1) Operand.Mode = 3;
-					else if (Operand.Mode  > 3) Operand.Mode = 0x0;
-
 					ESP_LOGE("hap_serv_ac_tempmode_create", "(%d, %d)", Operand.Mode, Operand.Temperature);
 
 					hap_serv_t *ServiceAC;
-					ServiceAC = hap_serv_ac_tempmode_create(Operand.Mode, Operand.Mode, Operand.Temperature, Operand.Temperature, 0);
+					ServiceAC = hap_serv_ac_tempmode_create(Operand.ModeToHomeKit(), Operand.ModeToHomeKit(), Operand.Temperature, Operand.Temperature, 0);
 					hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
 					hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
 					hap_serv_set_write_cb(ServiceAC, WriteCallback);
@@ -631,6 +627,9 @@ void HomeKit::FillAccessories() {
 
 void HomeKit::Task(void *) {
 	IsRunning = true;
+
+
+	hap_set_debug_level(HAP_DEBUG_LEVEL_INFO);
 
 	/* Initialize the HAP core */
 	hap_init(HAP_TRANSPORT_WIFI);
@@ -705,4 +704,19 @@ bool HomeKit::IsRecentAction(uint16_t AID) {
 
 	return (Time::UptimeU() - GetLastUpdatedForAID(AID) < 500);
 }
+
+void HomeKit::UpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t *Value) {
+
+	hap_acc_t* Accessory 	= hap_acc_get_by_aid(AID);
+	if (Accessory == NULL) 	return;
+
+	hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
+	if (Service == NULL) 	return;
+
+	hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
+	if (Char == NULL) 		return;
+
+	hap_char_update_val(Char, Value);
+}
+
 

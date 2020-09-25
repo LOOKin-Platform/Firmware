@@ -13,6 +13,14 @@
 #include "WiFi.h"
 #include "Memory.h"
 
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+#include <hap.h>
+#include "hap_apple_chars.h"
+#include "hap_apple_servs.h"
+#include <HomeKit.h>
+
+#endif
+
 using namespace std;
 
 class DataEndpoint_t {

@@ -776,6 +776,34 @@ class DataRemote_t : public DataEndpoint_t {
 			return Result;
 		}
 
+		pair<bool,uint16_t> SetExternalStatusForAC(uint16_t Codeset, uint16_t NewStatus) {
+			uint16_t 	Status 		= 0x0;
+			string 		DeviceID	= "";
+
+			for (auto& IRDeviceCacheItem : IRDevicesCache)
+				if (IRDeviceCacheItem.DeviceType == 0xEF && IRDeviceCacheItem.Extra == Codeset)
+				{
+					Status 		= IRDeviceCacheItem.Status;
+					DeviceID	= IRDeviceCacheItem.DeviceID;
+					break;
+				}
+
+			if (DeviceID == "")
+				return make_pair(false, Status);
+
+			ACOperand ACOperandPrev((uint32_t)Status);
+			ACOperand ACOperandNext((uint32_t)NewStatus);
+
+			StatusSave(DeviceID, NewStatus);
+
+			if (ACOperandPrev.Mode 			!= ACOperandNext.Mode) 			StatusTriggerUpdated(DeviceID, 0xEF, 0xE0, ACOperandNext.Mode);
+			if (ACOperandPrev.Temperature 	!= ACOperandNext.Temperature) 	StatusTriggerUpdated(DeviceID, 0xEF, 0xE1, ACOperandNext.Temperature);
+			if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		StatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
+			if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	StatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
+
+			return make_pair(true, NewStatus);
+		}
+
 		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value) {
 			uint16_t 	Status 		= 0x0;
 			uint8_t		DeviceType	= 0x0;
@@ -797,6 +825,8 @@ class DataRemote_t : public DataEndpoint_t {
 
 			StatusSave(DeviceID, NewStatus);
 
+			StatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value);
+
 			return make_pair(true, NewStatus);
 		}
 
@@ -813,6 +843,73 @@ class DataRemote_t : public DataEndpoint_t {
 					break;
 				}
 		}
+
+		void StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+
+			ESP_LOGE("StatusTriggerUpdated", "FunctionID: %04x Value: %d", FunctionID, Value);
+
+			uint32_t AID = (uint32_t)Converter::UintFromHexString<uint16_t>(DeviceID);
+
+			static hap_val_t HAPValue;
+
+			switch (FunctionID) {
+				case 0xE0: // AC mode
+					HAPValue.u = (uint8_t)ACOperand::ModeToHomeKit(Value);
+
+					ESP_LOGE("HAPValue.u", "%d", HAPValue.u);
+
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_TARGET_HEATING_COOLING_STATE, HAPValue);
+
+					//if (HAPValue.u > 2) HAPValue.u = 2;
+					//UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_CURRENT_HEATING_COOLING_STATE, HAPValue);
+					break;
+				case 0xE1: // AC Temeperature
+					HAPValue.f = (float)Value;
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAPValue);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_TARGET_TEMPERATURE, HAPValue);
+					break;
+				case 0xE2: // Fan Mode
+					HAPValue.f = (float)Value;
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
+
+					HAPValue.u = (Value == 0) ? 1 : 0;
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValue);
+					break;
+				case 0xE3: // Swing Mode
+					HAPValue.u = Value;
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_SWING_MODE, HAPValue);
+
+					break;
+			}
+
+
+			/*
+			 *
+			if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		StatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
+			if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	StatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
+			 *
+			 */
+#endif
+		}
+
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+		void UpdateHomeKitCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
+			hap_acc_t* Accessory 	= hap_acc_get_by_aid(AID);
+			if (Accessory == NULL) 	return;
+
+			ESP_LOGE("1","!");
+
+			hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
+			if (Service == NULL) 	return;
+			ESP_LOGE("2","!");
+			hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
+			if (Char == NULL) 		return;
+			ESP_LOGE("3","!");
+			int ttt = hap_char_update_val(Char, &Value);
+			ESP_LOGE("hap_char_update_val", "%d", ttt);
+		}
+#endif
 
 		private:
 			vector<string>				IRDevicesList		= vector<string>();

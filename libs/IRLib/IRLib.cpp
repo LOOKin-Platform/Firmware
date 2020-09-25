@@ -123,6 +123,65 @@ string IRLib::GetRawSignal() {
 	return SignalOutput;
 }
 
+
+
+
+string IRLib::GetSignalCRC() {
+	pair<uint16_t, uint16_t> ZeroPair 	= make_pair(0,0);
+	pair<uint16_t, uint16_t> OnePair 	= make_pair(0,0);
+
+	string CRC = "";
+
+	uint8_t CRCItem 	= 0;
+	uint8_t BitCounter 	= 0;
+
+	for (int i = 0; i < RawData.size() - 1; i +=2) {
+		uint16_t First = (uint16_t)abs(RawData.at(i));
+		uint16_t Second= (uint16_t)abs(RawData.at(i+1));
+
+		if (First > 2000 || Second > 2000)
+			continue;
+
+		if (ZeroPair.first == 0 && ZeroPair.second == 0)
+		{
+			ZeroPair.first  = First;
+			ZeroPair.second = Second;
+		}
+
+		if (CRCCompareFunction(First, ZeroPair.first) && CRCCompareFunction(Second, ZeroPair.second)) {
+			CRCItem = CRCItem << 1;
+			CRCItem += 0;
+			BitCounter++;
+		}
+		else
+		{
+			if (OnePair.first == 0 && OnePair.second == 0)
+			{
+				OnePair.first  = First;
+				OnePair.second = Second;
+			}
+
+			if (CRCCompareFunction(First, OnePair.first) && CRCCompareFunction(Second, OnePair.second)) {
+				CRCItem = CRCItem << 1;
+				CRCItem += 1;
+				BitCounter++;
+			}
+		}
+
+		if (BitCounter == 4) {
+			CRC += Converter::ToHexString(CRCItem, 1);
+			CRCItem = 0;
+			BitCounter = 0;
+		}
+	}
+
+	if (BitCounter > 0)
+		CRC += Converter::ToHexString(CRCItem, 1);
+
+	return CRC;
+}
+
+
 vector<int32_t> IRLib::GetRawDataForSending() {
 	IRProto *Proto = GetProtocolByID(this->Protocol);
 
@@ -332,4 +391,15 @@ string IRLib::ProntoHexConstruct(bool SpaceDelimeter) {
 		Result += Delimeter + Converter::ToHexString(round(abs(Bit) / USec) , 4);
 
 	return Result;
+}
+
+bool IRLib::CRCCompareFunction(uint16_t Item1, uint16_t Item2) {
+	if (Item1 > 0.70*Item2 && Item1 < 1.3*Item2)
+		return true;
+
+	if (Item2 > 0.70*Item1 && Item2 < 1.3*Item1)
+		return true;
+
+	return false;
+
 }

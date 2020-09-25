@@ -6,6 +6,11 @@
 
 #include <IRLib.h>
 #include <ISR.h>
+#include "HTTPClient.h"
+
+#include "Data.h"
+
+extern DataEndpoint_t *Data;
 
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
@@ -19,6 +24,10 @@ static uint64_t				NewSignalStart	= 0;
 static uint64_t 			NewSignalEnd	= 0;
 
 static esp_timer_handle_t 	SignalReceivedTimer = NULL;
+
+static string 				SensorIRACCheckBuffer 	= "";
+
+static char 				SensorIRSignalCRCBuffer[96] = "\0";
 
 class SensorIR_t : public Sensor_t {
 	public:
@@ -172,7 +181,9 @@ class SensorIR_t : public Sensor_t {
 
 			uint64_t Pause = (LastSignalEnd > 0) ? NewSignalStart - LastSignalEnd : 0;
 
-			if (Pause > 0 && Pause < Settings.SensorsConfig.IR.DetectionJoinU) {
+			//ESP_LOGE("PAUSE", "%d", (uint32_t)Pause);
+
+			if (Pause > 0 && Pause < Settings.SensorsConfig.IR.SignalPauseMax) {
 				FollowingSignal = IRLib(SensorIRCurrentMessage);
 
 				if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
@@ -191,7 +202,7 @@ class SensorIR_t : public Sensor_t {
 
 			SensorIRCurrentMessage.empty();
 
-			ESP_LOGE("Signal received","!");
+			ESP_LOGE("Signal received", "%s", LastSignal.GetRawSignal().c_str()); // fix to prevent freez in /sensors/ir endpoint
 
 			if (LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
 				Log::Add(Log::Events::Sensors::IRReceived);
@@ -199,8 +210,9 @@ class SensorIR_t : public Sensor_t {
 			LastSignalEnd = NewSignalEnd;
 
 			::esp_timer_stop(SignalReceivedTimer);
-			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionJoinU);
+			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);
 		};
+
 
 		static void SignalReceivedCallback(void *Param) {
 			RMT::ClearQueue();
@@ -210,6 +222,78 @@ class SensorIR_t : public Sensor_t {
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
+
+			if (LastSignal.Protocol == 0xFF) {
+				string URL = Settings.ServerUrls.BaseURL + "/ac/match";
+				string CRC = LastSignal.GetSignalCRC();
+
+				if (CRC.size() > 96) CRC = CRC.substr(0, 96);
+
+				ESP_LOGE("CRC", "%s", CRC.c_str());
+
+				HTTPClient::HTTPClientData_t QueryData;
+				strcpy(QueryData.URL, URL.c_str());
+				QueryData.Method 	= QueryType::POST;
+
+				strcpy(SensorIRSignalCRCBuffer, CRC.c_str());
+				QueryData.POSTData = &SensorIRSignalCRCBuffer[0];
+
+				QueryData.ReadStartedCallback 	= &ACCheckStarted;
+				QueryData.ReadBodyCallback 		= &ACCheckBody;
+				QueryData.ReadFinishedCallback	= &ACCheckFinished;
+
+				HTTPClient::Query(QueryData, true);
+			}
+		}
+
+		// AC check signal callbacks
+		static void ACCheckStarted(char IP[]) {
+			SensorIRACCheckBuffer = "";
+		}
+
+		static bool ACCheckBody(char Data[], int DataLen, char IP[]) {
+			SensorIRACCheckBuffer += string(Data, DataLen);
+			return true;
+		};
+
+		static void ACCheckFinished(char IP[]) {
+			if (SensorIRACCheckBuffer.size() == 0)
+				return;
+
+			uint16_t Codeset 	= 0;
+			uint16_t Status		= 0;
+
+			JSON JSONObject(SensorIRACCheckBuffer);
+			SensorIRACCheckBuffer = "";
+
+			if (JSONObject.IsItemExists("codeset")) {
+				string CodesetString = JSONObject.GetItem("codeset");
+				if (CodesetString.size() > 4)
+					CodesetString = CodesetString.substr(0,4);
+
+				Codeset = Converter::UintFromHexString<uint16_t>(CodesetString);
+			}
+
+			if (JSONObject.IsItemExists("status")) {
+				string StatusString = JSONObject.GetItem("status");
+				if (StatusString.size() > 4)
+					StatusString = StatusString.substr(0,4);
+
+				Status = Converter::UintFromHexString<uint16_t>(StatusString);
+			}
+
+			ESP_LOGE("RECEIVED DATA", "%04X %04X", Codeset, Status);
+
+			if (Codeset == 0)
+				return;
+
+			if (Settings.eFuse.Type == Settings.Devices.Remote)
+				((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Status);
+
+		}
+
+		static void ACReadAborted(char IP[]) {
+			SensorIRACCheckBuffer = "";
 		}
 
 		string StorageEncode(map<string,string> Data) override {

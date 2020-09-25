@@ -33,6 +33,8 @@ class HomeKit {
 
 		static void		ResetData();
 
+		static void 	UpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t *Value);
+
 	private:
 		static int 		BridgeIdentify		(hap_acc_t *ha);
 		static int 		AccessoryIdentify	(hap_acc_t *ha);

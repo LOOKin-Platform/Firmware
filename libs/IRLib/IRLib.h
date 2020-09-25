@@ -38,6 +38,7 @@ class IRLib {
 		void 			FillRawData();
 		string 			GetProntoHex(bool SpaceDelimeter = true);
 		string			GetRawSignal();
+		string			GetSignalCRC();
 
 		vector<int32_t>	GetRawDataForSending();
 		vector<int32_t>	GetRawRepeatSignalForSending();
@@ -66,6 +67,8 @@ class IRLib {
 		void 			FillFromProntoHex(const char *);
 
 		string 			ProntoHexConstruct(bool SpaceDelimeter = true);
+
+		bool			CRCCompareFunction(uint16_t Item1, uint16_t Item2);
 
 		static vector<IRProto *> Protocols;
 };

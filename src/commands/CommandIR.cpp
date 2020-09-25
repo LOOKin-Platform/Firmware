@@ -318,8 +318,6 @@ class CommandIR_t : public Command_t {
 
 			vector<gpio_num_t> GPIO = Settings.GPIOData.GetCurrent().IR.SenderGPIOs;
 
-			ESP_LOGE("MODEL", "%d, GPIO size %d FREQ %d", Settings.eFuse.Model, GPIO.size(), Frequency);
-
 			if (Settings.GPIOData.GetCurrent().IR.SenderGPIOExt != GPIO_NUM_0)
 				GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
 

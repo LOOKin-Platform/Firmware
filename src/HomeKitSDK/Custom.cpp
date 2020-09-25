@@ -1,4 +1,7 @@
-#include "HomeKit.h"
+#ifndef HOMEKIT_SDK_CUSTOM
+#define HOMEKIT_SDK_CUSTOM
+
+#include <HomeKit.h>
 
 #define CHAR_ACTIVE_IDENTIFIER_UUID 		"000000E7-0000-1000-8000-0026BB765291"
 #define CHAR_IDENTIFIER_UUID 				"000000E6-0000-1000-8000-0026BB765291"
@@ -418,6 +421,10 @@ hap_serv_t *hap_serv_ac_tempmode_create(uint8_t curr_heating_cooling_state, uint
     if (!hs) {
         return NULL;
     }
+
+    if (curr_heating_cooling_state > 2)
+    	curr_heating_cooling_state = 2;
+
     if (hap_serv_add_char(hs, hap_char_current_heating_cooling_state_create(curr_heating_cooling_state)) != HAP_SUCCESS) {
         goto err;
     }
@@ -463,3 +470,5 @@ err:
     hap_serv_delete(hs);
     return NULL;
 }
+
+#endif
