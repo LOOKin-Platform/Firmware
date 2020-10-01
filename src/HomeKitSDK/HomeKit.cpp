@@ -532,7 +532,7 @@ void HomeKit::FillAccessories() {
 			switch (IRDevice.Type) {
 				case 0x01: // TV
 					hap_serv_t *ServiceTV;
-					ServiceTV = hap_serv_tv_create(0);
+					ServiceTV = hap_serv_tv_create((IRDevice.Status > 0x0FFF) ? 1 : 0);
 					hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
 
 					hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
