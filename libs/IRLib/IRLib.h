@@ -51,6 +51,7 @@ class IRLib {
 		void			AppendRawSignal(IRLib &);
 		int32_t			RawPopItem();
 
+		bool			CompareIsIdenticalWith(IRLib &Signal);
 		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);
 
 	private:

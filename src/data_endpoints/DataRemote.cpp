@@ -30,14 +30,67 @@ class DataDeviceItem_t {
 	public:
 		uint8_t DeviceTypeID = 0;
 		virtual vector<uint8_t> GetAvaliableFunctions() { return vector<uint8_t>(); }
-		virtual uint16_t UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value) { return Status; }
+		virtual pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value,  string FunctionType = "") {
+			return make_pair(Status, Value);
+		}
+
 		virtual ~DataDeviceItem_t() {};
+
+		pair<bool,uint8_t> CheckPowerUpdated(uint8_t FunctionID, uint8_t Value, uint8_t CurrentValue = 0, string FunctionType = "") { // current 0 if off and 1 if on
+			if (FunctionID != 0x1 && FunctionID != 0x2 && FunctionID != 0x3)
+				return make_pair(false, 0);
+
+			if (FunctionType == "") FunctionType = "single";
+			if (CurrentValue > 1) CurrentValue = 1;
+
+			ESP_LOGE("CheckPowerUpdated values", ":");
+			ESP_LOGE("FunctionID", "%d", FunctionID);
+			ESP_LOGE("Value", "%d", Value);
+			ESP_LOGE("CurrentValue", "%d", CurrentValue);
+			ESP_LOGE("FunctionType", "%s", FunctionType.c_str());
+
+			if (FunctionID == 0x1) {
+				if (FunctionType == "single")
+					return make_pair(true, (1-CurrentValue));
+				else if (FunctionType == "toggle")
+					return make_pair(true, (Value == 0) ? 1 : 0);
+			}
+			else if (FunctionID == 0x2)
+				return make_pair(true, 1);
+			else if (FunctionID == 0x3)
+				return make_pair(true, 0);
+
+			return make_pair(false, 0);
+		}
 };
 
 class DataDeviceTV_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceTV_t() { DeviceTypeID = 0x01; }
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0C, 0x0D}; }
+
+		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
+
+			// On/off toggle functions
+			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
+				uint8_t CurrentPower = (uint8_t)(Status >> 12);
+				ESP_LOGE("CurrentPower", "%d", CurrentPower);
+
+				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
+
+				if (Result.first)
+				{
+					uint16_t NewResult = ((uint16_t)Result.second << 12);
+					Status = (Status & 0x0FFF) + NewResult;
+					return make_pair(Status, Result.second);
+				}
+			}
+
+			return make_pair(Status, Value);
+
+		}
+
+
 		virtual ~DataDeviceTV_t() {};
 };
 
@@ -87,7 +140,7 @@ class DataDeviceAC_t : public DataDeviceItem_t {
 	public:
 		DataDeviceAC_t() { DeviceTypeID = 0xEF; }
 
-		uint16_t UpdateStatusForFunction (uint16_t Status, uint8_t FunctionID, uint8_t Value) override
+		pair<uint16_t, uint8_t> UpdateStatusForFunction (uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override
 		{
 			ACOperand Operand((uint32_t)Status);
 
@@ -98,7 +151,7 @@ class DataDeviceAC_t : public DataDeviceItem_t {
 				case 0xE3: Operand.SwingMode	= Value; break;
 			}
 
-			return (uint16_t)((Operand.ToUint32() << 16) >> 16);
+			return make_pair((uint16_t)((Operand.ToUint32() << 16) >> 16), Value);
 		}
 
 		virtual ~DataDeviceAC_t() {};
@@ -168,9 +221,9 @@ class DataDevice_t {
 			// virtual AC functions
 			{ "acmode"	, 0xE0 }, { "actemp", 0xE1 }, { "acfan", 0xE2 }, { "acswing", 0xE3 }
 		};
+
+
 };
-
-
 
 class DataRemote_t : public DataEndpoint_t {
 	public:
@@ -192,12 +245,12 @@ class DataRemote_t : public DataEndpoint_t {
 		const string ResponseItemAlreadyExist 	= "{\"success\" : \"false\", \"Message\" : \"Item already exists\" }";
 
 		struct IRDeviceCacheItem_t {
-			string 		DeviceID 	{ ""  };
-			uint8_t		DeviceType 	{ 0x0 };
-			uint16_t	Status 		{ 0x0 };
-			uint16_t	Extra		{ 0x0 };
-			map<uint8_t, vector<pair<uint8_t, uint8_t>>>
-						IRCache		{ map<uint8_t, vector<pair<uint8_t, uint8_t>>>()};
+			string 			DeviceID 	{ ""  };
+			uint8_t			DeviceType 	{ 0x0 };
+			uint16_t		Status 		{ 0x0 };
+			uint16_t		Extra		{ 0x0 };
+			map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>
+							Functions = map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>();
 
 			bool IsEmpty() { return (DeviceID == "" && DeviceType == 0x0); }
 		};
@@ -316,6 +369,19 @@ class DataRemote_t : public DataEndpoint_t {
 						CacheItem.DeviceType 	= DeviceItem.Type;
 						CacheItem.Status		= DeviceItem.Status;
 						CacheItem.Extra			= DeviceItem.Extra;
+
+						for (auto& FunctionItem : DeviceItem.Functions)
+						{
+							uint8_t 	FunctionID 		= DevicesHelper.FunctionIDByName(FunctionItem.first);
+							string 		FunctionType 	= FunctionItem.second;
+
+							vector<pair<uint8_t,uint32_t>> FunctionsCache = vector<pair<uint8_t,uint32_t>>();
+
+							for (IRLib &Signal : LoadAllFunctionSignals(DeviceItem.UUID, FunctionItem.first, DeviceItem))
+								FunctionsCache.push_back(make_pair(Signal.Protocol, Signal.Uint32Data));
+
+							CacheItem.Functions[FunctionID] = make_pair(FunctionType, FunctionsCache);
+						}
 
 						IRDevicesCache.push_back(CacheItem);
 					}
@@ -804,7 +870,48 @@ class DataRemote_t : public DataEndpoint_t {
 			return make_pair(true, NewStatus);
 		}
 
-		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value) {
+		bool SetExternalStatusByIRCommand(IRLib &Signal) {
+			for (auto& CacheItem : IRDevicesCache) {
+
+				ESP_LOGE("CacheItem", "ID: %s", CacheItem.DeviceID.c_str());
+
+				if (CacheItem.DeviceType == 0xEF) continue;
+
+				for (auto& FunctionItem : CacheItem.Functions) {
+					uint8_t FunctionID 		= FunctionItem.first;
+					string 	FunctionType	= FunctionItem.second.first;
+
+					ESP_LOGE("FunctionItem", "FunctionID: %02X, FunctionType: %s",FunctionID, FunctionType.c_str());
+
+					for (int i = 0 ; i< FunctionItem.second.second.size(); i++) {
+						pair<uint8_t, uint32_t> FunctionSignal = FunctionItem.second.second[i];
+
+						ESP_LOGE("FunctionSignal", "Protocol: %02X, Uint32Operand: %08X", FunctionSignal.first, FunctionSignal.second);
+
+						if (Signal.Protocol == FunctionSignal.first) { // protocol identical
+							if (Signal.Protocol == 0xFF) { // raw signal
+								if (LoadFunctionByIndex(CacheItem.DeviceID, FunctionType, i).second.CompareIsIdenticalWith(Signal))
+								{
+									StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
+									break;
+								}
+							}
+							else if (Signal.Uint32Data == FunctionSignal.second && Signal.Uint32Data != 0x0)
+							{
+								StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
+								break;
+							}
+						}
+					}
+				}
+
+
+			}
+
+			return false;
+		}
+
+		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value, string FunctionType = "") {
 			uint16_t 	Status 		= 0x0;
 			uint8_t		DeviceType	= 0x0;
 
@@ -818,7 +925,13 @@ class DataRemote_t : public DataEndpoint_t {
 
 			if (DeviceType == 0x0) return make_pair(false, Status);
 
-			uint16_t NewStatus = DevicesHelper.GetDeviceForType(DeviceType)->UpdateStatusForFunction(Status, FunctionID, Value);
+			pair<uint16_t,uint8_t> UpdateStatusResult = DevicesHelper.GetDeviceForType(DeviceType)->UpdateStatusForFunction(Status, FunctionID, Value, FunctionType);
+			uint16_t NewStatus = UpdateStatusResult.first;
+			Value = UpdateStatusResult.second;
+
+			ESP_LOGE("OLD STATUS", "%04X", Status);
+			ESP_LOGE("NEW STATUS", "%04X", NewStatus);
+			ESP_LOGE("VALUE", "%01X", Value);
 
 			if (Status == NewStatus)
 				return make_pair(false, Status);
@@ -854,9 +967,15 @@ class DataRemote_t : public DataEndpoint_t {
 			static hap_val_t HAPValue;
 
 			switch (FunctionID) {
+				case 0x01:
+				case 0x02:
+				case 0x03:
+					HAPValue.u = Value;
+					UpdateHomeKitCharValue(AID, "000000D8-0000-1000-8000-0026BB765291", HAP_CHAR_UUID_ACTIVE, HAPValue);
+					break;
+
 				case 0xE0: // AC mode
 					HAPValue.u = (uint8_t)ACOperand::ModeToHomeKit(Value);
-
 					ESP_LOGE("HAPValue.u", "%d", HAPValue.u);
 
 					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_TARGET_HEATING_COOLING_STATE, HAPValue);
@@ -899,7 +1018,6 @@ class DataRemote_t : public DataEndpoint_t {
 			if (Accessory == NULL) 	return;
 
 			ESP_LOGE("1","!");
-
 			hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
 			if (Service == NULL) 	return;
 			ESP_LOGE("2","!");

@@ -123,9 +123,6 @@ string IRLib::GetRawSignal() {
 	return SignalOutput;
 }
 
-
-
-
 string IRLib::GetSignalCRC() {
 	pair<uint16_t, uint16_t> ZeroPair 	= make_pair(0,0);
 	pair<uint16_t, uint16_t> OnePair 	= make_pair(0,0);
@@ -257,6 +254,10 @@ int32_t IRLib::RawPopItem() {
 	RawData.erase(RawData.begin());
 
 	return Item;
+}
+
+bool IRLib::CompareIsIdenticalWith(IRLib &Signal) {
+	return CompareIsIdentical(*this, Signal);
 }
 
 bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {

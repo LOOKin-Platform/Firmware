@@ -223,6 +223,9 @@ class SensorIR_t : public Sensor_t {
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
 
+			if (Settings.eFuse.Type == Settings.Devices.Remote)
+				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(LastSignal);
+
 			if (LastSignal.Protocol == 0xFF) {
 				string URL = Settings.ServerUrls.BaseURL + "/ac/match";
 				string CRC = LastSignal.GetSignalCRC();

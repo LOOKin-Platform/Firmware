@@ -92,10 +92,12 @@ class CommandIR_t : public Command_t {
 
 				RMT::TXSetItems(IRSignal.GetRawDataForSending());
 				TXSend(IRSignal.GetProtocolFrequency());
+				TriggerStateChange(IRSignal);
+
 				return true;
 			}
 
-			if (EventCode == 0xED) {
+			if (EventCode == 0xED) { // repeat signal
 				uint8_t ProtocolID = Converter::ToUint8(StringOperand);
 
 				if (ProtocolID == 0)
@@ -112,10 +114,11 @@ class CommandIR_t : public Command_t {
 
 				RMT::TXSetItems(RepeatedSignal);
 				TXSend(IRSignal.GetProtocolFrequency());
+
 				return true;
 			}
 
-			if (EventCode == 0xEE) {
+			if (EventCode == 0xEE) { // signal from memory
 				uint16_t StorageItemID = Converter::ToUint16(StringOperand);
 
 				if (StorageItemID <= Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) {
@@ -140,6 +143,7 @@ class CommandIR_t : public Command_t {
 
 						RMT::TXSetItems(IRSignal.GetRawDataForSending());
 						TXSend(IRSignal.Frequency);
+						TriggerStateChange(IRSignal);
 
 						return true;
 					}
@@ -190,12 +194,13 @@ class CommandIR_t : public Command_t {
 
 				RMT::TXSetItems(IRSignal->GetRawDataForSending());
 				TXSend(IRSignal->Frequency);
+				TriggerStateChange(*IRSignal);
 
 				delete IRSignal;
 				return true;
 			}
 
-			if (EventCode == 0xFE) { // local saved remote
+			if (EventCode == 0xFE) { // local saved remote in /data
 				if (strlen(StringOperand) != 8 || InOperation)
 					return false;
 
@@ -207,7 +212,8 @@ class CommandIR_t : public Command_t {
 				string  SavedRemoteOperand(StringOperand,8);
 
 				string  UUID 		= SavedRemoteOperand.substr(0, 4);
-				string  Function 	= ((DataRemote_t*)Data)->DevicesHelper.FunctionNameByID(Converter::UintFromHexString<uint8_t>(SavedRemoteOperand.substr(4, 2)));
+				uint8_t FunctionID	= Converter::UintFromHexString<uint8_t>(SavedRemoteOperand.substr(4, 2));
+				string  Function 	= ((DataRemote_t*)Data)->DevicesHelper.FunctionNameByID(FunctionID);
 				uint8_t SignalID 	= Converter::UintFromHexString<uint8_t>( SavedRemoteOperand.substr(6,2));
 
 				string FunctionType = ((DataRemote_t*)Data)->GetFunctionType(UUID, Function);
@@ -242,6 +248,8 @@ class CommandIR_t : public Command_t {
 
 			    	it = SignalsToSend.erase(it);
 			    }
+
+				((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, SignalID);
 
 				return true;
 			}
@@ -281,7 +289,7 @@ class CommandIR_t : public Command_t {
 					else
 						SignalItem += SignalCharStr;
 				}
-				//IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
+				IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
 
 				IRSignal->ExternFillPostOperations();
 
@@ -299,6 +307,7 @@ class CommandIR_t : public Command_t {
 				}
 
 				TXSend(Frequency);
+				TriggerStateChange(*IRSignal);
 
 				delete IRSignal;
 				return true;
@@ -330,6 +339,11 @@ class CommandIR_t : public Command_t {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
 				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
+		}
+
+		void TriggerStateChange(IRLib &Signal) {
+			if (Settings.eFuse.Type == Settings.Devices.Remote)
+				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(Signal);
 		}
 
 		// AC Codeset callbacks
