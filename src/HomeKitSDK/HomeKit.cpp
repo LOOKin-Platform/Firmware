@@ -509,8 +509,19 @@ void HomeKit::FillAccessories() {
 
 		for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
 		{
-			char accessory_name[10] = "Accessory";
-//			sprintf(accessory_name, "Accessory");
+			char accessory_name[32] = "\0";
+
+			string Name = IRDevice.Name;
+
+			if (Name.size() > 32)
+				Name = Name.substr(0, 32);
+
+			if (Name != "")
+				sprintf(accessory_name, "%s", "123\0");//Name.c_str());
+			else
+				sprintf(accessory_name, "%s", "Accessory\0");
+
+			ESP_LOGE("Name", "%s", accessory_name);
 
 			hap_acc_cfg_t bridge_cfg = {
 				.name 				= accessory_name,
@@ -531,8 +542,13 @@ void HomeKit::FillAccessories() {
 
 			switch (IRDevice.Type) {
 				case 0x01: // TV
+				{
 					hap_serv_t *ServiceTV;
-					ServiceTV = hap_serv_tv_create((IRDevice.Status > 0x0FFF) ? 1 : 0);
+
+					uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
+					uint8_t ModeStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 1);
+
+					ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1);
 					hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
 
 					hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
@@ -565,7 +581,7 @@ void HomeKit::FillAccessories() {
 					}
 
 					break;
-
+				}
 				case 0x03: // light
 					hap_serv_t *ServiceLight;
 					ServiceLight = hap_serv_lightbulb_create(false);
@@ -633,12 +649,6 @@ void HomeKit::Task(void *) {
 
 	/* Initialize the HAP core */
 	hap_init(HAP_TRANSPORT_WIFI);
-
-    /* Initialise the mandatory parameters for Accessory which will be added as
-     * the mandatory services internally
-     */
-    //sprintf(accessory_name, "ESP-Fan-%d", i);
-
 
 	FillAccessories();
 

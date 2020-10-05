@@ -24,6 +24,10 @@
 
 #include <IRLib.h>
 
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+#include "Custom.h"
+#endif
+
 using namespace std;
 
 class DataDeviceItem_t {
@@ -36,18 +40,33 @@ class DataDeviceItem_t {
 
 		virtual ~DataDeviceItem_t() {};
 
+		static uint8_t GetStatusByte(uint16_t Status, uint8_t ByteID) {
+			if (ByteID > 3) ByteID = 3;
+
+			Status = Status << (ByteID * 4);
+			Status = Status >> 12;
+
+			return (uint8_t)Status;
+		}
+
+		static uint16_t SetStatusByte(uint16_t Status, uint8_t ByteID, uint8_t Value) {
+			switch (ByteID) {
+				case 0: Status = (Status & 0x0FFF); break;
+				case 1: Status = (Status & 0xF0FF); break;
+				case 2: Status = (Status & 0xFF0F); break;
+				case 3: Status = (Status & 0xFFF0); break;
+				default: break;
+			}
+
+			return Status + ((uint16_t)Value << ((3 - ByteID) * 4));
+		}
+
 		pair<bool,uint8_t> CheckPowerUpdated(uint8_t FunctionID, uint8_t Value, uint8_t CurrentValue = 0, string FunctionType = "") { // current 0 if off and 1 if on
 			if (FunctionID != 0x1 && FunctionID != 0x2 && FunctionID != 0x3)
 				return make_pair(false, 0);
 
 			if (FunctionType == "") FunctionType = "single";
 			if (CurrentValue > 1) CurrentValue = 1;
-
-			ESP_LOGE("CheckPowerUpdated values", ":");
-			ESP_LOGE("FunctionID", "%d", FunctionID);
-			ESP_LOGE("Value", "%d", Value);
-			ESP_LOGE("CurrentValue", "%d", CurrentValue);
-			ESP_LOGE("FunctionType", "%s", FunctionType.c_str());
 
 			if (FunctionID == 0x1) {
 				if (FunctionType == "single")
@@ -84,6 +103,9 @@ class DataDeviceTV_t  : public DataDeviceItem_t {
 					Status = (Status & 0x0FFF) + NewResult;
 					return make_pair(Status, Result.second);
 				}
+			}
+			else if (FunctionID == 0x04) { // mode
+				Status = SetStatusByte(Status, 1, Value);
 			}
 
 			return make_pair(Status, Value);
@@ -760,7 +782,6 @@ class DataRemote_t : public DataEndpoint_t {
 			return map<string,string>();
 		}
 
-
 		pair<bool,IRLib> LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
 			UUID 	= Converter::ToUpper(UUID);
 			Function= Converter::ToLower(Function);
@@ -872,25 +893,18 @@ class DataRemote_t : public DataEndpoint_t {
 
 		bool SetExternalStatusByIRCommand(IRLib &Signal) {
 			for (auto& CacheItem : IRDevicesCache) {
-
-				ESP_LOGE("CacheItem", "ID: %s", CacheItem.DeviceID.c_str());
-
 				if (CacheItem.DeviceType == 0xEF) continue;
 
 				for (auto& FunctionItem : CacheItem.Functions) {
 					uint8_t FunctionID 		= FunctionItem.first;
 					string 	FunctionType	= FunctionItem.second.first;
 
-					ESP_LOGE("FunctionItem", "FunctionID: %02X, FunctionType: %s",FunctionID, FunctionType.c_str());
-
 					for (int i = 0 ; i< FunctionItem.second.second.size(); i++) {
 						pair<uint8_t, uint32_t> FunctionSignal = FunctionItem.second.second[i];
 
-						ESP_LOGE("FunctionSignal", "Protocol: %02X, Uint32Operand: %08X", FunctionSignal.first, FunctionSignal.second);
-
 						if (Signal.Protocol == FunctionSignal.first) { // protocol identical
 							if (Signal.Protocol == 0xFF) { // raw signal
-								if (LoadFunctionByIndex(CacheItem.DeviceID, FunctionType, i).second.CompareIsIdenticalWith(Signal))
+								if (LoadFunctionByIndex(CacheItem.DeviceID, DevicesHelper.FunctionNameByID(FunctionID), i).second.CompareIsIdenticalWith(Signal))
 								{
 									StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
 									break;
@@ -904,8 +918,6 @@ class DataRemote_t : public DataEndpoint_t {
 						}
 					}
 				}
-
-
 			}
 
 			return false;
@@ -971,7 +983,7 @@ class DataRemote_t : public DataEndpoint_t {
 				case 0x02:
 				case 0x03:
 					HAPValue.u = Value;
-					UpdateHomeKitCharValue(AID, "000000D8-0000-1000-8000-0026BB765291", HAP_CHAR_UUID_ACTIVE, HAPValue);
+					UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, HAP_CHAR_UUID_ACTIVE, HAPValue);
 					break;
 
 				case 0xE0: // AC mode
@@ -999,6 +1011,13 @@ class DataRemote_t : public DataEndpoint_t {
 					HAPValue.u = Value;
 					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_SWING_MODE, HAPValue);
 
+					break;
+				case 0x04:
+
+					if (DeviceType == 0x01) { // TV, input mode
+						HAPValue.u = (Value + 1);
+						UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_ACTIVE_IDENTIFIER_UUID, HAPValue);
+					}
 					break;
 			}
 

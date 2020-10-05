@@ -97,8 +97,10 @@ void IRLib::LoadDataFromRaw() {
 		pair<uint32_t, uint16_t> Result = Protocol->GetData(RawData);
 		this->Uint32Data= Result.first;
 		this->MiscData	= Result.second;
-		//this->RawData.clear();
 	}
+
+	if (this->Protocol != 0xFF && this->Uint32Data == 0x0 && this->MiscData == 0x0)
+		this->Protocol = 0xFF;
 }
 
 void IRLib::FillRawData() {
