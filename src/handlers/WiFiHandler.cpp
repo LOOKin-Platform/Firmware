@@ -144,7 +144,7 @@ static void GatewayPingEnd(esp_ping_handle_t hdl, void *args)
 
 void IPDidntGetCallback(FreeRTOS::Timer *pTimer) {
 	Log::Add(Log::Events::WiFi::STAUndefinedIP);
-	WiFi.StartAP(Settings.WiFi.APSSID, Settings.WiFi.APPassword);
+	WiFi.StartAP(Settings.WiFi.APSSID);
 }
 
 class MyWiFiEventHandler: public WiFiEventHandler {
@@ -194,7 +194,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t ConnectionTimeout() {
-			WiFi.StartAP(Settings.WiFi.APSSID, Settings.WiFi.APPassword);
+			WiFi.StartAP(Settings.WiFi.APSSID);
 			return ESP_OK;
 		}
 
@@ -233,7 +233,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL		||
 				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
-				WiFi.StartAP(Settings.WiFi.APSSID, Settings.WiFi.APPassword);
+				WiFi.StartAP(Settings.WiFi.APSSID);
 			}
 			else { // Повторно подключится к Wi-Fi, если подключение оборвалось
 				Wireless.IsFirstWiFiStart = true;

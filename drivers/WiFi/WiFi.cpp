@@ -400,7 +400,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
  * @return N/A.
  */
 
-void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_auth_mode_t Auth, uint8_t Channel, bool SSIDIsHidden, uint8_t MaxConnections) {
+void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden, uint8_t MaxConnections) {
 	ESP_LOGD(tag, ">> startAP: ssid: %s", SSID.c_str());
 
 #if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
@@ -439,9 +439,10 @@ void WiFi_t::StartAP(const std::string& SSID, const std::string& Password, wifi_
 	::memset(&apConfig, 0, sizeof(apConfig));
 	::memcpy(apConfig.ap.ssid, SSID.data(), SSID.size());
 	apConfig.ap.ssid_len 		= SSID.size();
-	::memcpy(apConfig.ap.password, Password.data(), Password.size());
+	::memcpy(apConfig.ap.password, "", 0);
+
 	apConfig.ap.channel         = Channel;
-	apConfig.ap.authmode        = Auth;
+	apConfig.ap.authmode        = WIFI_AUTH_OPEN;
 	apConfig.ap.ssid_hidden     = (uint8_t) SSIDIsHidden;
 	apConfig.ap.max_connection  = MaxConnections;
 	apConfig.ap.beacon_interval = 100;
