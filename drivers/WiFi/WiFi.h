@@ -103,8 +103,8 @@ class WiFi_t {
 		uint32_t      		gw;
 		uint32_t            Netmask;
 		WiFiEventHandler*	m_pWifiEventHandler;
-		bool                m_initCalled;
-		bool				m_WiFiRunning;
+		bool                m_initCalled 	= false;
+		bool				m_WiFiRunning 	= false;
 		uint8_t             m_apConnectionStatus;   // ESP_OK = we are connected to an access point.  Otherwise receives wifi_err_reason_t.
 
 		FreeRTOS::Semaphore m_connectFinished 	= FreeRTOS::Semaphore("ConnectFinished");
@@ -142,8 +142,8 @@ class WiFi_t {
 
 		static void 		eventHandler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
-
 		vector<WiFiAPRecord> Scan();
+
 		uint8_t ConnectAP(const string& SSID, const string& Password, const uint8_t& Channel = 0, bool WaitForConnection = true);
 	    void 	StartAP	 (const string& SSID, uint8_t Channel = 0, bool SSIDIsHidden = false, uint8_t MaxConnections = 16);
 

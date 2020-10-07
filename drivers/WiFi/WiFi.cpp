@@ -40,17 +40,17 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
 	// indicates we are waiting for a connection complete.
 
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-		ESP_LOGI(tag, "SYSTEM_EVENT_STA_START");
+		ESP_LOGI(tag, "WIFI_EVENT_STA_START");
 		pWiFi->m_WiFiRunning = true;
     }
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_STOP) {
-		ESP_LOGI(tag, "SYSTEM_EVENT_STA_STOP");
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_STOP) {
+		ESP_LOGI(tag, "WIFI_EVENT_STA_STOP");
 		pWiFi->m_WiFiRunning = false;
     }
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_CONNECTED) {
-		ESP_LOGI(tag, "SYSTEM_EVENT_STA_CONNECTED");
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
+		ESP_LOGI(tag, "WIFI_EVENT_STA_CONNECTED");
 
 		::esp_netif_set_hostname(WiFi_t::GetNetIf(), STAHostName.c_str());
 
@@ -77,28 +77,28 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
 		pWiFi->m_connectFinished.Give();
 	}
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
 
-		ESP_LOGI(tag, "SYSTEM_EVENT_STA_DISCONNECTED, Reason: %d", event_id);
+		ESP_LOGI(tag, "WIFI_EVENT_STA_DISCONNECTED, Reason: %d", event_id);
 
         wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
 		pWiFi->m_apConnectionStatus = disconnected->reason;
 		pWiFi->m_WiFiRunning = false;
 	}
 
-	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_START) {
-		ESP_LOGI(tag, "SYSTEM_EVENT_AP_START");
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START) {
+		ESP_LOGI(tag, "WIFI_EVENT_AP_START");
 		pWiFi->m_WiFiRunning = true;
 	}
 
-	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_STOP) {
-		ESP_LOGI(tag, "SYSTEM_EVENT_AP_STOP");
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STOP) {
+		ESP_LOGI(tag, "WIFI_EVENT_AP_STOP");
 		pWiFi->m_WiFiRunning = false;
 	}
 
-	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_SCAN_DONE)
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_SCAN_DONE)
 	{
-		ESP_LOGI(tag, "SYSTEM_EVENT_SCAN_DONE");
+		ESP_LOGI(tag, "WIFI_EVENT_SCAN_DONE");
 		::esp_wifi_disconnect();
 		pWiFi->m_scanFinished.Give();
 	}
@@ -157,6 +157,11 @@ void WiFi_t::DeInit() {
 	::esp_wifi_stop();
 	::esp_wifi_deinit();
 
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
+	::esp_netif_destroy(::esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"));
+	::esp_netif_destroy(::esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"));
+#endif
+
 	::esp_event_loop_delete_default();
 
 	m_initCalled = false;
@@ -190,21 +195,28 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	ESP_LOGD(tag, ">> scan");
 	std::vector<WiFiAPRecord> apRecords;
 
-	m_WiFiRunning = true;
-
 	Init();
 
-	esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
-	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-		abort();
+	wifi_mode_t CurrentMode = WIFI_MODE_NULL;
+
+	if (m_WiFiRunning)
+		::esp_wifi_get_mode(&CurrentMode);
+	else
+	{
+		esp_err_t errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
+		if (errRc != ESP_OK) {
+			ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+			abort();
+		}
+
+		errRc = ::esp_wifi_start();
+		if (errRc != ESP_OK) {
+			ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+			abort();
+		}
 	}
 
-	errRc = ::esp_wifi_start();
-	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-		abort();
-	}
+	m_WiFiRunning = true;
 
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
@@ -220,7 +232,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	esp_err_t rc = ::esp_wifi_scan_start(&conf, true);
 	if (rc != ESP_OK) {
-		ESP_LOGE(tag, "esp_wifi_scan_start: %d", rc);
+		ESP_LOGE(tag, "esp_wifi_scan_start: %d %s", rc, Converter::ErrorToString(rc));
 		return apRecords;
 	}
 
@@ -236,9 +248,9 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		return apRecords;
 	}
 
-	errRc = ::esp_wifi_scan_get_ap_records(&apCount, list);
-	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "esp_wifi_scan_get_ap_records: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+	esp_err_t ScanErrRc = ::esp_wifi_scan_get_ap_records(&apCount, list);
+	if (ScanErrRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_scan_get_ap_records: rc=%d %s", ScanErrRc, Converter::ErrorToString(ScanErrRc));
 		abort();
 	}
 
@@ -272,10 +284,11 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	free(list);   // Release the storage allocated to hold the records.
 
-	::esp_wifi_disconnect();
-	::esp_wifi_stop();
-
-	m_WiFiRunning = false;
+	if (CurrentMode != WIFI_MODE_AP) {
+		::esp_wifi_disconnect();
+		::esp_wifi_stop();
+		m_WiFiRunning = false;
+	}
 
 	std::sort(apRecords.begin(),
 		apRecords.end(),

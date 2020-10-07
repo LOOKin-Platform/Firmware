@@ -43,6 +43,8 @@ uint32_t WiFiUptimeHandler::BatteryUptime 		= 0;
 uint32_t WiFiUptimeHandler::ClientModeNextTime	= 0;
 
 void WiFiUptimeHandler::SetClientModeNextTime(uint32_t Value) {
+	ESP_LOGE("SetClientModeNextTime", "%d", Value);
+
 	ClientModeNextTime = Time::Unixtime() + Value;
 }
 
@@ -61,15 +63,19 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
 
+		if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+			ESP_LOGE("UnixTime", "%d , ClientModeNextTime %d", Time::Unixtime(), ClientModeNextTime);
+
 		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_AP_STR && ClientModeNextTime > 0)
 		{
 			IsConnectedBefore = false;
 			ClientModeNextTime = 0;
 
-			if (WiFi_t::GetAPClientsCount() == 0) {
-				Wireless.StopWiFi();
+			if (WiFi_t::GetAPClientsCount() == 0 && Network.WiFiSettings.size() > 0) {
+				WiFi.DeInit();
 				Network.WiFiScannedList = WiFi.Scan();
 				Wireless.StartInterfaces();
+				SetClientModeNextTime(Settings.WiFi.STAModeInterval);
 			}
 			else
 				SetClientModeNextTime(Settings.WiFi.STAModeReconnect);

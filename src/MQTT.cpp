@@ -264,7 +264,9 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.keepalive			= 120;
 	Config.disable_auto_reconnect
 								= false;
-//	Config.use_secure_element	= false;
+	Config.network_timeout_ms	= 10000;
+	Config.use_secure_element	= false;
+	Config.ds_data				= NULL;
 
 	Config.client_id 			= NULL;
 	Config.lwt_topic			= NULL;

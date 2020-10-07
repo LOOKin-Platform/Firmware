@@ -32,15 +32,15 @@ void WiFiEventHandler::EventHandler(void *event_handler_arg, esp_event_base_t ev
 
 	WiFiEventHandler *pWiFiEventHandler = (WiFiEventHandler *)event_handler_arg;
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_START) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
 		::esp_wifi_connect();
 		pWiFiEventHandler->staStart();
     }
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_STOP)
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_STOP)
 		pWiFiEventHandler->staStop();
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_CONNECTED)
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED)
 		pWiFiEventHandler->staConnected();
 
 	if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
@@ -53,16 +53,16 @@ void WiFiEventHandler::EventHandler(void *event_handler_arg, esp_event_base_t ev
 		pWiFiEventHandler->staDisconnected(*DisconnectedInfo);
 	}
 
-	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_START)
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START)
 		pWiFiEventHandler->apStart();
 
-	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_AP_STOP)
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_STOP)
 		pWiFiEventHandler->apStop();
 
 	//if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_SCAN_DONE)
 
 
-	if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_WIFI_READY)
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_WIFI_READY)
 		pWiFiEventHandler->wifiReady();
 
 
