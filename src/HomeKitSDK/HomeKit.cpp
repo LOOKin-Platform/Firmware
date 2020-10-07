@@ -521,8 +521,6 @@ void HomeKit::FillAccessories() {
 			else
 				sprintf(accessory_name, "%s", "Accessory\0");
 
-			ESP_LOGE("Name", "%s", accessory_name);
-
 			hap_acc_cfg_t bridge_cfg = {
 				.name 				= accessory_name,
 				.model 				= NULL,
