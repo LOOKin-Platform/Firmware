@@ -25,19 +25,21 @@ class ExternalTempHandler {
 };
 
 void IRAM_ATTR ExternalTempHandler::Pool() {
-	if (Time::Uptime() % 10 != 5 && Time::Uptime() % 10 != 0)
+	if (Time::Uptime() %2 != 0)
 		return;
+
+	//if (Time::Uptime() % 10 != 5 && Time::Uptime() % 10 != 0)
+	//	return;
 
     // Create a 1-Wire bus, using the RMT timeslot driver
     OneWireBus * owb;
-//    owb_rmt_driver_info rmt_driver_info;
-//    owb = owb_rmt_initialize(&rmt_driver_info, GPIO_DS18B20_0, RMT_CHANNEL_6, RMT_CHANNEL_7);
 
-    owb_gpio_driver_info gpio_driver_info;
-    owb = owb_gpio_initialize(&gpio_driver_info, GPIO_DS18B20_0);
+    //gpio_set_pull_mode(GPIO_NUM_17, GPIO_PULLDOWN_ONLY);
+
+    owb_rmt_driver_info rmt_driver_info;
+    owb = owb_rmt_initialize(&rmt_driver_info, GPIO_NUM_15, RMT_CHANNEL_1, RMT_CHANNEL_0);
 
     owb_use_crc(owb, true);  // enable CRC check for ROM code
-
 
     // Find all connected devices
     printf("Find devices:\n");
@@ -46,6 +48,10 @@ void IRAM_ATTR ExternalTempHandler::Pool() {
     OneWireBus_SearchState search_state = {0};
     bool found = false;
     owb_search_first(owb, &search_state, &found);
+
+    if (found)
+    	Log::Add(Log::Events::Sensors ::IRReceived);
+
     while (found)
     {
         char rom_code_s[17];
@@ -95,6 +101,22 @@ void IRAM_ATTR ExternalTempHandler::Pool() {
         ds18b20_use_crc(ds18b20_info, true);           // enable CRC check for temperature readings
         ds18b20_set_resolution(ds18b20_info, DS18B20_RESOLUTION);
     }
+
+    // Check for parasitic-powered devices
+    bool parasitic_power = false;
+    ds18b20_check_for_parasite_power(owb, &parasitic_power);
+    if (parasitic_power) {
+        printf("Parasitic-powered devices detected");
+    }
+
+    // In parasitic-power mode, devices cannot indicate when conversions are complete,
+    // so waiting for a temperature conversion must be done by waiting a prescribed duration
+    owb_use_parasitic_power(owb, parasitic_power);
+
+    // An external pull-up circuit is used to supply extra current to OneWireBus devices
+    // during temperature conversions.
+    //owb_use_strong_pullup_gpio(owb, GPIO_NUM_17);
+
 
     // Read temperatures more efficiently by starting conversions on all devices at the same time
     int errors_count[MAX_DEVICES] = {0};
