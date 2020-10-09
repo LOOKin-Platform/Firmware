@@ -109,6 +109,8 @@ hap_char_t *hap_char_volume_selector_create(uint8_t VolumeSelector)
         return NULL;
     }
 
+    hap_char_int_set_constraints(hc, 0, 1, 1);
+
     return hc;
 }
 
@@ -277,7 +279,7 @@ hap_char_t *hap_char_ac_fan_rotation_create(float rotation_speed)
 }
 
 /* Service: TV */
-hap_serv_t *hap_serv_tv_create(uint8_t active, uint8_t ActiveIdentifier = 1)
+hap_serv_t *hap_serv_tv_create(uint8_t active, uint8_t ActiveIdentifier = 1, char *ConfiguredName = NULL)
 {
     hap_serv_t *hs = hap_serv_create(SERVICE_TV_UUID);
 
@@ -292,7 +294,7 @@ hap_serv_t *hap_serv_tv_create(uint8_t active, uint8_t ActiveIdentifier = 1)
     	goto err;
     }
 
-    if (hap_serv_add_char(hs, hap_char_configured_name_create(NULL)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_configured_name_create(ConfiguredName)) != HAP_SUCCESS) {
     	goto err;
     }
 

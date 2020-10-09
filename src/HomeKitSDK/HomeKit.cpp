@@ -113,19 +113,19 @@ int HomeKit::AccessoryIdentify(hap_acc_t *ha)
     return HAP_SUCCESS;
 }
 
-bool HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
+hap_status_t HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
-    	if (Iterator > 0) return true;
+    	if (Iterator > 0) return HAP_STATUS_SUCCESS;
 
     	ESP_LOGE("ON", "UUID: %04X, Value: %d", AID, Value);
 
         DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
 
         if (IRDeviceItem.IsEmpty())
-        	return false;
+        	return HAP_STATUS_VAL_INVALID;
 
-        if (IRDeviceItem.DeviceType == 0xEF) { // air conditionair
+        if (IRDeviceItem.DeviceType == 0xEF) { // air conditioner
 
         }
 
@@ -141,7 +141,7 @@ bool HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
         	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("power"),2);
         	Operand += (Functions["power"] == "toggle") ? ((Value) ? "00" : "01" ) : "FF";
         	IRCommand->Execute(0xFE, Operand.c_str());
-        	return true;
+        	return HAP_STATUS_SUCCESS;
         }
         else
         {
@@ -149,7 +149,7 @@ bool HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
         	{
             	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweron"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand.c_str());
-            	return true;
+            	return HAP_STATUS_SUCCESS;
 
         	}
 
@@ -157,12 +157,12 @@ bool HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
         	{
             	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweroff"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand.c_str());
-            	return true;
+            	return HAP_STATUS_SUCCESS;
         	}
         }
     }
 
-    return false;
+    return HAP_STATUS_VAL_INVALID;
 }
 
 bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
@@ -405,14 +405,10 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         ESP_LOGI(Tag, "Characteristic: %s, i: %d", hap_char_get_type_uuid(write->hc), i);
 
         if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ON)) {
-        	On(write->val.b, AID, i);
-            hap_char_update_val(write->hc, &(write->val));
-            *(write->status) = HAP_STATUS_SUCCESS;
+        	*(write->status) = On(write->val.b, AID, i);
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ACTIVE)) {
-        	On(write->val.b, AID, i);
-            hap_char_update_val(write->hc, &(write->val));
-            *(write->status) = HAP_STATUS_SUCCESS;
+        	*(write->status) = On(write->val.b, AID, i);
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_REMOTEKEY_UUID)) {
         	Cursor(write->val.b, AID);
@@ -454,12 +450,24 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_IS_CONFIGURED)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_MUTE_UUID)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_VOLUME_UUID)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+        }
         else {
             *(write->status) = HAP_STATUS_RES_ABSENT;
         }
-    }
 
-    SetLastUpdatedForAID(AID);
+        if (*(write->status) == HAP_STATUS_SUCCESS)
+            hap_char_update_val(write->hc, &(write->val));
+        else
+            ret = HAP_FAIL;
+    }
 
     return ret;
 }
@@ -517,14 +525,14 @@ void HomeKit::FillAccessories() {
 				Name = Name.substr(0, 32);
 
 			if (Name != "")
-				sprintf(accessory_name, "%s", "123\0");//Name.c_str());
+				sprintf(accessory_name, "%s", Name.c_str());//Name.c_str());
 			else
 				sprintf(accessory_name, "%s", "Accessory\0");
 
 			hap_acc_cfg_t bridge_cfg = {
 				.name 				= accessory_name,
-				.model 				= NULL,
-				.manufacturer 		= NULL,
+				.model 				= "",
+				.manufacturer 		= "",
 				.serial_num 		= "n/a",
 				.fw_rev 			= (char*)Settings.FirmwareVersion,
             	.hw_rev 			= NULL,
@@ -546,7 +554,7 @@ void HomeKit::FillAccessories() {
 					uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
 					uint8_t ModeStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 1);
 
-					ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1);
+					ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1, accessory_name);
 					hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
 
 					hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);

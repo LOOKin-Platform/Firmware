@@ -39,8 +39,8 @@ class HomeKit {
 		static int 		BridgeIdentify		(hap_acc_t *ha);
 		static int 		AccessoryIdentify	(hap_acc_t *ha);
 
-		static bool		On					(bool 		value	, uint16_t AID, uint8_t Iterator = 0);
-		static bool		Cursor				(uint8_t 	Key		, uint16_t AID);
+		static hap_status_t	On				(bool 		value	, uint16_t AID, uint8_t Iterator = 0);
+		static bool		Cursor			(uint8_t 	Key		, uint16_t AID);
 		static bool		ActiveID			(uint8_t 	NewID	, uint16_t AID);
 		static bool		Volume				(uint8_t 	Value	, uint16_t AID);
 		static bool 	HeatingCoolingState (uint8_t 	Value	, uint16_t AID);
