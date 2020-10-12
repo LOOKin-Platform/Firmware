@@ -58,7 +58,8 @@ class DataDeviceItem_t {
 				default: break;
 			}
 
-			return Status + ((uint16_t)Value << ((3 - ByteID) * 4));
+			Status = Status + ((uint16_t)Value << ((3 - ByteID) * 4));
+			return Status;
 		}
 
 		pair<bool,uint8_t> CheckPowerUpdated(uint8_t FunctionID, uint8_t Value, uint8_t CurrentValue = 0, string FunctionType = "") { // current 0 if off and 1 if on
@@ -93,23 +94,27 @@ class DataDeviceTV_t  : public DataDeviceItem_t {
 			// On/off toggle functions
 			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
 				uint8_t CurrentPower = (uint8_t)(Status >> 12);
-				ESP_LOGE("CurrentPower", "%d", CurrentPower);
 
 				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
 
 				if (Result.first)
-				{
-					uint16_t NewResult = ((uint16_t)Result.second << 12);
-					Status = (Status & 0x0FFF) + NewResult;
-					return make_pair(Status, Result.second);
-				}
+					return make_pair(SetStatusByte(Status, 0, Result.second), Result.second);
 			}
 			else if (FunctionID == 0x04) { // mode
 				Status = SetStatusByte(Status, 1, Value);
 			}
+			else if (FunctionID == 0x05) { // mute
+				Status = SetStatusByte(Status, 2, (GetStatusByte(Status,2) > 0) ? 0 : 1);
+				Value = (GetStatusByte(Status,2) == 0) ? 1 : 0;
+			}
+			else if (FunctionID == 0x06) { // volume up
+				Status = SetStatusByte(Status, 2, 255);
+			}
+			else if (FunctionID == 0x07) { // volume down
+				Status = SetStatusByte(Status, 2, 1);
+			}
 
 			return make_pair(Status, Value);
-
 		}
 
 
@@ -155,6 +160,22 @@ class DataDeviceFan_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceFan_t() { DeviceTypeID = 0x07; }
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x0A, 0x0B  }; }
+
+		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
+
+			// On/off toggle functions
+			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
+				uint8_t CurrentPower = GetStatusByte(Status, 0);
+
+				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
+
+				if (Result.first)
+					return make_pair(SetStatusByte(Status, 0, Result.second), Result.second);
+			}
+
+			return make_pair(Status, Value);
+		}
+
 		virtual ~DataDeviceFan_t() {};
 };
 
@@ -432,24 +453,38 @@ class DataRemote_t : public DataEndpoint_t {
 
 			if (Query.Type == QueryType::GET) {
 				if (Query.GetURLPartsCount() == 1) {
-					vector<map<string,string>> OutputArray = vector<map<string,string>>();
-
-					for (auto& IRDeviceItem : GetAvaliableDevices())
+					if (Query.GetParams().count("statuses"))
 					{
-						OutputArray.push_back({
-							{ "UUID" 	, 	IRDeviceItem.UUID								},
-							{ "Type"	, 	Converter::ToHexString(IRDeviceItem.Type,2)		},
-							{ "Updated" , 	Converter::ToString(IRDeviceItem.Updated)		}
-						});
+						vector<string> StatusesArray = vector<string>();
 
+						for (auto& IRDeviceItem : IRDevicesCache)
+							StatusesArray.push_back(IRDeviceItem.DeviceID + Converter::ToHexString(IRDeviceItem.Status,4));
+
+						Result.Body = JSON::CreateStringFromVector(StatusesArray);
+						Result.ContentType = WebServer_t::Response::TYPE::JSON;
+						return;
 					}
+					else
+					{
+						vector<map<string,string>> OutputArray = vector<map<string,string>>();
 
-					JSON JSONObject;
-					JSONObject.SetObjectsArray("", OutputArray);
+						for (auto& IRDeviceItem : GetAvaliableDevices())
+						{
+							OutputArray.push_back({
+								{ "UUID" 	, 	IRDeviceItem.UUID								},
+								{ "Type"	, 	Converter::ToHexString(IRDeviceItem.Type,2)		},
+								{ "Updated" , 	Converter::ToString(IRDeviceItem.Updated)		}
+							});
 
-					Result.Body = JSONObject.ToString();
-					Result.ContentType = WebServer_t::Response::TYPE::JSON;
-					return;
+						}
+
+						JSON JSONObject;
+						JSONObject.SetObjectsArray("", OutputArray);
+
+						Result.Body = JSONObject.ToString();
+						Result.ContentType = WebServer_t::Response::TYPE::JSON;
+						return;
+					}
 				}
 
 				if (Query.GetURLPartsCount() == 2) {
@@ -983,9 +1018,49 @@ class DataRemote_t : public DataEndpoint_t {
 				case 0x02:
 				case 0x03:
 					HAPValue.u = Value;
-					UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, HAP_CHAR_UUID_ACTIVE, HAPValue);
-					break;
 
+					switch (DeviceType) {
+						case 0x01:
+							UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, HAP_CHAR_UUID_ACTIVE, HAPValue);
+							UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
+							break;
+						case 0x07:
+							UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, HAPValue);
+							break;
+						default:
+							break;
+					}
+
+					break;
+				case 0x05: // mute
+					HAPValue.b = (Value == 0) ? true : false;
+					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
+
+					static hap_val_t HAPValueVolumeControlType;
+					HAPValueVolumeControlType.u = (Value == 0) ? 1 : 0;
+					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
+					break;
+				case 0x06: // volume up
+				{
+					HAPValue.b = false;
+					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
+
+					static hap_val_t HAPValueVolumeControlType;
+					HAPValueVolumeControlType.u = 1;
+					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
+
+					break;
+				}
+				case 0x07: // volume down
+				{
+					HAPValue.b = false;
+					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
+
+					static hap_val_t HAPValueVolumeControlType;
+					HAPValueVolumeControlType.u = 1;
+					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
+					break;
+				}
 				case 0xE0: // AC mode
 					HAPValue.u = (uint8_t)ACOperand::ModeToHomeKit(Value);
 					ESP_LOGE("HAPValue.u", "%d", HAPValue.u);
