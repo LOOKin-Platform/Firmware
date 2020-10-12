@@ -26,6 +26,8 @@ httpd_handle_t WebServer_t::HTTPServerHandle 	= NULL;
 static vector<uint16_t> UDPPorts 				= { Settings.WiFi.UPDPort };
 QueueHandle_t WebServer_t::UDPBroadcastQueue 	= FreeRTOS::Queue::Create(Settings.WiFi.UDPBroadcastQueue.Size, sizeof(UDPBroacastQueueItem));
 
+string WebServer_t::AllowOriginHeader 			= "";
+
 WebServer_t::WebServer_t() {
 	UDPListenerTaskHandle   = NULL;
 }
@@ -118,8 +120,8 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 		default							: httpd_resp_set_type	(Request, HTTPD_TYPE_TEXT); break;
 	}
 
-	if (Settings.eFuse.DeviceID <= 0x100)
-		httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", "*");
+	if (AllowOriginHeader != "")
+		httpd_resp_set_hdr(Request, "Access-Control-Allow-Origin", AllowOriginHeader.c_str());
 }
 
 httpd_uri_t uri_root_get 			= { .uri = "/"				, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};

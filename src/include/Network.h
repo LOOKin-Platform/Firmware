@@ -24,6 +24,8 @@ using namespace std;
 
 #define  NVSNetworkWiFiSettings	"WiFiSettings"
 #define  NVSNetworkDevicesArray "Devices"
+#define  NVSNetworkAllowOrigin 	"AllowOrigin"
+
 
 struct NetworkDevice_t {
 	uint8_t		TypeHex				= 0x00;
@@ -95,6 +97,7 @@ class NetworkSync {
     	static bool 			ReadStorageBody    (char Data[], int DataLen, char IP[]);
     	static void 			ReadStorageFinished(char IP[]);
     	static void 			StorageAborted     (char IP[]);
+
 	private:
     	static uint8_t			SameQueryCount;
     	static uint16_t			MaxStorageVersion;

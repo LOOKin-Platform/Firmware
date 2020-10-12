@@ -27,6 +27,8 @@ void Network_t::Init() {
 			Devices.push_back(NetworkDevice);
 		}
 	}
+
+	WebServer_t::AllowOriginHeader = Memory.GetString(NVSNetworkAllowOrigin);
 }
 
 NetworkDevice_t Network_t::GetNetworkDeviceByID(uint32_t ID) {
@@ -359,6 +361,11 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
 			}
 
+			if (Query.CheckURLPart("allow-origin", 1)) {
+				Result.Body = WebServer_t::AllowOriginHeader;
+				Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
+			}
+
 			if (Query.CheckURLPart("map", 1)) {
 				vector<map<string,string>> NetworkMap = vector<map<string,string>>();
 				for (auto& NetworkDevice: Devices)
@@ -432,6 +439,17 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			}
 
 			AddWiFiNetwork(Converter::StringURLDecode(Params["wifissid"]), Converter::StringURLDecode(Params["wifipassword"]));
+			Result.SetSuccess();
+			return;
+		}
+
+		if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("allow-origin", 1)) {
+			WebServer_t::AllowOriginHeader = Query.GetBody();
+
+			NVS Memory(NVSNetworkArea);
+			Memory.SetString(NVSNetworkAllowOrigin, WebServer_t::AllowOriginHeader);
+			Memory.Commit();
+
 			Result.SetSuccess();
 			return;
 		}

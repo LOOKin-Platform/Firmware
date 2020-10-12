@@ -90,9 +90,12 @@ class WebServer_t {
 		static string			UDPDiscoverBody(string ID = "");
 		static string			UDPUpdatedBody(uint8_t SensorID, string Value);
 
+		static string			AllowOriginHeader;
 	private:
+
 	    static QueueHandle_t 	UDPBroadcastQueue;
 	    static httpd_handle_t	HTTPServerHandle;
+
 
 		static void				UDPListenerTask(void *);
 };
