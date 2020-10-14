@@ -43,8 +43,6 @@ uint32_t WiFiUptimeHandler::BatteryUptime 		= 0;
 uint32_t WiFiUptimeHandler::ClientModeNextTime	= 0;
 
 void WiFiUptimeHandler::SetClientModeNextTime(uint32_t Value) {
-	ESP_LOGE("SetClientModeNextTime", "%d", Value);
-
 	ClientModeNextTime = Time::Unixtime() + Value;
 }
 
@@ -62,9 +60,6 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 	if (Device.PowerMode == DevicePowerMode::CONST ||
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
-
-		if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
-			ESP_LOGE("UnixTime", "%d , ClientModeNextTime %d", Time::Unixtime(), ClientModeNextTime);
 
 		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_AP_STR && ClientModeNextTime > 0)
 		{

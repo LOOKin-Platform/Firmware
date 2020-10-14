@@ -22,7 +22,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const char* 						FirmwareVersion = "2.02";
+		const char* 						FirmwareVersion = "2.03";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -122,7 +122,7 @@ class Settings_t {
 		struct {
 			const uint16_t					Interval 		= 1000;
 
-			const uint32_t					MQTTInterval	= 3*60*1000; 	// 3 минуты
+			const uint32_t					MQTTInterval	= 90*1000; 		// 90 секунд
 			const uint32_t					PingInterval	= 30*60*1000; 	// 30 минут
 
 			struct {

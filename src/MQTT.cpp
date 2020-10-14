@@ -262,6 +262,7 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.uri					= NULL;
 	Config.port					= 0;
 	Config.keepalive			= 120;
+	Config.reconnect_timeout_ms	= 10000;
 	Config.disable_auto_reconnect
 								= false;
 	Config.network_timeout_ms	= 10000;
