@@ -32,6 +32,7 @@ class DataEndpoint_t {
 		virtual void 			Init() {};
 
 		virtual void 			HandleHTTPRequest(WebServer_t::Response &, Query_t &) { };
+		virtual string			RootInfo() { return "{}"; }
 };
 
 #include "../data_endpoints/DataRemote.cpp"

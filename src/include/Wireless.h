@@ -15,7 +15,7 @@ class Wireless_t {
 	public:
 		void StartInterfaces();
 		void StopWiFi();
-		void SendBroadcastUpdated(uint8_t SensorID, string Value, string AdditionalData = "");
+		void SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "");
 		bool IsPeriodicPool();
 
 		bool IsFirstWiFiStart	= true;

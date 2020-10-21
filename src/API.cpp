@@ -36,19 +36,19 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 	{
 		ESP_LOGE("SUMMARY", ">>");
 
-		Response.Body = "{ \"Device\":" + Device.RootInfo().ToString() +  ",";
+		Response.Body = "{\"Device\":" + Device.RootInfo().ToString() +  ",";
 		Response.Body += "\"Network\":" + Network.RootInfo().ToString() + ",";
 		Response.Body += "\"Automation\":" + Automation.RootInfo().ToString() + ",";
-		Response.Body += "\"Storage\" : { \"Version\" : \"" + Storage.VersionToString() + "\"" + "}, ";
-		Response.Body += "\"Sensors\" : [";
+		Response.Body += "\"Storage\":{ \"Version\" : \"" + Storage.VersionToString() + "\"" + "}, ";
+		Response.Body += "\"Sensors\":[";
 		for (int i = 0; i < Sensors.size(); i++) {
 			Response.Body += " { \"" + Sensors[i]->Name + "\":" + Sensors[i]->EchoSummaryJSON() + "}";
 			if (i < Sensors.size() - 1)
 				Response.Body += ",";
 		}
-		Response.Body += "], ";
+		Response.Body += "],";
 
-		Response.Body += "\"Commands\" : [";
+		Response.Body += "\"Commands\":[";
 
 		for (int i = 0; i < Commands.size(); i++)
 		{
@@ -58,7 +58,11 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 				Response.Body += ",";
 		}
 
-		Response.Body += "]";
+		Response.Body += "],";
+		Response.Body += "\"Data\":";
+		Response.Body += Data->RootInfo();
+
+
 		/*
 		Result += "\"Log\" : ";
 		Log::HandleHTTPRequest(Response, Type, { }, Params);

@@ -72,7 +72,7 @@ class WebServer_t {
 
 		void 					UDPSendBroadcastAlive();
 		void 					UDPSendBroadcastDiscover();
-		void 					UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1);
+		void 					UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1, string Operand = "");
 		void 					UDPSendBroadcast(string);
 
 		void 					UDPSendBroacastFromQueue();
@@ -88,7 +88,7 @@ class WebServer_t {
 
 		static string			UDPAliveBody();
 		static string			UDPDiscoverBody(string ID = "");
-		static string			UDPUpdatedBody(uint8_t SensorID, string Value);
+		static string			UDPUpdatedBody(uint8_t SensorID, string Value, string Operand = "");
 
 		static string			AllowOriginHeader;
 	private:
