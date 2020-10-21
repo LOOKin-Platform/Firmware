@@ -282,9 +282,9 @@ void WebServer_t::UDPSendBroadcastDiscover() {
 	UDPSendBroadcast(UDPDiscoverBody());
 }
 
-void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat) {
+void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat, string Operand) {
 	for (int i=0; i < Repeat; i++)
-		UDPSendBroadcast(UDPUpdatedBody(SensorID, Value));
+		UDPSendBroadcast(UDPUpdatedBody(SensorID, Value, Operand));
 }
 
 string WebServer_t::UDPAliveBody() {
@@ -304,8 +304,11 @@ string WebServer_t::UDPDiscoverBody(string ID) {
 	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 
-string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value) {
+string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value, string Operand) {
 	string Message = "Updated!" + Device.IDToString() + ":" + Converter::ToHexString(SensorID, 2) + ":" + Value;
+
+	if (Operand != "") Message += ":" + Operand;
+
 	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 

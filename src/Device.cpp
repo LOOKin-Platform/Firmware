@@ -182,7 +182,6 @@ JSON Device_t::RootInfo() {
 	return JSONObject;
 }
 
-
 string Device_t::GetName() {
 	NVS Memory(NVSDeviceArea);
 	return Memory.GetString(NVSDeviceName);

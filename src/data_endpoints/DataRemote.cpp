@@ -404,33 +404,42 @@ class DataRemote_t : public DataEndpoint_t {
 					Iterator = IRDevicesList.erase(Iterator);
 				else {
 					DataRemote_t::IRDevice DeviceItem(Memory.GetString(*Iterator), *Iterator);
-
-					if (DeviceItem.IsCorrect()) {
-						IRDeviceCacheItem_t CacheItem;
-
-						CacheItem.DeviceID 		= DeviceItem.UUID;
-						CacheItem.DeviceType 	= DeviceItem.Type;
-						CacheItem.Status		= DeviceItem.Status;
-						CacheItem.Extra			= DeviceItem.Extra;
-
-						for (auto& FunctionItem : DeviceItem.Functions)
-						{
-							uint8_t 	FunctionID 		= DevicesHelper.FunctionIDByName(FunctionItem.first);
-							string 		FunctionType 	= FunctionItem.second;
-
-							vector<pair<uint8_t,uint32_t>> FunctionsCache = vector<pair<uint8_t,uint32_t>>();
-
-							for (IRLib &Signal : LoadAllFunctionSignals(DeviceItem.UUID, FunctionItem.first, DeviceItem))
-								FunctionsCache.push_back(make_pair(Signal.Protocol, Signal.Uint32Data));
-
-							CacheItem.Functions[FunctionID] = make_pair(FunctionType, FunctionsCache);
-						}
-
-						IRDevicesCache.push_back(CacheItem);
-					}
-
+					AddOrUpdateDeviceToCache(DeviceItem);
 					++Iterator;
 				}
+			}
+		}
+
+		void AddOrUpdateDeviceToCache(DataRemote_t::IRDevice DeviceItem) {
+			if (DeviceItem.IsCorrect()) {
+				IRDeviceCacheItem_t CacheItem;
+
+				CacheItem.DeviceID 		= DeviceItem.UUID;
+				CacheItem.DeviceType 	= DeviceItem.Type;
+				CacheItem.Status		= DeviceItem.Status;
+				CacheItem.Extra			= DeviceItem.Extra;
+
+				for (auto& FunctionItem : DeviceItem.Functions)
+				{
+					uint8_t 	FunctionID 		= DevicesHelper.FunctionIDByName(FunctionItem.first);
+					string 		FunctionType 	= FunctionItem.second;
+
+					vector<pair<uint8_t,uint32_t>> FunctionsCache = vector<pair<uint8_t,uint32_t>>();
+
+					for (IRLib &Signal : LoadAllFunctionSignals(DeviceItem.UUID, FunctionItem.first, DeviceItem))
+						FunctionsCache.push_back(make_pair(Signal.Protocol, Signal.Uint32Data));
+
+					CacheItem.Functions[FunctionID] = make_pair(FunctionType, FunctionsCache);
+				}
+
+				for (int i = 0; i< IRDevicesCache.size(); i++)
+					if (IRDevicesCache[i].DeviceID == CacheItem.DeviceID)
+					{
+						IRDevicesCache[i] = CacheItem;
+						return;
+					}
+
+				IRDevicesCache.push_back(CacheItem);
 			}
 		}
 
@@ -603,6 +612,7 @@ class DataRemote_t : public DataEndpoint_t {
 				if (Query.GetURLPartsCount() == 1) {
 					NVS Memory(DataEndpoint_t::NVSArea);
 					IRDevicesList.clear();
+					IRDevicesCache.clear();
 					Memory.EraseNamespace();
 				}
 
@@ -669,6 +679,15 @@ class DataRemote_t : public DataEndpoint_t {
 			Result.SetSuccess();
 		}
 
+		string RootInfo() override {
+			vector<string> StatusesArray = vector<string>();
+
+			for (auto& IRDeviceItem : IRDevicesCache)
+				StatusesArray.push_back(IRDeviceItem.DeviceID + Converter::ToHexString(IRDeviceItem.Status,4));
+
+			return JSON::CreateStringFromVector(StatusesArray);
+		}
+
 		void PUTorPOSTDeviceItem(Query_t &Query, string UUID, WebServer_t::Response &Result) {
 			DataRemote_t::IRDevice NewDeviceItem;
 
@@ -697,6 +716,9 @@ class DataRemote_t : public DataEndpoint_t {
 			DeviceItem.ParseJSONItems(JSON(Query.GetBody()).GetItems());
 
 			uint8_t ResultCode = SaveDevice(DeviceItem);
+
+			AddOrUpdateDeviceToCache(DeviceItem);
+
 			if (ResultCode == 0)
 				Result.SetSuccess();
 			else
@@ -918,10 +940,14 @@ class DataRemote_t : public DataEndpoint_t {
 
 			StatusSave(DeviceID, NewStatus);
 
-			if (ACOperandPrev.Mode 			!= ACOperandNext.Mode) 			StatusTriggerUpdated(DeviceID, 0xEF, 0xE0, ACOperandNext.Mode);
-			if (ACOperandPrev.Temperature 	!= ACOperandNext.Temperature) 	StatusTriggerUpdated(DeviceID, 0xEF, 0xE1, ACOperandNext.Temperature);
-			if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		StatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
-			if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	StatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+			if (ACOperandPrev.Mode 			!= ACOperandNext.Mode) 			HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE0, ACOperandNext.Mode);
+			if (ACOperandPrev.Temperature 	!= ACOperandNext.Temperature) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE1, ACOperandNext.Temperature);
+			if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
+			if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
+#endif
+
+			StatusTriggerUpdated(DeviceID, 0xEF, 0, 0, NewStatus);
 
 			return make_pair(true, NewStatus);
 		}
@@ -985,7 +1011,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 			StatusSave(DeviceID, NewStatus);
 
-			StatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value);
+			StatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value, NewStatus);
 
 			return make_pair(true, NewStatus);
 		}
@@ -1004,9 +1030,17 @@ class DataRemote_t : public DataEndpoint_t {
 				}
 		}
 
-		void StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {
+		void StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value, uint16_t Status) {
 #if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+			if (FunctionID > 0)
+				HomeKitStatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value);
+#endif
+			Wireless.SendBroadcastUpdated(0x87, "FE", DeviceID + Converter::ToHexString(Status,4));
 
+		}
+
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+		void HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {
 			ESP_LOGE("StatusTriggerUpdated", "FunctionID: %04x Value: %d", FunctionID, Value);
 
 			uint32_t AID = (uint32_t)Converter::UintFromHexString<uint16_t>(DeviceID);
@@ -1103,10 +1137,11 @@ class DataRemote_t : public DataEndpoint_t {
 			if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	StatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
 			 *
 			 */
-#endif
+
+
 		}
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+
 		void UpdateHomeKitCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
 			hap_acc_t* Accessory 	= hap_acc_get_by_aid(AID);
 			if (Accessory == NULL) 	return;
@@ -1147,6 +1182,15 @@ class DataRemote_t : public DataEndpoint_t {
 			uint8_t RemoveFromIRDevicesList(string UUID) {
 				std::vector<string>::iterator itr = std::find(IRDevicesList.begin(), IRDevicesList.end(), UUID);
 				if (itr != IRDevicesList.end()) IRDevicesList.erase(itr);
+
+				auto it = IRDevicesCache.begin();
+				while (it != IRDevicesCache.end())
+				{
+					if ((*it).DeviceID == UUID)
+						it = IRDevicesCache.erase(it);
+					else
+						++it;
+				}
 
 				return SaveIRDevicesList();
 			}

@@ -23,25 +23,24 @@ void Wireless_t::StopWiFi() {
 	WiFi.Stop();
 }
 
-void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string Value, string AdditionalData) {
-	#if !defined(CONFIG_BT_ENABLED)
+void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand) {
+	string UpdatedString = WebServer.UDPUpdatedBody(SensorID, Value, Operand);
 
 	if (WiFi.IsRunning())
-		WebServer.UDPSendBroadcastUpdated(SensorID, Value);
-	else {
-		WebServer.UDPSendBroadcastUpdated(SensorID, Value);
+	{
+		WebServer.UDPSendBroadcast(UpdatedString);
+
+		if (MQTT.GetStatus() == MQTT_t::CONNECTED)
+			MQTT.SendMessage(UpdatedString, "/devices/" + Device.IDToString() + "/UDP", 2);
+	}
+	else
+	{
+		WebServer.UDPSendBroadcast(UpdatedString);
 		IsEventDrivenStart = true;
 		StartInterfaces();
 	}
 
-	#else
-
-	if (WiFi.IsRunning())
-		WebServer.UDPSendBroadcastUpdated(SensorID, Value);
-	else
-		BLEServer.StartAdvertising("1" + Converter::ToHexString(SensorID,2) + Value + AdditionalData);
-
-	#endif
+	//BLEServer.StartAdvertising("1" + Converter::ToHexString(SensorID,2) + Value + AdditionalData);
 }
 
 bool Wireless_t::IsPeriodicPool() {

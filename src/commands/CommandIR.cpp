@@ -170,8 +170,6 @@ class CommandIR_t : public Command_t {
 					return false;
 				}
 
-				string ttt = Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery();
-
 				HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
 									QueryType::POST, true,
 									&ACReadStarted,
@@ -383,8 +381,10 @@ class CommandIR_t : public Command_t {
 		};
 
 		static void ACReadFinished(char IP[]) {
-			if (IRACReadBuffer.size() > 0)
+			if (IRACReadBuffer.size() > 0) {
 				RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer));
+				IRACReadBuffer = "";
+			}
 
 			CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
 			if (CommandIR == nullptr)
@@ -392,7 +392,15 @@ class CommandIR_t : public Command_t {
 			else
 				CommandIR->TXSend(IRACFrequency);
 
-			IRACReadBuffer = "";
+			Query_t Query(IP, WebServer_t::QueryTransportType::WebServer);
+			map<string,string> Params = Query.GetParams();
+
+			if (Params.count("operand") > 0 && Settings.eFuse.Type == Settings.Devices.Remote)
+				if (Params["operand"].size() == 8)
+					((DataRemote_t*)Data)->SetExternalStatusForAC(
+							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(0, 4)),
+							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4)));
+
 		}
 
 		static void ACReadAborted(char IP[]) {
