@@ -22,7 +22,7 @@ using namespace std;
 
 class Settings_t {
 	public:
-		const char* 						FirmwareVersion = "2.03";
+		const char* 						FirmwareVersion = "2.04";
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";

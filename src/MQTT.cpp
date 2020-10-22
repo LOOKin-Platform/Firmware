@@ -121,6 +121,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
 
     string DeviceTopic = Settings.MQTT.DeviceTopicPrefix + Device.IDToString();
+    string LastTopic = "";
 
     // your_context_t *context = event->context;
     switch (event->event_id) {
@@ -158,18 +159,17 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
         case MQTT_EVENT_DATA:
 		{
-			string Topic(event->topic, event->topic_len);
-
-			if (Topic == DeviceTopic + "/UDP")
+			if (LastTopic == DeviceTopic + "/UDP")
 			{
 				if (string(event->data, event->data_len) == WebServer_t::UDPDiscoverBody())
 					SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
 			}
 
-			if (Topic == DeviceTopic)
+			if (LastTopic == DeviceTopic)
 			{
 				WebServer_t::Response Response;
 				event->data[event->data_len] = '\0';
+
 				Query_t Query(event->data);
 				Query.Transport 		= WebServer.QueryTransportType::MQTT;
 				Query.MQTTMessageID 	= event->msg_id;
@@ -290,7 +290,7 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 
     Config.task_stack			= 6144;
 
-	Config.buffer_size			= 2560;
+	Config.buffer_size			= 4096;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size
 	Config.task_stack			= 0;
 	Config.task_prio			= 0;

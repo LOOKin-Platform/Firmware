@@ -492,7 +492,6 @@ class DataRemote_t : public DataEndpoint_t {
 								{ "Type"	, 	Converter::ToHexString(IRDeviceItem.Type,2)		},
 								{ "Updated" , 	Converter::ToString(IRDeviceItem.Updated)		}
 							});
-
 						}
 
 						JSON JSONObject;
@@ -679,8 +678,6 @@ class DataRemote_t : public DataEndpoint_t {
 										break;
 									}
 								}
-
-
 						}
 					}
 
@@ -736,8 +733,6 @@ class DataRemote_t : public DataEndpoint_t {
 
 			uint8_t ResultCode = SaveDevice(DeviceItem);
 
-			AddOrUpdateDeviceToCache(DeviceItem);
-
 			if (ResultCode == 0)
 				Result.SetSuccess();
 			else
@@ -746,7 +741,7 @@ class DataRemote_t : public DataEndpoint_t {
 				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(ResultCode) + " }";
 			}
 
-			Result.SetSuccess();
+			AddOrUpdateDeviceToCache(DeviceItem);
 
 			return;
 		}
@@ -851,7 +846,6 @@ class DataRemote_t : public DataEndpoint_t {
 				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::SignalsFieldEmpty)) + " }";
 				return;
 			}
-
 
 			Result.SetSuccess();
 			return;
@@ -1308,6 +1302,23 @@ class DataRemote_t : public DataEndpoint_t {
 				}
 
 				return make_pair(true, IRLib(Item));
+			}
+
+			void DebugIRDevicesCache() {
+				for (auto& Item : IRDevicesCache) {
+					ESP_LOGE("DeviceID"		, "%s"	, Item.DeviceID.c_str());
+					ESP_LOGE("DeviceType"	, "%02X", Item.DeviceType);
+					ESP_LOGE("Status"		, "%04X", Item.Status);
+					ESP_LOGE("Extra"		, "%04X", Item.Extra);
+
+					ESP_LOGE("Functions"	, " ");
+					for (auto& MapItem : Item.Functions) {
+						ESP_LOGE("-->"		, "%02X %s"	, MapItem.first, MapItem.second.first.c_str());
+
+						for (auto& MapFunctionItem : MapItem.second.second)
+							ESP_LOGE("---->", "%02X %02X"	, MapFunctionItem.first, MapFunctionItem.second);
+					}
+				}
 			}
 };
 
