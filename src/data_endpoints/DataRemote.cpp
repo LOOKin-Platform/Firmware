@@ -443,6 +443,14 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 		}
 
+		void AddOrUpdateDeviceFunctionInCache(string DeviceUUID, uint8_t FunctionID, string FunctionType, vector<pair<uint8_t, uint32_t>> FunctionData) {
+			for (int i=0; i < IRDevicesCache.size(); i++)
+				if (IRDevicesCache[i].DeviceID == DeviceUUID) {
+					IRDevicesCache[i].Functions[FunctionID] = make_pair(FunctionType, FunctionData);
+					return;
+				}
+		}
+
 		IRDeviceCacheItem_t GetDeviceFromCache(string UUID) {
 			for(auto& Item : IRDevicesCache)
 				if (Item.DeviceID == UUID)
@@ -662,6 +670,17 @@ class DataRemote_t : public DataEndpoint_t {
 							IsOK = true;
 							DeviceItem.Functions.erase(FunctionToDelete);
 							Memory.EraseStartedWith(UUID + "_" + FunctionToDelete + "_");
+
+							// delete from cache
+							for (int i=0;i<IRDevicesCache.size();i++)
+								if (IRDevicesCache[i].DeviceID == DeviceItem.UUID) {
+									if (IRDevicesCache[i].Functions.count(DevicesHelper.FunctionIDByName(FunctionToDelete)) > 0) {
+										IRDevicesCache[i].Functions.erase(DevicesHelper.FunctionIDByName(FunctionToDelete));
+										break;
+									}
+								}
+
+
 						}
 					}
 
@@ -802,11 +821,16 @@ class DataRemote_t : public DataEndpoint_t {
 					return;
 				}
 
+				vector<pair<uint8_t, uint32_t>> FunctionCache = vector<pair<uint8_t, uint32_t>>();
+
 				while(Child) {
 					JSON ChildObject(Child);
 					ChildObject.SetDestructable(false);
 
-					uint8_t SaveFunctionResult = SaveFunction(UUID, Function, SerializeIRSignal(ChildObject), Index++, DeviceItem.Type);
+					pair<uint8_t, uint32_t> IRDetails = make_pair(0,0);
+
+					uint8_t SaveFunctionResult = SaveFunction(UUID, Function, SerializeIRSignal(ChildObject, IRDetails), Index++, DeviceItem.Type);
+
 					if (SaveFunctionResult)
 					{
 						Result.SetFail();
@@ -814,8 +838,12 @@ class DataRemote_t : public DataEndpoint_t {
 						return;
 					}
 
+					FunctionCache.push_back(IRDetails);
+
 					Child = Child->next;
 				}
+
+				AddOrUpdateDeviceFunctionInCache(UUID, DevicesHelper.FunctionIDByName(Function), SignalType, FunctionCache);
 			}
 			else
 			{
@@ -823,6 +851,7 @@ class DataRemote_t : public DataEndpoint_t {
 				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(static_cast<uint8_t>(DataRemote_t::Error::SignalsFieldEmpty)) + " }";
 				return;
 			}
+
 
 			Result.SetSuccess();
 			return;
@@ -1229,7 +1258,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return 0;
 			}
 
-			string SerializeIRSignal(JSON &JSONObject) {
+			string SerializeIRSignal(JSON &JSONObject, pair<uint8_t,uint32_t> &IRDetails) {
 				IRLib Signal;
 
 				if (JSONObject.IsItemExists("raw")) { // сигнал передан в виде Raw
@@ -1250,12 +1279,18 @@ class DataRemote_t : public DataEndpoint_t {
 						Signal.Uint32Data = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("operand"));
 				}
 
-				if (Signal.Protocol != 0xFF)
+				if (Signal.Protocol != 0xFF) {
+					IRDetails 	= make_pair(Signal.Protocol, Signal.Uint32Data);
 					return Converter::ToHexString(Signal.Protocol,2) + Converter::ToHexString(Signal.Uint32Data, 8);
-				else if (Signal.Protocol == 0xFF && Signal.RawData.size() > 0)
+				}
+				else if (Signal.Protocol == 0xFF && Signal.RawData.size() > 0) {
+					IRDetails 	= make_pair(0xFF, 0);
 					return Signal.GetProntoHex(false);
-				else
+				}
+				else {
+					IRDetails 	= make_pair(0, 0);
 					return "";
+				}
 			}
 
 			pair<bool, IRLib> DeserializeIRSignal(string Item) {
