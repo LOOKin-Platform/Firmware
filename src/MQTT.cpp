@@ -121,7 +121,6 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
 
     string DeviceTopic = Settings.MQTT.DeviceTopicPrefix + Device.IDToString();
-    string LastTopic = "";
 
     // your_context_t *context = event->context;
     switch (event->event_id) {
@@ -159,13 +158,15 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
         case MQTT_EVENT_DATA:
 		{
-			if (LastTopic == DeviceTopic + "/UDP")
+			string Topic(event->topic, event->topic_len);
+
+			if (Topic == DeviceTopic + "/UDP")
 			{
 				if (string(event->data, event->data_len) == WebServer_t::UDPDiscoverBody())
 					SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
 			}
 
-			if (LastTopic == DeviceTopic)
+			if (Topic == DeviceTopic)
 			{
 				WebServer_t::Response Response;
 				event->data[event->data_len] = '\0';
@@ -202,9 +203,6 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 }
 
 int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retain) {
-	ESP_LOGD("Payload", "%s", Payload.c_str());
-	ESP_LOGD("Topic", "%s", Topic.c_str());
-
 	if (Status != CONNECTED)
 		return -1;
 
