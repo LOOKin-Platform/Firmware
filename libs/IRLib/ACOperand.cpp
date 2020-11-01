@@ -68,18 +68,31 @@ class ACOperand {
 			return Result;
 		}
 
-		uint8_t ModeToHomeKit() {
-			return ModeToHomeKit(Mode);
+		uint8_t ModeToHomeKitTarget() {
+			return ModeToHomeKitTarget(Mode);
 		}
 
-		static uint8_t ModeToHomeKit(uint8_t sMode) {
+		static uint8_t ModeToHomeKitTarget(uint8_t sMode) {
 			switch (sMode) {
-				case 0:  return 0;
 				case 3:  return 1;
 				case 2:  return 2;
+				default: return 0;
+			}
+		}
+
+		uint8_t ModeToHomeKitCurrent() {
+			return ModeToHomeKitCurrent(Mode);
+		}
+
+		static uint8_t ModeToHomeKitCurrent(uint8_t sMode) {
+			switch (sMode) {
+				case 3:  return 2;
+				case 2:  return 3;
+				case 0:  return 0;
 				default: return 3;
 			}
 		}
+
 
 		uint32_t ToUint32() {
 			uint32_t Result = 0x00;

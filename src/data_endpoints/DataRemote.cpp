@@ -1007,7 +1007,7 @@ class DataRemote_t : public DataEndpoint_t {
 			return false;
 		}
 
-		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value, string FunctionType = "") {
+		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value, string FunctionType = "", bool IsBroadcasted = true) {
 			uint16_t 	Status 		= 0x0;
 			uint8_t		DeviceType	= 0x0;
 
@@ -1027,14 +1027,14 @@ class DataRemote_t : public DataEndpoint_t {
 
 			ESP_LOGE("OLD STATUS", "%04X", Status);
 			ESP_LOGE("NEW STATUS", "%04X", NewStatus);
-			ESP_LOGE("VALUE", "%01X", Value);
 
 			if (Status == NewStatus)
 				return make_pair(false, Status);
 
 			StatusSave(DeviceID, NewStatus);
 
-			StatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value, NewStatus);
+			if (IsBroadcasted)
+				StatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value, NewStatus);
 
 			return make_pair(true, NewStatus);
 		}
@@ -1089,6 +1089,13 @@ class DataRemote_t : public DataEndpoint_t {
 					}
 
 					break;
+				case 0x04:
+					if (DeviceType == 0x01) { // TV, input mode
+						HAPValue.u = (Value + 1);
+						UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_ACTIVE_IDENTIFIER_UUID, HAPValue);
+					}
+					break;
+
 				case 0x05: // mute
 					HAPValue.b = (Value == 0) ? true : false;
 					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
@@ -1119,37 +1126,27 @@ class DataRemote_t : public DataEndpoint_t {
 					break;
 				}
 				case 0xE0: // AC mode
-					HAPValue.u = (uint8_t)ACOperand::ModeToHomeKit(Value);
+					HAPValue.u = (Value > 0) ? 3 : 0;
 					ESP_LOGE("HAPValue.u", "%d", HAPValue.u);
 
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_TARGET_HEATING_COOLING_STATE, HAPValue);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValue);
 
-					//if (HAPValue.u > 2) HAPValue.u = 2;
-					//UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_CURRENT_HEATING_COOLING_STATE, HAPValue);
+					HAPValue.b = (Value > 0);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, HAPValue);
 					break;
 				case 0xE1: // AC Temeperature
 					HAPValue.f = (float)Value;
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAPValue);
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_THERMOSTAT, HAP_CHAR_UUID_TARGET_TEMPERATURE, HAPValue);
+					//UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAPValue);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE, HAPValue);
 					break;
 				case 0xE2: // Fan Mode
 					HAPValue.f = (float)Value;
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
-
-					HAPValue.u = (Value == 0) ? 1 : 0;
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValue);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
 					break;
 				case 0xE3: // Swing Mode
 					HAPValue.u = Value;
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_SWING_MODE, HAPValue);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_SWING_MODE, HAPValue);
 
-					break;
-				case 0x04:
-
-					if (DeviceType == 0x01) { // TV, input mode
-						HAPValue.u = (Value + 1);
-						UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_ACTIVE_IDENTIFIER_UUID, HAPValue);
-					}
 					break;
 			}
 

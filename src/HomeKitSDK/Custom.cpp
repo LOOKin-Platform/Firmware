@@ -29,7 +29,7 @@ hap_char_t *hap_char_identifier_create(uint32_t ActiveID = 0)
 /* Char: Configured Name */
 hap_char_t *hap_char_configured_name_create(char *name)
 {
-    hap_char_t *hc = hap_char_string_create(CHAR_CONFIGUREDNAME_UUID, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_EV, name);
+    hap_char_t *hc = hap_char_string_create(CHAR_CONFIGUREDNAME_UUID, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, name);
     if (!hc) {
         return NULL;
     }
@@ -235,19 +235,51 @@ hap_char_t *hap_char_current_temperature_create_ac(float curr_temp)
     return hc;
 }
 
-/* Char: Target Temperature for ac */
-hap_char_t *hap_char_target_temperature_create_ac(float curr_temp)
+/* Char: Cooling temperature threshold for ac */
+hap_char_t *hap_char_custom_cooling_threshold_temperature_create(float cooling_threshold_temp)
 {
-    hap_char_t *hc = hap_char_float_create(HAP_CHAR_UUID_TARGET_TEMPERATURE, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, curr_temp);
+    hap_char_t *hc = hap_char_float_create(HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE,
+                                           HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, cooling_threshold_temp);
     if (!hc) {
         return NULL;
     }
 
-    hap_char_float_set_constraints(hc, 16, 30, 1);
+    hap_char_float_set_constraints(hc, 16.0, 30.0, 1);
     hap_char_add_unit(hc, HAP_CHAR_UNIT_CELSIUS);
 
     return hc;
 }
+
+/* Char: Target Heater Cooler State */
+hap_char_t *hap_char_custom_target_heater_cooler_state_create()
+{
+    hap_char_t *hc = hap_char_uint8_create(HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE,
+                                           HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, 2);
+    if (!hc) {
+        return NULL;
+    }
+
+    hap_char_int_set_constraints(hc, 2, 2, 1);
+
+    return hc;
+}
+
+
+/* Char: Heating temperature threshold for ac */
+hap_char_t *hap_char_custom_heating_threshold_temperature_create(float heating_threshold_temp)
+{
+    hap_char_t *hc = hap_char_float_create(HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE,
+                                           HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, heating_threshold_temp);
+    if (!hc) {
+        return NULL;
+    }
+
+    hap_char_float_set_constraints(hc, 16.0, 30.0, 1);
+    hap_char_add_unit(hc, HAP_CHAR_UNIT_CELSIUS);
+
+    return hc;
+}
+
 
 
 /* Char: Status Active (always ON) */
@@ -302,7 +334,7 @@ hap_serv_t *hap_serv_tv_create(uint8_t active, uint8_t ActiveIdentifier = 1, cha
     	goto err;
     }
 
-    if (hap_serv_add_char(hs, hap_char_sleep_discovery_mode_create(1)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_sleep_discovery_mode_create(active)) != HAP_SUCCESS) {
     	goto err;
     }
 
@@ -334,9 +366,11 @@ hap_serv_t *hap_serv_tv_speaker_create(bool IsMuted)
     	goto err;
     }
 
+    /*
     if (hap_serv_add_char(hs, hap_char_volume_create(10)) != HAP_SUCCESS) {
     	goto err;
     }
+    */
 
     if (hap_serv_add_char(hs, hap_char_volume_control_type_create(1)) != HAP_SUCCESS) {
     	goto err;
@@ -397,54 +431,43 @@ err:
     return NULL;
 }
 
-hap_serv_t *hap_serv_ac_tempmode_create(uint8_t curr_heating_cooling_state, uint8_t targ_heating_cooling_state,
-										float curr_temp, float targ_temp, uint8_t temp_disp_units)
-{
-    hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_THERMOSTAT);
+hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp, float targ_temp, uint8_t temp_disp_units, uint8_t SwingMode, float FanSpeed) {
+
+    hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_HEATER_COOLER);
     if (!hs) {
         return NULL;
     }
 
-    if (curr_heating_cooling_state > 2)
-    	curr_heating_cooling_state = 2;
+    ESP_LOGE("ACTIVE", "%s", (curr_heater_cooler_state > 0) ? "yes" : "no");
+    ESP_LOGE("ACTIVE", "%d", curr_heater_cooler_state);
 
-    if (hap_serv_add_char(hs, hap_char_current_heating_cooling_state_create(curr_heating_cooling_state)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_active_create(curr_heater_cooler_state > 0)) != HAP_SUCCESS) {
         goto err;
     }
-    if (hap_serv_add_char(hs, hap_char_target_heating_cooling_state_create(targ_heating_cooling_state)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_current_temperature_create(curr_temp)) != HAP_SUCCESS) {
         goto err;
     }
-    if (hap_serv_add_char(hs, hap_char_current_temperature_create_ac(curr_temp)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_current_heater_cooler_state_create(curr_heater_cooler_state)) != HAP_SUCCESS) {
         goto err;
     }
-    if (hap_serv_add_char(hs, hap_char_target_temperature_create_ac(targ_temp)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_custom_target_heater_cooler_state_create()) != HAP_SUCCESS) {
         goto err;
     }
     if (hap_serv_add_char(hs, hap_char_temperature_display_units_create(temp_disp_units)) != HAP_SUCCESS) {
         goto err;
     }
-    return hs;
-err:
-    hap_serv_delete(hs);
-    return NULL;
-}
-
-hap_serv_t *hap_serv_ac_fanswing_create(uint8_t TargetFanState, uint8_t SwingMode, uint8_t FanSpeed)
-{
-    hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_FAN_V2);
-    if (!hs) {
-        return NULL;
+    if (hap_serv_add_char(hs, hap_char_custom_cooling_threshold_temperature_create(20.0)) != HAP_SUCCESS) {
+    	goto err;
     }
-    if (hap_serv_add_char(hs, hap_char_always_active_create(1)) != HAP_SUCCESS) {
-        goto err;
+    /*
+    if (hap_serv_add_char(hs, hap_char_custom_heating_threshold_temperature_create(20.0)) != HAP_SUCCESS) {
+    	goto err;
     }
-    if (hap_serv_add_char(hs, hap_char_target_fan_state_create(TargetFanState)) != HAP_SUCCESS) {
-        goto err;
+    */
+    if (hap_serv_add_char(hs, hap_char_swing_mode_create(SwingMode)) != HAP_SUCCESS) {
+    	goto err;
     }
     if (hap_serv_add_char(hs, hap_char_ac_fan_rotation_create(FanSpeed)) != HAP_SUCCESS) {
-        goto err;
-    }
-    if (hap_serv_add_char(hs, hap_char_swing_mode_create(SwingMode)) != HAP_SUCCESS) {
         goto err;
     }
 

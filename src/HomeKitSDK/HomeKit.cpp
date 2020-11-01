@@ -113,7 +113,7 @@ int HomeKit::AccessoryIdentify(hap_acc_t *ha)
     return HAP_SUCCESS;
 }
 
-hap_status_t HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
+hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
     	if (Iterator > 0) return HAP_STATUS_SUCCESS;
@@ -126,7 +126,24 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
         	return HAP_STATUS_VAL_INVALID;
 
         if (IRDeviceItem.DeviceType == 0xEF) { // air conditioner
+        	uint8_t NewValue = 0;
+        	uint8_t CurrentMode = ((DataRemote_t*)Data)->DevicesHelper.GetDeviceForType(0xEF)->GetStatusByte(IRDeviceItem.Status , 0);
 
+        	if (Value)
+        	{
+        		const hap_val_t *ValueForCurrentState = hap_char_get_val(hap_serv_get_char_by_uuid(hap_char_get_parent(Char), HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE));
+
+                switch (ValueForCurrentState->u) {
+                	case 0: NewValue = 1; break;
+                	case 1: NewValue = 3; break;
+                	case 2: NewValue = 2; break;
+                }
+        	}
+
+        	if ((!Value && CurrentMode > 0) || (Value && CurrentMode == 0))
+        		StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, NewValue);
+
+        	return HAP_STATUS_SUCCESS;
         }
 
         ((DataRemote_t*)Data)->StatusUpdateForDevice(IRDeviceItem.DeviceID, 0xE0, Value);
@@ -160,6 +177,8 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, uint8_t Iterator) {
             	return HAP_STATUS_SUCCESS;
         	}
         }
+
+
     }
 
     return HAP_STATUS_VAL_INVALID;
@@ -263,7 +282,7 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
     return false;
 }
 
-bool HomeKit::HeatingCoolingState(uint8_t Value, uint16_t AID) {
+bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
 	ESP_LOGE("HeaterCoolerState", "UUID: %04X, Value: %d", AID, Value);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
@@ -274,9 +293,9 @@ bool HomeKit::HeatingCoolingState(uint8_t Value, uint16_t AID) {
 
         switch (Value)
         {
-        	case 1: Value = 3; break;
-        	case 2:	Value = 2; break;
-        	case 3: Value = 1; break;
+        	case 0: Value = 1; break;
+        	case 1:	Value = 3; break;
+        	case 2: Value = 2; break;
         	default: break;
         }
 
@@ -288,7 +307,7 @@ bool HomeKit::HeatingCoolingState(uint8_t Value, uint16_t AID) {
     return false;
 }
 
-bool HomeKit::TargetTemperature(float Value, uint16_t AID) {
+bool HomeKit::ThresholdTemperature(float Value, uint16_t AID, bool IsCooling) {
 	ESP_LOGE("TargetTemperature", "UUID: %04X, Value: %f", AID, Value);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
@@ -311,19 +330,15 @@ bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t
 	ESP_LOGE("RotationSpeed", "UUID: %04X, Value: %f", AID, Value);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
-    	if (Iterator > 0) return true;
-
         DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+    	if (Iterator > 0 && IRDeviceItem.DeviceType != 0xEF) return true;
+
 
         if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // Air Conditionair
         	return false;
 
         StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value));
-
-        hap_val_t ValueForTargetState;
-        ValueForTargetState.u = (Value == 0) ? 1 : 0;
-        hap_char_update_val(hap_serv_get_char_by_uuid(hap_char_get_parent(Char), HAP_CHAR_UUID_TARGET_FAN_STATE), &ValueForTargetState);
-
         return true;
     }
 
@@ -372,11 +387,9 @@ bool HomeKit::SwingMode(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iter
 
 
 void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value) {
-	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value);
+	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value, "", false);
 
 	if (!Result.first) return;
-
-	ESP_LOGE("New Status", "%04X", Result.second);
 
     CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
@@ -405,10 +418,20 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         ESP_LOGI(Tag, "Characteristic: %s, i: %d", hap_char_get_type_uuid(write->hc), i);
 
         if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ON)) {
-        	*(write->status) = On(write->val.b, AID, i);
+        	*(write->status) = On(write->val.b, AID, write->hc, i);
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ACTIVE)) {
-        	*(write->status) = On(write->val.b, AID, i);
+        	*(write->status) = On(write->val.b, AID, write->hc, i);
+
+        	if (Settings.eFuse.Type == Settings.Devices.Remote) {
+                DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+            	if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
+        			static hap_val_t HAPValue;
+        			HAPValue.u = (uint8_t)write->val.b;
+            		UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
+            	}
+        	}
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_REMOTEKEY_UUID)) {
         	Cursor(write->val.b, AID);
@@ -425,13 +448,18 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
-        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_HEATING_COOLING_STATE)) {
-        	HeatingCoolingState(write->val.b, AID);
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE)) {
+        	HeaterCoolerState(write->val.b, AID);
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
-        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_TEMPERATURE)) {
-        	TargetTemperature(write->val.f, AID);
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE)) {
+        	ThresholdTemperature(write->val.f, AID, true);
+            hap_char_update_val(write->hc, &(write->val));
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE)) {
+        	ThresholdTemperature(write->val.f, AID, false);
             hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
@@ -455,9 +483,33 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_MUTE_UUID)) {
         	*(write->status) = HAP_STATUS_SUCCESS;
+
+        	if (Settings.eFuse.Type == Settings.Devices.Remote) {
+                DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+            	if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
+        			static hap_val_t HAPValue;
+        			HAPValue.u = (write->val.b == true) ? 0 : 1;
+            		UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValue);
+            	}
+        	}
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_VOLUME_UUID)) {
         	*(write->status) = HAP_STATUS_SUCCESS;
+
+        	if (Settings.eFuse.Type == Settings.Devices.Remote) {
+                DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+                if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
+                	static hap_val_t HAPValueMute;
+                	HAPValueMute.b = false;
+        			UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValueMute);
+
+        			static hap_val_t HAPValueControlType;
+        			HAPValueControlType.u = 1;
+        			UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueControlType);
+                }
+        	}
         }
         else {
             *(write->status) = HAP_STATUS_RES_ABSENT;
@@ -472,8 +524,23 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
     return ret;
 }
 
+void HomeKit::UpdateHomeKitCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
+	hap_acc_t* Accessory 	= hap_acc_get_by_aid(AID);
+	if (Accessory == NULL) 	return;
+
+	hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
+	if (Service == NULL) 	return;
+
+	hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
+	if (Char == NULL) 		return;
+
+	hap_char_update_val(Char, &Value);
+}
+
 void HomeKit::FillAccessories() {
 	hap_acc_t 	*Accessory;
+
+	hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
 
 	if (Settings.eFuse.Type == 0x81) {
 		if (BridgedAccessories.size() == 0) {
@@ -524,10 +591,7 @@ void HomeKit::FillAccessories() {
 			if (Name.size() > 32)
 				Name = Name.substr(0, 32);
 
-			if (Name != "")
-				sprintf(accessory_name, "%s", Name.c_str());//Name.c_str());
-			else
-				sprintf(accessory_name, "%s", "Accessory\0");
+			sprintf(accessory_name, "%s", (Name != "") ? Name.c_str() : "Accessory\0");
 
 			hap_acc_cfg_t bridge_cfg = {
 				.name 				= accessory_name,
@@ -600,37 +664,30 @@ void HomeKit::FillAccessories() {
 					break;
 
 				case 0x07: // Fan
+				{
+					uint8_t PowerStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
+
 					hap_serv_t *ServiceFan;
-					ServiceFan = hap_serv_fan_v2_create(false);
+					ServiceFan = hap_serv_fan_v2_create(PowerStatus);
 					hap_serv_add_char(ServiceFan, hap_char_name_create(accessory_name));
 
 					hap_serv_set_priv(ServiceFan, (void *)(uint32_t)AID);
 					hap_serv_set_write_cb(ServiceFan, WriteCallback);
 					hap_acc_add_serv(Accessory, ServiceFan);
 					break;
+				}
 
 				case 0xEF: { // AC
 					ACOperand Operand((uint32_t)IRDevice.Status);
 
-					ESP_LOGE("hap_serv_ac_tempmode_create", "(%d, %d)", Operand.Mode, Operand.Temperature);
+					ESP_LOGD("HAP AC Create", "(%d, %d)", Operand.Mode, Operand.Temperature);
 
 					hap_serv_t *ServiceAC;
-					ServiceAC = hap_serv_ac_tempmode_create(Operand.ModeToHomeKit(), Operand.ModeToHomeKit(), Operand.Temperature, Operand.Temperature, 0);
+					ServiceAC = hap_serv_ac_create((Operand.Mode==0) ? 0 : 3, Operand.Temperature, Operand.Temperature, 0, (Operand.SwingMode > 0) ? 1 : 0, Operand.FanMode);
 					hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
 					hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
 					hap_serv_set_write_cb(ServiceAC, WriteCallback);
 					hap_acc_add_serv(Accessory, ServiceAC);
-
-					ESP_LOGE("hap_serv_ac_fanswing_create", "(%d, %d, %d)", (Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
-
-					hap_serv_t *ServiceACFan;
-					ServiceACFan = hap_serv_ac_fanswing_create((Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
-					hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
-
-					hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb(ServiceACFan, WriteCallback);
-					hap_serv_link_serv(ServiceAC, ServiceACFan);
-					hap_acc_add_serv(Accessory, ServiceACFan);
 					break;
 				}
 				default:
@@ -668,6 +725,7 @@ void HomeKit::Task(void *) {
      * Ideally, this should be available in factory_nvs partition. This is
      * just for demonstration purpose
      */
+
 	hap_set_setup_info(&setup_info);
 
     /* Register a common button for reset Wi-Fi network and reset to factory.
