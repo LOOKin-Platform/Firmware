@@ -263,36 +263,26 @@ class SensorIR_t : public Sensor_t {
 			if (SensorIRACCheckBuffer.size() == 0)
 				return;
 
-			uint16_t Codeset 	= 0;
-			uint16_t Status		= 0;
+			vector<string> Codesets = JSON(SensorIRACCheckBuffer).GetStringArray();
 
-			JSON JSONObject(SensorIRACCheckBuffer);
 			SensorIRACCheckBuffer = "";
 
-			if (JSONObject.IsItemExists("codeset")) {
-				string CodesetString = JSONObject.GetItem("codeset");
-				if (CodesetString.size() > 4)
-					CodesetString = CodesetString.substr(0,4);
+			if (Codesets.size() == 0) return;
 
-				Codeset = Converter::UintFromHexString<uint16_t>(CodesetString);
+			for (string CodesetItem : Codesets) {
+				if (CodesetItem.size() != 8) continue;
+
+				uint16_t Codeset 	= Converter::UintFromHexString<uint16_t>(CodesetItem.substr(0, 4));
+				uint16_t Status		= Converter::UintFromHexString<uint16_t>(CodesetItem.substr(4, 4));
+
+				if (Codeset == 0) return;
+
+				ESP_LOGE("RECEIVED DATA", "%04X %04X", Codeset, Status);
+
+				if (Settings.eFuse.Type == Settings.Devices.Remote)
+					((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Status);
+
 			}
-
-			if (JSONObject.IsItemExists("status")) {
-				string StatusString = JSONObject.GetItem("status");
-				if (StatusString.size() > 4)
-					StatusString = StatusString.substr(0,4);
-
-				Status = Converter::UintFromHexString<uint16_t>(StatusString);
-			}
-
-			ESP_LOGE("RECEIVED DATA", "%04X %04X", Codeset, Status);
-
-			if (Codeset == 0)
-				return;
-
-			if (Settings.eFuse.Type == Settings.Devices.Remote)
-				((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Status);
-
 		}
 
 		static void ACReadAborted(char IP[]) {
