@@ -281,21 +281,6 @@ hap_char_t *hap_char_custom_heating_threshold_temperature_create(float heating_t
 }
 
 
-
-/* Char: Status Active (always ON) */
-hap_char_t *hap_char_always_active_create(uint8_t active)
-{
-    hap_char_t *hc = hap_char_uint8_create(HAP_CHAR_UUID_ACTIVE, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, active);
-
-    hap_char_int_set_constraints(hc, 0, 1, 1);
-
-    if (!hc) {
-        return NULL;
-    }
-
-    return hc;
-}
-
 /* Char: Vent Speed for AC */
 hap_char_t *hap_char_ac_fan_rotation_create(float rotation_speed)
 {
@@ -431,7 +416,8 @@ err:
     return NULL;
 }
 
-hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp, float targ_temp, uint8_t temp_disp_units, uint8_t SwingMode, float FanSpeed) {
+hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp, float targ_temp, uint8_t temp_disp_units, uint8_t SwingMode)
+{
 
     hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_HEATER_COOLER);
     if (!hs) {
@@ -467,6 +453,25 @@ hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp
     if (hap_serv_add_char(hs, hap_char_swing_mode_create(SwingMode)) != HAP_SUCCESS) {
     	goto err;
     }
+
+    return hs;
+err:
+    hap_serv_delete(hs);
+    return NULL;
+}
+
+hap_serv_t *hap_serv_ac_fan_create(bool IsActive, uint8_t TargetFanState, uint8_t SwingMode, uint8_t FanSpeed)
+{
+    hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_FAN_V2);
+    if (!hs) {
+        return NULL;
+    }
+    if (hap_serv_add_char(hs, hap_char_active_create(IsActive ? 1 : 0)) != HAP_SUCCESS) {
+        goto err;
+    }
+    if (hap_serv_add_char(hs, hap_char_target_fan_state_create(TargetFanState)) != HAP_SUCCESS) {
+        goto err;
+    }
     if (hap_serv_add_char(hs, hap_char_ac_fan_rotation_create(FanSpeed)) != HAP_SUCCESS) {
         goto err;
     }
@@ -476,5 +481,7 @@ err:
     hap_serv_delete(hs);
     return NULL;
 }
+
+
 
 #endif

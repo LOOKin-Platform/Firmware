@@ -1125,23 +1125,42 @@ class DataRemote_t : public DataEndpoint_t {
 					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
 					break;
 				}
-				case 0xE0: // AC mode
+				case 0xE0: { // AC mode
 					HAPValue.u = (Value > 0) ? 3 : 0;
 					ESP_LOGE("HAPValue.u", "%d", HAPValue.u);
 
 					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValue);
 
 					HAPValue.b = (Value > 0);
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, HAPValue);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER	, HAP_CHAR_UUID_ACTIVE, HAPValue);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ACTIVE, HAPValue);
+
+
+					static hap_val_t HAPValueFanRotation;
+					static hap_val_t HAPValueFanAuto;
+
+			        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = GetDeviceFromCache(DeviceID);
+					uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
+
+					HAPValueFanRotation.f 	= (Value > 0) ? ((FanStatus > 0) ? FanStatus : 2) : 0;
+					HAPValueFanAuto.u 		= (Value > 0) ? ((FanStatus == 0) ? 1 : 0) : 0;
+
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, HAPValueFanRotation);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValueFanAuto);
 					break;
+				}
 				case 0xE1: // AC Temeperature
 					HAPValue.f = (float)Value;
 					//UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAPValue);
 					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE, HAPValue);
 					break;
 				case 0xE2: // Fan Mode
-					HAPValue.f = (float)Value;
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
+					HAPValue.f = (float) ((Value > 0) ? Value: 0);
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
+
+					HAPValue.u = (Value > 0) ? 0 : 1;
+					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValue);
+
 					break;
 				case 0xE3: // Swing Mode
 					HAPValue.u = Value;

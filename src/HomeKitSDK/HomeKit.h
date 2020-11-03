@@ -49,7 +49,7 @@ class HomeKit {
 		static bool		TargetFanState		(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 		static bool		SwingMode			(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 
-		static void		StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value);
+		static void		StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send = false);
 
 		static int 		WriteCallback(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv);
 		static void 	UpdateHomeKitCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value);

@@ -126,6 +126,10 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         	return HAP_STATUS_VAL_INVALID;
 
         if (IRDeviceItem.DeviceType == 0xEF) { // air conditioner
+        	// check service. If fan for ac - skip
+        	if (strcmp(hap_serv_get_type_uuid(hap_char_get_parent(Char)), HAP_SERV_UUID_FAN_V2) == 0)
+        		return HAP_STATUS_SUCCESS;
+
         	uint8_t NewValue = 0;
         	uint8_t CurrentMode = ((DataRemote_t*)Data)->DevicesHelper.GetDeviceForType(0xEF)->GetStatusByte(IRDeviceItem.Status , 0);
 
@@ -142,6 +146,20 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
 
         	if ((!Value && CurrentMode > 0) || (Value && CurrentMode == 0))
         		StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, NewValue);
+
+        	if (Value == 0) {
+        		hap_val_t ValueForACFanActive;
+        		ValueForACFanActive.u = 0;
+        		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+
+        		hap_val_t ValueForACFanState;
+        		ValueForACFanState.f = 0;
+        		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+
+        		hap_val_t ValueForACFanAuto;
+        		ValueForACFanAuto.u = 0;
+        		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+        	}
 
         	return HAP_STATUS_SUCCESS;
         }
@@ -299,6 +317,24 @@ bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
         	default: break;
         }
 
+    	if (Value == 2) {
+    		hap_val_t ValueForACFanActive;
+    		ValueForACFanActive.u = 1;
+    		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+
+    		hap_val_t ValueForACFanState;
+    		hap_val_t ValueForACFanAuto;
+
+    		uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
+
+    		ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
+    		ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
+
+    		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+    		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+    	}
+
+
         StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, Value);
 
         return true;
@@ -334,11 +370,27 @@ bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t
 
     	if (Iterator > 0 && IRDeviceItem.DeviceType != 0xEF) return true;
 
-
         if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // Air Conditionair
         	return false;
 
+        if ((Value > 0 && IRDeviceItem.Status < 0x1000) || (Value == 0 && IRDeviceItem.Status >= 0x1000)) {
+            hap_val_t ValueForACActive;
+            ValueForACActive.u = (Value == 0) ? 0 : 1;
+            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, ValueForACActive);
+
+            hap_val_t ValueForACState;
+            ValueForACState.u = (Value == 0) ? 0 : 3;
+            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, ValueForACState);
+
+            StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, (Value == 0) ? 0 : 2, false);
+
+            hap_val_t ValueForACFanAuto;
+            ValueForACFanAuto.u = 0;
+            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+    	}
+
         StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value));
+
         return true;
     }
 
@@ -356,11 +408,37 @@ bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t
         if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
         	return false;
 
-        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, (Value) ? 0 : 2);
+        // switch on
+        if (Value > 0 && IRDeviceItem.Status < 0x1000)
+        {
+        	hap_val_t ValueForACFanActive;
+        	ValueForACFanActive.u = 1;
+        	UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
 
-        hap_val_t ValueForRotationSpeed;
-        ValueForRotationSpeed.f = (Value == false) ? 2.0 : 0.0;
-        hap_char_update_val(hap_serv_get_char_by_uuid(hap_char_get_parent(Char), HAP_CHAR_UUID_ROTATION_SPEED), &ValueForRotationSpeed);
+        	hap_val_t ValueForACFanState;
+        	hap_val_t ValueForACFanAuto;
+
+        	uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
+        	ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
+        	ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
+
+        	UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+        	UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+
+            hap_val_t ValueForACActive;
+            ValueForACActive.u = 1;
+            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, ValueForACActive);
+
+            hap_val_t ValueForACState;
+            ValueForACState.u = 3;
+            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, ValueForACState);
+
+            StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 2, false);
+        }
+
+
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, (Value) ? 0 : 2);
 
         return true;
     }
@@ -386,8 +464,10 @@ bool HomeKit::SwingMode(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iter
 }
 
 
-void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value) {
+void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
 	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value, "", false);
+
+	if (!Send) return;
 
 	if (!Result.first) return;
 
@@ -465,7 +545,6 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ROTATION_SPEED)) {
         	RotationSpeed(write->val.f, AID, write->hc, i);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_FAN_STATE)) {
@@ -683,11 +762,20 @@ void HomeKit::FillAccessories() {
 					ESP_LOGD("HAP AC Create", "(%d, %d)", Operand.Mode, Operand.Temperature);
 
 					hap_serv_t *ServiceAC;
-					ServiceAC = hap_serv_ac_create((Operand.Mode==0) ? 0 : 3, Operand.Temperature, Operand.Temperature, 0, (Operand.SwingMode > 0) ? 1 : 0, Operand.FanMode);
+					ServiceAC = hap_serv_ac_create((Operand.Mode==0) ? 0 : 3, Operand.Temperature, Operand.Temperature, 0, (Operand.SwingMode > 0) ? 1 : 0);
 					hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
 					hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
 					hap_serv_set_write_cb(ServiceAC, WriteCallback);
 					hap_acc_add_serv(Accessory, ServiceAC);
+
+					hap_serv_t *ServiceACFan;
+					ServiceACFan = hap_serv_ac_fan_create((Operand.Mode == 0) ? false : true, (Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
+					hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
+
+					hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb(ServiceACFan, WriteCallback);
+					hap_serv_link_serv(ServiceAC, ServiceACFan);
+					hap_acc_add_serv(Accessory, ServiceACFan);
 					break;
 				}
 				default:
