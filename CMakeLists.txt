@@ -25,7 +25,7 @@ cmake_minimum_required(VERSION 3.5)
 	#endif(DEFINED ENV{IDF_PATH})
 	
 
-	set(EXTRA_COMPONENT_DIRS ${HOMEKIT_PATH} ${HOMEKIT_PATH}/components ${HOMEKIT_PATH}/components/homekit "drivers libs src components_override")
+	set(EXTRA_COMPONENT_DIRS ${HOMEKIT_PATH} ${HOMEKIT_PATH}/components ${HOMEKIT_PATH}/components/homekit "drivers libs src")
 	
 #else()
 #	set(EXTRA_COMPONENT_DIRS "drivers libs src")

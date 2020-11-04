@@ -1,11 +1,7 @@
-#ifndef HOMEKIT_SDK_CUSTOM
-#define HOMEKIT_SDK_CUSTOM
-
-#include <HomeKit.h>
 #include "Custom.h"
 
 /* Char: Active identifier */
-hap_char_t *hap_char_active_identifier_create(uint32_t ActiveID = 0)
+hap_char_t *hap_char_active_identifier_create(uint32_t ActiveID)
 {
     hap_char_t *hc = hap_char_uint32_create(CHAR_ACTIVE_IDENTIFIER_UUID, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, ActiveID);
     if (!hc) {
@@ -16,7 +12,7 @@ hap_char_t *hap_char_active_identifier_create(uint32_t ActiveID = 0)
 }
 
 /* Char: Identifier */
-hap_char_t *hap_char_identifier_create(uint32_t ActiveID = 0)
+hap_char_t *hap_char_identifier_create(uint32_t ActiveID)
 {
     hap_char_t *hc = hap_char_uint32_create(CHAR_IDENTIFIER_UUID, HAP_CHAR_PERM_PR, ActiveID);
     if (!hc) {
@@ -296,7 +292,7 @@ hap_char_t *hap_char_ac_fan_rotation_create(float rotation_speed)
 }
 
 /* Service: TV */
-hap_serv_t *hap_serv_tv_create(uint8_t active, uint8_t ActiveIdentifier = 1, char *ConfiguredName = NULL)
+hap_serv_t *hap_serv_tv_create(uint8_t active, uint8_t ActiveIdentifier, char *ConfiguredName)
 {
     hap_serv_t *hs = hap_serv_create(SERVICE_TV_UUID);
 
@@ -416,16 +412,13 @@ err:
     return NULL;
 }
 
-hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp, float targ_temp, uint8_t temp_disp_units, uint8_t SwingMode)
+hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp, float targ_temp, uint8_t temp_disp_units)
 {
 
     hap_serv_t *hs = hap_serv_create(HAP_SERV_UUID_HEATER_COOLER);
     if (!hs) {
         return NULL;
     }
-
-    ESP_LOGE("ACTIVE", "%s", (curr_heater_cooler_state > 0) ? "yes" : "no");
-    ESP_LOGE("ACTIVE", "%d", curr_heater_cooler_state);
 
     if (hap_serv_add_char(hs, hap_char_active_create(curr_heater_cooler_state > 0)) != HAP_SUCCESS) {
         goto err;
@@ -450,10 +443,6 @@ hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp
     	goto err;
     }
     */
-    if (hap_serv_add_char(hs, hap_char_swing_mode_create(SwingMode)) != HAP_SUCCESS) {
-    	goto err;
-    }
-
     return hs;
 err:
     hap_serv_delete(hs);
@@ -475,6 +464,9 @@ hap_serv_t *hap_serv_ac_fan_create(bool IsActive, uint8_t TargetFanState, uint8_
     if (hap_serv_add_char(hs, hap_char_ac_fan_rotation_create(FanSpeed)) != HAP_SUCCESS) {
         goto err;
     }
+    if (hap_serv_add_char(hs, hap_char_swing_mode_create(SwingMode)) != HAP_SUCCESS) {
+    	goto err;
+    }
 
     return hs;
 err:
@@ -482,6 +474,25 @@ err:
     return NULL;
 }
 
+void HomeKitUpdateCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
+	HomeKitUpdateCharValue((uint32_t)Converter::UintFromHexString<uint16_t>(StringAID), ServiceUUID, CharUUID, Value);
+}
+
+extern Device_t	Device;
+
+void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value)
+{
+	hap_acc_t* Accessory = (Device.HomeKitBridge) ? hap_acc_get_by_aid(AID) : hap_get_first_acc();
+
+	if (Accessory == NULL) 	return;
+
+	hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
+	if (Service == NULL) 	return;
+
+	hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
+	if (Char == NULL) 		return;
+
+	hap_char_update_val(Char, &Value);
+}
 
 
-#endif

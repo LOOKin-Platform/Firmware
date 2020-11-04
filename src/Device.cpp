@@ -6,7 +6,8 @@
 #include "Globals.h"
 #include "Device.h"
 
-httpd_req_t	*Device_t::CachedRequest = NULL;
+httpd_req_t	*Device_t::CachedRequest 	= NULL;
+bool		Device_t::HomeKitBridge 	= false;
 
 DeviceType_t::DeviceType_t(string TypeStr) {
 	for(auto const &TypeItem : Settings.Devices.Literaly) {

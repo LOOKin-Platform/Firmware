@@ -1,4 +1,3 @@
-#include "Custom.cpp"
 #include "HomeKit.h"
 
 const char *Tag = "HAP Bridge";
@@ -150,15 +149,15 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         	if (Value == 0) {
         		hap_val_t ValueForACFanActive;
         		ValueForACFanActive.u = 0;
-        		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
 
         		hap_val_t ValueForACFanState;
         		ValueForACFanState.f = 0;
-        		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
 
         		hap_val_t ValueForACFanAuto;
         		ValueForACFanAuto.u = 0;
-        		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
         	}
 
         	return HAP_STATUS_SUCCESS;
@@ -320,7 +319,7 @@ bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
     	if (Value == 2) {
     		hap_val_t ValueForACFanActive;
     		ValueForACFanActive.u = 1;
-    		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
 
     		hap_val_t ValueForACFanState;
     		hap_val_t ValueForACFanAuto;
@@ -330,8 +329,8 @@ bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
     		ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
     		ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
 
-    		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
-    		UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
     	}
 
 
@@ -376,17 +375,17 @@ bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t
         if ((Value > 0 && IRDeviceItem.Status < 0x1000) || (Value == 0 && IRDeviceItem.Status >= 0x1000)) {
             hap_val_t ValueForACActive;
             ValueForACActive.u = (Value == 0) ? 0 : 1;
-            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, ValueForACActive);
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, ValueForACActive);
 
             hap_val_t ValueForACState;
             ValueForACState.u = (Value == 0) ? 0 : 3;
-            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, ValueForACState);
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, ValueForACState);
 
             StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, (Value == 0) ? 0 : 2, false);
 
             hap_val_t ValueForACFanAuto;
             ValueForACFanAuto.u = 0;
-            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
     	}
 
         StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value));
@@ -413,7 +412,7 @@ bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t
         {
         	hap_val_t ValueForACFanActive;
         	ValueForACFanActive.u = 1;
-        	UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
 
         	hap_val_t ValueForACFanState;
         	hap_val_t ValueForACFanAuto;
@@ -422,16 +421,16 @@ bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t
         	ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
         	ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
 
-        	UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
-        	UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
 
             hap_val_t ValueForACActive;
             ValueForACActive.u = 1;
-            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, ValueForACActive);
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, ValueForACActive);
 
             hap_val_t ValueForACState;
             ValueForACState.u = 3;
-            UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, ValueForACState);
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, ValueForACState);
 
             StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 2, false);
         }
@@ -509,7 +508,7 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
             	if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
         			static hap_val_t HAPValue;
         			HAPValue.u = (uint8_t)write->val.b;
-            		UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
+        			HomeKitUpdateCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
             	}
         	}
         }
@@ -569,7 +568,7 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
             	if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
         			static hap_val_t HAPValue;
         			HAPValue.u = (write->val.b == true) ? 0 : 1;
-            		UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValue);
+        			HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValue);
             	}
         	}
         }
@@ -582,11 +581,11 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
                 if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
                 	static hap_val_t HAPValueMute;
                 	HAPValueMute.b = false;
-        			UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValueMute);
+                	HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValueMute);
 
         			static hap_val_t HAPValueControlType;
         			HAPValueControlType.u = 1;
-        			UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueControlType);
+        			HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueControlType);
                 }
         	}
         }
@@ -603,190 +602,256 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
     return ret;
 }
 
-void HomeKit::UpdateHomeKitCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
-	hap_acc_t* Accessory 	= hap_acc_get_by_aid(AID);
-	if (Accessory == NULL) 	return;
-
-	hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
-	if (Service == NULL) 	return;
-
-	hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
-	if (Char == NULL) 		return;
-
-	hap_char_update_val(Char, &Value);
-}
-
 void HomeKit::FillAccessories() {
-	hap_acc_t 	*Accessory;
+	hap_acc_t 	*Accessory = NULL;
 
 	hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
 
-	if (Settings.eFuse.Type == 0x81) {
-		if (BridgedAccessories.size() == 0) {
-			string BridgeNameString = Device.GetName();
-			if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
+	switch (Settings.eFuse.Type) {
+		case 0x81:
+			if (Device.HomeKitBridge == false)
+				FillRemoteACOnly(Accessory);
+			else
+				FillRemoteBridge(Accessory);
+			break;
+	}
+}
 
-			static AccessoryData_t AccessoryData(BridgeNameString, Device.ModelToString(), Device.IDToString());
 
-			hap_acc_cfg_t cfg = {
-				.name 				= AccessoryData.Name,
-				.model 				= AccessoryData.Model,
-				.manufacturer 		= "LOOK.in",
-				.serial_num 		= AccessoryData.ID,
-				.fw_rev 			= (char*)Settings.FirmwareVersion,
-				.hw_rev 			= NULL,
-				.pv 				= "1.1.0",
-				.cid 				= HAP_CID_BRIDGE,
-				.identify_routine 	= BridgeIdentify,
-			};
+void HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
+	string 		NameString 	=  "";
+	uint16_t 	UUID 		= 0;
+	uint16_t	Status		= 0;
 
-			/* Create accessory object */
-			Accessory = hap_acc_create(&cfg);
-
-			/* Product Data as per HAP Spec R15. Please use the actual product data
-			 * value assigned to your Product Plan
-			 */
-
-			uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
-			hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
-
-			/* Add the Accessory to the HomeKit Database */
-			hap_add_accessory(Accessory);
+	for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
+		if (IRDevice.Type == 0xEF) {
+			NameString 	= IRDevice.Name;
+			UUID 		= Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
+			Status		= IRDevice.Status;
+			break;
 		}
 
-		for(auto& BridgeAccessory : BridgedAccessories) {
-			hap_remove_bridged_accessory(BridgeAccessory);
-			hap_acc_delete(BridgeAccessory);
-		}
+	hap_acc_t* ExistedAccessory = hap_get_first_acc();
 
-		BridgedAccessories.clear();
+	if (ExistedAccessory == NULL)
+	{
+		if (NameString == "")
+			NameString = Device.TypeToString() + " " + Device.IDToString();
 
-		for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
-		{
-			char accessory_name[32] = "\0";
+		static AccessoryData_t AccessoryData(NameString, Device.ModelToString(), Device.IDToString());
 
-			string Name = IRDevice.Name;
+		hap_acc_cfg_t cfg = {
+			.name 				= AccessoryData.Name,
+			.model 				= AccessoryData.Model,
+			.manufacturer 		= "LOOK.in",
+			.serial_num 		= AccessoryData.ID,
+			.fw_rev 			= (char*)Settings.FirmwareVersion,
+			.hw_rev 			= NULL,
+			.pv 				= "1.1.0",
+			.cid 				= HAP_CID_AIR_CONDITIONER,
+			.identify_routine 	= BridgeIdentify,
+		};
 
-			if (Name.size() > 32)
-				Name = Name.substr(0, 32);
+		Accessory = hap_acc_create(&cfg);
 
-			sprintf(accessory_name, "%s", (Name != "") ? Name.c_str() : "Accessory\0");
+		uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
+		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
 
-			hap_acc_cfg_t bridge_cfg = {
-				.name 				= accessory_name,
-				.model 				= "",
-				.manufacturer 		= "",
-				.serial_num 		= "n/a",
-				.fw_rev 			= (char*)Settings.FirmwareVersion,
-            	.hw_rev 			= NULL,
-				.pv 				= "1.1.0",
-				.cid 				= HAP_CID_BRIDGE,
-				.identify_routine 	= AccessoryIdentify,
-			};
+		ACOperand Operand((uint32_t)Status);
 
-			uint16_t AID = Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
-			Accessory = hap_acc_create(&bridge_cfg);
+		hap_serv_t *ServiceAC;
+		ServiceAC = hap_serv_ac_create((Operand.Mode==0) ? 0 : 3, Operand.Temperature, Operand.Temperature, 0);
+		hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
+		hap_serv_set_priv(ServiceAC, (void *)(uint32_t)UUID);
+		hap_serv_set_write_cb(ServiceAC, WriteCallback);
+		hap_acc_add_serv(Accessory, ServiceAC);
 
-		    bool IsCreated = true;
+		hap_serv_t *ServiceACFan;
+		ServiceACFan = hap_serv_ac_fan_create((Operand.Mode == 0) ? false : true, (Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
+		hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
+		hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)UUID);
+		hap_serv_set_write_cb(ServiceACFan, WriteCallback);
+		//hap_serv_link_serv(ServiceAC, ServiceACFan);
+		hap_acc_add_serv(Accessory, ServiceACFan);
 
-			switch (IRDevice.Type) {
-				case 0x01: // TV
+		hap_add_accessory(Accessory);
+	}
+	else
+	{
+		ESP_LOGE("Second time init", "!");
+
+		hap_serv_t *ACService = hap_acc_get_serv_by_uuid(ExistedAccessory, HAP_SERV_UUID_HEATER_COOLER);
+		if (ACService != NULL)
+			hap_serv_set_priv(ACService, (void *)(uint32_t)UUID);
+
+		hap_serv_t *ACFanService = hap_acc_get_serv_by_uuid(ExistedAccessory, HAP_SERV_UUID_FAN_V2);
+		if (ACFanService != NULL)
+			hap_serv_set_priv(ACFanService, (void *)(uint32_t)UUID);
+	}
+}
+
+void HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
+	if (BridgedAccessories.size() == 0) {
+		string BridgeNameString = Device.GetName();
+		if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
+
+		static AccessoryData_t AccessoryData(BridgeNameString, Device.ModelToString(), Device.IDToString());
+
+		hap_acc_cfg_t cfg = {
+			.name 				= AccessoryData.Name,
+			.model 				= AccessoryData.Model,
+			.manufacturer 		= "LOOK.in",
+			.serial_num 		= AccessoryData.ID,
+			.fw_rev 			= (char*)Settings.FirmwareVersion,
+			.hw_rev 			= NULL,
+			.pv 				= "1.1.0",
+			.cid 				= HAP_CID_BRIDGE,
+			.identify_routine 	= BridgeIdentify,
+		};
+
+		Accessory = hap_acc_create(&cfg);
+
+		/* Product Data as per HAP Spec R15. Please use the actual product data
+		* value assigned to your Product Plan
+		 */
+
+		uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
+		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
+
+		/* Add the Accessory to the HomeKit Database */
+		hap_add_accessory(Accessory);
+	}
+
+	for(auto& BridgeAccessory : BridgedAccessories) {
+		hap_remove_bridged_accessory(BridgeAccessory);
+		hap_acc_delete(BridgeAccessory);
+	}
+
+	BridgedAccessories.clear();
+
+	for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
+	{
+		char accessory_name[32] = "\0";
+
+		string Name = IRDevice.Name;
+
+		if (Name.size() > 32)
+			Name = Name.substr(0, 32);
+
+		sprintf(accessory_name, "%s", (Name != "") ? Name.c_str() : "Accessory\0");
+
+		hap_acc_cfg_t bridge_cfg = {
+			.name 				= accessory_name,
+			.model 				= "",
+			.manufacturer 		= "",
+			.serial_num 		= "n/a",
+			.fw_rev 			= (char*)Settings.FirmwareVersion,
+            .hw_rev 			= NULL,
+			.pv 				= "1.1.0",
+			.cid 				= HAP_CID_BRIDGE,
+			.identify_routine 	= AccessoryIdentify,
+		};
+
+		uint16_t AID = Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
+		Accessory = hap_acc_create(&bridge_cfg);
+
+		bool IsCreated = true;
+
+		switch (IRDevice.Type) {
+			case 0x01: // TV
+			{
+				hap_serv_t *ServiceTV;
+
+				uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
+				uint8_t ModeStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 1);
+
+				ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1, accessory_name);
+				hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
+
+				hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
+				hap_serv_set_write_cb	(ServiceTV, WriteCallback);
+				hap_acc_add_serv		(Accessory, ServiceTV);
+
+				if (IRDevice.Functions.count("volup") > 0 || IRDevice.Functions.count("voldown") > 0) {
+					hap_serv_t *ServiceSpeaker;
+					ServiceSpeaker = hap_serv_tv_speaker_create(false);
+					hap_serv_add_char		(ServiceSpeaker, hap_char_name_create(accessory_name));
+
+					hap_serv_set_priv		(ServiceSpeaker, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb	(ServiceSpeaker, WriteCallback);
+					hap_serv_link_serv		(ServiceTV, ServiceSpeaker);
+					hap_acc_add_serv		(Accessory, ServiceSpeaker);
+				}
+
+				for (uint8_t i = 0; i < ((DataRemote_t *)Data)->LoadAllFunctionSignals(IRDevice.UUID, "mode", IRDevice).size(); i++)
 				{
-					hap_serv_t *ServiceTV;
+					char InputSourceName[17];
+				    sprintf(InputSourceName, "Input source %d", i+1);
 
-					uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
-					uint8_t ModeStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 1);
+					hap_serv_t *ServiceInput;
+					ServiceInput = hap_serv_input_source_create(&InputSourceName[0], i+1);
 
-					ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1, accessory_name);
-					hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
-
-					hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb	(ServiceTV, WriteCallback);
-					hap_acc_add_serv		(Accessory, ServiceTV);
-
-					if (IRDevice.Functions.count("volup") > 0 || IRDevice.Functions.count("voldown") > 0) {
-						hap_serv_t *ServiceSpeaker;
-						ServiceSpeaker = hap_serv_tv_speaker_create(false);
-						hap_serv_add_char		(ServiceSpeaker, hap_char_name_create(accessory_name));
-
-						hap_serv_set_priv		(ServiceSpeaker, (void *)(uint32_t)AID);
-						hap_serv_set_write_cb	(ServiceSpeaker, WriteCallback);
-						hap_serv_link_serv		(ServiceTV, ServiceSpeaker);
-						hap_acc_add_serv		(Accessory, ServiceSpeaker);
-					}
-
-					for (uint8_t i = 0; i < ((DataRemote_t *)Data)->LoadAllFunctionSignals(IRDevice.UUID, "mode", IRDevice).size(); i++)
-					{
-						char InputSourceName[17];
-					    sprintf(InputSourceName, "Input source %d", i+1);
-
-						hap_serv_t *ServiceInput;
-						ServiceInput = hap_serv_input_source_create(&InputSourceName[0], i+1);
-
-						hap_serv_set_priv(ServiceInput, (void *)(uint32_t)AID);
-						hap_serv_set_write_cb(ServiceInput, WriteCallback);
-						hap_serv_link_serv(ServiceTV, ServiceInput);
-						hap_acc_add_serv(Accessory, ServiceInput);
-					}
-
-					break;
-				}
-				case 0x03: // light
-					hap_serv_t *ServiceLight;
-					ServiceLight = hap_serv_lightbulb_create(false);
-					hap_serv_add_char(ServiceLight, hap_char_name_create(accessory_name));
-
-					hap_serv_set_priv(ServiceLight, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb(ServiceLight, WriteCallback);
-					hap_acc_add_serv(Accessory, ServiceLight);
-
-					break;
-
-				case 0x07: // Fan
-				{
-					uint8_t PowerStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
-
-					hap_serv_t *ServiceFan;
-					ServiceFan = hap_serv_fan_v2_create(PowerStatus);
-					hap_serv_add_char(ServiceFan, hap_char_name_create(accessory_name));
-
-					hap_serv_set_priv(ServiceFan, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb(ServiceFan, WriteCallback);
-					hap_acc_add_serv(Accessory, ServiceFan);
-					break;
+					hap_serv_set_priv(ServiceInput, (void *)(uint32_t)AID);
+					hap_serv_set_write_cb(ServiceInput, WriteCallback);
+					hap_serv_link_serv(ServiceTV, ServiceInput);
+					hap_acc_add_serv(Accessory, ServiceInput);
 				}
 
-				case 0xEF: { // AC
-					ACOperand Operand((uint32_t)IRDevice.Status);
+				break;
+			}
+			case 0x03: // light
+				hap_serv_t *ServiceLight;
+				ServiceLight = hap_serv_lightbulb_create(false);
+				hap_serv_add_char(ServiceLight, hap_char_name_create(accessory_name));
 
-					ESP_LOGD("HAP AC Create", "(%d, %d)", Operand.Mode, Operand.Temperature);
+				hap_serv_set_priv(ServiceLight, (void *)(uint32_t)AID);
+				hap_serv_set_write_cb(ServiceLight, WriteCallback);
+				hap_acc_add_serv(Accessory, ServiceLight);
 
-					hap_serv_t *ServiceAC;
-					ServiceAC = hap_serv_ac_create((Operand.Mode==0) ? 0 : 3, Operand.Temperature, Operand.Temperature, 0, (Operand.SwingMode > 0) ? 1 : 0);
-					hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
-					hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb(ServiceAC, WriteCallback);
-					hap_acc_add_serv(Accessory, ServiceAC);
+				break;
 
-					hap_serv_t *ServiceACFan;
-					ServiceACFan = hap_serv_ac_fan_create((Operand.Mode == 0) ? false : true, (Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
-					hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
+			case 0x07: // Fan
+			{
+				uint8_t PowerStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
 
-					hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb(ServiceACFan, WriteCallback);
-					hap_serv_link_serv(ServiceAC, ServiceACFan);
-					hap_acc_add_serv(Accessory, ServiceACFan);
-					break;
-				}
-				default:
-					IsCreated = false;
-					hap_acc_delete(Accessory);
+				hap_serv_t *ServiceFan;
+				ServiceFan = hap_serv_fan_v2_create(PowerStatus);
+				hap_serv_add_char(ServiceFan, hap_char_name_create(accessory_name));
+
+				hap_serv_set_priv(ServiceFan, (void *)(uint32_t)AID);
+				hap_serv_set_write_cb(ServiceFan, WriteCallback);
+				hap_acc_add_serv(Accessory, ServiceFan);
+				break;
 			}
 
-		    if (IsCreated) {
-				BridgedAccessories.push_back(Accessory);
-				hap_add_bridged_accessory(Accessory, AID);
-		    }
+			case 0xEF: { // AC
+				ACOperand Operand((uint32_t)IRDevice.Status);
+
+				hap_serv_t *ServiceAC;
+				ServiceAC = hap_serv_ac_create((Operand.Mode==0) ? 0 : 3, Operand.Temperature, Operand.Temperature, 0);
+				hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
+				hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
+				hap_serv_set_write_cb(ServiceAC, WriteCallback);
+				hap_acc_add_serv(Accessory, ServiceAC);
+
+				hap_serv_t *ServiceACFan;
+				ServiceACFan = hap_serv_ac_fan_create((Operand.Mode == 0) ? false : true, (Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
+				hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
+
+				hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)AID);
+				hap_serv_set_write_cb(ServiceACFan, WriteCallback);
+				//hap_serv_link_serv(ServiceAC, ServiceACFan);
+				hap_acc_add_serv(Accessory, ServiceACFan);
+				break;
+			}
+			default:
+				IsCreated = false;
+				hap_acc_delete(Accessory);
+			}
+
+		if (IsCreated) {
+			BridgedAccessories.push_back(Accessory);
+			hap_add_bridged_accessory(Accessory, AID);
 		}
 	}
 }
@@ -794,7 +859,6 @@ void HomeKit::FillAccessories() {
 
 void HomeKit::Task(void *) {
 	IsRunning = true;
-
 
 	hap_set_debug_level(HAP_DEBUG_LEVEL_INFO);
 
@@ -866,19 +930,3 @@ bool HomeKit::IsRecentAction(uint16_t AID) {
 
 	return (Time::UptimeU() - GetLastUpdatedForAID(AID) < 500);
 }
-
-void HomeKit::UpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t *Value) {
-
-	hap_acc_t* Accessory 	= hap_acc_get_by_aid(AID);
-	if (Accessory == NULL) 	return;
-
-	hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
-	if (Service == NULL) 	return;
-
-	hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
-	if (Char == NULL) 		return;
-
-	hap_char_update_val(Char, Value);
-}
-
-

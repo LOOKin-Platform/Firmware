@@ -24,7 +24,10 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 			break;
 
 		case Settings.Devices.Remote:
-			Sensors = { new SensorIR_t() };
+			if (Settings.eFuse.Model < 2)
+				Sensors = { new SensorIR_t() };
+			else
+				Sensors = { new SensorIR_t(), new SensorTemperatureRemote_t() };
 			break;
 		//case Settings.Devices.Motion:
 		//	Sensors = { new SensorMotion_t() };

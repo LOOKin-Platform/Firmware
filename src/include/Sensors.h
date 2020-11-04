@@ -17,9 +17,9 @@
 
 #include "Settings.h"
 
+#include "Automation.h"
 #include "Globals.h"
 #include "Wireless.h"
-#include "Automation.h"
 #include "JSON.h"
 #include "RMT.h"
 #include "HardwareIO.h"
@@ -87,7 +87,8 @@ extern Storage_t	Storage;
 //#include "../sensors/SensorRGBW.cpp"
 #include "../sensors/SensorIR.cpp"
 //#include "../sensors/SensorMotion.cpp"
-//#include "../sensors/SensorTemperature.cpp"
+#include "../sensors/SensorTemperature.cpp"
+#include "../sensors/SensorTemperatureRemote.cpp"
 #include "../sensors/SensorTouch.cpp"
 
 #endif

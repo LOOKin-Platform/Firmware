@@ -1062,8 +1062,8 @@ class DataRemote_t : public DataEndpoint_t {
 
 		}
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
 		void HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
 			ESP_LOGE("StatusTriggerUpdated", "FunctionID: %04x Value: %d", FunctionID, Value);
 
 			uint32_t AID = (uint32_t)Converter::UintFromHexString<uint16_t>(DeviceID);
@@ -1078,11 +1078,11 @@ class DataRemote_t : public DataEndpoint_t {
 
 					switch (DeviceType) {
 						case 0x01:
-							UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, HAP_CHAR_UUID_ACTIVE, HAPValue);
-							UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
+							HomeKitUpdateCharValue(AID, SERVICE_TV_UUID, HAP_CHAR_UUID_ACTIVE, HAPValue);
+							HomeKitUpdateCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
 							break;
 						case 0x07:
-							UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, HAPValue);
+							HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, HAPValue);
 							break;
 						default:
 							break;
@@ -1092,48 +1092,48 @@ class DataRemote_t : public DataEndpoint_t {
 				case 0x04:
 					if (DeviceType == 0x01) { // TV, input mode
 						HAPValue.u = (Value + 1);
-						UpdateHomeKitCharValue(AID, SERVICE_TV_UUID, CHAR_ACTIVE_IDENTIFIER_UUID, HAPValue);
+						HomeKitUpdateCharValue(AID, SERVICE_TV_UUID, CHAR_ACTIVE_IDENTIFIER_UUID, HAPValue);
 					}
 					break;
 
 				case 0x05: // mute
 					HAPValue.b = (Value == 0) ? true : false;
-					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
+					HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
 
 					static hap_val_t HAPValueVolumeControlType;
 					HAPValueVolumeControlType.u = (Value == 0) ? 1 : 0;
-					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
+					HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
 					break;
 				case 0x06: // volume up
 				{
 					HAPValue.b = false;
-					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
+					HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
 
 					static hap_val_t HAPValueVolumeControlType;
 					HAPValueVolumeControlType.u = 1;
-					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
+					HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
 
 					break;
 				}
 				case 0x07: // volume down
 				{
 					HAPValue.b = false;
-					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
+					HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValue);
 
 					static hap_val_t HAPValueVolumeControlType;
 					HAPValueVolumeControlType.u = 1;
-					UpdateHomeKitCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
+					HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
 					break;
 				}
 				case 0xE0: { // AC mode
 					HAPValue.u = (Value > 0) ? 3 : 0;
 					ESP_LOGE("HAPValue.u", "%d", HAPValue.u);
 
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValue);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValue);
 
 					HAPValue.b = (Value > 0);
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER	, HAP_CHAR_UUID_ACTIVE, HAPValue);
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ACTIVE, HAPValue);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER	, HAP_CHAR_UUID_ACTIVE, HAPValue);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ACTIVE, HAPValue);
 
 
 					static hap_val_t HAPValueFanRotation;
@@ -1147,26 +1147,26 @@ class DataRemote_t : public DataEndpoint_t {
 					HAPValueFanRotation.f 	= (Value > 0) ? ((FanStatus > 0) ? FanStatus : 2) : 0;
 					HAPValueFanAuto.u 		= (Value > 0) ? ((FanStatus == 0) ? 1 : 0) : 0;
 
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, HAPValueFanRotation);
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValueFanAuto);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, HAPValueFanRotation);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValueFanAuto);
 					break;
 				}
 				case 0xE1: // AC Temeperature
 					HAPValue.f = (float)Value;
 					//UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAPValue);
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE, HAPValue);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE, HAPValue);
 					break;
 				case 0xE2: // Fan Mode
 					HAPValue.f = (float) ((Value > 0) ? Value: 0);
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
 
 					HAPValue.u = (Value > 0) ? 0 : 1;
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValue);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValue);
 
 					break;
 				case 0xE3: // Swing Mode
 					HAPValue.u = Value;
-					UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_SWING_MODE, HAPValue);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_SWING_MODE, HAPValue);
 
 					break;
 			}
@@ -1180,25 +1180,8 @@ class DataRemote_t : public DataEndpoint_t {
 			 */
 
 
-		}
-
-
-		void UpdateHomeKitCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
-			hap_acc_t* Accessory 	= hap_acc_get_by_aid(AID);
-			if (Accessory == NULL) 	return;
-
-			ESP_LOGE("1","!");
-			hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
-			if (Service == NULL) 	return;
-			ESP_LOGE("2","!");
-			hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
-			if (Char == NULL) 		return;
-			ESP_LOGE("3","!");
-			int ttt = hap_char_update_val(Char, &Value);
-			ESP_LOGE("hap_char_update_val", "%d", ttt);
-		}
 #endif
-
+		}
 		private:
 			vector<string>				IRDevicesList		= vector<string>();
 			map<string,vector<string>> 	AvaliableFunctions 	= map<string,vector<string>>();

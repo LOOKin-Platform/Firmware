@@ -25,7 +25,6 @@
 #include <nvs_flash.h>
 #include <mdns.h>
 
-
 #include "Memory.h"
 #include "Converter.h"
 #include "FreeRTOSWrapper.h"

@@ -1,6 +1,8 @@
 #ifndef HOMEKIT_SDK
 #define HOMEKIT_SDK
 
+#include "Custom.h"
+
 #include "FreeRTOSWrapper.h"
 
 #include "Globals.h"
@@ -32,9 +34,6 @@ class HomeKit {
 		static void 	AppServerRestart();
 
 		static void		ResetData();
-
-		static void 	UpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t *Value);
-
 	private:
 		static int 		BridgeIdentify		(hap_acc_t *ha);
 		static int 		AccessoryIdentify	(hap_acc_t *ha);
@@ -49,13 +48,16 @@ class HomeKit {
 		static bool		TargetFanState		(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 		static bool		SwingMode			(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 
-		static void		StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send = false);
+		static void		StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send = true);
 
 		static int 		WriteCallback(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv);
-		static void 	UpdateHomeKitCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value);
-
 
 		static void 	FillAccessories();
+
+		static void 	FillRemoteACOnly(hap_acc_t *Accessory);
+		static void 	FillRemoteBridge(hap_acc_t *Accessory);
+
+
 		static void 	Task(void *);
 
 		static void		SetLastUpdatedForAID(uint16_t);

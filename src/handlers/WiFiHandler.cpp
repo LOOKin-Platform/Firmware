@@ -328,9 +328,17 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		        return ESP_OK;
 		    }
 
-		    mdns_hostname_set(Device.IDToString().c_str());
+		    err = mdns_hostname_set(Device.IDToString().c_str());
+
+		    if (err !=ESP_OK)
+		    	ESP_LOGE("!", "MDNS hostname set failed: %d", err);
+
 		    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();
 		    mdns_instance_name_set(InstanceName.c_str());
+#endif
+
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+		    mdns_hostname_set(Device.IDToString().c_str());
 #endif
 
 			IsConnectedBefore = true;

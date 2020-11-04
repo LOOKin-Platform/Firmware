@@ -99,6 +99,8 @@ class Device_t {
 		static void			OTACallbackFileDoesntExist();
 		static	httpd_req_t	*CachedRequest;
 
+		static bool			HomeKitBridge;
+
 	private:
 		bool 				POSTName(map<string,string>);
 		bool 				POSTTime(map<string,string>);

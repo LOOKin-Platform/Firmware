@@ -23,6 +23,8 @@
 #include "Converter.h"
 #include "Storage.h"
 
+#include "Sensors.h"
+
 #include "Log.h"
 
 using namespace std;

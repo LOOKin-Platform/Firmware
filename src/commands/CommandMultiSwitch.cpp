@@ -3,8 +3,6 @@
 *    CommandSwitch_t implementation
 *
 */
-#include "Sensors.h"
-
 class CommandMultiSwitch_t : public Command_t {
 	private:
 		vector<gpio_num_t> GPIOS = vector<gpio_num_t>();
