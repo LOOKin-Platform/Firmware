@@ -420,7 +420,10 @@ bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t
         	ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
 
         	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
-        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+
+
+//        	ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
+//        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
 
             hap_val_t ValueForACActive;
             ValueForACActive.u = 1;
@@ -513,32 +516,26 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_REMOTEKEY_UUID)) {
         	Cursor(write->val.b, AID);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_ACTIVE_IDENTIFIER_UUID)) {
         	ActiveID(write->val.b, AID);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_VOLUME_SELECTOR_UUID)) {
         	Volume(write->val.b, AID);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE)) {
         	HeaterCoolerState(write->val.b, AID);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE)) {
         	ThresholdTemperature(write->val.f, AID, true);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE)) {
         	ThresholdTemperature(write->val.f, AID, false);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ROTATION_SPEED)) {
@@ -547,12 +544,10 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_FAN_STATE)) {
         	TargetFanState(write->val.b, AID, write->hc, i);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_SWING_MODE)) {
         	SwingMode(write->val.b, AID, write->hc, i);
-            hap_char_update_val(write->hc, &(write->val));
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_IS_CONFIGURED)) {
