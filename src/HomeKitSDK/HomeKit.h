@@ -60,10 +60,6 @@ class HomeKit {
 
 		static void 	Task(void *);
 
-		static void		SetLastUpdatedForAID(uint16_t);
-		static uint64_t	GetLastUpdatedForAID(uint16_t);
-		static bool		IsRecentAction(uint16_t);
-
 		static 			TaskHandle_t TaskHandle;
 
 		static bool		IsRunning;
@@ -73,7 +69,6 @@ class HomeKit {
 		static string 	Password;
 
 		static vector<hap_acc_t*> BridgedAccessories;
-		static map<uint16_t, uint64_t> LastUpdated;
 };
 
 #endif

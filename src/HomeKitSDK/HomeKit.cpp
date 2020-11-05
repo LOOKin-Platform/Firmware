@@ -10,7 +10,6 @@ string			HomeKit::SSID		= "";
 string			HomeKit::Password	= "";
 
 vector<hap_acc_t*> 		HomeKit::BridgedAccessories = vector<hap_acc_t*>();
-map<uint16_t, uint64_t> HomeKit::LastUpdated 		= map<uint16_t, uint64_t>();
 
 #define NUM_BRIDGED_ACCESSORIES 2
 
@@ -77,7 +76,6 @@ void HomeKit::Stop() {
 }
 
 void HomeKit::AppServerRestart() {
-	LastUpdated.clear();
 	FillAccessories();
 	return;
 }
@@ -469,6 +467,7 @@ void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t Functi
 	if (!Send) return;
 
 	if (!Result.first) return;
+	if (Codeset == 0) return;
 
     CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
@@ -678,8 +677,6 @@ void HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 	}
 	else
 	{
-		ESP_LOGE("Second time init", "!");
-
 		hap_serv_t *ACService = hap_acc_get_serv_by_uuid(ExistedAccessory, HAP_SERV_UUID_HEATER_COOLER);
 		if (ACService != NULL)
 			hap_serv_set_priv(ACService, (void *)(uint32_t)UUID);
@@ -915,18 +912,4 @@ void HomeKit::Task(void *) {
     /* The task ends here. The read/write callbacks will be invoked by the HAP Framework */
 
     vTaskDelete(NULL);
-}
-
-void HomeKit::SetLastUpdatedForAID(uint16_t AID) {
-	LastUpdated[AID] = Time::UptimeU();
-}
-
-uint64_t HomeKit::GetLastUpdatedForAID(uint16_t AID) {
-	return (LastUpdated.count(AID) > 0) ? LastUpdated[AID] : 0;
-}
-
-bool HomeKit::IsRecentAction(uint16_t AID) {
-	ESP_LOGE("IsRecentAction", "%" PRIu64 " %" PRIu64, GetLastUpdatedForAID(AID), Time::UptimeU());
-
-	return (Time::UptimeU() - GetLastUpdatedForAID(AID) < 500);
 }
