@@ -77,7 +77,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 		// Запрос конкретного параметра
 		if (Query.GetURLPartsCount() == 2) {
 			if (Query.CheckURLPart("type"			, 1))	Result.Body = TypeToString();
-			if (Query.CheckURLPart("model"			, 1))	Result.Body = ModelToString();
+			if (Query.CheckURLPart("mrdc"			, 1))	Result.Body = MRDCToString();
 			if (Query.CheckURLPart("status"			, 1))	Result.Body = StatusToString();
 			if (Query.CheckURLPart("id"				, 1))	Result.Body = IDToString();
 			if (Query.CheckURLPart("name"			, 1))	Result.Body = NameToString();
@@ -164,7 +164,7 @@ JSON Device_t::RootInfo() {
 
 	JSONObject.SetItems(vector<pair<string,string>> ({
 		make_pair("Type"			, TypeToString()),
-		make_pair("Model"			, ModelToString()),
+		make_pair("MRDC"			, MRDCToString()),
 		make_pair("Status"			, StatusToString()),
 		make_pair("ID"				, IDToString()),
 		make_pair("Name"			, NameToString()),
@@ -409,7 +409,17 @@ string Device_t::SensorModeToString() {
 }
 
 string Device_t::ModelToString() {
-	return Converter::ToString((Settings.eFuse.Model == 0) ? 1 : Settings.eFuse.Model);
+	return Converter::ToHexString(((Settings.eFuse.Model == 0) ? 1 : Settings.eFuse.Model), 2);
+}
+
+string Device_t::MRDCToString() {
+	return ModelToString()
+			+ Converter::ToHexString((Settings.eFuse.Revision),4)
+			+ Converter::ToHexString(Settings.eFuse.Produced.Destination,2)
+			+ Converter::ToHexString(Settings.eFuse.Produced.Factory,2)
+			+ Converter::ToHexString(Settings.eFuse.Produced.Day, 2)
+			+ Converter::ToHexString(Settings.eFuse.Produced.Month, 1)
+			+ Converter::ToHexString(Settings.eFuse.Produced.Year, 3);
 }
 
 string Device_t::HomeKitToString() {

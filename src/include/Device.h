@@ -116,6 +116,7 @@ class Device_t {
 		string 				CurrentVoltageToString();
 		string				SensorModeToString();
 		string				HomeKitToString();
+		string				MRDCToString();
 };
 
 #endif
