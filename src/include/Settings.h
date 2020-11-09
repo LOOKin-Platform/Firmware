@@ -190,11 +190,11 @@ class Settings_t {
 		} Memory;
 
 		struct Storage_t {
+#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
 			struct Versions_t {
 				static constexpr uint32_t 	StartAddress	= 0x92000;
 				static constexpr uint32_t 	Size			= 0xA000;
 				static constexpr uint8_t 	VersionMaxSize	= 10;
-				static constexpr uint16_t 	VersionsMax		= 0x400;
 			} Versions;
 
 			struct Data_t {
@@ -202,6 +202,19 @@ class Settings_t {
 				static constexpr uint32_t 	Size			= 0x84000;
 				static constexpr uint16_t 	ItemSize		= 0x108;
 			} Data;
+#else
+			struct Versions_t {
+				static constexpr uint32_t 	StartAddress	= 0xB00000;
+				static constexpr uint32_t 	Size			= 0x40000;
+				static constexpr uint8_t 	VersionMaxSize	= 10;
+			} Versions;
+
+			struct Data_t {
+				static constexpr uint32_t 	StartAddress	= 0xB40000;
+				static constexpr uint32_t 	Size			= 0x210000;
+				static constexpr uint16_t 	ItemSize		= 0x108;
+			} Data;
+#endif
 		} Storage;
 
 		struct Scenarios_t {
@@ -224,11 +237,17 @@ class Settings_t {
 			} Types;
 
 			struct Memory_t {
+#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
 				static constexpr uint32_t	Start			= 0x32000;
 				static constexpr uint32_t	Size			= 0x60000;
 				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
-				static constexpr uint16_t	Count			= 256;		// 1536 байт
-
+				static constexpr uint16_t	Count			= 256;
+#else
+				static constexpr uint32_t	Start			= 0x900000;
+				static constexpr uint32_t	Size			= 0x200000;
+				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
+				static constexpr uint16_t	Count			= 1024;
+#endif
 				struct ItemOffset_t {
 					static constexpr uint16_t ID			= 0x0;
 					static constexpr uint16_t Type			= 0x4;

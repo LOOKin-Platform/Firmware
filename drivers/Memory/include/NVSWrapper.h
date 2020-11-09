@@ -16,13 +16,15 @@ using namespace std;
 #include "Converter.h"
 
 #define MAX_NVSARRAY_INDEX	128
+#define DATA_NVS_16MB		"data"
 
 class NVS {
 	public:
+		enum PartitionTypeEnum { STANDART, DATA};
+
 		static void Init();
 
-		NVS(string name, nvs_open_mode openMode = NVS_READWRITE);
-		NVS(const char[], nvs_open_mode openMode = NVS_READWRITE);
+		NVS(string name, PartitionTypeEnum Type = PartitionTypeEnum::STANDART, nvs_open_mode openMode = NVS_READWRITE);
 
 		virtual 	~NVS();
 		void 		Commit();

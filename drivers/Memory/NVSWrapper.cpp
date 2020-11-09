@@ -23,20 +23,34 @@ void NVS::Init() {
         err = nvs_flash_init();
     }
 
-    if (err == ESP_OK) 	{	ESP_LOGI("main", "NVS flash init success");				}
-    else 				{	ESP_LOGE("main", "Error while NVS flash init, %d", err);}
+    if (err == ESP_OK) 	{	ESP_LOGI("Default NVS", "NVS flash init success");				}
+    else 				{	ESP_LOGE("Default NVS", "Error while NVS flash init, %d", err);	}
 
+#if (CONFIG_FIRMWARE_TARGET_SIZE_16MB)
+    err = ::nvs_flash_init_partition(DATA_NVS_16MB);
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase_partition(DATA_NVS_16MB));
+        err = ::nvs_flash_init_partition(DATA_NVS_16MB);
+    }
+
+    if (err == ESP_OK) 	{	ESP_LOGI("Data NVS", "NVS flash init success");					}
+    else 				{	ESP_LOGE("Data NVS", "Error while NVS flash init, %d", err);	}
+#endif
 }
 
-NVS::NVS(string name, nvs_open_mode openMode) {
+NVS::NVS(string name, PartitionTypeEnum Type, nvs_open_mode openMode) {
 	m_name = name;
+
+#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
 	nvs_open(name.c_str(), openMode, &m_handle);
+#else
+	if (Type == PartitionTypeEnum::STANDART)
+		nvs_open(name.c_str(), openMode, &m_handle);
+	else if (Type == PartitionTypeEnum::DATA)
+		nvs_open_from_part(DATA_NVS_16MB, name.c_str(), openMode, &m_handle);
+#endif
 } // NVS
 
-NVS::NVS(const char name[], nvs_open_mode openMode) {
-	m_name = name;
-	nvs_open(name, openMode, &m_handle);
-} // NVS
 
 NVS::~NVS() {
 	nvs_close(m_handle);

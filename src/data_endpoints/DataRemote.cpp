@@ -393,7 +393,7 @@ class DataRemote_t : public DataEndpoint_t {
 		};
 
 		void Init() override {
-			NVS Memory(DataEndpoint_t::NVSArea);
+			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 			IRDevicesList = Converter::StringToVector(Memory.GetString("DevicesList"), "|");
 
@@ -617,14 +617,14 @@ class DataRemote_t : public DataEndpoint_t {
 
 			if (Query.Type == QueryType::DELETE) {
 				if (Query.GetURLPartsCount() == 1) {
-					NVS Memory(DataEndpoint_t::NVSArea);
+					NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 					IRDevicesList.clear();
 					IRDevicesCache.clear();
 					Memory.EraseNamespace();
 				}
 
 				if (Query.GetURLPartsCount() == 2) {
-					NVS Memory(DataEndpoint_t::NVSArea);
+					NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 					string UUID = Converter::ToUpper(Query.GetStringURLPartByNumber(1));
 
@@ -660,7 +660,7 @@ class DataRemote_t : public DataEndpoint_t {
 						return;
 					}
 
-					NVS Memory(DataEndpoint_t::NVSArea);
+					NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 					bool IsOK = false;
 					for (auto& FunctionToDelete : FunctionsToDelete) {
@@ -785,7 +785,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			if (Query.Type == QueryType::PUT) {
-				NVS Memory(DataEndpoint_t::NVSArea);
+				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 				Memory.EraseStartedWith(UUID + "_" + Function + "_");
 			}
 
@@ -852,7 +852,7 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		map<string,string> LoadDeviceFunctions(string UUID) {
-			NVS Memory(DataEndpoint_t::NVSArea);
+			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 			IRDevice Result(Memory.GetString(UUID), UUID);
 
@@ -866,7 +866,7 @@ class DataRemote_t : public DataEndpoint_t {
 			UUID 	= Converter::ToUpper(UUID);
 			Function= Converter::ToLower(Function);
 
-			NVS Memory(DataEndpoint_t::NVSArea);
+			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 			IRLib Result;
 
@@ -929,7 +929,7 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		vector<IRDevice> GetAvaliableDevices() {
-			NVS Memory(DataEndpoint_t::NVSArea);
+			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 			vector<IRDevice> Result = vector<IRDevice>();
 
@@ -1187,7 +1187,7 @@ class DataRemote_t : public DataEndpoint_t {
 			map<string,vector<string>> 	AvaliableFunctions 	= map<string,vector<string>>();
 
 			uint8_t	SaveIRDevicesList() {
-				NVS Memory(DataEndpoint_t::NVSArea);
+				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 				return (Memory.SetString("DevicesList", Converter::VectorToString(IRDevicesList, "|"))) ? 0 : static_cast<uint8_t>(NoSpaceToSaveDevice);
 			}
 
@@ -1220,7 +1220,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			IRDevice LoadDevice(string UUID) {
-				NVS Memory(DataEndpoint_t::NVSArea);
+				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 				UUID = Converter::ToUpper(UUID);
 
@@ -1229,7 +1229,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			uint8_t	SaveDevice(IRDevice DeviceItem) {
-				NVS Memory(DataEndpoint_t::NVSArea);
+				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 				bool SetResult = Memory.SetString(DeviceItem.UUID, DeviceItem.ToString());
 
@@ -1238,7 +1238,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			uint8_t SaveFunction(string UUID, string Function, string Item, uint8_t Index, uint8_t DeviceType) {
-				NVS Memory(DataEndpoint_t::NVSArea);
+				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
 
 				if (!DevicesHelper.IsValidKeyForType(DeviceType, Function))
 					return static_cast<uint8_t>(DataRemote_t::Error::UnsupportedFunction);

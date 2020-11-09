@@ -1,0 +1,25 @@
+# Espressif ESP32 Partition Table
+# 0x1       1     B
+# 0x10		16    B
+# 0x100		256   B
+# 0x1000    4     KB
+# 0x10000	64    KB
+# 0x60000	384   KB
+# 0x100000	1024  KB
+# 0x140000	1280  KB
+# 0x14E000	1336  KB
+# 0x150000	1344  KB
+# Name,     Type, SubType,    	Offset,		Size
+phy_init,   data, phy,        	0x0f000,  	0x1000
+otadata,    data, ota,        	0x10000,  	0x2000
+factory_nvs,data, nvs,        	0x12000,  	0x4000
+nvs_keys,	data, nvs_keys,		0x16000,   	0x1000
+coredump, 	data, coredump,		0x17000,	0x10000
+nvs, 		data, nvs,			0x27000,	0xF9000
+ota_0,      app,  0x10,       	0x120000, 	0x300000
+ota_1,     	app,  0x11,      	0x420000, 	0x300000
+data, 		data, nvs,			0x720000,	0x180000
+#scenarios          (2MB),  	0x900000,  	0x200000
+#shared memory cache(256KB),  	0xB00000,  	0x40000
+#shared memory area (2112KB),  	0xB40000,  	0x210000
+#reserved space (2752KB),		0xD50000, 	0x2B0000
