@@ -16,15 +16,12 @@ using namespace std;
 #include "Converter.h"
 
 #define MAX_NVSARRAY_INDEX	128
-#define DATA_NVS_16MB		"data"
 
 class NVS {
 	public:
-		enum PartitionTypeEnum { STANDART, DATA};
-
 		static void Init();
 
-		NVS(string name, PartitionTypeEnum Type = PartitionTypeEnum::STANDART, nvs_open_mode openMode = NVS_READWRITE);
+		NVS(string name, nvs_open_mode openMode = NVS_READWRITE);
 
 		virtual 	~NVS();
 		void 		Commit();
@@ -40,8 +37,15 @@ class NVS {
 		uint8_t 	GetInt8Bit(string key);
 		void 		SetInt8Bit(string key, uint8_t data);
 
+		uint16_t 	GetUInt16Bit(string key);
+		void 		SetUInt16Bit(string key, uint16_t data);
+
 		uint32_t 	GetUInt32Bit(string key);
 		void 		SetUInt32Bit(string key, uint32_t data);
+
+		uint64_t 	GetUInt64Bit(string key);
+		void 		SetUInt64Bit(string key, uint64_t data);
+
 
 		void * 		GetBlob(string key);
 		void 		SetBlob(string key, void *data, size_t datalen = 0);

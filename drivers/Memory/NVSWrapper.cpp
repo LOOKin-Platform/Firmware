@@ -25,30 +25,11 @@ void NVS::Init() {
 
     if (err == ESP_OK) 	{	ESP_LOGI("Default NVS", "NVS flash init success");				}
     else 				{	ESP_LOGE("Default NVS", "Error while NVS flash init, %d", err);	}
-
-#if (CONFIG_FIRMWARE_TARGET_SIZE_16MB)
-    err = ::nvs_flash_init_partition(DATA_NVS_16MB);
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_ERROR_CHECK(nvs_flash_erase_partition(DATA_NVS_16MB));
-        err = ::nvs_flash_init_partition(DATA_NVS_16MB);
-    }
-
-    if (err == ESP_OK) 	{	ESP_LOGI("Data NVS", "NVS flash init success");					}
-    else 				{	ESP_LOGE("Data NVS", "Error while NVS flash init, %d", err);	}
-#endif
 }
 
-NVS::NVS(string name, PartitionTypeEnum Type, nvs_open_mode openMode) {
+NVS::NVS(string name, nvs_open_mode openMode) {
 	m_name = name;
-
-#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
 	nvs_open(name.c_str(), openMode, &m_handle);
-#else
-	if (Type == PartitionTypeEnum::STANDART)
-		nvs_open(name.c_str(), openMode, &m_handle);
-	else if (Type == PartitionTypeEnum::DATA)
-		nvs_open_from_part(DATA_NVS_16MB, name.c_str(), openMode, &m_handle);
-#endif
 } // NVS
 
 
@@ -163,6 +144,29 @@ void NVS::SetInt8Bit(string key, uint8_t data) {
 } // set
 
 /**
+ * @brief Retrieve a uint 16 bit value by key.
+ *
+ * @param [in] key The key to read from the namespace.
+ * @param [out] result The uint read from the %NVS storage.
+ */
+uint16_t NVS::GetUInt16Bit(string key) {
+	uint16_t data;
+	esp_err_t nvs_err = nvs_get_u16(m_handle, key.c_str(), &data);
+
+	return (nvs_err == ESP_OK) ? data : +0;
+} // get
+
+/**
+ * @brief Set the uint 16 bit value by key.
+ *
+ * @param [in] key The key to set from the namespace.
+ * @param [in] data The value to set for the key.
+ */
+void NVS::SetUInt16Bit(string key, uint16_t data) {
+	nvs_set_u16(m_handle, key.c_str(), data);
+} // set
+
+/**
  * @brief Retrieve a uint 32 bit value by key.
  *
  * @param [in] key The key to read from the namespace.
@@ -183,6 +187,29 @@ uint32_t NVS::GetUInt32Bit(string key) {
  */
 void NVS::SetUInt32Bit(string key, uint32_t data) {
 	nvs_set_u32(m_handle, key.c_str(), data);
+} // set
+
+/**
+ * @brief Retrieve a uint 32 bit value by key.
+ *
+ * @param [in] key The key to read from the namespace.
+ * @param [out] result The uint read from the %NVS storage.
+ */
+uint64_t NVS::GetUInt64Bit(string key) {
+	uint64_t data;
+	esp_err_t nvs_err = nvs_get_u64(m_handle, key.c_str(), &data);
+
+	return (nvs_err == ESP_OK) ? data : +0;
+} // get
+
+/**
+ * @brief Set the uint 32 bit value by key.
+ *
+ * @param [in] key The key to set from the namespace.
+ * @param [in] data The value to set for the key.
+ */
+void NVS::SetUInt64Bit(string key, uint64_t data) {
+	nvs_set_u64(m_handle, key.c_str(), data);
 } // set
 
 /**
