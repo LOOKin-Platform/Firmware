@@ -17,14 +17,11 @@ set(srcs
 	"Data.cpp"
 	"WebServer.cpp"
 	"Wireless.cpp"
-	"HomeKitADK/App.cpp"
-	"HomeKitADK/DB.cpp"
-	"HomeKitADK/HomeKitADK.cpp"
-	"HomeKitSDK/HomeKit.cpp"
-	"HomeKitSDK/Custom.cpp")
+	"HomeKit/HomeKit.cpp"
+	"HomeKit/Custom.cpp")
 
 idf_component_register(SRCS "${srcs}"
-                      INCLUDE_DIRS "include" "HomeKitADK/include" "HomeKitSDK"
-                      REQUIRES "bt BLE Converter DateTime HTTPClient libJSON esp_http_server WiFi OTA HardwareIO ISR RMT IRLib mqtt UART Sleep mdns PowerManagement platform hap_apple_profiles esp32-ds18b20 esp32-owb esp-bme280")
+                      INCLUDE_DIRS "include" "HomeKit"
+                      REQUIRES "bt BLE Converter DateTime HTTPClient libJSON esp_http_server WiFi OTA HardwareIO ISR RMT IRLib mqtt UART Sleep mdns PowerManagement esp_hap_platform esp_hap_apple_profiles esp32-ds18b20 esp32-owb esp-bme280")
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG")

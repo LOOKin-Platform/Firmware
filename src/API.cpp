@@ -6,10 +6,6 @@
 
 #include "API.h"
 
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
-#include "HomeKitADK.h"
-#endif
-
 #if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
 #include "HomeKit.h"
 #endif
@@ -90,7 +86,7 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 		if (Query.CheckURLPart("commands"	, 0))	Command_t	::HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("log"		, 0))	Log			::HandleHTTPRequest	(Response, Query);
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
     	if (Query.GetURLPartsCount() == 2)
     	{
     		if (Query.CheckURLPart("homekit", 0)) {

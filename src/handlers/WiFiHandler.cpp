@@ -9,10 +9,6 @@
 #include <netdb.h>
 #include <mdns.h>
 
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
-#include "HomeKitADK.h"
-#endif
-
 #if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
 #include "HomeKit.h"
 #endif
@@ -188,7 +184,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE)
 			IPDidntGetTimer->Start();
 #endif
 			return ESP_OK;
@@ -206,11 +202,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			WebServer.UDPStop();
 
 			MQTT.Stop();
-
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
-		    if (HomeKitADK::IsSupported())
-		    	HomeKitADK::Stop();
-#endif
 
 			//::mdns_free();
 
@@ -246,7 +237,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE)
 			esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
 
 			IsIPCheckSuccess = false;
@@ -297,7 +288,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			WiFi.IsIPCheckSuccess = true;
 #endif
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE)
 			WebServer.HTTPStart();
 #endif
 			WebServer.UDPStart();
@@ -315,13 +306,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Wireless.IsEventDrivenStart = false;
 
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK
-		    if (HomeKitADK::IsSupported())
-		    	HomeKitADK::Start();
-#endif
-
-
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE)
 		    esp_err_t err = mdns_init();
 		    if (err) {
 		        ESP_LOGE("!", "MDNS Init failed: %d", err);

@@ -1,4 +1,4 @@
-#include "HomeKit.h"
+#include "../HomeKit/HomeKit.h"
 
 const char *Tag = "HAP Bridge";
 
@@ -6,46 +6,8 @@ TaskHandle_t 	HomeKit::TaskHandle = NULL;
 
 bool 			HomeKit::IsRunning 	= false;
 bool 			HomeKit::IsAP 		= false;
-string			HomeKit::SSID		= "";
-string			HomeKit::Password	= "";
 
 vector<hap_acc_t*> 		HomeKit::BridgedAccessories = vector<hap_acc_t*>();
-
-#define NUM_BRIDGED_ACCESSORIES 2
-
-
-/* Setup Information for the Setup Code: 111-22-333 */
-static const hap_setup_info_t setup_info = {
-    .salt = {
-        0x93, 0x15, 0x1A, 0x47, 0x57, 0x55, 0x3C, 0x21, 0x0B, 0x55, 0x89, 0xB8, 0xC3, 0x99, 0xA0, 0xF3
-    },
-    .verifier = {
-        0x9E, 0x9C, 0xC3, 0x73, 0x9B, 0x04, 0x83, 0xC8, 0x13, 0x7C, 0x5B, 0x5F, 0xAC, 0xC5, 0x63, 0xDF,
-        0xF4, 0xF1, 0x0F, 0x39, 0x06, 0x4A, 0x20, 0x2D, 0x53, 0x2A, 0x09, 0x20, 0x3A, 0xA6, 0xBA, 0xE3,
-        0x1E, 0x42, 0x4E, 0x58, 0x4E, 0xBB, 0x44, 0x5F, 0x7F, 0xDF, 0xCC, 0x11, 0xD0, 0xF7, 0x8B, 0x35,
-        0xE1, 0x16, 0xA9, 0x79, 0x30, 0xBC, 0x37, 0x19, 0x77, 0x36, 0xB1, 0xEC, 0xD4, 0x12, 0x4C, 0xE4,
-        0x5D, 0xE3, 0x7E, 0x46, 0xA0, 0x2D, 0x10, 0x07, 0xAB, 0x48, 0x40, 0x36, 0xD5, 0x3F, 0x7F, 0xBE,
-        0xA5, 0xAE, 0xD0, 0x25, 0x6B, 0xC4, 0x9E, 0xC8, 0x5F, 0xC9, 0x4E, 0x47, 0x0D, 0xBA, 0xD3, 0x63,
-        0x44, 0x20, 0x01, 0x69, 0x97, 0xDD, 0x20, 0x54, 0x7C, 0x59, 0x78, 0x3D, 0x5C, 0x6D, 0xC7, 0x1F,
-        0xE6, 0xFD, 0xA0, 0x8E, 0x9B, 0x36, 0x45, 0x1F, 0xC1, 0x4B, 0xB5, 0x26, 0xE1, 0x8E, 0xEB, 0x4C,
-        0x05, 0x58, 0xD7, 0xC8, 0x80, 0xA1, 0x43, 0x7F, 0x5F, 0xDB, 0x75, 0x1B, 0x19, 0x57, 0x25, 0xAC,
-        0x5D, 0xF5, 0x8D, 0xF6, 0x7B, 0xAA, 0xB7, 0x7D, 0xE0, 0x36, 0xEF, 0xEA, 0xF3, 0x57, 0xAC, 0xFE,
-        0x12, 0x87, 0xF9, 0x31, 0x4C, 0xF7, 0x44, 0xBD, 0xB6, 0x26, 0x6C, 0xB4, 0x0D, 0x7C, 0x52, 0x4F,
-        0x85, 0x56, 0x91, 0x5D, 0x13, 0xD8, 0xDA, 0x8C, 0x45, 0x3E, 0x73, 0xF2, 0xF9, 0x20, 0x39, 0x24,
-        0x8B, 0xFB, 0xEE, 0xFD, 0x77, 0x54, 0x8D, 0x37, 0x22, 0xE8, 0x55, 0xC3, 0xD2, 0xF8, 0xB8, 0x23,
-        0xB0, 0xE2, 0x9E, 0x43, 0xAE, 0xB4, 0x37, 0xFA, 0xA7, 0x03, 0xF1, 0x82, 0x68, 0x4C, 0xD4, 0x86,
-        0xC6, 0x3E, 0xDE, 0x70, 0x11, 0x03, 0x77, 0x46, 0x59, 0x14, 0x97, 0xC6, 0xAE, 0x52, 0x6F, 0x03,
-        0x77, 0x36, 0x40, 0xBC, 0xDE, 0xCD, 0x3D, 0xE0, 0x4F, 0x69, 0x18, 0x0D, 0xCA, 0x85, 0x7E, 0x07,
-        0x30, 0xF4, 0xA1, 0xCE, 0x05, 0xB5, 0x4B, 0xE1, 0x1D, 0x43, 0xDF, 0xDB, 0x11, 0x43, 0xDE, 0x21,
-        0xAC, 0x8F, 0x03, 0x9E, 0x6E, 0x9F, 0xA8, 0xE5, 0x02, 0x06, 0x1C, 0x63, 0x34, 0x22, 0x1D, 0x39,
-        0xE3, 0x3D, 0x12, 0x2E, 0xA2, 0xF3, 0xFC, 0xB5, 0xB4, 0x16, 0x9E, 0x0E, 0x7C, 0x52, 0xC8, 0x7D,
-        0x50, 0x3D, 0xDB, 0xF5, 0x83, 0x46, 0x18, 0x92, 0x7F, 0x4D, 0x38, 0xAD, 0x0A, 0x2A, 0xBC, 0x2A,
-        0x50, 0x4B, 0xDF, 0x5D, 0xFA, 0x93, 0x41, 0x78, 0xD6, 0x45, 0x54, 0xDB, 0x44, 0x81, 0xF7, 0x5A,
-        0x0A, 0xDD, 0x18, 0x4F, 0x27, 0xD7, 0xDD, 0x5E, 0xB7, 0x3E, 0x99, 0xE6, 0xE1, 0x69, 0x35, 0x74,
-        0xD6, 0x98, 0x58, 0xB2, 0x13, 0x6F, 0xB7, 0x82, 0x72, 0xBC, 0xA6, 0x8B, 0xA3, 0x36, 0x2A, 0xCE,
-        0x65, 0x65, 0x51, 0x08, 0x8A, 0x3D, 0x04, 0x93, 0x8F, 0x01, 0x8A, 0xAB, 0x4B, 0xFC, 0x06, 0xF9
-    }
-};
 
 HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sID) {
 	//sName.copy(Name, sName.size(), 0);
@@ -61,8 +23,6 @@ HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sI
 
 void HomeKit::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
 	IsAP 		= sIsAP;
-	SSID 		= sSSID;
-	Password 	= sPassword;
 }
 
 void HomeKit::Start() {
@@ -413,15 +373,13 @@ bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t
         	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
 
         	hap_val_t ValueForACFanState;
-        	hap_val_t ValueForACFanAuto;
 
         	uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
         	ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
-        	ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
 
         	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
 
-
+//			hap_val_t ValueForACFanAuto;
 //        	ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
 //        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
 
@@ -596,7 +554,7 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
     return ret;
 }
 
-void HomeKit::FillAccessories() {
+hap_cid_t HomeKit::FillAccessories() {
 	hap_acc_t 	*Accessory = NULL;
 
 	hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
@@ -604,24 +562,28 @@ void HomeKit::FillAccessories() {
 	switch (Settings.eFuse.Type) {
 		case 0x81:
 			if (Device.HomeKitBridge == false)
-				FillRemoteACOnly(Accessory);
+				return FillRemoteACOnly(Accessory);
 			else
-				FillRemoteBridge(Accessory);
+				return FillRemoteBridge(Accessory);
 			break;
 	}
+
+	return HAP_CID_NONE;
 }
 
 
-void HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
+hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 	string 		NameString 	=  "";
 	uint16_t 	UUID 		= 0;
 	uint16_t	Status		= 0;
 
-	for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
-		if (IRDevice.Type == 0xEF) {
-			NameString 	= IRDevice.Name;
-			UUID 		= Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
-			Status		= IRDevice.Status;
+	for (auto &IRCachedDevice : ((DataRemote_t *)Data)->IRDevicesCache)
+		if (IRCachedDevice.DeviceType == 0xEF) {
+			DataRemote_t::IRDevice LoadedDevice = ((DataRemote_t *)Data)->GetDevice(IRCachedDevice.DeviceID);
+
+			NameString 	= LoadedDevice.Name;
+			UUID 		= Converter::UintFromHexString<uint16_t>(LoadedDevice.UUID);
+			Status		= LoadedDevice.Status;
 			break;
 		}
 
@@ -648,9 +610,6 @@ void HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 
 		Accessory = hap_acc_create(&cfg);
 
-		uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
-		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
-
 		ACOperand Operand((uint32_t)Status);
 
 		hap_serv_t *ServiceAC;
@@ -669,6 +628,9 @@ void HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 		hap_acc_add_serv(Accessory, ServiceACFan);
 
 		hap_add_accessory(Accessory);
+
+		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
+		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
 	}
 	else
 	{
@@ -680,9 +642,11 @@ void HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 		if (ACFanService != NULL)
 			hap_serv_set_priv(ACFanService, (void *)(uint32_t)UUID);
 	}
+
+	return HAP_CID_AIR_CONDITIONER;
 }
 
-void HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
+hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 	if (BridgedAccessories.size() == 0) {
 		string BridgeNameString = Device.GetName();
 		if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
@@ -703,15 +667,10 @@ void HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 		Accessory = hap_acc_create(&cfg);
 
-		/* Product Data as per HAP Spec R15. Please use the actual product data
-		* value assigned to your Product Plan
-		 */
-
-		uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
-		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
-
-		/* Add the Accessory to the HomeKit Database */
 		hap_add_accessory(Accessory);
+
+		uint8_t product_data[] = {'T','T','1','1','!','G','B','M'};
+		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
 	}
 
 	for(auto& BridgeAccessory : BridgedAccessories) {
@@ -721,8 +680,10 @@ void HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 	BridgedAccessories.clear();
 
-	for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
+	for (auto &IRCachedDevice : ((DataRemote_t *)Data)->IRDevicesCache)
 	{
+		DataRemote_t::IRDevice IRDevice = ((DataRemote_t *)Data)->GetDevice(IRCachedDevice.DeviceID);
+
 		char accessory_name[32] = "\0";
 
 		string Name = IRDevice.Name;
@@ -846,6 +807,8 @@ void HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 			hap_add_bridged_accessory(Accessory, AID);
 		}
 	}
+
+	return HAP_CID_BRIDGE;
 }
 
 
@@ -854,55 +817,46 @@ void HomeKit::Task(void *) {
 
 	hap_set_debug_level(HAP_DEBUG_LEVEL_INFO);
 
+    hap_cfg_t hap_cfg;
+    hap_get_config(&hap_cfg);
+    hap_cfg.unique_param = UNIQUE_NAME;
+    hap_set_config(&hap_cfg);
+
 	/* Initialize the HAP core */
 	hap_init(HAP_TRANSPORT_WIFI);
 
-	FillAccessories();
-
-    /* Set the Setup ID required for QR code based Accessory Setup.
-     * Ideally, this should be available in factory_nvs partition. This is
-     * just for demonstration purpose
-     */
-	hap_set_setup_id("ES32");
-
-    /* Provide the Setup Information for HomeKit Pairing.
-     * Ideally, this should be available in factory_nvs partition. This is
-     * just for demonstration purpose
-     */
-
-	hap_set_setup_info(&setup_info);
-
-    /* Register a common button for reset Wi-Fi network and reset to factory.
-     */
-    //reset_key_init(RESET_GPIO);
-
-    /* Use the setup_payload_gen tool to get the QR code for Accessory Setup.
-     * The payload below is for a Bridge with setup code 111-22-333 and setup id ES32
-     */
-    ESP_LOGI(Tag, "Use setup payload: \"X-HM://002LETYN1ES32\" for Accessory Setup");
+	hap_cid_t CID = FillAccessories();
 
     /* Enable WAC2 as per HAP Spec R12 */
-    hap_enable_wac2();
+    //hap_enable_wac2();
 
-    ::hap_set_softap_ssid(Settings.WiFi.APSSID.c_str());
+	//ESP_LOGI(Tag, "Use setup payload: \"X-HM://00LCC17KE1234\" for Accessory Setup");
 
-    if (!IsAP && SSID != "" && Password != "") {
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
-    	::hap_set_wifi_network_ext(SSID.c_str(), SSID.size(), Password.c_str(), Password.size());
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED)
+    hap_set_setup_id("T94S");
+    hap_set_setup_code("11122333");
+    esp_hap_get_setup_payload("11122333", "1234", false, CID);
 #endif
 
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED
-    	::hap_disable_mfi_auth(SSID.c_str(), Password.c_str());
+#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+    hap_set_setup_id("RQW0");
+    hap_enable_software_auth();
+    //esp_hap_get_setup_payload("11122333", "1234", true, CID);
 #endif
-    }
 
-    ::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID	 , &WiFi.eventHandler, &WiFi);
-    ::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP, &WiFi.eventHandler, &WiFi);
+    //::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID	 , &WiFi.eventHandler, &WiFi);
+    //::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP, &WiFi.eventHandler, &WiFi);
+
+    //app_wifi_init();
 
     /* After all the initializations are done, start the HAP core */
     hap_start();
 
-    WebServer.RegisterHandlers(*hap_platform_httpd_get_handle());
+    //app_wifi_start(portMAX_DELAY);
+
+    httpd_handle_t *HAPWebServerHandle = hap_platform_httpd_get_handle();
+    if (HAPWebServerHandle != NULL)
+    	WebServer.RegisterHandlers(*HAPWebServerHandle);
 
     /* The task ends here. The read/write callbacks will be invoked by the HAP Framework */
 

@@ -8,7 +8,7 @@
 #include "PowerManagement.h"
 
 #if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-#include "HomeKit.h"
+#include "../../src/HomeKit/HomeKit.h"
 #endif
 
 static char 	tag[]						= "WiFi";
@@ -121,15 +121,8 @@ void WiFi_t::Init() {
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 		esp_err_t errRc = ::esp_wifi_init(&cfg);
 
-
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
 	    esp_netif_create_default_wifi_sta();
 	    esp_netif_create_default_wifi_ap();
-#endif
-
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED)
-	    esp_netif_create_default_wifi_ap();
-#endif
 
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
@@ -156,11 +149,6 @@ void WiFi_t::DeInit() {
 	::esp_wifi_set_ps(WIFI_PS_NONE);
 	::esp_wifi_stop();
 	::esp_wifi_deinit();
-
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_ADK)
-	::esp_netif_destroy(::esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"));
-	::esp_netif_destroy(::esp_netif_get_handle_from_ifkey("WIFI_AP_DEF"));
-#endif
 
 	::esp_event_loop_delete_default();
 
@@ -310,19 +298,6 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, const uint8_t& Channel, bool WaitForConnection) {
 	ESP_LOGD(tag, "Connecting to AP: %s %s", SSID.c_str(), Password.c_str());
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-	DeInit();
-
-	//::esp_event_loop_create_default();
-
-    //::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID	, &eventHandler, this);
-    //::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this);
-
-	HomeKit::WiFiSetMode(false, SSID, Password);
-	HomeKit::Start();
-	return ESP_OK;
-#endif
-
 	m_WiFiNetworkSwitch = false;
 	IsIPCheckSuccess = false;
 
@@ -415,11 +390,6 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden, uint8_t MaxConnections) {
 	ESP_LOGD(tag, ">> startAP: ssid: %s", SSID.c_str());
-
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
-	HomeKit::Start();
-	return;
-#endif
 
 	m_WiFiNetworkSwitch = false;
 

@@ -23,9 +23,6 @@ menu "LOOKin configuration"
         config FIRMWARE_HOMEKIT_SUPPORT_NONE
             bool "No HomeKit in firmware"
 
-        config FIRMWARE_HOMEKIT_SUPPORT_ADK
-            bool "Support based on Apple ADK"
-
         config FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED
             bool "Using official Espressif SDK without SF or HW authorization"
 
