@@ -9,17 +9,37 @@
 # 0x140000	1280  KB
 # 0x14E000	1336  KB
 # 0x150000	1344  KB
+# 0x200000	2048  KB
+# 0x300000	3072  KB
+
 # Name,     Type, SubType,    	Offset,		Size
-phy_init,   data, phy,        	0x0f000,  	0x1000
-otadata,    data, ota,        	0x10000,  	0x2000
-factory_nvs,data, nvs,        	0x12000,  	0x4000
-nvs_keys,	data, nvs_keys,		0x16000,   	0x1000
-coredump, 	data, coredump,		0x17000,	0x10000
-nvs, 		data, nvs,			0x27000,	0xF9000
-ota_0,      app,  0x10,       	0x120000, 	0x300000
-ota_1,     	app,  0x11,      	0x420000, 	0x300000
-data, 		data, nvs,			0x720000,	0x180000
-#scenarios          (2MB),  	0x900000,  	0x200000
-#shared memory cache(256KB),  	0xB00000,  	0x40000
-#shared memory area (2112KB),  	0xB40000,  	0x210000
-#reserved space (2752KB),		0xD50000, 	0x2B0000
+phy_init,   data, phy,        	0x00f000,  	0x1000
+otadata,    data, ota,        	0x010000,  	0x2000
+factory_nvs,data, nvs,        	0x012000,  	0x4000
+nvs_keys,	data, nvs_keys,		0x016000,   0x1000
+coredump, 	data, coredump,		0x017000,	0x10000
+nvs, 		data, nvs,			0x027000,	0x49000
+ota_0,      app,  0x10,       	0x070000, 	0x300000
+ota_1,     	app,  0x11,      	0x370000, 	0x300000
+misc,		data,,				0x670000,	0x30000
+dataitems, 	data,,				0x6A0000, 	0x200000
+scenarios, 	data,,  			0x8A0000,  	0x200000
+scache, 	data,,  			0xAA0000,  	0x40000
+storage,  	data,,				0xAE0000,  	0x210000
+constants,	data,,				0xCF0000, 	0x310000
+
+
+#phy_init,data,phy,0xf000,4K,
+#otadata,data,ota,0x10000,8K,
+#factory_nvs,data,nvs,0x12000,16K,
+#nvs_keys,data,nvs_keys,0x16000,4K,
+#coredump,data,coredump,0x17000,64K,
+#nvs,data,nvs,0x27000,292K,
+#ota_0,app,ota_0,0x70000,3M,
+#ota_1,app,ota_1,0x370000,3M,
+#datacache,data,ota,0x670000,192K,
+#dataitems,data,ota,0x6a0000,2M,
+#scenarios,data,ota,0x8a0000,2M,
+#scache,data,ota,0xaa0000,256K,
+#storage,data,ota,0xae0000,2112K,
+#constants,data,ota,0xcf0000,3136K,

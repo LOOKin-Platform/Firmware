@@ -204,13 +204,13 @@ class Settings_t {
 			} Data;
 #else
 			struct Versions_t {
-				static constexpr uint32_t 	StartAddress	= 0xB00000;
+				static constexpr uint32_t 	StartAddress	= 0xAA0000;
 				static constexpr uint32_t 	Size			= 0x40000;
 				static constexpr uint8_t 	VersionMaxSize	= 10;
 			} Versions;
 
 			struct Data_t {
-				static constexpr uint32_t 	StartAddress	= 0xB40000;
+				static constexpr uint32_t 	StartAddress	= 0xAE0000;
 				static constexpr uint32_t 	Size			= 0x210000;
 				static constexpr uint16_t 	ItemSize		= 0x108;
 			} Data;
@@ -243,7 +243,7 @@ class Settings_t {
 				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
 				static constexpr uint16_t	Count			= 256;
 #else
-				static constexpr uint32_t	Start			= 0x900000;
+				static constexpr uint32_t	Start			= 0x8A0000;
 				static constexpr uint32_t	Size			= 0x200000;
 				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
 				static constexpr uint16_t	Count			= 1024;

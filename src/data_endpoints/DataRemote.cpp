@@ -20,7 +20,6 @@
 
 #include "WebServer.h"
 #include "WiFi.h"
-#include "Memory.h"
 
 #include <IRLib.h>
 
@@ -292,6 +291,7 @@ class DataRemote_t : public DataEndpoint_t {
 			uint8_t			DeviceType 	{ 0x0 };
 			uint16_t		Status 		{ 0x0 };
 			uint16_t		Extra		{ 0x0 };
+			uint32_t		Updated		{ 0x0 };
 			map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>
 							Functions = map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>();
 
@@ -393,20 +393,37 @@ class DataRemote_t : public DataEndpoint_t {
 		};
 
 		void Init() override {
-			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
+			InitDevicesCacheFromNVSKeys();
+		}
 
-			IRDevicesList = Converter::StringToVector(Memory.GetString("DevicesList"), "|");
+		void InitDevicesCacheFromNVSKeys() {
+			nvs_handle handle;
+			nvs_open(DataEndpoint_t::NVSArea.c_str(), NVS_READONLY, &handle);
 
-			auto Iterator = IRDevicesList.begin();
-			while (Iterator != IRDevicesList.end())
-			{
-				if (*Iterator == "")
-					Iterator = IRDevicesList.erase(Iterator);
-				else {
-					DataRemote_t::IRDevice DeviceItem(Memory.GetString(*Iterator), *Iterator);
-					AddOrUpdateDeviceToCache(DeviceItem);
-					++Iterator;
-				}
+			nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY);
+			while (it != NULL) {
+				nvs_entry_info_t info;
+				nvs_entry_info(it, &info);
+				it = nvs_entry_next(it);
+
+				string Key(info.key);
+
+				if (Key.size() == 4)
+					AddOrUpdateDeviceToCache(LoadDevice(Key));
+			}
+		}
+
+		void RemoveDeviceFromCache(string UUID) {
+			UUID = Converter::ToUpper(UUID);
+
+			vector<IRDeviceCacheItem_t>::iterator it = IRDevicesCache.begin();
+
+			while(it != IRDevicesCache.end()) {
+
+			    if (it->DeviceID == UUID) {
+			        it = IRDevicesCache.erase(it);
+			    }
+			    else ++it;
 			}
 		}
 
@@ -418,6 +435,7 @@ class DataRemote_t : public DataEndpoint_t {
 				CacheItem.DeviceType 	= DeviceItem.Type;
 				CacheItem.Status		= DeviceItem.Status;
 				CacheItem.Extra			= DeviceItem.Extra;
+				CacheItem.Updated		= DeviceItem.Updated;
 
 				for (auto& FunctionItem : DeviceItem.Functions)
 				{
@@ -461,13 +479,6 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		void HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) override {
-			if (Query.GetURLPartsCount() == 2)
-				if (Query.CheckURLPart("deviceslist", 1)) // Forbidden to use this as UUID
-				{
-					Result.SetFail();
-					return;
-				}
-
 			if (Query.Type == QueryType::GET) {
 				if (Query.GetURLPartsCount() == 1) {
 					if (Query.GetParams().count("statuses"))
@@ -485,12 +496,12 @@ class DataRemote_t : public DataEndpoint_t {
 					{
 						vector<map<string,string>> OutputArray = vector<map<string,string>>();
 
-						for (auto& IRDeviceItem : GetAvaliableDevices())
+						for (auto& IRDeviceItem : IRDevicesCache)
 						{
 							OutputArray.push_back({
-								{ "UUID" 	, 	IRDeviceItem.UUID								},
-								{ "Type"	, 	Converter::ToHexString(IRDeviceItem.Type,2)		},
-								{ "Updated" , 	Converter::ToString(IRDeviceItem.Updated)		}
+								{ "UUID" 	, 	IRDeviceItem.DeviceID								},
+								{ "Type"	, 	Converter::ToHexString(IRDeviceItem.DeviceType,2)	},
+								{ "Updated" , 	Converter::ToString(IRDeviceItem.Updated)			}
 							});
 						}
 
@@ -536,7 +547,7 @@ class DataRemote_t : public DataEndpoint_t {
 					if (DeviceItem.Functions.count(Converter::ToLower(Function)))
 						JSONObject.SetItem("Type", DeviceItem.Functions[Converter::ToLower(Function)]);
 					else {
-						// JSONObject.SetItem("Type", "single");
+						// JSONObject.SaveItem("Type", "single");
 						Result.SetInvalid();
 						Result.Body = ResponseItemDidntExist;
 						return;
@@ -617,15 +628,11 @@ class DataRemote_t : public DataEndpoint_t {
 
 			if (Query.Type == QueryType::DELETE) {
 				if (Query.GetURLPartsCount() == 1) {
-					NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-					IRDevicesList.clear();
 					IRDevicesCache.clear();
-					Memory.EraseNamespace();
+					EraseAll();
 				}
 
 				if (Query.GetURLPartsCount() == 2) {
-					NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-
 					string UUID = Converter::ToUpper(Query.GetStringURLPartByNumber(1));
 
 					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
@@ -636,8 +643,8 @@ class DataRemote_t : public DataEndpoint_t {
 						return;
 					}
 
-					RemoveFromIRDevicesList(UUID);
-					Memory.EraseStartedWith(UUID);
+					RemoveDeviceFromCache(UUID);
+					DeleteStartedWith(UUID);
 				}
 
 				if (Query.GetURLPartsCount() == 3) {
@@ -660,15 +667,21 @@ class DataRemote_t : public DataEndpoint_t {
 						return;
 					}
 
-					NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-
 					bool IsOK = false;
 					for (auto& FunctionToDelete : FunctionsToDelete) {
 						if (DeviceItem.Functions.count(FunctionToDelete) != 0)
 						{
 							IsOK = true;
+
+							if (!DeviceItem.Functions.count(FunctionToDelete))
+								break;
+
+							if (DeviceItem.Functions[FunctionToDelete] == "single")
+								DeleteItem(UUID + "_" + FunctionToDelete);
+							else
+								DeleteStartedWith(UUID + "_" + FunctionToDelete + "_");
+
 							DeviceItem.Functions.erase(FunctionToDelete);
-							Memory.EraseStartedWith(UUID + "_" + FunctionToDelete + "_");
 
 							// delete from cache
 							for (int i=0;i<IRDevicesCache.size();i++)
@@ -731,14 +744,12 @@ class DataRemote_t : public DataEndpoint_t {
 
 			DeviceItem.ParseJSONItems(JSON(Query.GetBody()).GetItems());
 
-			uint8_t ResultCode = SaveDevice(DeviceItem);
-
-			if (ResultCode == 0)
+			if (SaveDevice(DeviceItem))
 				Result.SetSuccess();
 			else
 			{
 				Result.SetFail();
-				Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(ResultCode) + " }";
+				Result.Body = "{\"success\" : \"false\"}";
 			}
 
 			AddOrUpdateDeviceToCache(DeviceItem);
@@ -785,8 +796,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			if (Query.Type == QueryType::PUT) {
-				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-				Memory.EraseStartedWith(UUID + "_" + Function + "_");
+				DeleteStartedWith(UUID + "_" + Function + "_");
 			}
 
 			JSON SignalsJSON = JSONObject.Detach("signals");
@@ -807,12 +817,9 @@ class DataRemote_t : public DataEndpoint_t {
 				if (JSONObject.IsItemExists("updated"))
 					DeviceItem.Updated = Converter::ToUint32(JSONObject.GetItem("updated"));
 
-				uint8_t SaveDeviceResult = SaveDevice(DeviceItem);
-
-				if (SaveDeviceResult)
+				if (!SaveDevice(DeviceItem))
 				{
 					Result.SetFail();
-					Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(SaveDeviceResult) + " }";
 					return;
 				}
 
@@ -824,12 +831,9 @@ class DataRemote_t : public DataEndpoint_t {
 
 					pair<uint8_t, uint32_t> IRDetails = make_pair(0,0);
 
-					uint8_t SaveFunctionResult = SaveFunction(UUID, Function, SerializeIRSignal(ChildObject, IRDetails), Index++, DeviceItem.Type);
-
-					if (SaveFunctionResult)
+					if (!SaveFunction(UUID, Function, SerializeIRSignal(ChildObject, IRDetails), Index++, DeviceItem.Type))
 					{
 						Result.SetFail();
-						Result.Body = "{\"success\" : \"false\", \"Code\" : " + Converter::ToString(SaveFunctionResult) + " }";
 						return;
 					}
 
@@ -852,9 +856,8 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		map<string,string> LoadDeviceFunctions(string UUID) {
-			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-
-			IRDevice Result(Memory.GetString(UUID), UUID);
+			ESP_LOGE("LoadDeviceFunctions", "!");
+			IRDevice Result(GetItem(UUID), UUID);
 
 			if (Result.IsCorrect())
 				return Result.Functions;
@@ -866,8 +869,6 @@ class DataRemote_t : public DataEndpoint_t {
 			UUID 	= Converter::ToUpper(UUID);
 			Function= Converter::ToLower(Function);
 
-			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-
 			IRLib Result;
 
 			if (!DeviceItem.IsCorrect())
@@ -877,12 +878,12 @@ class DataRemote_t : public DataEndpoint_t {
 				string KeyString = UUID + "_" + Function;
 
 				if (DeviceItem.Functions[Function] == "single")
-					return DeserializeIRSignal(Memory.GetString(KeyString));
+					return DeserializeIRSignal(GetItem(KeyString));
 				else {
 					if (Index > 0)
 						KeyString += "_" + Converter::ToString(Index);
 
-					return DeserializeIRSignal(Memory.GetString(KeyString));
+					return DeserializeIRSignal(GetItem(KeyString));
 				}
 			}
 
@@ -926,21 +927,6 @@ class DataRemote_t : public DataEndpoint_t {
 				return DeviceItem.Functions[Function];
 			else
 				return "single";
-		}
-
-		vector<IRDevice> GetAvaliableDevices() {
-			NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-
-			vector<IRDevice> Result = vector<IRDevice>();
-
-			for (auto& IRDeviceUUID: IRDevicesList) {
-				DataRemote_t::IRDevice DeviceItem(Memory.GetString(IRDeviceUUID), IRDeviceUUID);
-
-				if (DeviceItem.IsCorrect())
-					Result.push_back(DeviceItem);
-			}
-
-			return Result;
 		}
 
 		pair<bool,uint16_t> SetExternalStatusForAC(uint16_t Codeset, uint16_t NewStatus) {
@@ -1051,6 +1037,10 @@ class DataRemote_t : public DataEndpoint_t {
 
 					break;
 				}
+		}
+
+		IRDevice GetDevice(string UUID) {
+			return LoadDevice(UUID);
 		}
 
 		void StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value, uint16_t Status) {
@@ -1171,7 +1161,6 @@ class DataRemote_t : public DataEndpoint_t {
 					break;
 			}
 
-
 			/*
 			 *
 			if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		StatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
@@ -1183,63 +1172,23 @@ class DataRemote_t : public DataEndpoint_t {
 #endif
 		}
 		private:
-			vector<string>				IRDevicesList		= vector<string>();
 			map<string,vector<string>> 	AvaliableFunctions 	= map<string,vector<string>>();
 
-			uint8_t	SaveIRDevicesList() {
-				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-				return (Memory.SetString("DevicesList", Converter::VectorToString(IRDevicesList, "|"))) ? 0 : static_cast<uint8_t>(NoSpaceToSaveDevice);
-			}
-
-			uint8_t	AddToDevicesList(string UUID) {
-				if (!(std::count(IRDevicesList.begin(), IRDevicesList.end(), UUID)))
-				{
-					IRDevicesList.push_back(UUID);
-					uint8_t SetResult = SaveIRDevicesList();
-
-					return (SetResult != 0) ? SetResult + 0x10 : 0;
-				}
-
-				return 0;//static_cast<uint8_t>(Error::DeviceAlreadyExists);
-			}
-
-			uint8_t RemoveFromIRDevicesList(string UUID) {
-				std::vector<string>::iterator itr = std::find(IRDevicesList.begin(), IRDevicesList.end(), UUID);
-				if (itr != IRDevicesList.end()) IRDevicesList.erase(itr);
-
-				auto it = IRDevicesCache.begin();
-				while (it != IRDevicesCache.end())
-				{
-					if ((*it).DeviceID == UUID)
-						it = IRDevicesCache.erase(it);
-					else
-						++it;
-				}
-
-				return SaveIRDevicesList();
-			}
-
 			IRDevice LoadDevice(string UUID) {
-				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-
 				UUID = Converter::ToUpper(UUID);
-
-				IRDevice Result(Memory.GetString(UUID), UUID);
+				IRDevice Result(GetItem(UUID), UUID);
 				return Result;
 			}
 
 			uint8_t	SaveDevice(IRDevice DeviceItem) {
-				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
+				if (!SaveItem(DeviceItem.UUID, DeviceItem.ToString()))
+					return 1;
 
-				bool SetResult = Memory.SetString(DeviceItem.UUID, DeviceItem.ToString());
-
-				if (SetResult != true) return 1;
-				return AddToDevicesList(DeviceItem.UUID);
+				AddOrUpdateDeviceToCache(DeviceItem);
+				return 1;
 			}
 
-			uint8_t SaveFunction(string UUID, string Function, string Item, uint8_t Index, uint8_t DeviceType) {
-				NVS Memory(DataEndpoint_t::NVSArea, NVS::PartitionTypeEnum::DATA);
-
+			bool SaveFunction(string UUID, string Function, string Item, uint8_t Index, uint8_t DeviceType) {
 				if (!DevicesHelper.IsValidKeyForType(DeviceType, Function))
 					return static_cast<uint8_t>(DataRemote_t::Error::UnsupportedFunction);
 
@@ -1248,9 +1197,7 @@ class DataRemote_t : public DataEndpoint_t {
 				if (Index > 0)
 					ValueName += "_" + Converter::ToString(Index);
 
-				Memory.SetString(ValueName, Item);
-
-				return 0;
+				return SaveItem(ValueName, Item);
 			}
 
 			string SerializeIRSignal(JSON &JSONObject, pair<uint8_t,uint32_t> &IRDetails) {
