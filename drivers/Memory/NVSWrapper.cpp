@@ -80,6 +80,31 @@ void NVS::EraseNamespace() {
 	};
 }
 
+/**
+ * @brief Find all keys started by Key.
+ *
+ * @param [in] Key The start key to read from the namespace.
+ */
+
+vector<string> NVS::FindAllStartedWith(string Key) {
+	vector<string> Result = vector<string>();
+
+	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY);
+	while (it != NULL) {
+		nvs_entry_info_t info;
+		nvs_entry_info(it, &info);
+		it = nvs_entry_next(it);
+
+		string ItemKey(info.key);
+		string ItemKeyForComprasion  = Converter::ToLower(ItemKey);
+
+		if (Converter::StartsWith(ItemKeyForComprasion, Converter::ToLower(Key)))
+			Result.push_back(ItemKey);
+	}
+
+	return Result;
+}
+
 
 /**
  * @brief Retrieve a string value by key.
