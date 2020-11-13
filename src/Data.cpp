@@ -5,6 +5,7 @@
 */
 #include "Globals.h"
 #include "Data.h"
+#include "HomeKit.h"
 
 const char *DataEndpoint_t::Tag 			= "Data_t";
 string		DataEndpoint_t::NVSArea			= "Data";
@@ -104,16 +105,10 @@ void DataEndpoint_t::Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Siz
 
 	while (Counter < Size)
 	{
-		uint16_t BufferSize = MemoryBlockSize - MinRecordSize;
-
-		// Clear memory where to write new block
-		uint32_t 	BlockStart 			= floor(((NewAddress + Counter) / MemoryBlockSize)) * MemoryBlockSize;
-		bool 		IsWriteInBlockStart = (NewAddress == BlockStart);
-
 	    EraseRange(NewAddress + Counter, MemoryBlockSize - MinRecordSize);
 
 		::esp_partition_read		(Partition, OldAddress + Counter, ReadBuffer, MemoryBlockSize - MinRecordSize);
-	    ::esp_partition_write		(Partition, NewAddress + Counter, &ReadBuffer, BufferSize);
+	    ::esp_partition_write		(Partition, NewAddress + Counter, &ReadBuffer, MemoryBlockSize - MinRecordSize);
 
 	    Counter += MemoryBlockSize - MinRecordSize;
 	}
@@ -229,7 +224,8 @@ string DataEndpoint_t::GetItem(string ItemName) {
 bool DataEndpoint_t::DeleteItem(string ItemName) {
 	NVS Memory(DataEndpoint_t::NVSArea);
 #if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
-	return Memory.DeleteItem(ItemName);
+	Memory.Erase(ItemName);
+	return true;
 #else
 	if (ItemName == FREE_MEMORY_NVS)
 		return false;
@@ -251,7 +247,8 @@ bool DataEndpoint_t::DeleteItem(string ItemName) {
 bool DataEndpoint_t::DeleteStartedWith(string Key) {
 	NVS Memory(DataEndpoint_t::NVSArea);
 #if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
-	return Memory.EraseStartedWith(ItemName);
+	Memory.EraseStartedWith(Key);
+	return true;
 #else
 	if (Key == FREE_MEMORY_NVS)
 		return false;
@@ -284,6 +281,9 @@ void DataEndpoint_t::EraseAll() {
     	::esp_partition_erase_range(Partition, 0, Partition->size);
 }
 
+bool DataEndpoint_t::IsHomeKitEnabled() 		{ return HomeKit::IsEnabledForDevice();		}
+bool DataEndpoint_t::IsHomeKitExperimental()	{ return HomeKit::IsExperimentalMode();	}
+
 void DataEndpoint_t::Debug(string Tag) {
     const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
 
@@ -311,7 +311,7 @@ void DataEndpoint_t::Debug(string Tag) {
 			uint32_t Size		= (uint32_t)((AddressAndSize << 32) >> 32);
 
 		    char ReadBuffer[Size];
-		    esp_err_t Result = esp_partition_read(Partition, Address, ReadBuffer, Size);
+		    esp_partition_read(Partition, Address, ReadBuffer, Size);
 
 			ESP_LOGE("Data debug", "Item: %s Address %d Size %d", info.key, Address, Size);
 			ESP_LOGE("Data debug", "Value: %s", string(ReadBuffer, Size).c_str());

@@ -1,4 +1,5 @@
-#include "../HomeKit/Custom.h"
+#include "Custom.h"
+#include "HomeKit.h"
 
 /* Char: Active identifier */
 hap_char_t *hap_char_active_identifier_create(uint32_t ActiveID)
@@ -487,7 +488,7 @@ extern Device_t	Device;
 
 void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value)
 {
-	hap_acc_t* Accessory = (Device.HomeKitBridge) ? hap_acc_get_by_aid(AID) : hap_get_first_acc();
+	hap_acc_t* Accessory = HomeKit::IsExperimentalMode() ? hap_acc_get_by_aid(AID) : hap_get_first_acc();
 
 	if (Accessory == NULL) 	return;
 

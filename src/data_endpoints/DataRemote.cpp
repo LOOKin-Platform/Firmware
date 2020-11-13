@@ -23,9 +23,7 @@
 
 #include <IRLib.h>
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
 #include "Custom.h"
-#endif
 
 using namespace std;
 
@@ -949,12 +947,12 @@ class DataRemote_t : public DataEndpoint_t {
 
 			StatusSave(DeviceID, NewStatus);
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-			if (ACOperandPrev.Mode 			!= ACOperandNext.Mode) 			HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE0, ACOperandNext.Mode);
-			if (ACOperandPrev.Temperature 	!= ACOperandNext.Temperature) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE1, ACOperandNext.Temperature);
-			if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
-			if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
-#endif
+			if (IsHomeKitEnabled()) {
+				if (ACOperandPrev.Mode 			!= ACOperandNext.Mode) 			HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE0, ACOperandNext.Mode);
+				if (ACOperandPrev.Temperature 	!= ACOperandNext.Temperature) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE1, ACOperandNext.Temperature);
+				if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
+				if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
+			}
 
 			StatusTriggerUpdated(DeviceID, 0xEF, 0, 0, NewStatus);
 
@@ -1044,16 +1042,17 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		void StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value, uint16_t Status) {
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-			if (FunctionID > 0)
+			if (FunctionID > 0 && IsHomeKitEnabled())
 				HomeKitStatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value);
-#endif
+
 			Wireless.SendBroadcastUpdated(0x87, "FE", DeviceID + Converter::ToHexString(Status,4));
 
 		}
 
 		void HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
+			if (!IsHomeKitEnabled())
+				return;
+
 			ESP_LOGE("StatusTriggerUpdated", "FunctionID: %04x Value: %d", FunctionID, Value);
 
 			uint32_t AID = (uint32_t)Converter::UintFromHexString<uint16_t>(DeviceID);
@@ -1167,9 +1166,6 @@ class DataRemote_t : public DataEndpoint_t {
 			if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	StatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
 			 *
 			 */
-
-
-#endif
 		}
 		private:
 			map<string,vector<string>> 	AvaliableFunctions 	= map<string,vector<string>>();

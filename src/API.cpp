@@ -5,10 +5,7 @@
 */
 
 #include "API.h"
-
-#if CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
-#include "HomeKit.h"
-#endif
+#include <HomeKit.h>
 
 void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 	if (Query.GetURLPartsCount() == 0) {
@@ -81,28 +78,12 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 		if (Query.CheckURLPart("network"	, 0))	Network		.HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("automation"	, 0))	Automation	.HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("storage"	, 0))	Storage		.HandleHTTPRequest	(Response, Query);
-		if (Query.CheckURLPart("data"		, 0))	Data->		HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("data"		, 0))	Data		->HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("sensors"	, 0))	Sensor_t	::HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("commands"	, 0))	Command_t	::HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("log"		, 0))	Log			::HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("homekit"	, 0))	HomeKitAPI_t::HandleHTTPRequest	(Response, Query);
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-    	if (Query.GetURLPartsCount() == 2)
-    	{
-    		if (Query.CheckURLPart("homekit", 0)) {
-    			if (Query.CheckURLPart("refresh", 1)) {
-    				HomeKit::AppServerRestart();
-    				Response.SetSuccess();
-    				return;
-    			}
-    			else if (Query.CheckURLPart("reset", 1)) {
-    				HomeKit::ResetData();
-    				Response.SetSuccess();
-    				return;
-    			}
-    		}
-    	}
-#endif
 		// Fixes null string at some APIs
 		if (Query.GetURLPartsCount() == 2 && (Query.CheckURLPart("device", 0)) && (Query.CheckURLPart("name", 1)))
 			return;

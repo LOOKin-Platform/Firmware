@@ -13,22 +13,4 @@ menu "LOOKin configuration"
             bool "Second gen 16MB devices"
 
     endchoice #FIRMWARE_TARGET
-    
-    choice FIRMWARE_HOMEKIT_SUPPORT
-        prompt "Apple HomeKit support"
-        default FIRMWARE_HOMEKIT_SUPPORT_NONE
-        help
-		  	Please choose HomeKit supporting
-
-        config FIRMWARE_HOMEKIT_SUPPORT_NONE
-            bool "No HomeKit in firmware"
-
-        config FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED
-            bool "Using official Espressif SDK without SF or HW authorization"
-
-        config FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL
-            bool "Full Apple HomeKit support"
-
-    endchoice #FIRMWARE_TARGET
-
 endmenu

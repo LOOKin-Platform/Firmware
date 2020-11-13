@@ -5,9 +5,9 @@
  */
 #include "Globals.h"
 #include "Device.h"
+#include "HomeKit.h"
 
 httpd_req_t	*Device_t::CachedRequest 	= NULL;
-bool		Device_t::HomeKitBridge 	= false;
 
 DeviceType_t::DeviceType_t(string TypeStr) {
 	for(auto const &TypeItem : Settings.Devices.Literaly) {
@@ -423,9 +423,6 @@ string Device_t::MRDCToString() {
 }
 
 string Device_t::HomeKitToString() {
-	#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_NONE)
-	return "0";
-	#endif
-
-	return "1";
+	if (!HomeKit::IsEnabledForDevice()) return "0";
+	return (HomeKit::IsExperimentalMode()) ? "2" : "1";
 }

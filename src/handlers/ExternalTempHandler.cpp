@@ -25,7 +25,7 @@ class ExternalTempHandler {
 };
 
 void IRAM_ATTR ExternalTempHandler::Pool() {
-	if (Time::Uptime() %2 != 0)
+	if (Time::Uptime() %5 != 0)
 		return;
 
 	//if (Time::Uptime() % 10 != 5 && Time::Uptime() % 10 != 0)

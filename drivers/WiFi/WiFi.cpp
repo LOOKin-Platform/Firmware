@@ -7,9 +7,7 @@
 #include "WiFi.h"
 #include "PowerManagement.h"
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-#include "../../src/HomeKit/HomeKit.h"
-#endif
+#include "HomeKit.h"
 
 static char 	tag[]						= "WiFi";
 

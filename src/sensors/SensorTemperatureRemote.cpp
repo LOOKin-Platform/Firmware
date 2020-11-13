@@ -60,15 +60,14 @@ class SensorTemperatureRemote_t : public SensorTemperature_t {
 
 			Value	+= (uint32_t)abs(Temperature * 10);
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-			// Update HomeKit AC temp values
-			for (auto &IRDevice : ((DataRemote_t *)Data)->GetAvaliableDevices())
-				if (IRDevice.Type == 0xEF) {
-					hap_val_t CurrentTempValue;
-					CurrentTempValue.f = Temperature;
-					HomeKitUpdateCharValue(IRDevice.UUID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
-				}
-#endif
+			if (IsHomeKitEnabled()) {
+				for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
+					if (IRDevice.DeviceType == 0xEF) {
+						hap_val_t CurrentTempValue;
+						CurrentTempValue.f = Temperature;
+						HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
+					}
+			}
 
 			return Value;
 		}

@@ -1,13 +1,14 @@
-#include "../HomeKit/HomeKit.h"
+#include "HomeKit.h"
 
 const char *Tag = "HAP Bridge";
 
-TaskHandle_t 	HomeKit::TaskHandle = NULL;
+TaskHandle_t 		HomeKit::TaskHandle = NULL;
 
-bool 			HomeKit::IsRunning 	= false;
-bool 			HomeKit::IsAP 		= false;
+bool 				HomeKit::IsRunning 		= false;
+bool 				HomeKit::IsAP 			= false;
+HomeKit::ModeEnum	HomeKit::Mode			= HomeKit::ModeEnum::NONE;
 
-vector<hap_acc_t*> 		HomeKit::BridgedAccessories = vector<hap_acc_t*>();
+vector<hap_acc_t*> 	HomeKit::BridgedAccessories = vector<hap_acc_t*>();
 
 HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sID) {
 	//sName.copy(Name, sName.size(), 0);
@@ -23,6 +24,28 @@ HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sI
 
 void HomeKit::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
 	IsAP 		= sIsAP;
+}
+
+void HomeKit::Init() {
+	NVS Memory(NVS_HOMEKIT_AREA);
+	uint8_t LoadedMode = Memory.GetInt8Bit(NVS_HOMEKIT_AREA_MODE);
+
+	uint8_t NewMode = 0;
+
+	if (LoadedMode == 0) { // check and set if there first start of new device
+		if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
+			NewMode = 1;
+
+		if (LoadedMode != NewMode) {
+			Memory.SetInt8Bit(NVS_HOMEKIT_AREA_MODE, NewMode);
+			LoadedMode = NewMode;
+		}
+	}
+
+	Mode = static_cast<ModeEnum>(LoadedMode);
+
+	if (Mode != ModeEnum::NONE)
+		HomeKit::Start();
 }
 
 void HomeKit::Start() {
@@ -43,6 +66,15 @@ void HomeKit::AppServerRestart() {
 void HomeKit::ResetData() {
 	::hap_reset_homekit_data();
 }
+
+bool HomeKit::IsEnabledForDevice() {
+	return (Mode != ModeEnum::NONE);
+}
+
+bool HomeKit::IsExperimentalMode() {
+	return (Mode == ModeEnum::EXPERIMENTAL);
+}
+
 
 
 /* Mandatory identify routine for the accessory (bridge)
@@ -561,10 +593,7 @@ hap_cid_t HomeKit::FillAccessories() {
 
 	switch (Settings.eFuse.Type) {
 		case 0x81:
-			if (Device.HomeKitBridge == false)
-				return FillRemoteACOnly(Accessory);
-			else
-				return FillRemoteBridge(Accessory);
+			return (Mode == ModeEnum::BASIC) ? FillRemoteACOnly(Accessory) : FillRemoteBridge(Accessory);
 			break;
 	}
 
@@ -627,10 +656,11 @@ hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 		//hap_serv_link_serv(ServiceAC, ServiceACFan);
 		hap_acc_add_serv(Accessory, ServiceACFan);
 
-		hap_add_accessory(Accessory);
 
 		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
 		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
+
+		hap_add_accessory(Accessory);
 	}
 	else
 	{
@@ -667,10 +697,11 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 		Accessory = hap_acc_create(&cfg);
 
+		uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
+		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
+
 		hap_add_accessory(Accessory);
 
-		uint8_t product_data[] = {'T','T','1','1','!','G','B','M'};
-		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
 	}
 
 	for(auto& BridgeAccessory : BridgedAccessories) {
@@ -832,17 +863,18 @@ void HomeKit::Task(void *) {
 
 	//ESP_LOGI(Tag, "Use setup payload: \"X-HM://00LCC17KE1234\" for Accessory Setup");
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED)
-    hap_set_setup_id("T94S");
-    hap_set_setup_code("11122333");
-    esp_hap_get_setup_payload("11122333", "1234", false, CID);
-#endif
-
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-    hap_set_setup_id("RQW0");
-    hap_enable_software_auth();
-    //esp_hap_get_setup_payload("11122333", "1234", true, CID);
-#endif
+	if (Mode == ModeEnum::BASIC)
+	{
+	    hap_set_setup_id("RQW0");
+	    hap_enable_software_auth();
+	}
+	else if (Mode == ModeEnum::EXPERIMENTAL)
+	{
+	    hap_set_setup_code("999-55-222");
+	    hap_set_setup_id("ES32");
+	    esp_hap_get_setup_payload("999-55-222", "ES32", false, CID);
+	    hap_enable_mfi_auth(HAP_MFI_AUTH_NONE);
+	}
 
     //::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID	 , &WiFi.eventHandler, &WiFi);
     //::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP, &WiFi.eventHandler, &WiFi);

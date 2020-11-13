@@ -82,11 +82,7 @@ void app_main(void) {
 	Data = DataEndpoint_t::GetForDevice();
 	Data->Init();
 
-#if (CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_RESTRICTED || CONFIG_FIRMWARE_HOMEKIT_SUPPORT_SDK_FULL)
-	HomeKit::Start();
-	ESP_LOGE("HomeKit", "start failed");
-#endif
-
+	HomeKit::Init();
 
 	// Remote temporary hack
 	if (Settings.eFuse.Type == Settings.Devices.Remote) {
