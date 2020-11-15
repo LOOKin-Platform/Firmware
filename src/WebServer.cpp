@@ -282,9 +282,9 @@ void WebServer_t::UDPSendBroadcastDiscover() {
 	UDPSendBroadcast(UDPDiscoverBody());
 }
 
-void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat, string Operand) {
+void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string EventID, uint8_t Repeat, string Operand) {
 	for (int i=0; i < Repeat; i++)
-		UDPSendBroadcast(UDPUpdatedBody(SensorID, Value, Operand));
+		UDPSendBroadcast(UDPUpdatedBody(SensorID, EventID, Operand));
 }
 
 string WebServer_t::UDPAliveBody() {

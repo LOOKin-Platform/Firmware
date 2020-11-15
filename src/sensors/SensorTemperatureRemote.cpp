@@ -15,10 +15,10 @@
 class SensorTemperatureRemote_t : public SensorTemperature_t {
 	private:
 		BME280 		bme280			= 0;
-		uint32_t 	PreviousValue 	= 0;
 		bool		IsSensorHWInited= false;
 
 		uint32_t	Value			= 0x0000;
+		uint32_t	PreviousTime	= 0;
 
 	public:
 		void Pool() override {
@@ -33,8 +33,20 @@ class SensorTemperatureRemote_t : public SensorTemperature_t {
 
 			uint32_t 	NewValue 	= GetValueFromSensor();
 			uint32_t	OldValue	= GetValue().Value;
-			if (NewValue != OldValue) {
-				PreviousValue = OldValue;
+
+			bool ShouldUpdate = true;
+
+			if (OldValue != numeric_limits<uint32_t>::max()) {
+				uint32_t DeltaTemp = (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
+				uint32_t DeltaTime = Time::Uptime() - PreviousTime;
+
+				if (DeltaTemp < 2 && DeltaTime < 120)
+					ShouldUpdate = false;
+			}
+
+			if (ShouldUpdate) {
+				PreviousTime 	= Time::Uptime();
+				PreviousValue 	= OldValue;
 				SetValue(NewValue);
 				Update();
 			}

@@ -23,8 +23,8 @@ void Wireless_t::StopWiFi() {
 	WiFi.Stop();
 }
 
-void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand) {
-	string UpdatedString = WebServer.UDPUpdatedBody(SensorID, Value, Operand);
+void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand) {
+	string UpdatedString = WebServer.UDPUpdatedBody(SensorID, EventID, Operand);
 
 	if (WiFi.IsRunning())
 	{

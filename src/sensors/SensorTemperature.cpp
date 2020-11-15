@@ -5,15 +5,15 @@
 */
 
 class SensorTemperature_t : public Sensor_t {
-	private:
-		uint32_t 	PreviousValue 	= 0;
+	protected:
+		uint32_t 	PreviousValue 	= numeric_limits<uint32_t>::max();
 
 	public:
 		SensorTemperature_t() {
 			if (GetIsInited()) return;
 
 			ID          = 0x85;
-			Name        = "Temp";
+			Name        = "Temperature";
 			EventCodes  = { 0x00, 0x01, 0x02 };
 
 			SetValue(0);
@@ -22,7 +22,7 @@ class SensorTemperature_t : public Sensor_t {
 		}
 
 		void Update() override {
-			Wireless.SendBroadcastUpdated(ID, Converter::ToHexString(GetValue().Value,4));
+			Wireless.SendBroadcastUpdated(ID, "00", Converter::ToHexString(GetValue().Value,4));
 			Automation.SensorChanged(ID);
 		};
 
