@@ -40,7 +40,7 @@ class SensorTemperatureRemote_t : public SensorTemperature_t {
 				uint32_t DeltaTemp = (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
 				uint32_t DeltaTime = Time::Uptime() - PreviousTime;
 
-				if (DeltaTemp < 2 && DeltaTime < 120)
+				if (DeltaTemp < 2 && DeltaTime < 60)
 					ShouldUpdate = false;
 			}
 
