@@ -49,6 +49,11 @@ class SensorTemperature_t : public Sensor_t {
 			return false;
 		}
 
+		string SummaryJSON() override {
+			return "\"" + FormatValue() + "\"";
+		};
+
+
 		float ConvertToFloat(uint32_t Temperature)
 		{
 			bool IsNegative = false;

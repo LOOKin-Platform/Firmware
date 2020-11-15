@@ -128,7 +128,6 @@ class SensorIR_t : public Sensor_t {
 			return "{}";
 		};
 
-
 		static void MessageStart() {
 			NewSignalEnd 	= RMT::GetSignalEndU();
 			NewSignalStart	= NewSignalEnd;
