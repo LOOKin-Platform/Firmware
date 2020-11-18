@@ -279,7 +279,7 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 		return false;
 
 	if (Converter::ToLower(Params["firmware"]).find("http") != 0)
-		if (Converter::ToFloat(Settings.FirmwareVersion) > Converter::ToFloat(Params["firmware"])) {
+		if (Converter::ToFloat(Settings.Firmware.ToString()) > Converter::ToFloat(Params["firmware"])) {
 			Response.ResponseCode = WebServer_t::Response::CODE::OK;
 			Response.Body = "{\"success\" : \"false\" , \"Message\": \"Attempt to update to the old version\"}";
 			return false;

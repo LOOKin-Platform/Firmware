@@ -20,9 +20,36 @@
 
 using namespace std;
 
+typedef struct FirmwareVersionStruct {
+	union __attribute__((__packed__)) {
+		struct { uint8_t Major : 8, Minor : 8; uint16_t Revision : 16; };
+		uint32_t Uint32Data = 0x00000000;
+	} Version;
+
+	FirmwareVersionStruct(uint32_t sVersion) { Version.Uint32Data = sVersion; }
+	FirmwareVersionStruct(uint8_t sMajor, uint8_t sMinor, uint16_t sRevision) { Version.Major = sMajor; Version.Minor = sMinor; Version.Revision = sRevision;}
+	string 	ToString() { return (Version.Uint32Data == 0) ? "" : Converter::ToString<uint8_t>(Version.Major) + "." + Converter::ToString<uint8_t>(Version.Minor,2);}
+	bool 	operator== (const FirmwareVersionStruct &fw2) { return (Version.Uint32Data == fw2.Version.Uint32Data); }
+	bool 	operator!= (const FirmwareVersionStruct &fw2) { return !(Version.Uint32Data == fw2.Version.Uint32Data); }
+} FirmwareVersion;
+
+
 class Settings_t {
 	public:
-		const char* 						FirmwareVersion = "2.05";
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 10, 0);
+
+//		const FirmwareVersion Firmware =  0x020A0000;
+
+		/*
+		struct {
+			const FirmwareVersion			Version			= 0x020A0000;
+
+
+			string 			ToString() 						{ return Converter::ToString<uint8_t>(Major) + "." + Converter::ToString<uint8_t>(Minor,2);}
+			uint32_t 		ToUint32() 						{ return (((uint32_t)Major) << 24) + (((uint32_t)Minor) << 16) + Revision; }
+			static string 	Uint32ToString(uint32_t Version){ return Converter::ToString((uint8_t)(Version >> 24)) + "." + Converter::ToString((uint8_t)((Version << 8) >> 24), 2);}
+		} Firmware;
+		*/
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";

@@ -47,6 +47,9 @@ class Converter {
 		template <typename T>
 		static string			ToString(T);
 
+		template <typename T>
+		static string			ToString(T, uint8_t);
+
 		static string			ToHexString(uint64_t, size_t);
 		static string			ToASCII(string HexString);
 

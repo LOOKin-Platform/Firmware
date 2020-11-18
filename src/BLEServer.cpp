@@ -139,7 +139,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
 
-    return os_mbuf_append(ctxt->om, Settings.FirmwareVersion, strlen(Settings.FirmwareVersion)) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+    return os_mbuf_append(ctxt->om, strdup(Settings.Firmware.ToString().c_str()), Settings.Firmware.ToString().size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
 int IRAM_ATTR BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
