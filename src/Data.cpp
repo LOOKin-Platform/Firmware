@@ -157,7 +157,7 @@ void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
 
 bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
+#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 	Memory.SetString(ItemName, Item);
 	return true;
 #else
@@ -200,7 +200,7 @@ bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 
 string DataEndpoint_t::GetItem(string ItemName) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
+#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 	return Memory.GetString(ItemName);
 #else
 	if (ItemName == FREE_MEMORY_NVS)
@@ -223,7 +223,7 @@ string DataEndpoint_t::GetItem(string ItemName) {
 
 bool DataEndpoint_t::DeleteItem(string ItemName) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
+#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 	Memory.Erase(ItemName);
 	return true;
 #else
@@ -246,7 +246,7 @@ bool DataEndpoint_t::DeleteItem(string ItemName) {
 
 bool DataEndpoint_t::DeleteStartedWith(string Key) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
+#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 	Memory.EraseStartedWith(Key);
 	return true;
 #else

@@ -6,3 +6,4 @@
 
 #include "NVSWrapper.h"
 #include "SPIFlash.h"
+#include "PartitionAPI.h"

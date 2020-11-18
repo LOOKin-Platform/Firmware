@@ -13,14 +13,19 @@ using namespace std;
 
 class Wireless_t {
 	public:
-		void StartInterfaces();
-		void StopWiFi();
-		void SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "");
-		bool IsPeriodicPool();
+		void 	StartInterfaces();
 
-		bool IsFirstWiFiStart	= true;
-		bool IsEventDrivenStart = false;
+		void 	StopInterfaces(bool ShouldBlockForever);
+		void	StopWiFi();
+		void 	StopBluetooth();
+
+		void 	SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "");
+		bool 	IsPeriodicPool();
+
+		bool 	IsFirstWiFiStart	= true;
+		bool 	IsEventDrivenStart = false;
 	private:
+		bool	BlockRestartForever = false;
 };
 
 #endif // WIRELESS_H

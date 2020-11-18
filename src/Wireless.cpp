@@ -6,10 +6,14 @@
 
 #include "Wireless.h"
 #include "Globals.h"
+#include "HomeKit.h"
 
 static char tag[] = "Wireless";
 
 void Wireless_t::StartInterfaces() {
+	if (BlockRestartForever)
+		return;
+
 	ESP_LOGI(tag, "StartInterfaces");
 
 	if (!WiFi.IsRunning()) {
@@ -19,8 +23,27 @@ void Wireless_t::StartInterfaces() {
 	}
 }
 
+void Wireless_t::StopInterfaces(bool ShouldBlockForever) {
+	if (ShouldBlockForever)
+		BlockRestartForever = ShouldBlockForever;
+
+	if (HomeKit::IsEnabledForDevice())
+		HomeKit::Stop();
+
+	if (WiFi.IsRunning())
+		Wireless.StopWiFi();
+
+	if (BLE::IsRunning())
+		Wireless.StopBluetooth();
+}
+
+
 void Wireless_t::StopWiFi() {
 	WiFi.Stop();
+}
+
+void Wireless_t::StopBluetooth() {
+	BLEServer.StopAdvertising();
 }
 
 void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand) {

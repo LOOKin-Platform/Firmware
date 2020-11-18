@@ -164,6 +164,16 @@ class Settings_t {
 			} NetworkMap;
 		} Pooling;
 
+		struct {
+			const uint16_t					ActionsDelay	= 2000;
+
+			const uint16_t					APSuccessDelay	= 2500;
+			const uint16_t					STASuccessADelay= 5000;
+
+			const uint8_t					AttemptsToRevert= 5;
+			const uint8_t					AttemptsToReset	= 10;
+		} BootAndRestore;
+
 		struct Devices_t {
 			public:
 				static constexpr uint8_t	Duo				= 0x02;
@@ -217,7 +227,7 @@ class Settings_t {
 		} Memory;
 
 		struct Storage_t {
-#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
+#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 			struct Versions_t {
 				static constexpr uint32_t 	StartAddress	= 0x92000;
 				static constexpr uint32_t 	Size			= 0xA000;
@@ -264,7 +274,7 @@ class Settings_t {
 			} Types;
 
 			struct Memory_t {
-#if (CONFIG_FIRMWARE_TARGET_SIZE_4MB)
+#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 				static constexpr uint32_t	Start			= 0x32000;
 				static constexpr uint32_t	Size			= 0x60000;
 				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт

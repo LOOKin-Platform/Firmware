@@ -161,6 +161,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			else
 				WiFiUptimeHandler::SetClientModeNextTime(Settings.WiFi.STAModeInterval);
 
+			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.APSuccessDelay);
+
 			return ESP_OK;
 		}
 
@@ -331,6 +333,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
 
 			MQTT.Start();
+
+			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
 
 			return ESP_OK;
 		}

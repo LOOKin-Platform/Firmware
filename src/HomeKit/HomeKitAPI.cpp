@@ -1,5 +1,6 @@
 #include "HomeKitAPI.h"
 #include "HomeKit.h"
+#include "BootAndRestore.h"
 
 void HomeKitAPI_t::HandleHTTPRequest(WebServer_t::Response &Response, Query_t &Query)
 {
@@ -54,20 +55,10 @@ void HomeKitAPI_t::HandleHTTPRequest(WebServer_t::Response &Response, Query_t &Q
 
     			Response.SetSuccess();
 
-    			TestTask* pTestTask = new TestTask();
-    			pTestTask->Start();
+    			BootAndRestore::Reboot();
 
 				return;
     		}
     	}
 	}
-}
-
-void TestTask::Run(void *data) {
-	FreeRTOS::Sleep(2500);
-
-	if (HomeKit::IsEnabledForDevice())
-		hap_reboot_accessory();
-	else
-		esp_restart();
 }

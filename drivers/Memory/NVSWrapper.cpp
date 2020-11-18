@@ -34,12 +34,19 @@ NVS::NVS(string name, nvs_open_mode openMode) {
 
 
 NVS::~NVS() {
-	nvs_close(m_handle);
+	if (m_handle != NULL)
+		nvs_close(m_handle);
 } // ~NVS
 
 void NVS::Commit() {
 	nvs_commit(m_handle);
 } // commit
+
+void NVS::Close() {
+	nvs_close(m_handle);
+	m_handle = NULL;
+}
+
 
 void NVS::Erase() {
 	nvs_erase_all(m_handle);
@@ -79,6 +86,11 @@ void NVS::EraseNamespace() {
 		Erase(info.key);
 	};
 }
+
+void NVS::ClearAll() {
+	nvs_flash_erase();
+} // erase all items in NVS
+
 
 /**
  * @brief Find all keys started by Key.
@@ -243,7 +255,7 @@ void NVS::SetUInt64Bit(string key, uint64_t data) {
  * @param [in] key The key to read from the namespace.
  * @param [out] result void * read from the %NVS storage.
  */
-void * NVS::GetBlob(string key) {
+pair<void *, size_t> NVS::GetBlob(string key) {
 	size_t Length = 0;  // value will default to 0, if not set yet in NVS
 
 	esp_err_t nvs_err = nvs_get_blob(m_handle, key.c_str(), NULL, &Length);
@@ -253,10 +265,10 @@ void * NVS::GetBlob(string key) {
 		void *Value = malloc(Length + sizeof(uint32_t));
 		nvs_get_blob(m_handle, key.c_str(), Value, &Length);
 
-		return Value;
+		return make_pair(Value, Length);
 	}
 
-	return NULL;
+	return make_pair<void *, size_t>(NULL, 0);
 } // get
 
 
@@ -267,7 +279,6 @@ void * NVS::GetBlob(string key) {
  * @param [in] data The value to set for the key.
  */
 void NVS::SetBlob(string key, void *Data, size_t datalen) {
-
 	size_t Length = (datalen == 0) ? sizeof(Data) : datalen;
 	nvs_set_blob(m_handle, key.c_str(), Data, Length);
 } // set
@@ -294,7 +305,7 @@ void NVS::BlobArrayAdd(string ArrayName, void *Item, size_t DataLength) {
  * @param [out] result void * read from the NVS array by given index. NULL if none result.
  */
 void * NVS::BlobArrayGet(string ArrayName, uint8_t Index) {
-	 return GetBlob(ArrayName + "_" + Converter::ToString(Index));
+	 return GetBlob(ArrayName + "_" + Converter::ToString(Index)).first;
 }
 
 /**
@@ -309,7 +320,7 @@ void NVS::BlobArrayRemove(string ArrayName, uint8_t Index) {
 	Erase(ArrayName + "_" + Converter::ToString(Index));
 
 	for (uint8_t i = Index; i < (Count-1) ; i++) {
-		void * tmp = GetBlob(ArrayName + "_" + Converter::ToString((uint8_t)(i+1)));
+		void * tmp = GetBlob(ArrayName + "_" + Converter::ToString((uint8_t)(i+1))).first;
 		SetBlob(ArrayName + "_" + Converter::ToString((uint8_t)i), tmp);
 	}
 

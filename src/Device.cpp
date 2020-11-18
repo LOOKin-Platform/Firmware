@@ -6,6 +6,7 @@
 #include "Globals.h"
 #include "Device.h"
 #include "HomeKit.h"
+#include "BootAndRestore.h"
 
 httpd_req_t	*Device_t::CachedRequest 	= NULL;
 
@@ -122,6 +123,14 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 
 			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet) && Result.Body == "")
 				Result.Body = "{\"success\" : \"true\"}";
+		}
+
+		if (Query.GetURLPartsCount() == 2) {
+			if (Query.CheckURLPart("factory-reset", 1)) {
+				Result.SetSuccess();
+				BootAndRestore::HardReset();
+				return;
+			}
 		}
 
 		if (Query.GetURLPartsCount() == 3) {
@@ -291,19 +300,14 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 		return false;
 	}
 
-	/*
-	if (WiFi_t::GetMode() != WIFI_MODE_STA_STR) {
-		Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
-		Response.Body = "{\"success\" : \"false\" , \"Error\": \"Device is not connected to the Internet\"}";
-		return false;
-	}
-	*/
-
 	string OTAUrl = Params["firmware"];
 
 	if (Converter::ToLower(Params["firmware"]).find("http") != 0) {
+#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
+		string UpdateFilename = "firmware_4mb.bin";
+#else
 		string UpdateFilename = "firmware.bin";
-
+#endif
 		if (Params["filename"].size() > 0)
 			UpdateFilename = Params["filename"];
 

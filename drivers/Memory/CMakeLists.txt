@@ -1,5 +1,5 @@
 
-idf_component_register(SRCS "NVSWrapper.cpp" "SPIFlash.cpp"
+idf_component_register(SRCS "NVSWrapper.cpp" "SPIFlash.cpp" "PartitionAPI.cpp"
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "include"
                     REQUIRES "nvs_flash bt Converter")

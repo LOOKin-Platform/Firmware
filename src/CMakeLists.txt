@@ -17,6 +17,7 @@ set(srcs
 	"Data.cpp"
 	"WebServer.cpp"
 	"Wireless.cpp"
+	"BootAndRestore.cpp"
 	"HomeKit/HomeKit.cpp"
 	"HomeKit/Custom.cpp"
 	"HomeKit/HomeKitAPI.cpp")

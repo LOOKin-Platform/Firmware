@@ -16,6 +16,8 @@
 #include "Memory.h"
 #include "Sleep.h"
 
+#include "BootAndRestore.h"
+
 #include "PowerManagement.h"
 
 #include "handlers/Pooling.cpp"
@@ -55,17 +57,9 @@ void app_main(void) {
 
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 
-
-	/*
-	if (!Log::VerifyLastBoot()) {
-		Log::Add(Log::Events::System::DeviceRollback);
-		ESP_LOGE(tag, "Failed start, device rollback started");
-		OTA::Rollback();
-	}
-	*/
-
 	Settings.eFuse.ReadData();
-	Log::Add(Log::Events::System::DeviceOn);
+
+	BootAndRestore::OnDeviceStart();
 
 	PowerManagement::SetIsActive((Settings.eFuse.Type == 0x81) ? false : true);
 	//PowerManagement::SetIsActive(true);
@@ -95,8 +89,6 @@ void app_main(void) {
 
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
-
-	Log::Add(Log::Events::System::DeviceStarted);
 
 	BLEServer.StartAdvertising("", true);
 	//BLEClient.Scan(60);

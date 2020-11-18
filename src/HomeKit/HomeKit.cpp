@@ -55,7 +55,8 @@ void HomeKit::Start() {
 
 
 void HomeKit::Stop() {
-	::hap_stop();
+	if (IsRunning)
+		::hap_stop();
 }
 
 void HomeKit::AppServerRestart() {
