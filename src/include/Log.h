@@ -29,10 +29,9 @@ using namespace std;
  */
 class Log {
 	public:
-		struct Item {
-			uint16_t  Code  = 0;
-			uint32_t  Data  = 0;
-			uint32_t  Time  = 0;
+		union __attribute__((__packed__)) Item {
+			struct { uint16_t Code : 16, Data : 16; uint32_t Time : 32; };
+			uint64_t Uint64Data = 0;
 		};
 
 		enum ItemType { SYSTEM, ERROR, INFO };
@@ -42,9 +41,6 @@ class Log {
 		static void         Add(uint16_t Code, uint32_t Data = 0);
 
 		static vector<Item> GetSystemLog();
-		static uint8_t      GetSystemLogCount(NVS *Memory = nullptr);
-		static Item         GetSystemLogItem(uint8_t Index, NVS *Memory = nullptr);
-		static string       GetSystemLogJSONItem(uint8_t Index, NVS *MemoryLink = nullptr);
 		static string       GetSystemLogJSON();
 
 		static vector<Item> GetEventsLog();
@@ -84,7 +80,6 @@ class Log {
 		static vector<Log::Item> Items;
 		static string       Serialize(Log::Item Item);
 		static Log::Item    Deserialize(string JSONString);
-
 	public:
 		 // 1XXX - информация, 0XXX - ошибки
 		class Events {
