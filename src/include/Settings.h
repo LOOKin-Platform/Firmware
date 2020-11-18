@@ -170,8 +170,8 @@ class Settings_t {
 			const uint16_t					APSuccessDelay	= 2500;
 			const uint16_t					STASuccessADelay= 5000;
 
-			const uint8_t					AttemptsToRevert= 5;
-			const uint8_t					AttemptsToReset	= 10;
+			const uint8_t					AttemptsToReset	= 5;
+			const uint8_t					AttemptsToRevert= 10;
 		} BootAndRestore;
 
 		struct Devices_t {
@@ -402,6 +402,8 @@ class Settings_t {
 			/* Implementation of this settings see Settings.cpp */
 
 		} GPIOData;
+
+		uint8_t DeviceGeneration = 0;
 };
 
 extern Settings_t Settings;

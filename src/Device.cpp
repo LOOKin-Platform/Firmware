@@ -305,7 +305,7 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 	if (Converter::ToLower(Params["firmware"]).find("http") != 0) {
 		string UpdateFilename = "firmware.bin";
 /*
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
+#if (Settings.DeviceGeneration == 2)
 		string UpdateFilename = "firmware_4mb.bin";
 #else
 		string UpdateFilename = "firmware.bin";

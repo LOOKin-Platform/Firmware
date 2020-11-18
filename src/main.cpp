@@ -59,6 +59,8 @@ void app_main(void) {
 
 	Settings.eFuse.ReadData();
 
+	ESP_LOGE("Device Generation", "%d", Settings.DeviceGeneration);
+
 	BootAndRestore::OnDeviceStart();
 
 	PowerManagement::SetIsActive((Settings.eFuse.Type == 0x81) ? false : true);

@@ -157,10 +157,12 @@ void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
 
 bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-	Memory.SetString(ItemName, Item);
-	return true;
-#else
+
+	if (Settings.DeviceGeneration == 1) {
+		Memory.SetString(ItemName, Item);
+		return true;
+	}
+
 	if (ItemName == FREE_MEMORY_NVS)
 		return false;
 
@@ -195,14 +197,13 @@ bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
     SetFreeMemoryAddress(AddressToSave + Item.size());
 
 	return true;
-#endif
 }
 
 string DataEndpoint_t::GetItem(string ItemName) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-	return Memory.GetString(ItemName);
-#else
+	if (Settings.DeviceGeneration == 1)
+		return Memory.GetString(ItemName);
+
 	if (ItemName == FREE_MEMORY_NVS)
 		return "";
 
@@ -218,15 +219,16 @@ string DataEndpoint_t::GetItem(string ItemName) {
     if (Result != ESP_OK) return "";
 
 	return string(ReadBuffer, AddressAndSize.second);
-#endif
 }
 
 bool DataEndpoint_t::DeleteItem(string ItemName) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-	Memory.Erase(ItemName);
-	return true;
-#else
+
+	if (Settings.DeviceGeneration == 1) {
+		Memory.Erase(ItemName);
+		return true;
+	}
+
 	if (ItemName == FREE_MEMORY_NVS)
 		return false;
 
@@ -241,15 +243,16 @@ bool DataEndpoint_t::DeleteItem(string ItemName) {
     Defragment();
 
     return true;
-#endif
 }
 
 bool DataEndpoint_t::DeleteStartedWith(string Key) {
 	NVS Memory(DataEndpoint_t::NVSArea);
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-	Memory.EraseStartedWith(Key);
-	return true;
-#else
+
+	if (Settings.DeviceGeneration == 1) {
+		Memory.EraseStartedWith(Key);
+		return true;
+	}
+
 	if (Key == FREE_MEMORY_NVS)
 		return false;
 
@@ -268,7 +271,6 @@ bool DataEndpoint_t::DeleteStartedWith(string Key) {
     Defragment();
 
     return true;
-#endif
 }
 
 void DataEndpoint_t::EraseAll() {

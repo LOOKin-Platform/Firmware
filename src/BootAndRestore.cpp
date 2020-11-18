@@ -101,17 +101,19 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 
 			break;
 		case HARDRESET_ON_START:
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-			SPIFlash::EraseRange(0x32000, 0xEE000);
-#else
-			PartitionAPI::ErasePartition("coredump");
-			PartitionAPI::ErasePartition("misc");
-			PartitionAPI::ErasePartition("dataitems");
-			PartitionAPI::ErasePartition("scenarios");
-			PartitionAPI::ErasePartition("scache");
-			PartitionAPI::ErasePartition("storage");
+			if (Settings.DeviceGeneration == 1)
+				SPIFlash::EraseRange(0x32000, 0xEE000);
+			else
+			{
+				PartitionAPI::ErasePartition("coredump");
+				PartitionAPI::ErasePartition("misc");
+				PartitionAPI::ErasePartition("dataitems");
+				PartitionAPI::ErasePartition("scenarios");
+				PartitionAPI::ErasePartition("scache");
+				PartitionAPI::ErasePartition("storage");
+			}
 			//PartitionAPI::ErasePartition("constants");
-#endif
+
 			NVS::ClearAll();
 
 			ExecuteOperationNow(REBOOT);
@@ -141,7 +143,5 @@ void BootAndRestoreTaskDeviceOn::Run(void *Data) {
 	FreeRTOS::Sleep((uint32_t)Data);
 	Log::Add(Log::Events::System::DeviceStarted);
 	BootAndRestore::IsDeviceFullyStarted = true;
-
-	ESP_LOGE("!","EVERYTHING IS OK NOW");
     vTaskDelete(NULL);
 }
