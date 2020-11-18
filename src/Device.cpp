@@ -303,11 +303,14 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 	string OTAUrl = Params["firmware"];
 
 	if (Converter::ToLower(Params["firmware"]).find("http") != 0) {
+		string UpdateFilename = "firmware.bin";
+/*
 #if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 		string UpdateFilename = "firmware_4mb.bin";
 #else
 		string UpdateFilename = "firmware.bin";
 #endif
+*/
 		if (Params["filename"].size() > 0)
 			UpdateFilename = Params["filename"];
 

@@ -32,6 +32,9 @@ void BootAndRestore::OnDeviceStart() {
 		ESP_LOGE("InvalidStartAttempts", "%d", InvalidStartAttempts);
 		ESP_LOGE("AttemptsToReset", "%d", Settings.BootAndRestore.AttemptsToReset);
 
+		if (InvalidStartAttempts > Settings.BootAndRestore.AttemptsToRevert * 2)
+			InvalidStartAttempts = Settings.BootAndRestore.AttemptsToRevert * 2;
+
 		if (InvalidStartAttempts <= Settings.BootAndRestore.AttemptsToReset)
 			Memory.SetInt8Bit(NVSBootAndRestoreAreaOnAttempts, InvalidStartAttempts + 1);
 		else

@@ -181,6 +181,9 @@ void Settings_t::eFuse_t::ReadData() {
 	if (DeviceID == 0x00000002)
 		Revision = 0x1;
 
+	// Setup device generation
+	Settings.DeviceGeneration = (Produced.Year < 2021) ? 1 : 2;
+
 	FillDevices();
 
 	Settings.WiFi.APSSID 			= "LOOK.in_" + Device.IDToString();

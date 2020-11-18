@@ -35,24 +35,12 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 		memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
 		if (DataFromNVS.first != NULL) free(DataFromNVS.first);
 
-		for (int i=0; i< Settings.Log.SystemLogSize; i++) {
-			Item ttt;
-			ttt.Uint64Data = LogBlob[i];
-			ESP_LOGE("LOG ITEM INITED", "%d", ttt.Code);
-		}
-
 		// shift left
 		for (int i = Settings.Log.SystemLogSize; i > 0; i--)
 			LogBlob[i] = LogBlob[i-1];
 
 		//add new item at start
 		LogBlob[0] = Record.Uint64Data;
-
-		for (int i=0; i< Settings.Log.SystemLogSize; i++) {
-			Item ttt;
-			ttt.Uint64Data = LogBlob[i];
-			ESP_LOGE("LOG ITEM AFTER ADD", "%d", ttt.Code);
-		}
 
 		Memory.SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
 		Memory.Commit();
