@@ -38,10 +38,10 @@ class BootAndRestore {
 		static 	void 	ExecuteOperationNow		(OperationTypeEnum Operation);
 		static 	void 	ExecuteOperationDelayed	(OperationTypeEnum Operation);
 
-		static	void	ExecuteOperationDelayedCallback	(FreeRTOS::Timer *);
-		static	void 	MarkDeviceStartedCallback		(FreeRTOS::Timer *);
+		static	void	ExecuteOperationDelayedTask	(void*);
+		static	void 	MarkDeviceStartedTask		(void*);
 
-		static FreeRTOS::Timer*	DelayedOperationTimer;
-		static FreeRTOS::Timer*	MarkDeviceStartedTimer;
+		static 	TaskHandle_t	DelayedOperationTaskHandler;
+		static 	TaskHandle_t	MarkDeviceStartedTaskHandler;
 
 };

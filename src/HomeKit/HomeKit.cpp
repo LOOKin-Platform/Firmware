@@ -871,8 +871,6 @@ void HomeKit::Task(void *) {
 	}
 	else if (Mode == ModeEnum::EXPERIMENTAL)
 	{
-		::hap_set_debug_level(HAP_DEBUG_LEVEL_INFO);
-
 	    hap_enable_mfi_auth(HAP_MFI_AUTH_NONE);
 	    hap_set_setup_code("999-55-222");
 	    hap_set_setup_id("17AC");

@@ -27,9 +27,8 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 	Record.Time = Time::Unixtime();
 
 	if (GetItemType(Code) == SYSTEM) { // важное системные события
-		NVS Memory(NVSLogArea);
-
-		pair<void *, size_t> DataFromNVS = Memory.GetBlob(NVSLogArray);
+		NVS *Memory = new NVS(NVSLogArea);
+		pair<void *, size_t> DataFromNVS = Memory->GetBlob(NVSLogArray);
 
 		uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 		memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
@@ -42,8 +41,9 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 		//add new item at start
 		LogBlob[0] = Record.Uint64Data;
 
-		Memory.SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
-		Memory.Commit();
+		Memory->SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
+
+		delete Memory;
 	}
 	else
 	{ // событие, не требующее хранение в NVS
@@ -69,10 +69,10 @@ void Log::Add(uint16_t Code, uint32_t Data) {
  * @return log item with given index.
  */
 vector<Log::Item> Log::GetSystemLog() {
-	NVS Memory(NVSLogArea);
+	NVS *Memory = new NVS(NVSLogArea);
 	vector<Item> Result = vector<Item>();
 
-	pair<void *, size_t> DataFromNVS = Memory.GetBlob(NVSLogArray);
+	pair<void *, size_t> DataFromNVS = Memory->GetBlob(NVSLogArray);
 
 	uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 	memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
@@ -84,6 +84,7 @@ vector<Log::Item> Log::GetSystemLog() {
 		Result.push_back(ItemToAdd);
 	}
 
+	delete Memory;
 	return Result;
 }
 
@@ -150,7 +151,7 @@ string Log::GetEventsLogJSONItem(uint8_t Index) {
 	JSON JSONObject;
 
 	JSONObject.SetItem("Code", Converter::ToHexString(Items.at(Index).Code, 4));
-	JSONObject.SetItem("Data", Converter::ToHexString(Items.at(Index).Data, 8));
+	JSONObject.SetItem("Data", Converter::ToHexString(Items.at(Index).Data, 4));
 	JSONObject.SetItem("Time", Converter::ToHexString(Items.at(Index).Time, 8));
 
 	return JSONObject.ToString();
@@ -189,9 +190,9 @@ Log::ItemType Log::GetItemType(uint16_t Code) {
  * @brief Correct log items time after device time updated
  */
 void Log::CorrectTime() {
-	NVS Memory(NVSLogArea);
+	NVS *Memory = new NVS(NVSLogArea);
 
-	pair<void *, size_t> DataFromNVS = Memory.GetBlob(NVSLogArray);
+	pair<void *, size_t> DataFromNVS = Memory->GetBlob(NVSLogArray);
 
 	uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 	memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
@@ -206,8 +207,8 @@ void Log::CorrectTime() {
 		if (ItemToModify.Code == 0x0001) break;
 	}
 
-	Memory.SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
-	Memory.Commit();
+	Memory->SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
+	delete Memory;
 }
 
 /**
