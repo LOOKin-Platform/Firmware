@@ -182,7 +182,10 @@ void Settings_t::eFuse_t::ReadData() {
 		Revision = 0x1;
 
 	// Setup device generation
-	Settings.DeviceGeneration = (Produced.Year < 2021) ? 1 : 2;
+	if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model < 2)
+		Settings.DeviceGeneration = 1;
+	else
+		Settings.DeviceGeneration = 2;
 
 	FillDevices();
 

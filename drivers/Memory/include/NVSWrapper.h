@@ -25,7 +25,6 @@ class NVS {
 
 		virtual 			~NVS();
 		void 				Commit();
-		void				Close();
 
 		void 				Erase();
 		void 				Erase(string key);

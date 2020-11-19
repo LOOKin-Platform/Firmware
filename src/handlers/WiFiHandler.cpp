@@ -204,8 +204,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			MQTT.Stop();
 
-			//::mdns_free();
-
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;
 
@@ -237,7 +235,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
-
 			if (!HomeKit::IsEnabledForDevice())
 			{
 				esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
@@ -326,7 +323,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			}
 			else
 			    mdns_hostname_set(Device.IDToString().c_str());
-
 
 			IsConnectedBefore = true;
 

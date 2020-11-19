@@ -11,6 +11,9 @@
 
 bool BootAndRestore::IsDeviceFullyStarted = false;
 
+FreeRTOS::Timer*	BootAndRestore::DelayedOperationTimer		= nullptr;
+FreeRTOS::Timer*	BootAndRestore::MarkDeviceStartedTimer		= nullptr;
+
 void BootAndRestore::OnDeviceStart() {
 	NVS Memory(NVSBootAndRestoreArea);
 	FirmwareVersion OldFirmware = FirmwareVersion(Memory.GetUInt32Bit(NVSBootAndRestoreAreaFirmware));
@@ -21,13 +24,10 @@ void BootAndRestore::OnDeviceStart() {
 	}
 
 	if (Log::VerifyLastBoot()) {
-		ESP_LOGE("Log::VerifyLastBoot", "true");
 		Memory.SetInt8Bit(NVSBootAndRestoreAreaOnAttempts, 0);
 	}
 	else
 	{
-		ESP_LOGE("Log::VerifyLastBoot", "false");
-
 		uint8_t InvalidStartAttempts = Memory.GetInt8Bit(NVSBootAndRestoreAreaOnAttempts);
 		ESP_LOGE("InvalidStartAttempts", "%d", InvalidStartAttempts);
 		ESP_LOGE("AttemptsToReset", "%d", Settings.BootAndRestore.AttemptsToReset);
@@ -53,9 +53,10 @@ void BootAndRestore::OnDeviceStart() {
 void BootAndRestore::MarkDeviceStartedWithDelay(uint16_t Delay) {
 	if (IsDeviceFullyStarted) return;
 
-	BootAndRestoreTaskDeviceOn* pTask = new BootAndRestoreTaskDeviceOn();
-	pTask->SetStackSize(2048);
-	pTask->Run((void *)(uint32_t)Delay);
+	if (MarkDeviceStartedTimer == nullptr)
+		MarkDeviceStartedTimer = new FreeRTOS::Timer((char*)"MarkDeviceStartedTimer", Delay / portTICK_PERIOD_MS, pdFALSE, NULL, BootAndRestore::MarkDeviceStartedCallback);
+
+	MarkDeviceStartedTimer->Start();
 }
 
 
@@ -66,7 +67,6 @@ void BootAndRestore::Reboot(bool IsDelayed) {
 void BootAndRestore::HardReset(bool IsDelayed) {
 	RunOperation(OperationTypeEnum::HARDRESET, IsDelayed);
 }
-
 
 
 void BootAndRestore::RunOperation(OperationTypeEnum Operation, bool IsDelayed) {
@@ -83,8 +83,6 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		Memory.EraseStartedWith(NVSLogArray);
 	}
 }
-
-
 
 void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 	if (Operation == HARDRESET) {
@@ -125,23 +123,22 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 }
 
 void BootAndRestore::ExecuteOperationDelayed(OperationTypeEnum Operation) {
-	BootAndRestoreTask* pTask = new BootAndRestoreTask();
-	pTask->SetStackSize(3072);
-	pTask->Run((void *)(uint32_t)Operation);
+	if (DelayedOperationTimer == nullptr)
+		DelayedOperationTimer = new FreeRTOS::Timer((char*)"DelayedOperationTimer", Settings.BootAndRestore.ActionsDelay / portTICK_PERIOD_MS, pdFALSE, (void *)(uint32_t)Operation, BootAndRestore::ExecuteOperationDelayedCallback);
+
+	DelayedOperationTimer->Start();
 }
 
-void BootAndRestoreTask::Run(void *Data) {
-	BootAndRestore::OperationTypeEnum Operation = static_cast<BootAndRestore::OperationTypeEnum>((uint32_t)Data);
-
-	FreeRTOS::Sleep(Settings.BootAndRestore.ActionsDelay);
+void BootAndRestore::ExecuteOperationDelayedCallback(FreeRTOS::Timer *Timer) {
+	BootAndRestore::OperationTypeEnum Operation = static_cast<BootAndRestore::OperationTypeEnum>((uint32_t)Timer->GetData());
 	BootAndRestore::RunOperation(Operation, false);
 
-    vTaskDelete(NULL);
+	Timer->Stop();
 }
 
-void BootAndRestoreTaskDeviceOn::Run(void *Data) {
-	FreeRTOS::Sleep((uint32_t)Data);
+void BootAndRestore::MarkDeviceStartedCallback(FreeRTOS::Timer *Timer) {
 	Log::Add(Log::Events::System::DeviceStarted);
 	BootAndRestore::IsDeviceFullyStarted = true;
-    vTaskDelete(NULL);
+
+	Timer->Stop();
 }

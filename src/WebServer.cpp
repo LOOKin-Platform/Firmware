@@ -165,6 +165,7 @@ void WebServer_t::HTTPStart() {
     config.lru_purge_enable = true;
     config.task_priority	= tskIDLE_PRIORITY + 7;
     config.max_uri_handlers = 30;
+    config.ctrl_port		= 32768;
 
     HTTPServerHandle		 = NULL;
 

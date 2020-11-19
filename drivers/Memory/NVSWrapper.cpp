@@ -34,19 +34,12 @@ NVS::NVS(string name, nvs_open_mode openMode) {
 
 
 NVS::~NVS() {
-	if (m_handle != NULL)
-		nvs_close(m_handle);
+	nvs_close(m_handle);
 } // ~NVS
 
 void NVS::Commit() {
 	nvs_commit(m_handle);
 } // commit
-
-void NVS::Close() {
-	nvs_close(m_handle);
-	m_handle = NULL;
-}
-
 
 void NVS::Erase() {
 	nvs_erase_all(m_handle);

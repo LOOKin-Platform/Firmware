@@ -33,7 +33,7 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 
 		uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 		memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
-		if (DataFromNVS.first != NULL) free(DataFromNVS.first);
+		//if (DataFromNVS.first != NULL) free(DataFromNVS.first);
 
 		// shift left
 		for (int i = Settings.Log.SystemLogSize; i > 0; i--)
@@ -44,7 +44,6 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 
 		Memory.SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
 		Memory.Commit();
-		Memory.Close();
 	}
 	else
 	{ // событие, не требующее хранение в NVS
@@ -77,7 +76,7 @@ vector<Log::Item> Log::GetSystemLog() {
 
 	uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 	memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
-	if (DataFromNVS.first != NULL) free(DataFromNVS.first);
+	//if (DataFromNVS.first != NULL) free(DataFromNVS.first);
 
 	for (int i=0; i < (DataFromNVS.second / sizeof(uint64_t)); i++) {
 		Item ItemToAdd;
@@ -196,7 +195,7 @@ void Log::CorrectTime() {
 
 	uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 	memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
-	if (DataFromNVS.first != NULL) free(DataFromNVS.first);
+	//if (DataFromNVS.first != NULL) free(DataFromNVS.first);
 
 	for (int i=0; i < (DataFromNVS.second / sizeof(uint64_t)); i++) {
 		Item ItemToModify;
@@ -224,7 +223,7 @@ bool Log::VerifyLastBoot() {
 
 	uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 	memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
-	if (DataFromNVS.first != NULL) free(DataFromNVS.first);
+	//if (DataFromNVS.first != NULL) free(DataFromNVS.first);
 
 	if (DataFromNVS.second == 0) return true;
 

@@ -4,7 +4,7 @@
 *
 */
 
-#include "FreeRTOSTask.h"
+#include "FreeRTOSWrapper.h"
 #include "string.h"
 
 using namespace std;
@@ -37,15 +37,11 @@ class BootAndRestore {
 
 		static 	void 	ExecuteOperationNow		(OperationTypeEnum Operation);
 		static 	void 	ExecuteOperationDelayed	(OperationTypeEnum Operation);
-};
 
-class BootAndRestoreTask : public Task {
-	public:
-		void Run(void *);
-};
+		static	void	ExecuteOperationDelayedCallback	(FreeRTOS::Timer *);
+		static	void 	MarkDeviceStartedCallback		(FreeRTOS::Timer *);
 
-class BootAndRestoreTaskDeviceOn : public Task {
-	public:
-		void Run(void *);
-};
+		static FreeRTOS::Timer*	DelayedOperationTimer;
+		static FreeRTOS::Timer*	MarkDeviceStartedTimer;
 
+};

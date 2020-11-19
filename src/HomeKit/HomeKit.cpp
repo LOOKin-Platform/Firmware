@@ -871,10 +871,12 @@ void HomeKit::Task(void *) {
 	}
 	else if (Mode == ModeEnum::EXPERIMENTAL)
 	{
-	    hap_set_setup_code("999-55-222");
-	    hap_set_setup_id("ES32");
-	    esp_hap_get_setup_payload("999-55-222", "ES32", false, CID);
+		::hap_set_debug_level(HAP_DEBUG_LEVEL_INFO);
+
 	    hap_enable_mfi_auth(HAP_MFI_AUTH_NONE);
+	    hap_set_setup_code("999-55-222");
+	    hap_set_setup_id("17AC");
+	    esp_hap_get_setup_payload("999-55-222", "17AC", false, CID);
 	}
 
     //::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID	 , &WiFi.eventHandler, &WiFi);
