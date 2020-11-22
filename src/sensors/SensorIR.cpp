@@ -152,8 +152,6 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageEnd() {
-			IRLib Test = IRLib(SensorIRCurrentMessage);
-
 			bool IsOdd = false;
 
 			uint64_t Length = NewSignalEnd - NewSignalStart;
@@ -180,24 +178,33 @@ class SensorIR_t : public Sensor_t {
 
 			uint64_t Pause = (LastSignalEnd > 0) ? NewSignalStart - LastSignalEnd : 0;
 
-			//ESP_LOGE("PAUSE", "%d", (uint32_t)Pause);
+			ESP_LOGE("PAUSE", "%d", (uint32_t)Pause);
 
-			if (Pause > 0 && Pause < Settings.SensorsConfig.IR.SignalPauseMax) {
-				FollowingSignal = IRLib(SensorIRCurrentMessage);
+			FollowingSignal = IRLib(SensorIRCurrentMessage);
 
-				if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
-					LastSignal.IsRepeated = true;
-				else {
-					if (LastSignal.RawData.size() > 0)
-						LastSignal.RawData.back() = -(uint32_t)Pause;
+			bool IsFollowingRepeatSignal = false;
+			if (LastSignal.Protocol != 0xFF && FollowingSignal.CompareIsIdenticalWith(LastSignal.GetRawRepeatSignalForSending()))
+				IsFollowingRepeatSignal = true;
 
-					LastSignal.AppendRawSignal(FollowingSignal);
+			if (!IsFollowingRepeatSignal) {
+				if (Pause > 0 && Pause < Settings.SensorsConfig.IR.SignalPauseMax)
+				{
+					if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
+						LastSignal.IsRepeated = true;
+					else
+					{
+						if (LastSignal.RawData.size() > 0)
+							LastSignal.RawData.back() = -(uint32_t)Pause;
+
+						LastSignal.AppendRawSignal(FollowingSignal);
+					}
 				}
-
-				FollowingSignal = IRLib();
+				else
+					LastSignal = FollowingSignal;
 			}
-			else
-				LastSignal = IRLib(SensorIRCurrentMessage);
+
+			FollowingSignal = IRLib();
+
 
 			SensorIRCurrentMessage.empty();
 
@@ -208,8 +215,10 @@ class SensorIR_t : public Sensor_t {
 
 			LastSignalEnd = NewSignalEnd;
 
-			::esp_timer_stop(SignalReceivedTimer);
-			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);
+			if (!IsFollowingRepeatSignal) {
+				::esp_timer_stop(SignalReceivedTimer);
+				::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);
+			}
 		};
 
 

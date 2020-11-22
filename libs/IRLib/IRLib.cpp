@@ -262,6 +262,24 @@ bool IRLib::CompareIsIdenticalWith(IRLib &Signal) {
 	return CompareIsIdentical(*this, Signal);
 }
 
+bool IRLib::CompareIsIdenticalWith(vector<int32_t> SignalInVector) {
+	uint16_t SizeDiff		= abs((uint16_t)(RawData.size() - SignalInVector.size()));
+	uint16_t MinimalSize	= min(RawData.size(), SignalInVector.size());
+
+	if (SizeDiff >= 5) // too big difference between signals length
+		return false;
+
+	for (uint16_t i=0; i< MinimalSize; i++) {
+		uint16_t PartDif = abs(RawData[i] - SignalInVector[i]);
+
+		if (PartDif > 0.20 * max(abs(RawData[i]), abs(SignalInVector[i])))
+			return false;
+	}
+
+	return true;
+}
+
+
 bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 	if (Signal1.Protocol == Signal2.Protocol) {
 		uint16_t SizeDiff		= abs((uint16_t)(Signal1.RawData.size() - Signal2.RawData.size()));

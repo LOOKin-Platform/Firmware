@@ -42,7 +42,7 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 		LogBlob[0] = Record.Uint64Data;
 
 		Memory->SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
-
+		Memory->Commit();
 		delete Memory;
 	}
 	else
@@ -208,6 +208,8 @@ void Log::CorrectTime() {
 	}
 
 	Memory->SetBlob(NVSLogArray, LogBlob, Settings.Log.SystemLogSize * sizeof(uint64_t));
+	Memory->Commit();
+
 	delete Memory;
 }
 
