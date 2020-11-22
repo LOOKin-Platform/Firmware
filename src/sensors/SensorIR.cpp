@@ -186,22 +186,23 @@ class SensorIR_t : public Sensor_t {
 			if (LastSignal.Protocol != 0xFF && FollowingSignal.CompareIsIdenticalWith(LastSignal.GetRawRepeatSignalForSending()))
 				IsFollowingRepeatSignal = true;
 
+			if (!IsFollowingRepeatSignal)
+				if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
+					IsFollowingRepeatSignal = true;
+
 			if (!IsFollowingRepeatSignal) {
 				if (Pause > 0 && Pause < Settings.SensorsConfig.IR.SignalPauseMax)
 				{
-					if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
-						LastSignal.IsRepeated = true;
-					else
-					{
-						if (LastSignal.RawData.size() > 0)
-							LastSignal.RawData.back() = -(uint32_t)Pause;
+					if (LastSignal.RawData.size() > 0)
+						LastSignal.RawData.back() = -(uint32_t)Pause;
 
-						LastSignal.AppendRawSignal(FollowingSignal);
-					}
+					LastSignal.AppendRawSignal(FollowingSignal);
 				}
 				else
 					LastSignal = FollowingSignal;
 			}
+			else
+				LastSignal.IsRepeated = true;
 
 			FollowingSignal = IRLib();
 
