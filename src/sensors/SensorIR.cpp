@@ -206,7 +206,6 @@ class SensorIR_t : public Sensor_t {
 
 			FollowingSignal = IRLib();
 
-
 			SensorIRCurrentMessage.empty();
 
 			ESP_LOGE("Signal received", "%s", LastSignal.GetRawSignal().c_str()); // fix to prevent freez in /sensors/ir endpoint
@@ -216,10 +215,8 @@ class SensorIR_t : public Sensor_t {
 
 			LastSignalEnd = NewSignalEnd;
 
-			if (!IsFollowingRepeatSignal) {
-				::esp_timer_stop(SignalReceivedTimer);
-				::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);
-			}
+			::esp_timer_stop(SignalReceivedTimer);
+			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);
 		};
 
 
