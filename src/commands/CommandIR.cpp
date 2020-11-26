@@ -21,9 +21,9 @@ static uint16_t	IRACFrequency	= 38000;
 class CommandIR_t : public Command_t {
 	public:
 		struct LastSignal_t {
-			uint8_t 	Protocol;
-			uint32_t 	Data;
-			uint16_t 	Misc;
+			uint8_t 	Protocol 	= 0;
+			uint32_t 	Data		= 0;
+			uint16_t 	Misc		= 0;
 		};
 
 		CommandIR_t() {
@@ -288,7 +288,6 @@ class CommandIR_t : public Command_t {
 						SignalItem += SignalCharStr;
 				}
 				IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
-
 				IRSignal->ExternFillPostOperations();
 
 				LastSignal.Protocol = IRSignal->Protocol;

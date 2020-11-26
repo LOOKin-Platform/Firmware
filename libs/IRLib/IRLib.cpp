@@ -379,14 +379,15 @@ void IRLib::FillFromProntoHex(const char *SrcString) {
 		else if (SymbolCounter == 15)
 			ProntoRepeatBurst 	= Converter::UintFromHexString<uint8_t>(Group);
 
-		if ((SymbolCounter+1)%4 == 0) {
-			uint16_t SignalPart = USec * Converter::UintFromHexString<uint16_t>(Group);
+		if ((SymbolCounter+1)%4 == 0 ) {
+			if (SymbolCounter > 15) {
+				uint16_t SignalPart = USec * Converter::UintFromHexString<uint16_t>(Group);
+				RawData.push_back((Sign) ? +SignalPart : -SignalPart);
+				Sign = !Sign;
+			}
 
-			RawData.push_back((Sign) ? +SignalPart : -SignalPart);
 			Group = "";
-			Sign = !Sign;
 		}
-
 		SymbolCounter++;
 	}
 }
