@@ -43,10 +43,16 @@ class DataDeviceItem_t {
 			Status = Status << (ByteID * 4);
 			Status = Status >> 12;
 
-			return (uint8_t)Status;
+			uint8_t Result = (uint8_t)Status;
+
+			if (Result > 0xF) Result = 0xF;
+
+			return Result;
 		}
 
 		static uint16_t SetStatusByte(uint16_t Status, uint8_t ByteID, uint8_t Value) {
+			if (Value > 0xF) Value = 0xF;
+
 			switch (ByteID) {
 				case 0: Status = (Status & 0x0FFF); break;
 				case 1: Status = (Status & 0xF0FF); break;
@@ -87,7 +93,7 @@ class DataDeviceTV_t  : public DataDeviceItem_t {
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0C, 0x0D}; }
 
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
-
+			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
 			// On/off toggle functions
 			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
 				uint8_t CurrentPower = (uint8_t)(Status >> 12);
@@ -105,7 +111,7 @@ class DataDeviceTV_t  : public DataDeviceItem_t {
 				Value = (GetStatusByte(Status,2) == 0) ? 1 : 0;
 			}
 			else if (FunctionID == 0x06) { // volume up
-				Status = SetStatusByte(Status, 2, 255);
+				Status = SetStatusByte(Status, 2, 0xF);
 			}
 			else if (FunctionID == 0x07) { // volume down
 				Status = SetStatusByte(Status, 2, 1);

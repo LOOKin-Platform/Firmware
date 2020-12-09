@@ -427,3 +427,24 @@ uint8_t Converter::BcdToUint8(const uint8_t bcd) {
 	return (bcd >> 4) * 10 + (bcd & 0xF);
 }
 
+string Converter::GenerateRandomString(uint8_t Size) {
+    string tmp_s;
+
+    static const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+
+    srand( (unsigned) time(NULL) * getpid());
+
+    tmp_s.reserve(Size);
+
+    for (int i = 0; i < Size; ++i)
+        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+
+
+    return tmp_s;
+
+}
+
+

@@ -20,6 +20,12 @@ void HomeKitAPI_t::HandleHTTPRequest(WebServer_t::Response &Response, Query_t &Q
     			return;
     		}
 
+    		if (Query.CheckURLPart("reset-pairs", 1)) {
+    			HomeKit::ResetPairs();
+    			Response.SetSuccess();
+    			return;
+    		}
+
     		if (Query.CheckURLPart("mode", 1)) {
     			if (Settings.eFuse.Type != Settings.Devices.Remote) {
     				Response.SetFail();

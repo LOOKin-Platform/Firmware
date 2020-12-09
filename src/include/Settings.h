@@ -36,7 +36,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 10, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 11, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -170,8 +170,8 @@ class Settings_t {
 			const uint16_t					APSuccessDelay	= 2500;
 			const uint16_t					STASuccessADelay= 5000;
 
-			const uint8_t					AttemptsToReset	= 5;
-			const uint8_t					AttemptsToRevert= 10;
+			const uint8_t					AttemptsToReset	= 10;
+			const uint8_t					AttemptsToRevert= 20;
 		} BootAndRestore;
 
 		struct Devices_t {

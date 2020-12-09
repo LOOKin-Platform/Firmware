@@ -8,6 +8,8 @@ bool 				HomeKit::IsRunning 		= false;
 bool 				HomeKit::IsAP 			= false;
 HomeKit::ModeEnum	HomeKit::Mode			= HomeKit::ModeEnum::NONE;
 
+uint64_t			HomeKit::VolumeLastUpdated = 0;
+
 vector<hap_acc_t*> 	HomeKit::BridgedAccessories = vector<hap_acc_t*>();
 
 HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sID) {
@@ -64,6 +66,10 @@ void HomeKit::AppServerRestart() {
 	return;
 }
 
+void HomeKit::ResetPairs() {
+	::hap_reset_pairings();
+}
+
 void HomeKit::ResetData() {
 	::hap_reset_homekit_data();
 }
@@ -112,6 +118,9 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
 
         DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
 
+        if (IRDeviceItem.DeviceType == 0x01 && (Time::UptimeU() - VolumeLastUpdated) < 1000000)
+        	return HAP_STATUS_SUCCESS;
+
         if (IRDeviceItem.IsEmpty())
         	return HAP_STATUS_VAL_INVALID;
 
@@ -156,6 +165,7 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
 
         ((DataRemote_t*)Data)->StatusUpdateForDevice(IRDeviceItem.DeviceID, 0xE0, Value);
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(IRDeviceItem.DeviceID);
+
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
@@ -264,6 +274,8 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
 	ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	VolumeLastUpdated = Time::UptimeU();
+
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
@@ -727,8 +739,8 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 		hap_acc_cfg_t bridge_cfg = {
 			.name 				= accessory_name,
-			.model 				= "",
-			.manufacturer 		= "",
+			.model 				= "n/a",
+			.manufacturer 		= "n/a",
 			.serial_num 		= "n/a",
 			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
             .hw_rev 			= NULL,
@@ -738,6 +750,7 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 		};
 
 		uint16_t AID = Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
+
 		Accessory = hap_acc_create(&bridge_cfg);
 
 		bool IsCreated = true;
@@ -749,6 +762,13 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 				uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
 				uint8_t ModeStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 1);
+
+				if (PowerStatus > 1) PowerStatus = 1;
+
+				/*
+				if (ModeStatus >= IRDevice.Functions.count("mode"))
+					ModeStatus = 0;
+				*/
 
 				ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1, accessory_name);
 				hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));

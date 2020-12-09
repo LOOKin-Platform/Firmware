@@ -100,5 +100,7 @@ class Converter {
 		static uint8_t 			Uint8ToBcd(const uint8_t integer);
 		static uint8_t			BcdToUint8(const uint8_t bcd);
 
+		static string			GenerateRandomString(uint8_t Size);
+
 };
 #endif

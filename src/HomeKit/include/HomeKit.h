@@ -39,6 +39,7 @@ class HomeKit {
 
 		static void 			AppServerRestart();
 
+		static void				ResetPairs();
 		static void				ResetData();
 
 		static bool				IsEnabledForDevice();
@@ -73,6 +74,8 @@ class HomeKit {
 		static bool				IsRunning;
 		static bool				IsAP;
 		static ModeEnum			Mode;
+
+		static uint64_t			VolumeLastUpdated;
 
 		static vector<hap_acc_t*> BridgedAccessories;
 };
