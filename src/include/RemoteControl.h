@@ -4,8 +4,8 @@
 *
 */
 
-#ifndef MQTT_H_
-#define MQTT_H_
+#ifndef REMOTECONTROL_H_
+#define REMOTECONTROL_H_
 
 using namespace std;
 
@@ -18,29 +18,35 @@ using namespace std;
 #include "Query.h"
 #include "Settings.h"
 
-#define	NVSLocalMQTTArea		"LocalMQTT"
-#define	NVSLocalMQTTLogin		"Login"
-#define	NVSLocalMQTTPassword	"Password"
-#define	NVSLocalMQTTServerIP	"ServerIP"
-#define	NVSLocalMQTTServerPort	"ServerPort"
+#define	NVSMQTTArea				"MQTT"
+#define	NVSMQTTClientID			"ClientID"
+#define	NVSMQTTClientSecret		"ClientSecret"
 
-class MQTT_t {
+class RemoteControl_t {
 	public:
 		enum Status_t { UNACTIVE, CONNECTED, ERROR };
 
-		MQTT_t							(string Username = "", string Password = "");
+		RemoteControl_t							(string Username = "", string Password = "");
 
 		void SetCredentials				(string Username = "", string Password = "");
 		void ChangeOrSetCredentialsBLE	(string Username = "", string Password = "");
+
+		void Init();
 
 		void Start();
 		void Stop();
 		void Reconnect();
 
+		string GetClientID();
+
 		static esp_err_t 	mqtt_event_handler(esp_mqtt_event_handle_t event);
 
 		static int 			SendMessage (string Payload, string Topic = "",
 				uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+
+		static string		StartChunk 	(int MessageID = 0, uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+		static void 		SendChunk 	(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID = 0,uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+		static void 		EndChunk 	(string ChunkHash, int MessageID = 0,uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
 
 		static bool 		IsCredentialsSet();
 		static Status_t 	GetStatus();
@@ -48,10 +54,6 @@ class MQTT_t {
 	private:
 		static string		Username;
 		static string		Password;
-		static string		ClientID;
-
-		static string		ServerIP;
-		static uint32_t		ServerPort;
 
 		static esp_mqtt_client_handle_t ClientHandle;
 

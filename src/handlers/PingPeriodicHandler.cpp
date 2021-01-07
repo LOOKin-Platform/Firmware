@@ -20,7 +20,7 @@ bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, char I
 	return true;
 }
 
-void IRAM_ATTR PingPeriodicHandler::Pool() {
+void PingPeriodicHandler::Pool() {
 	if (Device.Type.IsBattery() && Device.SensorMode == true)
 		return;
 

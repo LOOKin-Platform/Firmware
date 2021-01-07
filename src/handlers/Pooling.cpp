@@ -6,10 +6,10 @@
 #include "BluetoothHandler.cpp"
 #include "EnergyHandler.cpp"
 #include "SensorPeriodicHandler.cpp"
-#include "MQTTPeriodicHandler.cpp"
 #include "PingPeriodicHandler.cpp"
 #include "NetworkMapHandler.cpp"
 #include "ExternalTempHandler.cpp"
+#include "RemoteControlPeriodicHandler.cpp"
 
 class Pooling_t {
 	public:
@@ -29,14 +29,14 @@ class Pooling_t {
 				}
 				 */
 
-				OverheatHandler			::Pool();
-				WiFiUptimeHandler		::Pool();
-				BluetoothPeriodicHandler::Pool();
-				EnergyPeriodicHandler	::Pool();
-				SensorPeriodicHandler	::Pool();
-				MQTTPeriodicHandler		::Pool();
-				PingPeriodicHandler		::Pool();
-				NetworkMapHandler		::Pool();
+				OverheatHandler				::Pool();
+				WiFiUptimeHandler			::Pool();
+				BluetoothPeriodicHandler	::Pool();
+				EnergyPeriodicHandler		::Pool();
+				SensorPeriodicHandler		::Pool();
+				RemoteControlPeriodicHandler::Pool();
+				PingPeriodicHandler			::Pool();
+				NetworkMapHandler			::Pool();
 
 				if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1) {
 					//ExternalTempHandler	::Pool();

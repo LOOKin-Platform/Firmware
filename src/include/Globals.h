@@ -19,9 +19,9 @@
 #include "WebServer.h"
 #include "BLEServer.h"
 #include "BLEClient.h"
-#include "Wireless.h"
+#include "RemoteControl.h"
 #include "MQTT.h"
-
+#include "Wireless.h"
 #include "Settings.h"
 
 extern Settings_t				Settings;
@@ -43,6 +43,7 @@ extern BLEClient_t				BLEClient;
 #endif /* Bluetooth enabled */
 
 extern Wireless_t				Wireless;
+extern RemoteControl_t			RemoteControl;
 extern MQTT_t					MQTT;
 
 #endif

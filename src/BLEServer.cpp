@@ -107,7 +107,7 @@ void BLEServer_t::StopAdvertising() {
 }
 
 
-int IRAM_ATTR BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -116,7 +116,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, 
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int IRAM_ATTR BLEServer_t::GATTDeviceModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int BLEServer_t::GATTDeviceModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -125,7 +125,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceModelCallback(uint16_t conn_handle, uint16_
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int IRAM_ATTR BLEServer_t::GATTDeviceIDCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int BLEServer_t::GATTDeviceIDCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -134,7 +134,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceIDCallback(uint16_t conn_handle, uint16_t a
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int IRAM_ATTR BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -142,7 +142,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint
     return os_mbuf_append(ctxt->om, strdup(Settings.Firmware.ToString().c_str()), Settings.Firmware.ToString().size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int IRAM_ATTR BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
 	    return BLE_ATT_ERR_UNLIKELY;
@@ -151,7 +151,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle,
     return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 }
 
-int IRAM_ATTR BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (BLE::GetRSSIForConnection(conn_handle) < Settings.Bluetooth.RSSILimit)
 	{
@@ -208,7 +208,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t
     return BLE_ATT_ERR_UNLIKELY;
 }
 
-int IRAM_ATTR BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
+int BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
 {
 	if (BLE::GetRSSIForConnection(conn_handle) < Settings.Bluetooth.RSSILimit)
 	{
@@ -217,7 +217,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t
 	}
 
 	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
-	    string Result = MQTT.GetClientID();
+	    string Result = RemoteControl.GetClientID();
 	    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 	}
 	else if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
@@ -236,7 +236,7 @@ int IRAM_ATTR BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t
 			else
 			{
 				ESP_LOGD(tag, "MQTT credentials data received. ClientID: %s, ClientSecret: %s", Parts[0].c_str(), Parts[1].c_str());
-				MQTT.ChangeOrSetCredentialsBLE(Parts[0], Parts[1]);
+				RemoteControl.ChangeOrSetCredentialsBLE(Parts[0], Parts[1]);
 			}
 		}
 

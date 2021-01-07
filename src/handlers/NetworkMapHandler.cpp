@@ -9,7 +9,7 @@ class NetworkMapHandler {
 		static void 	SetLastInfoReceivedTimer();
 };
 
-void IRAM_ATTR NetworkMapHandler::Pool() {
+void NetworkMapHandler::Pool() {
 	if (Network.PoolingNetworkMapReceivedTimer == Settings.Pooling.NetworkMap.DefaultValue)
 		return;
 

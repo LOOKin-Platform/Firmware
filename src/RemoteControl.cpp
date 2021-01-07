@@ -4,55 +4,50 @@
 *
 */
 
-#include <MQTT.h>
+#include <RemoteControl.h>
 #include "Globals.h"
 #include "API.h"
 
-static char TAG[] = "MQTT";
+static char Tag[] = "RemoteControl";
 
-string				MQTT_t::Username		= "";
-string				MQTT_t::Password		= "";
-string				MQTT_t::ClientID		= "";
-string				MQTT_t::ServerIP		= "";
-uint32_t			MQTT_t::ServerPort		= 0;
+string				RemoteControl_t::Username		= "";
+string				RemoteControl_t::Password		= "";
+RemoteControl_t::Status_t 	RemoteControl_t::Status			= RemoteControl_t::Status_t::UNACTIVE;
+uint8_t				RemoteControl_t::ConnectionTries	= 0;
 
-MQTT_t::Status_t 	MQTT_t::Status			= MQTT_t::Status_t::UNACTIVE;
-uint8_t				MQTT_t::ConnectionTries	= 0;
+esp_mqtt_client_handle_t RemoteControl_t::ClientHandle = NULL;
 
-esp_mqtt_client_handle_t MQTT_t::ClientHandle = NULL;
-
-
-MQTT_t::MQTT_t(string Username, string Password) {
+RemoteControl_t::RemoteControl_t(string Username, string Password) {
 	SetCredentials	(Username, Password);
 }
 
-void MQTT_t::Start() {
-	if (Status != CONNECTED)
-	{
-		NVS Memory(NVSLocalMQTTArea);
+void RemoteControl_t::Init() {
+	NVS Memory(NVSMQTTArea);
 
-		Username 	= "user2"; 	//Memory.GetString(NVSMQTTClientID);
-		Password 	= "password2"; 	//Memory.GetString(NVSMQTTClientSecret);
-		ClientID	= "ewewewewew";
-		ServerIP	= "mqtt://192.168.1.54";
-		ServerPort	= 1883;
-	}
+	Username = Memory.GetString(NVSMQTTClientID);
+	Password = Memory.GetString(NVSMQTTClientSecret);
+}
 
+void RemoteControl_t::Start() {
 	if (Username != "" && Status != CONNECTED) {
+		ESP_LOGI(Tag, "Started RAM left %d", esp_get_free_heap_size());
+
 	    esp_mqtt_client_config_t mqtt_cfg = CreateConfig();
 
 		ConnectionTries = 0;
 
-	    MQTT_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
+	    RemoteControl_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
 
 	    if (ClientHandle != NULL)
-			esp_mqtt_client_start(MQTT_t::ClientHandle);
+			esp_mqtt_client_start(RemoteControl_t::ClientHandle);
 	    else
-			ESP_LOGE(TAG, "esp_mqtt_client_init failed");
+			ESP_LOGE(Tag, "esp_mqtt_client_init failed");
+
+	    ESP_LOGI(Tag, "Started");
 	}
 }
 
-void MQTT_t::Stop() {
+void RemoteControl_t::Stop() {
 	if (ClientHandle && Status != UNACTIVE) {
 		Status = UNACTIVE;
 
@@ -60,11 +55,11 @@ void MQTT_t::Stop() {
 
 		ClientHandle	= NULL;
 
-	    ESP_LOGI(TAG,"MQTT Stopped");
+	    ESP_LOGI(Tag, "Stopped");
 	}
 }
 
-void MQTT_t::Reconnect() {
+void RemoteControl_t::Reconnect() {
 	if (Status == CONNECTED  && ClientHandle != nullptr) {
 		Stop();
 		FreeRTOS::Sleep(1000);
@@ -80,11 +75,20 @@ void MQTT_t::Reconnect() {
 	Start();
 }
 
-void MQTT_t::SetCredentials(string Username, string Password) {
-	return;
+string RemoteControl_t::GetClientID() {
+	return Username;
 }
 
-void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
+void RemoteControl_t::SetCredentials(string Username, string Password) {
+	this->Username 		= Username;
+	this->Password 		= Password;
+
+	NVS Memory(NVSMQTTArea);
+	Memory.SetString(NVSMQTTClientID	, Username);
+	Memory.SetString(NVSMQTTClientSecret, Password);
+}
+
+void RemoteControl_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 	if (Username == this->Username && Password == this->Password && Status == CONNECTED) {
 		SendMessage(WebServer.UDPAliveBody(), Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/UDP");
 		return;
@@ -109,11 +113,11 @@ void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
 		esp_mqtt_client_config_t Config = CreateConfig();
 		::esp_mqtt_set_config(ClientHandle, &Config);
 		::esp_mqtt_client_reconnect(ClientHandle);
-		ESP_LOGE("MQTT", "reconnected");
+		ESP_LOGE(Tag, "reconnected");
 	}
 }
 
-esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
+esp_err_t IRAM_ATTR RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
 
     string DeviceTopic = Settings.MQTT.DeviceTopicPrefix + Device.IDToString();
@@ -123,7 +127,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
         case MQTT_EVENT_CONNECTED:
 			Status = CONNECTED;
 
-			ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
+			ESP_LOGI(Tag, "MQTT_EVENT_CONNECTED");
 			ConnectionTries = 0;
 
 			::esp_mqtt_client_subscribe(client, DeviceTopic.c_str(), Settings.MQTT.DefaultQOS);
@@ -133,7 +137,7 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 			break;
 
         case MQTT_EVENT_DISCONNECTED:
-            ESP_LOGI(TAG, "MQTT_EVENT_DISCONNECTED");
+            ESP_LOGI(Tag, "MQTT_EVENT_DISCONNECTED");
 
             if (Status == CONNECTED && ClientHandle != NULL)
             	Status = ERROR;
@@ -141,15 +145,15 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
             break;
 
         case MQTT_EVENT_SUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
+            ESP_LOGI(Tag, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_UNSUBSCRIBED:
-            ESP_LOGI(TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+            ESP_LOGI(Tag, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_PUBLISHED:
-            ESP_LOGI(TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
+            ESP_LOGI(Tag, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_DATA:
@@ -187,18 +191,18 @@ esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 			break;
 		}
         case MQTT_EVENT_ERROR:
-            ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+            ESP_LOGI(Tag, "MQTT_EVENT_ERROR");
             break;
 
         default:
-            ESP_LOGI(TAG, "Other event id:%d", event->event_id);
+            ESP_LOGI(Tag, "Other event id:%d", event->event_id);
             break;
     }
 
     return ESP_OK;
 }
 
-int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retain) {
+int RemoteControl_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retain) {
 	if (Status != CONNECTED)
 		return -1;
 
@@ -208,43 +212,58 @@ int MQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retai
 	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
 }
 
-bool MQTT_t::IsCredentialsSet() {
+string RemoteControl_t::StartChunk(int MessageID, uint8_t QOS, uint8_t Retain) {
+    string ChunkID = Converter::ToHexString((rand() % 0xFFFF) + 1, 4);
+    SendMessage("200 CHUNK " + ChunkID +  " START", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
+    return ChunkID;
+}
+
+void RemoteControl_t::SendChunk(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID, uint8_t QOS, uint8_t Retain) {
+    SendMessage("200 CHUNK " + ChunkHash +  " " + Converter::ToString(ChunkPartID) + " " + Payload, Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
+}
+
+void RemoteControl_t::EndChunk (string ChunkHash, int MessageID, uint8_t QOS, uint8_t Retain) {
+    SendMessage("200 CHUNK " + ChunkHash +  " END", Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
+}
+
+
+bool RemoteControl_t::IsCredentialsSet() {
 	return (Username != "" && Password != "");
 }
 
-MQTT_t::Status_t MQTT_t::GetStatus() {
+RemoteControl_t::Status_t RemoteControl_t::GetStatus() {
 	return Status;
 }
 
-esp_mqtt_client_config_t MQTT_t::CreateConfig() {
+esp_mqtt_client_config_t RemoteControl_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
-	Config.uri 			= ServerIP.c_str();
-	Config.port			= ServerPort;
+	Config.uri 			= Settings.MQTT.Server.c_str();
+	Config.port			= 8883;
 
 	Config.event_handle = mqtt_event_handler;
 	Config.transport 	= MQTT_TRANSPORT_OVER_SSL;
 
 	Config.username		= Username.c_str();
     Config.password		= Password.c_str();
-    Config.client_id	= ClientID.c_str();
+    Config.client_id	= Username.c_str();
 
     Config.protocol_ver	= MQTT_PROTOCOL_V_3_1_1;
 
     return Config;
 }
 
-esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
+esp_mqtt_client_config_t RemoteControl_t::ConfigDefault() {
 	esp_mqtt_client_config_t Config;
 
 	Config.host					= NULL;
 	Config.uri					= NULL;
 	Config.port					= 0;
 	Config.keepalive			= 120;
-	Config.reconnect_timeout_ms	= 5000;
+	Config.reconnect_timeout_ms	= 10000;
 	Config.disable_auto_reconnect
 								= false;
-	Config.network_timeout_ms	= 5000;
+	Config.network_timeout_ms	= 10000;
 	Config.use_secure_element	= false;
 	Config.ds_data				= NULL;
 
@@ -267,9 +286,9 @@ esp_mqtt_client_config_t MQTT_t::ConfigDefault() {
 	Config.refresh_connection_after_ms
 								= 0;
 
-    Config.task_stack			= 4096;
+    Config.task_stack			= 6144;
 
-	Config.buffer_size			= 2048;
+	Config.buffer_size			= 4096;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size
 	Config.task_stack			= 0;
 	Config.task_prio			= 0;

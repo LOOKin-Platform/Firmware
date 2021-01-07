@@ -410,7 +410,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			{
 				if (Query.CheckURLPart("reconnect", 2))
 				{
-					MQTT.Reconnect();
+					RemoteControl.Reconnect();
 					Result.Body = "{\"success\" : \"true\"}";
 					return;
 				}
@@ -419,8 +419,8 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 
 		if (Query.GetURLPartsCount() == 4) {
 			if (Query.CheckURLPart("remotecontrol",1) && Query.CheckURLPart("stop",2)) {
-				if (Converter::ToLower(MQTT.GetClientID()) == Query.GetStringURLPartByNumber(3)) {
-					MQTT.SetCredentials("","");
+				if (Converter::ToLower(RemoteControl.GetClientID()) == Query.GetStringURLPartByNumber(3)) {
+					RemoteControl.SetCredentials("","");
 					Result.Body = "{\"success\" : \"true\"}";
 					return;
 				}

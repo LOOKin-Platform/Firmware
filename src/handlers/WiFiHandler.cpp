@@ -202,7 +202,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			WebServer.HTTPStop();
 			WebServer.UDPStop();
 
-			MQTT.Stop();
+			RemoteControl.Stop();
 
 			if (Device.Status == UPDATING)
 				Device.Status = RUNNING;
@@ -313,7 +313,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			        return ESP_OK;
 			    }
 
-			    err = mdns_hostname_set(Device.IDToString().c_str());
+			    err = mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 
 			    if (err !=ESP_OK)
 			    	ESP_LOGE("!", "MDNS hostname set failed: %d", err);
@@ -322,13 +322,18 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			    mdns_instance_name_set(InstanceName.c_str());
 			}
 			else
-			    mdns_hostname_set(Device.IDToString().c_str());
+			    mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 
 			IsConnectedBefore = true;
 
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
 
-			MQTT.Start();
+			RemoteControl.Start();
+
+			/*
+			if (Settings.eFuse.DeviceID == 0x00000002)
+				MQTT.Start();
+			*/
 
 			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
 

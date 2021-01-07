@@ -1,7 +1,7 @@
 #ifndef MQTT_HANDLER
 #define MQTT_HANDLER
 
-class MQTTPeriodicHandler {
+class RemoteControlPeriodicHandler {
 	public:
 		static void Pool();
 		static void ClearCounter();
@@ -9,13 +9,13 @@ class MQTTPeriodicHandler {
 		static uint32_t MQTTRestartCounter;
 };
 
-uint32_t MQTTPeriodicHandler::MQTTRestartCounter = 0;
+uint32_t RemoteControlPeriodicHandler::MQTTRestartCounter = 0;
 
-void MQTTPeriodicHandler::ClearCounter() {
+void RemoteControlPeriodicHandler::ClearCounter() {
 	MQTTRestartCounter = 0;
 }
 
-void IRAM_ATTR MQTTPeriodicHandler::Pool() {
+void RemoteControlPeriodicHandler::Pool() {
 	return;
 
 	if (Device.Type.IsBattery() && Device.SensorMode == true)
@@ -29,8 +29,8 @@ void IRAM_ATTR MQTTPeriodicHandler::Pool() {
 	if (MQTTRestartCounter >= Settings.Pooling.MQTTInterval) {
 		MQTTRestartCounter = 0;
 
-		if (MQTT.GetStatus() != MQTT_t::CONNECTED)
-			MQTT.Reconnect();
+		if (RemoteControl.GetStatus() != RemoteControl_t::CONNECTED)
+			RemoteControl.Reconnect();
 	}
 }
 

@@ -27,6 +27,7 @@
 #include "Commands.h"
 #include "Storage.h"
 #include "Log.h"
+#include "MQTT.h"
 
 using namespace std;
 

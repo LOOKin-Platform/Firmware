@@ -47,6 +47,7 @@ Wireless_t			Wireless;
 vector<Sensor_t*>	Sensors;
 vector<Command_t*>	Commands;
 
+RemoteControl_t		RemoteControl;
 MQTT_t				MQTT;
 
 const char tag[] = "Main";
@@ -73,7 +74,7 @@ void app_main(void) {
 	Device.Init();
 	Network.Init();
 	Automation.Init();
-	MQTT.Init();
+	RemoteControl.Init();
 
 	Data = DataEndpoint_t::GetForDevice();
 	Data->Init();

@@ -24,7 +24,7 @@ class ExternalTempHandler {
 		static bool IsInited;
 };
 
-void IRAM_ATTR ExternalTempHandler::Pool() {
+void ExternalTempHandler::Pool() {
 	if (Time::Uptime() %5 != 0)
 		return;
 

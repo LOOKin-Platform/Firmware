@@ -19,7 +19,7 @@ uint64_t 	BluetoothPeriodicHandler::BluetoothStartedTime 	= 0;
 uint32_t 	BluetoothPeriodicHandler::BatteryUptime 		= 0;
 
 
-void IRAM_ATTR BluetoothPeriodicHandler::Pool() {
+void BluetoothPeriodicHandler::Pool() {
 	#if defined(CONFIG_BT_ENABLED)
 
 	if (!Device.Type.IsBattery())
