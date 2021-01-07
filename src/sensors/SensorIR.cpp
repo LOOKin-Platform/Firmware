@@ -229,6 +229,12 @@ class SensorIR_t : public Sensor_t {
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
 
+			/*
+			if (Settings.eFuse.DeviceID == 0x00000002) {
+				MQTT_t::SendMessage(LastSignal.GetRawSignal().c_str() , "/00000002/sensors/ir/raw", 2);
+			}
+			*/
+
 			if (Settings.eFuse.Type == Settings.Devices.Remote)
 				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(LastSignal);
 

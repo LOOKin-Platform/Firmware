@@ -19,7 +19,7 @@ class Wireless_t {
 		void	StopWiFi();
 		void 	StopBluetooth();
 
-		void 	SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "");
+		void 	SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "", bool IsScheduled = true);
 		bool 	IsPeriodicPool();
 
 		bool 	IsFirstWiFiStart	= true;

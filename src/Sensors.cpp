@@ -28,7 +28,7 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 			if (Settings.eFuse.Model < 2)
 				Sensors = { new SensorIR_t() };
 			else
-				Sensors = { new SensorIR_t(), new SensorTemperatureRemote_t() };
+				Sensors = { new SensorIR_t(), new SensorMeteo_t() };
 			break;
 		//case Settings.Devices.Motion:
 		//	Sensors = { new SensorMotion_t() };
@@ -88,9 +88,10 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 		if (Sensor->Values.size() > 0) {
 			JSON JSONObject;
 
-			JSONObject.SetItems(vector<pair<string,string>>({
-				make_pair("Value", Sensor->FormatValue()), make_pair("Updated", Converter::ToString(Sensor->Values["Primary"].Updated))
-			}));
+			if (Sensor->HasPrimaryValue())
+				JSONObject.SetItems(vector<pair<string,string>>({
+					make_pair("Value", Sensor->FormatValue()), make_pair("Updated", Converter::ToString(Sensor->Values["Primary"].Updated))
+				}));
 
 			// Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
 			if (Sensor->Values.size() > 1) {

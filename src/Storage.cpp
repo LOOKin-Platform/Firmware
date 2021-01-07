@@ -315,8 +315,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 					"{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
 					+ Converter::ToHexString(To	,4) + "\", \"Items\":[");
 			else {
-				MQTTChunkHash = MQTT.StartChunk(Query.MQTTMessageID);
-				MQTT.SendChunk("{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
+				MQTTChunkHash = RemoteControl.StartChunk(Query.MQTTMessageID);
+				RemoteControl.SendChunk("{ \"From\": \"" + Converter::ToHexString(From,4) +"\", \"To\":\""
 						+ Converter::ToHexString(To	,4) + "\", \"Items\":[", MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 			}
 
@@ -334,7 +334,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 				if (Query.Transport == WebServer_t::QueryTransportType::WebServer)
 					WebServer_t::SendChunk(Query.GetRequest(), JSONObject.ToString() + ((Items.size() > 1) ? "," : ""));
 				else
-					MQTT.SendChunk(JSONObject.ToString() + ((Items.size() > 1) ? "," : ""), MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
+					RemoteControl.SendChunk(JSONObject.ToString() + ((Items.size() > 1) ? "," : ""), MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
 
 				Items.erase(Items.begin());
 			}
@@ -345,8 +345,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 				WebServer_t::EndChunk(Query.GetRequest());
 			}
 			else {
-				MQTT.SendChunk("]}", MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
-				MQTT.EndChunk(MQTTChunkHash, Query.MQTTMessageID);
+				RemoteControl.SendChunk("]}", MQTTChunkHash, ChunkPartID++, Query.MQTTMessageID);
+				RemoteControl.EndChunk(MQTTChunkHash, Query.MQTTMessageID);
 			}
 
 			Result.Body = "";

@@ -51,6 +51,8 @@ class Sensor_t {
 		virtual uint32_t			ReceiveValue(string = "") 			{ return 0; };
 		virtual bool				CheckOperand(uint8_t, uint8_t) 		{ return false; };
 		virtual string				FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
+		virtual bool				HasPrimaryValue() 					{ return true; }
+
 
 		bool						SetValue(uint32_t Value, string Key = "Primary", uint32_t UpdatedTime = 0);
 		SensorValueItem				GetValue(string Key = "Primary");
@@ -94,7 +96,7 @@ extern Storage_t	Storage;
 #include "../sensors/SensorIR.cpp"
 //#include "../sensors/SensorMotion.cpp"
 #include "../sensors/SensorTemperature.cpp"
-#include "../sensors/SensorTemperatureRemote.cpp"
+#include "../sensors/SensorMeteo.cpp"
 #include "../sensors/SensorTouch.cpp"
 
 #endif

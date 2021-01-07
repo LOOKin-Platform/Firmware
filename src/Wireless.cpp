@@ -46,19 +46,19 @@ void Wireless_t::StopBluetooth() {
 	BLEServer.StopAdvertising();
 }
 
-void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand) {
+void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand, bool IsScheduled) {
 	string UpdatedString = WebServer.UDPUpdatedBody(SensorID, EventID, Operand);
 
 	if (WiFi.IsRunning())
 	{
-		WebServer.UDPSendBroadcast(UpdatedString);
+		WebServer.UDPSendBroadcast(UpdatedString, IsScheduled);
 
-		if (MQTT.GetStatus() == MQTT_t::CONNECTED)
-			MQTT.SendMessage(UpdatedString, "/devices/" + Device.IDToString() + "/UDP", 2);
+		if (RemoteControl.GetStatus() == RemoteControl_t::CONNECTED)
+			RemoteControl.SendMessage(UpdatedString, "/devices/" + Device.IDToString() + "/UDP", 2);
 	}
 	else
 	{
-		WebServer.UDPSendBroadcast(UpdatedString);
+		WebServer.UDPSendBroadcast(UpdatedString, IsScheduled);
 		IsEventDrivenStart = true;
 		StartInterfaces();
 	}

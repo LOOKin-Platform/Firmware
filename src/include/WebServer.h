@@ -73,7 +73,7 @@ class WebServer_t {
 		void 					UDPSendBroadcastAlive();
 		void 					UDPSendBroadcastDiscover();
 		void 					UDPSendBroadcastUpdated(uint8_t SensorID, string Value, uint8_t Repeat = 1, string Operand = "");
-		void 					UDPSendBroadcast(string);
+		void 					UDPSendBroadcast(string, bool IsScheduled = true);
 
 		void 					UDPSendBroacastFromQueue();
 		void 					UDPSendBroadcastQueueAdd(string Message);

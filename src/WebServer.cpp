@@ -313,7 +313,7 @@ string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value, string Operan
 	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 
-void WebServer_t::UDPSendBroadcast(string Message) {
+void WebServer_t::UDPSendBroadcast(string Message, bool IsScheduled) {
 	if (WiFi.IsRunning()
 		&& (WiFi.GetMode() == WIFI_MODE_AP_STR || (WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.IsIPCheckSuccess)))
 	{
@@ -371,7 +371,9 @@ void WebServer_t::UDPSendBroadcast(string Message) {
 	}
 	else
 	{
-		UDPSendBroadcastQueueAdd(Message);
+		if (IsScheduled)
+			UDPSendBroadcastQueueAdd(Message);
+
 		ESP_LOGE(tag, "WiFi switched off - can't send UDP message");
 		return;
 	}
