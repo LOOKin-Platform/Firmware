@@ -15,6 +15,8 @@ vector<hap_acc_t*> 	HomeKit::BridgedAccessories = vector<hap_acc_t*>();
 HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sID) {
 	//sName.copy(Name, sName.size(), 0);
 
+	Converter::FindAndRemove(sName, "., ");
+
 	if (sName.size() > 32) sName 	= sName.substr(0, 32);
 	if (sModel.size() > 2) sModel 	= sModel.substr(0, 32);
 	if (sID.size() > 8) 	sID 	= sID.substr(0, 32);
@@ -814,7 +816,20 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 				hap_acc_add_serv(Accessory, ServiceLight);
 
 				break;
+			case 0x06: // Vacuum cleaner
+			{
+				hap_serv_t *ServiceVacuumCleaner;
 
+				uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
+
+				ServiceVacuumCleaner = hap_serv_switch_create((bool)(PowerStatus > 0));
+				hap_serv_add_char(ServiceVacuumCleaner, hap_char_name_create(accessory_name));
+
+				hap_serv_set_priv(ServiceVacuumCleaner, (void *)(uint32_t)AID);
+				hap_serv_set_write_cb(ServiceVacuumCleaner, WriteCallback);
+				hap_acc_add_serv(Accessory, ServiceVacuumCleaner);
+				break;
+			}
 			case 0x07: // Fan
 			{
 				uint8_t PowerStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
@@ -903,13 +918,16 @@ void HomeKit::Task(void *) {
     //app_wifi_init();
 
     /* After all the initializations are done, start the HAP core */
-    hap_start();
+    if (hap_start() == HAP_SUCCESS)
+    {
+        //app_wifi_start(portMAX_DELAY);
+        httpd_handle_t *HAPWebServerHandle = hap_platform_httpd_get_handle();
+        if (HAPWebServerHandle != NULL)
+        	WebServer.RegisterHandlers(*HAPWebServerHandle);
+    }
+    else
+    	WebServer.HTTPStart();
 
-    //app_wifi_start(portMAX_DELAY);
-
-    httpd_handle_t *HAPWebServerHandle = hap_platform_httpd_get_handle();
-    if (HAPWebServerHandle != NULL)
-    	WebServer.RegisterHandlers(*HAPWebServerHandle);
 
     /* The task ends here. The read/write callbacks will be invoked by the HAP Framework */
 
