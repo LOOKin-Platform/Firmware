@@ -318,7 +318,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			    if (err !=ESP_OK)
 			    	ESP_LOGE("!", "MDNS hostname set failed: %d", err);
 
-			    string InstanceName = "LOOK.in " + Device.TypeToString() + " " + Device.IDToString();
+			    string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
 			    mdns_instance_name_set(InstanceName.c_str());
 			}
 			else

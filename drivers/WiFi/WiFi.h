@@ -114,6 +114,9 @@ class WiFi_t {
 
 		static esp_netif_t*	GetNetIf();
 
+		static esp_netif_t* NetIfSTAHandle;
+		static esp_netif_t* NetIfAPHandle;
+
 	public:
 		void                Init();
 		void 				DeInit();

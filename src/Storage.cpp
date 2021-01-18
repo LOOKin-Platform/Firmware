@@ -9,10 +9,12 @@
 
 const char tag[] = "Storage";
 
-Storage_t::Storage_t() {
+void Storage_t::Init() {
 	AddressToWrite = Settings.Storage.Versions.StartAddress;
+
 	while (AddressToWrite < Settings.Storage.Versions.StartAddress + Settings.Storage.Versions.Size) {
 		uint16_t FindedID = SPIFlash::ReadUint16(AddressToWrite);
+
 		if (FindedID == Settings.Memory.Empty16Bit)
 			break;
 

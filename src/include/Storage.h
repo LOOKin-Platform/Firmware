@@ -49,7 +49,7 @@ class Storage_t {
 				void					CalculateLength();
 		};
 
-		Storage_t();
+		void Init();
 
 		Item 							Read	(uint16_t ItemID);
 		//vector<Item> 					Read	(vector<uint16_t> ItemID);

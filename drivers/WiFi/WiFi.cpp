@@ -14,6 +14,8 @@ static char 	tag[]						= "WiFi";
 string			WiFi_t::STAHostName 		= "LOOK.in Device";
 bool			WiFi_t::m_WiFiNetworkSwitch = false;
 
+esp_netif_t* 	WiFi_t::NetIfSTAHandle		= NULL;
+esp_netif_t*	WiFi_t::NetIfAPHandle		= NULL;
 
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
 	m_initCalled        = false;
@@ -119,8 +121,8 @@ void WiFi_t::Init() {
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 		esp_err_t errRc = ::esp_wifi_init(&cfg);
 
-	    esp_netif_create_default_wifi_sta();
-	    esp_netif_create_default_wifi_ap();
+		if (NetIfSTAHandle 	== NULL) NetIfSTAHandle = esp_netif_create_default_wifi_sta();
+		if (NetIfAPHandle 	== NULL) NetIfAPHandle 	= esp_netif_create_default_wifi_ap();
 
 		if (errRc != ESP_OK) {
 			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
@@ -345,6 +347,9 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	sta_config.sta.bssid_set = 0;
 	sta_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
 	sta_config.sta.listen_interval = 5;
+
+	sta_config.sta.pmf_cfg.capable 	= true;
+	sta_config.sta.pmf_cfg.required = false;
 
 	if (Channel > 0)
 		sta_config.sta.channel = Channel;
