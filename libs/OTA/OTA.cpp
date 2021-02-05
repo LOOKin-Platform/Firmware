@@ -40,25 +40,50 @@ void OTA::Update(string URL, OTAStarted Started, OTAFileDoesntExist FileDoesntEx
 esp_err_t OTA::PerformUpdate(string URL) {
 	ESP_LOGI(tag, "Starting OTA from URL %s...", URL.c_str());
 
-    esp_http_client_config_t config = {
-        .url 			= URL.c_str()
-    };
+	esp_http_client_config_t Config;
+	Config.password 				= NULL;
+	Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
 
-    config.buffer_size 	= Settings.OTA.BufferSize;
+	Config.cert_pem					= NULL;
+	Config.client_cert_pem			= NULL;
+	Config.client_key_pem			= NULL;
+
+	Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
+
+	Config.timeout_ms 				= 7000;
+	Config.buffer_size 				= Settings.OTA.BufferSize;
+	Config.buffer_size_tx 			= Settings.OTA.BufferSize;
+	Config.max_redirection_count 	= 0;
+	Config.method 					= esp_http_client_method_t::HTTP_METHOD_GET;
+
+	Config.user_data 				= NULL;
+	Config.event_handler			= NULL;
+
+	Config.is_async					= false;
+	Config.timeout_ms				= 10000;
+
+	Config.host						= NULL;
+	Config.path						= "/";
+	Config.query					= NULL;
+	Config.port						= 80;
+	Config.url 						= URL.c_str();
 
     Log::Add(Log::Events::System::OTAStarted);
 
 	PowerManagement::AddLock("OTA");
 
-	esp_err_t ret = esp_https_ota(&config);
+	esp_err_t ret = esp_https_ota(&Config);
 
     if (ret == ESP_OK)
     {
+    	ESP_LOGE(tag, "OTA succeed");
     	Log::Add(Log::Events::System::OTASucceed);
         esp_restart();
     }
     else
     {
+    	ESP_LOGE(tag, "OTA failed, %d", ret);
+
 		Device.Status = DeviceStatus::RUNNING;
 		PowerManagement::ReleaseLock("OTA");
 
@@ -85,7 +110,7 @@ bool OTA::Rollback() {
 	}
 
 	const esp_partition_t *partition = NULL;
-	partition = esp_ota_get_next_update_partition(NULL);
+	partition = esp_ota_get_next_update_partition(esp_current_partition);
 	assert(partition != NULL);
 
 	memcpy(&RollbackPartition, partition, sizeof(esp_partition_t));
@@ -94,19 +119,21 @@ bool OTA::Rollback() {
 
 	if (err == ESP_OK)
 	{
-		DelayedRebootTimer = new FreeRTOS::Timer((char*)"DelayedReboot", 1000 / portTICK_PERIOD_MS, pdFALSE, NULL, OTA::DelayedRebootTask);
-		DelayedRebootTimer->Start();
+		ESP_LOGE(tag, "Prepare to restart");
 
+		DelayedRebootTimer = new FreeRTOS::Timer((char*)"DelayedReboot", 50 / portTICK_PERIOD_MS, pdFALSE, NULL, OTA::DelayedRebootTask);
+		DelayedRebootTimer->Start();
 		return true;
 	}
-	else
+	else {
+		ESP_LOGE(tag, "Error occured during partition rollback");
 		return false;
+	}
 }
 
 void OTA::DelayedRebootTask(FreeRTOS::Timer *) {
 	esp_restart();
 }
-
 
 void OTA::ReadStarted(char IP[]) {
 	ESP_LOGD(tag, "ReadStarted");

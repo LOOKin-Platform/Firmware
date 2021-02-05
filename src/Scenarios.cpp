@@ -116,10 +116,14 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 }
 
 void Scenario_t::LoadScenarios() {
-	uint32_t Address 			= Settings.Scenarios.Memory.Start;
+	uint32_t Start 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Start4MB 		:  Settings.Scenarios.Memory.Start16MB;
+	uint32_t Size 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Size4MB 		:  Settings.Scenarios.Memory.Size16MB;
+	uint32_t ItemSize 	= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.ItemSize4MB 	:  Settings.Scenarios.Memory.ItemSize16MB;
+
+	uint32_t Address 			= Start;
 	uint32_t ScenarioFindedID 	= 0x0;
 
-	while (Address < Settings.Scenarios.Memory.Start + Settings.Scenarios.Memory.Size) {
+	while (Address < Start + Size) {
 		ScenarioFindedID = SPIFlash::ReadUint32(Address);
 
 		if (ScenarioFindedID != Settings.Memory.Empty32Bit) {
@@ -130,26 +134,32 @@ void Scenario_t::LoadScenarios() {
 			if (!Scenario.IsEmpty())
 				Automation.AddScenarioCacheItem(Scenario);
 		}
-		Address += Settings.Scenarios.Memory.ItemSize;
+		Address += ItemSize;
 	}
 
 	ESP_LOGI(tag, "Loaded %d scenarios", Automation.ScenarioCacheItemCount());
 }
 
 void Scenario_t::LoadScenario(Scenario_t &Scenario, uint32_t ScenarioID) {
-	uint32_t Address 			= Settings.Scenarios.Memory.Start;
+	uint32_t Start 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Start4MB 		:  Settings.Scenarios.Memory.Start16MB;
+	uint32_t Size 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Size4MB 		:  Settings.Scenarios.Memory.Size16MB;
+	uint32_t ItemSize 	= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.ItemSize4MB 	:  Settings.Scenarios.Memory.ItemSize16MB;
 
-	while (Address < Settings.Scenarios.Memory.Start + Settings.Scenarios.Memory.Size) {
+	uint32_t Address 			= Start;
+
+	while (Address < Start + Size) {
 		uint32_t FindedID = SPIFlash::ReadUint32(Address);
 
 		if (FindedID == ScenarioID)
 			LoadScenarioByAddress(Scenario, Address);
 
-		Address += Settings.Scenarios.Memory.ItemSize;
+		Address += ItemSize;
 	}
 }
 
 void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
+	uint32_t ItemSize 	= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.ItemSize4MB 	:  Settings.Scenarios.Memory.ItemSize16MB;
+
 	Scenario.ID = SPIFlash::ReadUint32(Address + Settings.Scenarios.Memory.ItemOffset.ID);
 
 	Scenario.SetType(SPIFlash::ReadUint8(Address + Settings.Scenarios.Memory.ItemOffset.Type));
@@ -164,7 +174,7 @@ void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
 
 	uint32_t CommandAddress 	= Address + Settings.Scenarios.Memory.ItemOffset.Commands;
 
-	while (CommandAddress < Address + Settings.Scenarios.Memory.ItemSize) {
+	while (CommandAddress < Address + ItemSize) {
 		uint32_t FindedCommandDeviceID = SPIFlash::ReadUint32(CommandAddress + Settings.Scenarios.Memory.CommandOffset.DeviceID);
 
 		if (FindedCommandDeviceID == Settings.Memory.Empty32Bit)
@@ -183,18 +193,22 @@ void Scenario_t::LoadScenarioByAddress(Scenario_t &Scenario, uint32_t Address) {
 }
 
 bool Scenario_t::SaveScenario(Scenario_t Scenario) {
-	uint32_t Address = Settings.Scenarios.Memory.Start;
+	uint32_t Start 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Start4MB 		:  Settings.Scenarios.Memory.Start16MB;
+	uint32_t Size 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Size4MB 		:  Settings.Scenarios.Memory.Size16MB;
+	uint32_t ItemSize 	= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.ItemSize4MB 	:  Settings.Scenarios.Memory.ItemSize16MB;
 
-	while (Address < Settings.Scenarios.Memory.Start + Settings.Scenarios.Memory.Size) {
+	uint32_t Address = Start;
+
+	while (Address < Start + Size) {
 		uint32_t CurrentID = SPIFlash::ReadUint32(Address);
 
 		if (CurrentID == Settings.Memory.Empty32Bit)
 			break;
 
-		Address += Settings.Scenarios.Memory.ItemSize;
+		Address += ItemSize;
 	}
 
-	if (Address > Settings.Scenarios.Memory.Start + Settings.Scenarios.Memory.Size - 1)
+	if (Address > Start + Size - 1)
 		return false;
 
 	if (Scenario.IsEmpty())
@@ -224,15 +238,19 @@ bool Scenario_t::SaveScenario(Scenario_t Scenario) {
 }
 
 void Scenario_t::RemoveScenario(uint32_t ScenarioID) {
-	uint32_t Address 			= Settings.Scenarios.Memory.Start;
+	uint32_t Start 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Start4MB 		:  Settings.Scenarios.Memory.Start16MB;
+	uint32_t Size 		= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.Size4MB 		:  Settings.Scenarios.Memory.Size16MB;
+	uint32_t ItemSize 	= (Settings.DeviceGeneration < 2) ? Settings.Scenarios.Memory.ItemSize4MB 	:  Settings.Scenarios.Memory.ItemSize16MB;
 
-	while (Address < Settings.Scenarios.Memory.Start + Settings.Scenarios.Memory.Size) {
+	uint32_t Address 	= Start;
+
+	while (Address < Start + Size) {
 		uint32_t FindedID = SPIFlash::ReadUint32(Address);
 
 		if (FindedID == ScenarioID)
-			SPIFlash::EraseRange(Address, Settings.Scenarios.Memory.ItemSize);
+			SPIFlash::EraseRange(Address, ItemSize);
 
-		Address += Settings.Scenarios.Memory.ItemSize;
+		Address += ItemSize;
 	}
 }
 

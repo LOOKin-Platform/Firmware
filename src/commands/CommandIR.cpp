@@ -121,7 +121,9 @@ class CommandIR_t : public Command_t {
 			if (EventCode == 0xEE) { // signal from memory
 				uint16_t StorageItemID = Converter::ToUint16(StringOperand);
 
-				if (StorageItemID <= Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) {
+				uint32_t DataSize	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
+				if (StorageItemID <= DataSize / Settings.Storage.Data.ItemSize) {
 					Storage_t::Item Item = Storage.Read(StorageItemID);
 
 					Sensor_t* SensorIR = Sensor_t::GetSensorByID(ID + 0x80);

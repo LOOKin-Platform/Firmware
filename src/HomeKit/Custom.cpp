@@ -26,7 +26,7 @@ hap_char_t *hap_char_identifier_create(uint32_t ActiveID)
 /* Char: Configured Name */
 hap_char_t *hap_char_configured_name_create(char *name)
 {
-    hap_char_t *hc = hap_char_string_create(CHAR_CONFIGUREDNAME_UUID, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_EV, name);
+    hap_char_t *hc = hap_char_string_create(CHAR_CONFIGUREDNAME_UUID, HAP_CHAR_PERM_PR | HAP_CHAR_PERM_PW | HAP_CHAR_PERM_TW  | HAP_CHAR_PERM_EV , name);
     if (!hc) {
         return NULL;
     }

@@ -123,7 +123,7 @@ void IRAM_ATTR RMT::RXCompleteCallback() {
 	if (FreeRTOS::Queue::IsQueueFullFromISR(RXReceivedTimeQueue)) return;
 
 	RXTimeStruct TimeStruct;
-	TimeStruct.Time = Time::UptimeU() - rmt_item32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
+	TimeStruct.Time = ::esp_timer_get_time() - rmt_item32_TIMEOUT_US / 10 * (RMT_TICK_10_US);
 
 	FreeRTOS::Queue::SendToBackFromISR(RXReceivedTimeQueue, &TimeStruct);
 }

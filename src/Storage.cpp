@@ -10,9 +10,12 @@
 const char tag[] = "Storage";
 
 void Storage_t::Init() {
-	AddressToWrite = Settings.Storage.Versions.StartAddress;
+	uint32_t VersionsStart	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB 	:  Settings.Storage.Versions.StartAddress16MB;
+	uint32_t VersionsSize	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB 			:  Settings.Storage.Versions.Size16MB;
 
-	while (AddressToWrite < Settings.Storage.Versions.StartAddress + Settings.Storage.Versions.Size) {
+	AddressToWrite = VersionsStart;
+
+	while (AddressToWrite < VersionsStart + VersionsSize) {
 		uint16_t FindedID = SPIFlash::ReadUint16(AddressToWrite);
 
 		if (FindedID == Settings.Memory.Empty16Bit)
@@ -81,14 +84,17 @@ void Storage_t::Item::CalculateLength() {
 }
 
 Storage_t::Item Storage_t::Read(uint16_t ItemID) {
-	uint32_t 			Address 		= Settings.Storage.Data.StartAddress;
+	uint32_t DataStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
+	uint32_t 			Address 		= DataStart;
 	vector<uint32_t> 	AddressVector 	= vector<uint32_t>();
 	Storage_t::Item 	Result;
 
-	if (ItemID > Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize)
+	if (ItemID > DataSize / Settings.Storage.Data.ItemSize)
 		return Result;
 
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger 	= SPIFlash::ReadUint32(Address);
 
@@ -100,7 +106,7 @@ Storage_t::Item Storage_t::Read(uint16_t ItemID) {
 		Address += Settings.Storage.Data.ItemSize;
 	}
 
-	if (Address > Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size)
+	if (Address > DataStart + DataSize)
 		return Result;
 
 	if (AddressVector.size() > 0)
@@ -130,14 +136,16 @@ Storage_t::Item Storage_t::Read(uint16_t ItemID) {
 }
 
 uint16_t Storage_t::Write(Item Record) {
+	uint32_t DataSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
 	if (Record.Header.MemoryID== 0xFFFF)
 		Record.Header.MemoryID = FindFreeID();
 
 	if (Record.Header.MemoryID == 0xFFFF)
 		return 0xFFFF;
 
-	if (Record.Header.MemoryID >= Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize - 1)
-		Record.Header.MemoryID = Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize - 1;
+	if (Record.Header.MemoryID >= DataSize / Settings.Storage.Data.ItemSize - 1)
+		Record.Header.MemoryID = DataSize / Settings.Storage.Data.ItemSize - 1;
 
 	vector<Item>::iterator it = Patch->begin();
 	// delete write items already in commit
@@ -181,18 +189,41 @@ void Storage_t::Commit(uint16_t Version) {
 
 		if (Version <= LastVersion) Version = 0;
 
-		map<uint16_t,uint8_t> Items = {};
+
+		vector<pair<uint16_t,uint8_t>> Items = {};
 
 		while (Patch->front().Header.Length + Size < Settings.Storage.Versions.VersionMaxSize && Patch->size() > 0) {
 			Size += (Patch->front().Header.Length > 0) ? Patch->front().Header.Length : 1 ;
 
-			if (Patch->front().Header.Length == 0) {
+			if (Patch->front().Header.Length == 0)
+			{
 				EraseNow(Patch->front().Header.MemoryID);
-				Items[Patch->front().Header.MemoryID + 0x1000] = Patch->front().Header.TypeID;
+
+				uint16_t NewMemoryID = Patch->front().Header.MemoryID + 0x1000;
+
+				// delete already added items with same MemoryID
+				vector<pair<uint16_t,uint8_t>>::iterator it = Items.begin();
+				while (it != Items.end())
+					if (it->first == NewMemoryID)
+						it = Items.erase(it);
+					else
+					    ++it;
+
+				Items.push_back(make_pair(NewMemoryID, (uint8_t)Patch->front().Header.TypeID));
 			}
-			else {
+			else
+			{
 				WriteNow(Patch->front());
-				Items[Patch->front().Header.MemoryID] = Patch->front().Header.TypeID;
+
+				// delete already added items with same MemoryID
+				vector<pair<uint16_t,uint8_t>>::iterator it = Items.begin();
+				while (it != Items.end())
+					if (it->first == Patch->front().Header.MemoryID)
+						it = Items.erase(it);
+					else
+					    ++it;
+
+				Items.push_back(make_pair((uint16_t)Patch->front().Header.MemoryID, (uint8_t)Patch->front().Header.TypeID));
 			}
 			Patch->erase(Patch->begin());
 		}
@@ -215,6 +246,12 @@ uint16_t Storage_t::CurrentVersion() {
 
 
 void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
+	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
+	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
+
 	if (Query.Type == QueryType::GET) {
 		if (Query.GetURLPartsCount() == 1) {
 			JSON JSONObject;
@@ -327,6 +364,11 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			while (it != Items.end()) {
 				JSON JSONObject;
 
+				if (it->Header.TypeID == 0 && it->DataToString() == "") {
+					Items.erase(Items.begin());
+					continue;
+				}
+
 				JSONObject.SetItems(vector<pair<string,string>>({
 		    		make_pair("ID"		, Converter::ToHexString(it->Header.MemoryID, 3)),
 		    	    make_pair("TypeID"	, Converter::ToHexString(it->Header.TypeID  , 2)),
@@ -369,7 +411,7 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 		if (Query.GetURLPartsCount() == 2 || (Query.GetURLPartsCount() == 3 && Query.CheckURLPart("decode", 2))) {
 			uint16_t ItemID = Converter::UintFromHexString<uint16_t>(Query.GetStringURLPartByNumber(1));
 
-			if (ItemID > (Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize))
+			if (ItemID > (DataSize / Settings.Storage.Data.ItemSize))
 			{
 				Result.SetInvalid();
 				return;
@@ -420,8 +462,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 		}
 
 		if (Query.GetURLPartsCount() == 1) {
-			map<string, string> Params 			= JSON(Query.GetBody()).GetItems();
-			vector<map<string,string>> Items 	= vector<map<string,string>>();
+			map<string, string> 		Params 	= JSON(Query.GetBody()).GetItems();
+			vector<map<string,string>> 	Items 	= vector<map<string,string>>();
 
 			if (Params.empty()) {
 				JSON JSONObject(Query.GetBody());
@@ -499,13 +541,13 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 	if (Query.Type == QueryType::DELETE) {
 		if (Query.GetURLPartsCount() == 1) {
 
-			SPIFlash::EraseRange(Settings.Storage.Versions.StartAddress, Settings.Storage.Versions.Size);
-			SPIFlash::EraseRange(Settings.Storage.Data.StartAddress, Settings.Storage.Data.Size);
+			SPIFlash::EraseRange(VersionsStart, VersionsSize);
+			SPIFlash::EraseRange(DataStart, DataSize);
 
 			if (Patch->size() > 0)
 				Patch->clear();
 
-			AddressToWrite 			= Settings.Storage.Versions.StartAddress;
+			AddressToWrite 			= VersionsStart;
 			LastVersion 			= 0x1FFF;
 			MemoryStoredItemsSize	= 0x0;
 			MemoryStoredItems		= 0x0;
@@ -536,13 +578,20 @@ string Storage_t::VersionToString() {
 
 
 uint16_t Storage_t::FindFreeID() {
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
+	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
+	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
+
 	uint16_t Result = 0xFFF;
 
-	bitset<Settings.Storage.Data.Size/Settings.Storage.Data.ItemSize> *FreeIndexes = new bitset<Settings.Storage.Data.Size/Settings.Storage.Data.ItemSize>(0);
+	// Use max avaliable bitset size
+	bitset<Settings.Storage.Data.Size16MB/Settings.Storage.Data.ItemSize> *FreeIndexes = new bitset<Settings.Storage.Data.Size16MB/Settings.Storage.Data.ItemSize>(0);
 	FreeIndexes->set();
 
-	uint32_t Address = Settings.Storage.Data.StartAddress;
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	uint32_t Address = DataStart;
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
@@ -555,8 +604,9 @@ uint16_t Storage_t::FindFreeID() {
 	for (int i=0;i< Patch->size(); i++)
 		FreeIndexes->set(Patch->at(i).Header.MemoryID, (Patch->at(i).Header.Length == 0) ? true : false);
 
-	for (uint16_t i=0; i < FreeIndexes->size(); i++)
-		if (FreeIndexes->test(i)) {
+	for (uint16_t i=0; i < (DataSize/Settings.Storage.Data.ItemSize); i++)
+		if (FreeIndexes->test(i))
+		{
 			Result = i;
 			break;
 		}
@@ -566,14 +616,18 @@ uint16_t Storage_t::FindFreeID() {
 }
 
 uint16_t Storage_t::WriteNow(Item Record) {
-	uint32_t 			Address 		= Settings.Storage.Data.StartAddress;
+	uint32_t DataStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
+
+	uint32_t 			Address 		= DataStart;
 	vector<uint32_t> 	AddressVector 	= vector<uint32_t>();
 	uint8_t				tmpLength		= Record.Header.Length;
 
 	MemoryStoredItemsSize += Record.Header.Length;
 	MemoryStoredItems ++;
 
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
@@ -587,7 +641,7 @@ uint16_t Storage_t::WriteNow(Item Record) {
 		Address += Settings.Storage.Data.ItemSize;
 	}
 
-	if (Address > Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size - 1)
+	if (Address > DataStart + DataSize - 1)
 		return false;
 
 	if (Record.GetData().size() == 0)
@@ -623,14 +677,17 @@ uint16_t Storage_t::WriteNow(Item Record) {
 		}
 	}
 
-	return ((AddressVector[0] - Settings.Storage.Data.StartAddress) / Settings.Storage.Data.ItemSize);
+	return ((AddressVector[0] - DataStart) / Settings.Storage.Data.ItemSize);
 }
 
 void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
-	uint32_t 			Address 		= Settings.Storage.Data.StartAddress;
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
+	uint32_t 			Address 		= DataStart;
 	vector<uint32_t> 	AddressVector 	= vector<uint32_t>();
 
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
@@ -642,7 +699,7 @@ void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
 		Address += Settings.Storage.Data.ItemSize;
 	}
 
-	if (Address > (Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size -1 ))
+	if (Address > (DataStart + DataSize -1 ))
 		return;
 
 	for (uint32_t AddressItem : AddressVector) {
@@ -657,15 +714,20 @@ void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
 }
 
 uint32_t IRAM_ATTR Storage_t::GetFreeMemory() {
-	return ((Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize) - MemoryStoredItemsSize) * (Settings.Storage.Data.ItemSize - sizeof(RecordHeader) - sizeof(RecordPartInfo));
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
+	return ((DataSize / Settings.Storage.Data.ItemSize) - MemoryStoredItemsSize) * (Settings.Storage.Data.ItemSize - sizeof(RecordHeader) - sizeof(RecordPartInfo));
 }
 
 void IRAM_ATTR Storage_t::CalculateMemoryItemsData() {
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
 	MemoryStoredItemsSize 	= 0x0;
 	MemoryStoredItems		= 0x0;
-	uint32_t Address		= Settings.Storage.Data.StartAddress;
+	uint32_t Address		= DataStart;
 
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
@@ -680,10 +742,13 @@ void IRAM_ATTR Storage_t::CalculateMemoryItemsData() {
 }
 
 vector<uint8_t> IRAM_ATTR Storage_t::GetItemsTypes() {
-	vector<uint8_t> Result 	= vector<uint8_t>();
-	uint32_t 		Address = Settings.Storage.Data.StartAddress;
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	vector<uint8_t> Result 	= vector<uint8_t>();
+	uint32_t 		Address = DataStart;
+
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
@@ -702,9 +767,12 @@ vector<uint8_t> IRAM_ATTR Storage_t::GetItemsTypes() {
 uint16_t IRAM_ATTR Storage_t::CountItemsForTypeID(uint8_t TypeID) {
 	uint16_t Result = 0;
 
-	uint32_t Address = Settings.Storage.Data.StartAddress;
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	uint32_t Address = DataStart;
+
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
@@ -718,12 +786,15 @@ uint16_t IRAM_ATTR Storage_t::CountItemsForTypeID(uint8_t TypeID) {
 }
 
 vector<uint16_t> Storage_t::GetItemsForTypeID(uint8_t Type, uint16_t Limit, uint8_t Page) {
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+
 	vector<uint16_t> Result = vector<uint16_t>();
 
 	uint16_t Counter = 0;
 
-	uint32_t Address = Settings.Storage.Data.StartAddress;
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	uint32_t Address = DataStart;
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
@@ -741,9 +812,12 @@ vector<uint16_t> Storage_t::GetItemsForTypeID(uint8_t Type, uint16_t Limit, uint
 }
 
 bool IRAM_ATTR Storage_t::IsExist(uint16_t ID) {
-	uint32_t Address = Settings.Storage.Data.StartAddress;
+	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
-	while (Address < Settings.Storage.Data.StartAddress + Settings.Storage.Data.Size) {
+	uint32_t Address = DataStart;
+
+	while (Address < DataStart + DataSize) {
 		RecordHeader Header;
 		Header.HeaderAsInteger = SPIFlash::ReadUint32(Address);
 
@@ -757,10 +831,13 @@ bool IRAM_ATTR Storage_t::IsExist(uint16_t ID) {
 }
 
 uint16_t IRAM_ATTR Storage_t::VersionHistoryCount() {
+	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
+	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
+
 	uint16_t Count = 0;
 
-	uint32_t Address = Settings.Storage.Versions.StartAddress;
-	while (Address < Settings.Storage.Versions.StartAddress + Settings.Storage.Versions.Size) {
+	uint32_t Address = VersionsStart;
+	while (Address < VersionsStart + VersionsSize) {
 		uint32_t DataPart = SPIFlash::ReadUint32(Address);
 
 		uint16_t LeftPart	= (uint16_t)((DataPart << 16) >> 16);
@@ -779,12 +856,15 @@ uint16_t IRAM_ATTR Storage_t::VersionHistoryCount() {
 }
 
 vector<uint16_t> IRAM_ATTR Storage_t::VersionHistoryGet(uint16_t Limit, uint8_t Page) {
+	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
+	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
+
 	vector<uint16_t> Result = vector<uint16_t>();
 
 	uint16_t Counter = 0;
 
-	uint32_t Address = Settings.Storage.Versions.StartAddress;
-	while (Address < Settings.Storage.Versions.StartAddress + Settings.Storage.Versions.Size) {
+	uint32_t Address = VersionsStart;
+	while (Address < VersionsStart + VersionsSize) {
 		uint32_t DataPart = SPIFlash::ReadUint32(Address);
 
 		uint16_t LeftPart	= (uint16_t)((DataPart << 16) >> 16);
@@ -817,12 +897,18 @@ vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version) {
 }
 
 vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version, uint32_t &LastAddress, uint32_t StartAdress) {
+	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
+	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
+
 	vector<uint16_t> Result = vector<uint16_t>();
+
+	if (StartAdress == UINT32MAX)
+		StartAdress = (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
 
 	bool VersionFinded = false;
 
 	uint32_t Address = StartAdress;
-	while (Address < Settings.Storage.Versions.StartAddress + Settings.Storage.Versions.Size) {
+	while (Address < VersionsStart + VersionsSize) {
 		uint32_t DataPart = SPIFlash::ReadUint32(Address);
 
 		uint16_t LeftPart	= (uint16_t)((DataPart << 16) >> 16);
@@ -863,9 +949,12 @@ vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version, uint3
 }
 
 vector<Storage_t::Item> IRAM_ATTR Storage_t::GetUpgradeItems(uint16_t From, uint16_t &ToCurrent) {
+	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
+	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
+
 	vector<Item> Result 	= vector<Item>();
 	vector<Item> ResultPart	= vector<Item>();
-	uint32_t LastAddress 	= Settings.Storage.Versions.StartAddress;
+	uint32_t LastAddress 	= VersionsStart;
 
 	if (From == 0)
 		From = 0x1FFF;
@@ -879,17 +968,21 @@ vector<Storage_t::Item> IRAM_ATTR Storage_t::GetUpgradeItems(uint16_t From, uint
 	uint8_t		TotalCount 	= 0;
 	uint8_t		PartCount 	= 0;
 
-	while (TotalCount + PartCount < Settings.Storage.Versions.VersionMaxSize && From <= LastVersion) {
+	uint16_t	SavedTo 	= ToCurrent;
+
+	while (TotalCount + PartCount < Settings.Storage.Versions.VersionMaxSize && From <= LastVersion)
+	{
 		From++;
 		PartCount = 0;
 
 		for (auto& FindedItem: GetItemsForVersion(From, LastAddress, LastAddress)) {
-			if ((uint16_t)((FindedItem << 4) >> 4) <= (Settings.Storage.Data.Size / Settings.Storage.Data.ItemSize)) {
+			if ((uint16_t)((FindedItem << 4) >> 4) <= (DataSize / Settings.Storage.Data.ItemSize)) {
 				if (FindedItem < 0x1000) {
 					Item ReadedItem = Read(FindedItem);
 
 					if (ReadedItem.Header.MemoryID != Settings.Memory.Empty16Bit) {
 						ResultPart.push_back(ReadedItem);
+
 						PartCount += ReadedItem.Header.Length;
 					}
 				}
@@ -905,12 +998,16 @@ vector<Storage_t::Item> IRAM_ATTR Storage_t::GetUpgradeItems(uint16_t From, uint
 
 		if (PartCount + TotalCount > Settings.Storage.Versions.VersionMaxSize)
 			break;
-		else {
+		else
+		{
 			Result.insert(Result.end(), ResultPart.begin(), ResultPart.end());
 			ResultPart.clear();
 			TotalCount += PartCount;
 
 			ToCurrent = From;
+
+			if (From < LastVersion)
+				ToCurrent++;
 		}
 	}
 

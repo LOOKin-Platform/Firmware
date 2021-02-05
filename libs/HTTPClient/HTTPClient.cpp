@@ -34,8 +34,8 @@ void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
 
 	strncpy(QueryData.URL   , URL.c_str(), 64);
 
-	QueryData.Method  		= Type;
-	QueryData.BufferSize 	= 1024;
+	QueryData.Method  				= Type;
+	QueryData.BufferSize 			= 1024;
 
 	QueryData.ReadStartedCallback   = ReadStartedCallback;
 	QueryData.ReadBodyCallback      = ReadBodyCallback;
@@ -133,7 +133,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 			Config.timeout_ms 				= 7000;
 			Config.buffer_size 				= ClientData.BufferSize;
-			Config.buffer_size_tx = ClientData.BufferSize;
+			Config.buffer_size_tx 			= ClientData.BufferSize;
 			Config.max_redirection_count 	= 0;
 
 

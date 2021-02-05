@@ -20,6 +20,8 @@
 
 using namespace std;
 
+#define UINT32MAX 0xFFFFFFFF
+
 typedef struct FirmwareVersionStruct {
 	union __attribute__((__packed__)) {
 		struct { uint8_t Major : 8, Minor : 8; uint16_t Revision : 16; };
@@ -36,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 12, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 13, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -227,31 +229,26 @@ class Settings_t {
 		} Memory;
 
 		struct Storage_t {
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
 			struct Versions_t {
-				static constexpr uint32_t 	StartAddress	= 0x92000;
-				static constexpr uint32_t 	Size			= 0xA000;
+				static constexpr uint32_t 	StartAddress4MB	= 0x92000;
+				static constexpr uint32_t 	Size4MB			= 0xA000;
+
+				static constexpr uint32_t 	StartAddress16MB= 0xAA0000;
+				static constexpr uint32_t 	Size16MB		= 0x40000;
+
+
 				static constexpr uint8_t 	VersionMaxSize	= 10;
 			} Versions;
 
 			struct Data_t {
-				static constexpr uint32_t 	StartAddress	= 0x9C000;
-				static constexpr uint32_t 	Size			= 0x84000;
-				static constexpr uint16_t 	ItemSize		= 0x108;
-			} Data;
-#else
-			struct Versions_t {
-				static constexpr uint32_t 	StartAddress	= 0xAA0000;
-				static constexpr uint32_t 	Size			= 0x40000;
-				static constexpr uint8_t 	VersionMaxSize	= 10;
-			} Versions;
+				static constexpr uint32_t 	StartAddress4MB	= 0x9C000;
+				static constexpr uint32_t 	Size4MB			= 0x84000;
 
-			struct Data_t {
-				static constexpr uint32_t 	StartAddress	= 0xAE0000;
-				static constexpr uint32_t 	Size			= 0x210000;
+				static constexpr uint32_t 	StartAddress16MB= 0xAE0000;
+				static constexpr uint32_t 	Size16MB		= 0x210000;
+
 				static constexpr uint16_t 	ItemSize		= 0x108;
 			} Data;
-#endif
 		} Storage;
 
 		struct Scenarios_t {
@@ -274,17 +271,16 @@ class Settings_t {
 			} Types;
 
 			struct Memory_t {
-#if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-				static constexpr uint32_t	Start			= 0x32000;
-				static constexpr uint32_t	Size			= 0x60000;
-				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
-				static constexpr uint16_t	Count			= 256;
-#else
-				static constexpr uint32_t	Start			= 0x8A0000;
-				static constexpr uint32_t	Size			= 0x200000;
-				static constexpr uint32_t	ItemSize		= 0x600;	// 1536 байт
-				static constexpr uint16_t	Count			= 1024;
-#endif
+				static constexpr uint32_t	Start4MB		= 0x32000;
+				static constexpr uint32_t	Size4MB			= 0x60000;
+				static constexpr uint32_t	ItemSize4MB		= 0x600;	// 1536 байт
+				static constexpr uint16_t	Count4MB		= 256;
+
+				static constexpr uint32_t	Start16MB		= 0x8A0000;
+				static constexpr uint32_t	Size16MB		= 0x200000;
+				static constexpr uint32_t	ItemSize16MB	= 0x600;	// 1536 байт
+				static constexpr uint16_t	Count16MB		= 1024;
+
 				struct ItemOffset_t {
 					static constexpr uint16_t ID			= 0x0;
 					static constexpr uint16_t Type			= 0x4;
@@ -311,6 +307,7 @@ class Settings_t {
 				const uint16_t				SignalPauseMax	= 65000;
 				const uint32_t				DetectionDelay	= 250000; 	// Временной интервал в течении которого считается, что сигнал 1 (в микросекундах)
 				const uint8_t				MinSignalLen	= 10;		// Минимальная длинна сигнала, которая может быть распознана
+				const uint16_t				ValueThreshold	= 220;		// Если есть сигнал в посылке с меньшей длительностью - значит засветка
 			} IR;
 
 			struct {

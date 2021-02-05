@@ -13,8 +13,9 @@
 #include <string.h>
 #include "Custom.h"
 
-#define	NVS_HOMEKIT_AREA 		"homekit"
-#define NVS_HOMEKIT_AREA_MODE	"mode"
+#define	NVS_HOMEKIT_AREA 			"homekit"
+#define NVS_HOMEKIT_AREA_MODE		"mode"
+#define NVS_HOMEKIT_CNPREFIX		"cn"
 
 class HomeKit {
 	public:
@@ -58,15 +59,18 @@ class HomeKit {
 		static bool				TargetFanState		(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 		static bool				SwingMode			(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 
+		static bool				GetConfiguredName	(char*		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
+		static bool				SetConfiguredName	(char*		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
+
 		static void				StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send = true);
 
-		static int 				WriteCallback(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv);
+		static int 				WriteCallback	(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv);
+//		static int 				ReadCallback	(hap_char_t *hc, hap_status_t *status_code, void *serv_priv, void *read_priv)
 
 		static hap_cid_t		FillAccessories();
 
 		static hap_cid_t 		FillRemoteACOnly(hap_acc_t *Accessory);
 		static hap_cid_t 		FillRemoteBridge(hap_acc_t *Accessory);
-
 
 		static void 			Task(void *);
 

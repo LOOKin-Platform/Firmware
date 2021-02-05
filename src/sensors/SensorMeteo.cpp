@@ -141,7 +141,7 @@ class SensorMeteo_t : public Sensor_t {
 				uint32_t DeltaHumidity 	= (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
 				uint32_t DeltaTime 		= Time::Uptime() - PreviousHumidityTime;
 
-				if (DeltaHumidity < 2 && DeltaTime < 60)
+				if (DeltaHumidity < 3 && DeltaTime < 60)
 					ShouldUpdate = false;
 			}
 

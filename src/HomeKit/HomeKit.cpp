@@ -64,7 +64,9 @@ void HomeKit::Stop() {
 }
 
 void HomeKit::AppServerRestart() {
+	Stop();
 	FillAccessories();
+	Start();
 	return;
 }
 
@@ -102,12 +104,8 @@ int HomeKit::BridgeIdentify(hap_acc_t *ha) {
  */
 int HomeKit::AccessoryIdentify(hap_acc_t *ha)
 {
-    hap_serv_t *hs = hap_acc_get_serv_by_uuid(ha, HAP_SERV_UUID_ACCESSORY_INFORMATION);
-    hap_char_t *hc = hap_serv_get_char_by_uuid(hs, HAP_CHAR_UUID_NAME);
-    const hap_val_t *val = hap_char_get_val(hc);
-    char *name = val->s;
-
-    ESP_LOGI(Tag, "Bridged Accessory %s identified", name);
+    ESP_LOGI(Tag, "Bridge identified");
+    Log::Add(Log::Events::Misc::HomeKitIdentify);
     return HAP_SUCCESS;
 }
 
@@ -468,6 +466,40 @@ bool HomeKit::SwingMode(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iter
     return false;
 }
 
+bool HomeKit::GetConfiguredName(char* Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+
+
+	ESP_LOGE("GetConfiguredName", "UUID: %04X, Value: %s", AID, Value);
+	uint32_t IID = hap_serv_get_iid(hap_char_get_parent(Char));
+
+
+	/*
+	string KeyName = string(NVS_HOMEKIT_CNPREFIX) + Converter::ToHexString(AID, 4) + Converter::ToHexString(IID, 8);
+
+	ESP_LOGE("!", "%s", KeyName.c_str());
+
+	NVS Memory(NVS_HOMEKIT_AREA);
+	Memory.SetString(Converter::ToLower(KeyName), string(Value));
+	Memory.Commit();
+	 */
+	return true;
+}
+
+bool HomeKit::SetConfiguredName(char* Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+	ESP_LOGE("SetConfiguredName", "UUID: %04X, Value: %s", AID, Value);
+	uint32_t IID = hap_serv_get_iid(hap_char_get_parent(Char));
+
+	string KeyName = string(NVS_HOMEKIT_CNPREFIX) + Converter::ToHexString(AID, 4) + Converter::ToHexString(IID, 8);
+
+	ESP_LOGE("!", "%s", KeyName.c_str());
+
+	NVS Memory(NVS_HOMEKIT_AREA);
+	Memory.SetString(Converter::ToLower(KeyName), string(Value));
+	Memory.Commit();
+
+	return true;
+}
+
 
 void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
 	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value, "", false);
@@ -495,7 +527,7 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
     int i, ret = HAP_SUCCESS;
 
     uint16_t AID = (uint16_t)((uint32_t)(serv_priv));
-    ESP_LOGI(Tag, "Write called for Accessory with AID %04X", AID);
+    ESP_LOGE(Tag, "Write called for Accessory with AID %04X", AID);
 
     hap_write_data_t *write;
     for (i = 0; i < count; i++) {
@@ -555,6 +587,10 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         	SwingMode(write->val.b, AID, write->hc, i);
             *(write->status) = HAP_STATUS_SUCCESS;
         }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_CONFIGUREDNAME_UUID)) {
+        	//ConfiguredName(write->val.s, AID, write->hc, i);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_IS_CONFIGURED)) {
         	*(write->status) = HAP_STATUS_SUCCESS;
         }
@@ -593,7 +629,7 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         }
 
         if (*(write->status) == HAP_STATUS_SUCCESS)
-            hap_char_update_val(write->hc, &(write->val));
+        	hap_char_update_val(write->hc, &(write->val));
         else
             ret = HAP_FAIL;
     }
@@ -730,7 +766,7 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 	{
 		DataRemote_t::IRDevice IRDevice = ((DataRemote_t *)Data)->GetDevice(IRCachedDevice.DeviceID);
 
-		char accessory_name[32] = "\0";
+		char accessory_name[32] = {0};
 
 		string Name = IRDevice.Name;
 
@@ -772,11 +808,12 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 					ModeStatus = 0;
 				*/
 
-				ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1, accessory_name);
+				ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1, &accessory_name[0]);
 				hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
 
 				hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
 				hap_serv_set_write_cb	(ServiceTV, WriteCallback);
+				//hap_serv_set_read_cb	(ServiceTC, ReadCallback)
 				hap_acc_add_serv		(Accessory, ServiceTV);
 
 				if (IRDevice.Functions.count("volup") > 0 || IRDevice.Functions.count("voldown") > 0) {
@@ -786,6 +823,8 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 					hap_serv_set_priv		(ServiceSpeaker, (void *)(uint32_t)AID);
 					hap_serv_set_write_cb	(ServiceSpeaker, WriteCallback);
+					//hap_serv_set_read_cb	(ServiceTC, ReadCallback);
+
 					hap_serv_link_serv		(ServiceTV, ServiceSpeaker);
 					hap_acc_add_serv		(Accessory, ServiceSpeaker);
 				}
@@ -800,6 +839,8 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 					hap_serv_set_priv(ServiceInput, (void *)(uint32_t)AID);
 					hap_serv_set_write_cb(ServiceInput, WriteCallback);
+					//hap_serv_set_read_cb	(ServiceTC, ReadCallback)
+
 					hap_serv_link_serv(ServiceTV, ServiceInput);
 					hap_acc_add_serv(Accessory, ServiceInput);
 				}
@@ -878,7 +919,6 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 	return HAP_CID_BRIDGE;
 }
 
-
 void HomeKit::Task(void *) {
 	IsRunning = true;
 
@@ -901,14 +941,61 @@ void HomeKit::Task(void *) {
 
 	if (Mode == ModeEnum::BASIC)
 	{
-	    hap_set_setup_id("RQW0");
-	    hap_enable_software_auth();
+		// first Remote2 batch fix
+
+		string 	Pin 	= "";
+		string	SetupID = "";
+
+		switch (Settings.eFuse.DeviceID)  {
+			case 0x00000003: case 0x98F33002: case 0x98F33008: case 0x98F3300E: case 0x98F33014: case 0x98F3301A: case 0x98F33020: case 0x98F33026: case 0x98F3303B: case 0x98F33041:
+				Pin 	= "354-86-394";
+				SetupID = "QP07";
+				break;
+
+			case 0x98F33001: case 0x98F33007: case 0x98F3300D: case 0x98F33013: case 0x98F33019: case 0x98F3301F: case 0x98F33025: case 0x98F3303A: case 0x98F33040:
+				Pin 	= "483-27-621";
+				SetupID = "ER11";
+				break;
+
+			case 0x98F33005: case 0x98F3300B: case 0x98F33011: case 0x98F33017: case 0x98F3301D: case 0x98F33023: case 0x98F33029: case 0x98F3303E:
+				Pin 	= "192-01-049";
+				SetupID = "POMJ";
+				break;
+
+			case 0x98F33006: case 0x98F3300C: case 0x98F33012: case 0x98F33018: case 0x98F3301E: case 0x98F33024: case 0x98F33030: case 0x98F3303F:
+				Pin 	= "548-68-670";
+				SetupID = "DKJU";
+				break;
+
+			case 0x98F33004: case 0x98F3300A: case 0x98F33010: case 0x98F33016: case 0x98F3301C: case 0x98F33022: case 0x98F33028: case 0x98F3303D:
+				Pin 	= "729-17-934";
+				SetupID = "DCIU";
+				break;
+
+			case 0x98F33003: case 0x98F33009: case 0x98F3300F: case 0x98F33015: case 0x98F3301B: case 0x98F33021: case 0x98F33027: case 0x98F3303C:
+				Pin 	= "905-86-070";
+				SetupID = "FF11";
+				break;
+		}
+
+
+		if (Pin != "") {
+		    hap_enable_mfi_auth(HAP_MFI_AUTH_NONE);
+		    hap_set_setup_code(Pin.c_str());
+		    hap_set_setup_id(SetupID.c_str());
+//		    esp_hap_get_setup_payload(Pin.c_str(), SetupID.c_str(), false, CID);
+		}
+		else
+		{
+		    hap_enable_software_auth();
+		}
 	}
 	else if (Mode == ModeEnum::EXPERIMENTAL)
 	{
 	    hap_enable_mfi_auth(HAP_MFI_AUTH_NONE);
 	    hap_set_setup_code("999-55-222");
 	    hap_set_setup_id("17AC");
+
 	    esp_hap_get_setup_payload("999-55-222", "17AC", false, CID);
 	}
 

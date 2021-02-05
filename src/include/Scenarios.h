@@ -40,6 +40,8 @@ class Data_t;
 
 class Scenario_t {
 	public:
+		const char*	PartitionName 	= "scenarios";
+
 		uint8_t     Type;
 		uint32_t    ID;
 		uint16_t	Name[Settings.Scenarios.NameLength] = { 0 };

@@ -56,7 +56,7 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 			ESP_LOGE(tag, "Error code %04X(%08X)", Code, Data);
 
 		if (GetItemType(Code) == INFO)
-			ESP_LOGI(tag, "Info code %04X(%08X)", Code, Data);
+			ESP_LOGE(tag, "Info code %04X(%08X)", Code, Data);
 	}
 
 	Indicator_t::Display(Code);

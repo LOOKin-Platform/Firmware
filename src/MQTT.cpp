@@ -84,34 +84,6 @@ void MQTT_t::SetCredentials(string Username, string Password) {
 	return;
 }
 
-void MQTT_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
-	if (Username == this->Username && Password == this->Password && Status == CONNECTED) {
-		SendMessage(WebServer.UDPAliveBody(), Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/UDP");
-		return;
-	}
-
-	SetCredentials(Username, Password);
-
-	if (!WiFi.IsConnectedSTA())
-		return;
-
-	switch (Status)
-	{
-		case UNACTIVE	: ESP_LOGE("Status", "Unactive"); break;
-		case CONNECTED	: ESP_LOGE("Status", "Connected"); break;
-		case ERROR		: ESP_LOGE("Status", "Error");  break;
-	}
-
-	if (Status == UNACTIVE && ClientHandle == nullptr)
-		Start();
-	else if (ClientHandle != nullptr)
-	{
-		esp_mqtt_client_config_t Config = CreateConfig();
-		::esp_mqtt_set_config(ClientHandle, &Config);
-		::esp_mqtt_client_reconnect(ClientHandle);
-		ESP_LOGE("MQTT", "reconnected");
-	}
-}
 
 esp_err_t IRAM_ATTR MQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;

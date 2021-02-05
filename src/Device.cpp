@@ -400,7 +400,7 @@ string Device_t::PowerModeToString() {
 }
 
 string Device_t::FirmwareVersionToString() {
-	return FirmwareVersion;
+	return Settings.Firmware.ToString();
 }
 
 string Device_t::TemperatureToString() {

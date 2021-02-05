@@ -335,7 +335,8 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-		abort();
+		m_apConnectionStatus = UINT8_MAX;
+		return m_apConnectionStatus;
 	}
 
 	wifi_config_t sta_config;
@@ -358,16 +359,13 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-		abort();
+		m_apConnectionStatus = UINT8_MAX;
+		return m_apConnectionStatus;
 	}
-
-	//ESP_ERROR_CHECK(::esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N));
 
 	errRc = ::esp_wifi_start();
-	if (errRc != ESP_OK) {
+	if (errRc != ESP_OK)
 		ESP_LOGE(tag, "esp_wifi_start: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-		abort();
-	}
 
 	return m_apConnectionStatus;  // Return ESP_OK if we are now connected and wifi_err_reason_t if not.
 } // connectAP

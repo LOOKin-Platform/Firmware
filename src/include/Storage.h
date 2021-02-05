@@ -65,7 +65,7 @@ class Storage_t {
 	private:
 
 		vector<Item>					*Patch = new vector<Item>();
-		uint32_t						AddressToWrite 			= Settings.Storage.Versions.StartAddress;
+		uint32_t						AddressToWrite 			= 0x0;
 
 		uint16_t						LastVersion 			= 0x1FFF;
 		uint16_t						MemoryStoredItemsSize	= 0x0;
@@ -88,7 +88,7 @@ class Storage_t {
 		uint16_t						VersionHistoryCount();
 		vector<uint16_t>				VersionHistoryGet(uint16_t Limit, uint8_t Page);
 		vector<uint16_t>				GetItemsForVersion(uint16_t Version);
-		vector<uint16_t>				GetItemsForVersion(uint16_t Version, uint32_t &LastAddress, uint32_t StartAdress = Settings.Storage.Versions.StartAddress);
+		vector<uint16_t>				GetItemsForVersion(uint16_t Version, uint32_t &LastAddress, uint32_t StartAdress = UINT32MAX);
 		vector<Storage_t::Item>			GetUpgradeItems(uint16_t From, uint16_t &ToCurrent);
 
 		static uint8_t					RecordHeaderSize();

@@ -66,7 +66,6 @@ class Device_t {
 		DevicePowerMode 	PowerMode	= DevicePowerMode::CONST;
 		uint8_t         	PowerModeVoltage = 220;
 
-		string          	FirmwareVersion = Settings.Firmware.ToString();
 		uint8_t         	Temperature = 0;
 		uint16_t			CurrentVoltage = 0;
 

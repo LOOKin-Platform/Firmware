@@ -14,6 +14,9 @@ void Wireless_t::StartInterfaces() {
 	if (BlockRestartForever)
 		return;
 
+	if (Device.Status == UPDATING)
+		return;
+
 	ESP_LOGI(tag, "StartInterfaces");
 
 	if (!WiFi.IsRunning()) {
@@ -47,6 +50,9 @@ void Wireless_t::StopBluetooth() {
 }
 
 void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand, bool IsScheduled) {
+	if (Device.Status == UPDATING)
+		return;
+
 	string UpdatedString = WebServer.UDPUpdatedBody(SensorID, EventID, Operand);
 
 	if (WiFi.IsRunning())

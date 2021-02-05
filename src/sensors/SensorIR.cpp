@@ -152,6 +152,13 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageEnd() {
+
+			for (auto &Item : SensorIRCurrentMessage)
+				if (abs(Item) <= Settings.SensorsConfig.IR.ValueThreshold) {
+					SensorIRCurrentMessage.empty();
+					return;
+				}
+
 			bool IsOdd = false;
 
 			uint64_t Length = NewSignalEnd - NewSignalStart;
