@@ -97,7 +97,7 @@ void DataEndpoint_t::Defragment() {
 void DataEndpoint_t::Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Size) {
 	uint32_t Counter = 0;
 
-    const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
+    const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
     if (Partition == NULL) return;
 
 	static char ReadBuffer[MemoryBlockSize - MinRecordSize];
@@ -115,7 +115,7 @@ void DataEndpoint_t::Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Siz
 }
 
 void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
-    const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
+    const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
     if (Partition == NULL) return;
 
     if (Start + Length > spi_flash_get_chip_size())
@@ -179,7 +179,7 @@ bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 			DeleteItem(ItemName);						// delete to write at new location
 	}
 
-    const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
+    const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
     if (Partition == NULL) return false;
 
     static uint32_t AddressToSave = 0;
@@ -207,7 +207,7 @@ string DataEndpoint_t::GetItem(string ItemName) {
 	if (ItemName == FREE_MEMORY_NVS)
 		return "";
 
-    const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
+    const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
 
     if (Partition == NULL) return "";
 
@@ -256,7 +256,7 @@ bool DataEndpoint_t::DeleteStartedWith(string Key) {
 	if (Key == FREE_MEMORY_NVS)
 		return false;
 
-    const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
+    const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
     if (Partition == NULL) return false;
 
     for (string Key : Memory.FindAllStartedWith(Key))
@@ -277,7 +277,7 @@ void DataEndpoint_t::EraseAll() {
 	NVS Memory(DataEndpoint_t::NVSArea);
 	Memory.EraseNamespace();
 
-	const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
+	const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
 
     if (Partition != NULL)
     	::esp_partition_erase_range(Partition, 0, Partition->size);
@@ -287,7 +287,7 @@ bool DataEndpoint_t::IsHomeKitEnabled() 		{ return HomeKit::IsEnabledForDevice()
 bool DataEndpoint_t::IsHomeKitExperimental()	{ return HomeKit::IsExperimentalMode();	}
 
 void DataEndpoint_t::Debug(string Tag) {
-    const esp_partition_t *Partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
+    const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
 
     if (Partition == NULL) return;
 

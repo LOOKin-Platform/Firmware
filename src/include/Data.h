@@ -28,6 +28,7 @@ class DataEndpoint_t {
 		static 	const char		*Tag;
 		static 	string 			NVSArea;
 		const 	char*			PartitionName 	= "dataitems";
+		const 	uint8_t			PartitionType	= 0x81;
 
 		static 	const uint16_t	MinRecordSize 	= 2048;
 		static 	const uint16_t	MaxRecordsNum 	= 1024;

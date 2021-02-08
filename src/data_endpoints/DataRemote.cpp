@@ -267,8 +267,6 @@ class DataDevice_t {
 			// virtual AC functions
 			{ "acmode"	, 0xE0 }, { "actemp", 0xE1 }, { "acfan", 0xE2 }, { "acswing", 0xE3 }
 		};
-
-
 };
 
 class DataRemote_t : public DataEndpoint_t {
