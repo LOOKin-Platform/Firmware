@@ -65,7 +65,7 @@ class SensorMeteo_t : public Sensor_t {
 		}
 
 		void Pool() override {
-			if (Time::Uptime() %2 != 0) // read temp only in 2 seconds interval
+			if (Time::Uptime() %3 != 0) // read temp only in 3 seconds interval
 				return;
 
 			if (Settings.eFuse.Type != Settings.Devices.Remote)

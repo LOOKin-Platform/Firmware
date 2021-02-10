@@ -23,6 +23,8 @@ static uint64_t 			LastSignalEnd 	= 0;
 static uint64_t				NewSignalStart	= 0;
 static uint64_t 			NewSignalEnd	= 0;
 
+static uint16_t				RepeatPause 	= 0;
+
 static esp_timer_handle_t 	SignalReceivedTimer = NULL;
 
 static string 				SensorIRACCheckBuffer 	= "";
@@ -64,10 +66,10 @@ class SensorIR_t : public Sensor_t {
 			if (LastSignal.Protocol == IR_PROTOCOL_RAW && LastSignal.RawData.size() == 0) {
 				SetValue(0, "Primary"		, SignalDetectionTime);
 				SetValue(0, "Signal"		, SignalDetectionTime);
-				SetValue(0, "Frequency"		, SignalDetectionTime);
 				SetValue(0, "Raw"			, SignalDetectionTime);
 				SetValue(0, "IsRepeated"	, SignalDetectionTime);
 				SetValue(0, "RepeatSignal"	, SignalDetectionTime);
+				SetValue(0, "RepeatPause"	, SignalDetectionTime);
 				return;
 			}
 
@@ -76,10 +78,11 @@ class SensorIR_t : public Sensor_t {
 
 			SetValue(LastSignal.Protocol			, "Primary"		, SignalDetectionTime);
 			SetValue(LastSignal.Uint32Data			, "Signal" 		, SignalDetectionTime);
-			SetValue(LastSignal.Frequency			, "Frequency" 	, SignalDetectionTime);
 			SetValue(0								, "Raw"			, SignalDetectionTime);
 			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated"	, SignalDetectionTime);
 			SetValue(0								, "RepeatSignal", SignalDetectionTime);
+			SetValue(0								, "RepeatPause"	, SignalDetectionTime);
+
 		}
 
 		string FormatValue(string Key = "Primary") override {
@@ -89,9 +92,6 @@ class SensorIR_t : public Sensor_t {
 			if (Key == "Signal" && LastSignal.Protocol == IR_PROTOCOL_RAW)
 				return "0";
 
-			if (Key == "Frequency")
-				return Converter::ToString(LastSignal.Frequency);
-
 			if (Key == "Raw")
 				return LastSignal.GetRawSignal();
 
@@ -100,6 +100,9 @@ class SensorIR_t : public Sensor_t {
 
 			if (Key == "RepeatSignal")
 				return RepeatCode;
+
+			if (Key == "RepeatPause")
+				return (LastSignal.IsRepeated) ? Converter::ToString(RepeatPause) : "0";
 
 			return Converter::ToHexString(Values[Key].Value, 8);
 		}
@@ -152,7 +155,6 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageEnd() {
-
 			for (auto &Item : SensorIRCurrentMessage)
 				if (abs(Item) <= Settings.SensorsConfig.IR.ValueThreshold) {
 					SensorIRCurrentMessage.empty();
@@ -181,6 +183,8 @@ class SensorIR_t : public Sensor_t {
 				}
 			}
 
+			LastSignal.IsRepeated = false;
+
 			RepeatCode = "";
 
 			uint64_t Pause = (LastSignalEnd > 0) ? NewSignalStart - LastSignalEnd : 0;
@@ -208,8 +212,11 @@ class SensorIR_t : public Sensor_t {
 				else
 					LastSignal = FollowingSignal;
 			}
-			else
+			else if (Pause <= Settings.SensorsConfig.IR.SignalPauseMax) {
 				LastSignal.IsRepeated = true;
+
+				RepeatPause = (Pause > numeric_limits<uint16_t>::max()) ? numeric_limits<uint16_t>::max() :  Pause;
+			}
 
 			FollowingSignal = IRLib();
 
