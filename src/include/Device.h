@@ -87,7 +87,7 @@ class Device_t {
 		static void			SetIDToNVS(uint32_t);
 
 		static bool 		GetEcoFromNVS();
-		static void 		SetEcoFromNVS(bool);
+		static void 		SetEcoToNVS(bool);
 
 		static bool			GetSensorModeFromNVS();
 		static void			SetSensorModeToNVS(bool);

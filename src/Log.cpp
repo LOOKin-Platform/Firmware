@@ -252,21 +252,20 @@ bool Log::VerifyLastBoot() {
 void Log::Indicator_t::Display(uint16_t LogItem) {
 
 	switch (LogItem) {
-		case Events::System::DeviceOn		: Execute(0		, 255	, 255	, BLINKING	, 10);	break;
-		case Events::WiFi::APStart			: Execute(255	, 255	, 0		, CONST		, 4);	break;
-		case Events::WiFi::STAConnecting	: Execute(0		, 255	, 0		, BLINKING	, 0);	break;
-		case Events::WiFi::STAGotIP			: Execute(0		, 255	, 0		, CONST		, 4);	break;
-		case Events::System::OTAStarted		: Execute(230	, 57 	, 155	, BLINKING	, 300);	break;
-		case Events::System::OTAFailed		:
-		case Events::System::OTAVerifyFailed: Execute(0		, 0 	, 0		, CONST		, 2);	break;
+		case Events::System		::DeviceOn			: Execute(0		, 255	, 255	, BLINKING	, 10);	break;
+		case Events::WiFi		::APStart			: Execute(255	, 255	, 0		, CONST		, 4);	break;
+		case Events::WiFi		::STAConnecting		: Execute(0		, 255	, 0		, BLINKING	, 0);	break;
+		case Events::WiFi		::STAGotIP			: Execute(0		, 255	, 0		, CONST		, 4);	break;
+		case Events::System		::OTAStarted		: Execute(230	, 57 	, 155	, BLINKING	, 300);	break;
+		case Events::System		::OTAFailed			:
+		case Events::System		::OTAVerifyFailed	: Execute(0		, 0 	, 0		, CONST		, 2);	break;
 
-		case Events::System::PowerManageOn	: Execute(0		, 255	, 255	, CONST		, 5);	break;
+		case Events::System		::PowerManageOn		: Execute(255	, 239	, 213 	, CONST		, 3);	break;
 
-		case Events::Commands::IRExecuted	:
-		case Events::Sensors ::IRReceived	:
-			Execute(60, 0, 0, STROBE, 2);	break;
+		case Events::Commands	::IRExecuted		:
+		case Events::Sensors 	::IRReceived		: Execute(60, 0, 0, STROBE, 2);	break;
 
-		case Events::Misc::HomeKitIdentify	: Execute(255	, 255	, 0		, BLINKING	, 5);	break;
+		case Events::Misc		::HomeKitIdentify	: Execute(255	, 255	, 0		, BLINKING	, 5);	break;
 
 		default: break;
 	}

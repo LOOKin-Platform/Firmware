@@ -231,7 +231,7 @@ bool Device_t::GetEcoFromNVS() {
 	return (Memory.GetInt8Bit(NVSDeviceEco) == 1) ? true : false;
 }
 
-void Device_t::SetEcoFromNVS(bool Eco) {
+void Device_t::SetEcoToNVS(bool Eco) {
 	NVS Memory(NVSDeviceArea);
 	Memory.SetInt8Bit(NVSDeviceEco, (Eco) ? 1 : 0);
 	Memory.Commit();
@@ -392,9 +392,11 @@ bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& 
 bool Device_t::POSTEco(map<string,string> Params) {
 	if (Params.count("ecomode") > 0) {
 		bool EcoOn = Converter::ToLower(Params["ecomode"]) == "on" ? true : false;
-		SetEcoFromNVS(EcoOn);
+		SetEcoToNVS(EcoOn);
 
 		PowerManagement::SetPMType(EcoOn, (Device.PowerMode == CONST));
+
+		Log::Add((EcoOn) ? Log::Events::System::PowerManageOn : Log::Events::System::PowerManageOff);
 
 		return true;
 	}

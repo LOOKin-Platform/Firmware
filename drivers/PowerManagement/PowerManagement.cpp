@@ -19,11 +19,6 @@ void PowerManagement::SetPMType(PowerManagementType PMType) {
 
 	ActivePMType = PMType;
 
-	if (PMType > 0)
-		Log::Add(Log::Events::System::PowerManageOn);
-	else
-		Log::Add(Log::Events::System::PowerManageOff);
-
 	SetWiFiOptions();
 	SetBLEOptions();
 	SetPMOptions();
