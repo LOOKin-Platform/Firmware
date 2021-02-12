@@ -62,9 +62,6 @@ void app_main(void) {
 
 	BootAndRestore::OnDeviceStart();
 
-	PowerManagement::SetIsActive((Settings.eFuse.Type == 0x81) ? false : true);
-	//PowerManagement::SetIsActive(true);
-
 	Network.WiFiScannedList = WiFi.Scan();
 
 	Time::SetTimezone();

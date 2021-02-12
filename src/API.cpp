@@ -90,13 +90,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 
 		if (Query.GetURLPartsCount() == 2 && (Query.CheckURLPart("network", 0)) && (Query.CheckURLPart("currentssid", 1)))
 			return;
-
-		// ECO mode test
-		if (Query.GetURLPartsCount() > 1 && (Query.CheckURLPart("eco", 0)))
-		{
-			PowerManagement::SetIsActive(Query.GetStringURLPartByNumber(1) == "on");
-			Response.SetSuccess();
-		}
 	}
 
 	if (Response.Body == "" && Response.ResponseCode == WebServer_t::Response::CODE::OK) {

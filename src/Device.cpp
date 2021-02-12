@@ -65,6 +65,8 @@ void Device_t::Init() {
 			SensorMode 			= GetSensorModeFromNVS();
 			break;
 	}
+
+	PowerManagement::SetPMType(GetEcoFromNVS(), (PowerMode == DevicePowerMode::CONST));
 }
 
 void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
@@ -89,6 +91,8 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			if (Query.CheckURLPart("firmware"		, 1))	Result.Body = FirmwareVersionToString();
 			if (Query.CheckURLPart("temperature"	, 1))	Result.Body = TemperatureToString();
 			if (Query.CheckURLPart("homekit"		, 1))	Result.Body = HomeKitToString();
+			if (Query.CheckURLPart("ecomode"		, 1))	Result.Body = EcoToString();
+
 			if (Query.CheckURLPart("restart"		, 1))	esp_restart();
 
 			if ((Query.CheckURLPart("sensormode", 1)) && Device.Type.Hex == Settings.Devices.Remote)
@@ -118,10 +122,11 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			bool isNameSet            	= POSTName(Params);
 			bool isTimeSet            	= POSTTime(Params);
 			bool isTimezoneSet        	= POSTTimezone(Params);
+			bool isEcoSet				= POSTEco(Params);
 			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Query.GetRequest(), Query.Transport);
 			bool isSensorModeSet		= POSTSensorMode(Params, Result);
 
-			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet) && Result.Body == "")
+			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet || isEcoSet) && Result.Body == "")
 				Result.Body = "{\"success\" : \"true\"}";
 		}
 
@@ -183,7 +188,8 @@ JSON Device_t::RootInfo() {
 		make_pair("CurrentVoltage"	, CurrentVoltageToString()),
 		make_pair("Firmware"		, FirmwareVersionToString()),
 		make_pair("Temperature"		, TemperatureToString()),
-		make_pair("HomeKit"			, HomeKitToString())
+		make_pair("HomeKit"			, HomeKitToString()),
+		make_pair("EcoMode"			, EcoToString())
 	}));
 
 	if (Device.Type.Hex == Settings.Devices.Remote)
@@ -217,6 +223,18 @@ void Device_t::SetTypeToNVS(uint8_t Type) {
 uint32_t Device_t::GetIDFromNVS() {
 	NVS Memory(NVSDeviceArea);
 	return Memory.GetUInt32Bit(NVSDeviceID);
+}
+
+bool Device_t::GetEcoFromNVS() {
+	ESP_LOGE("!", "Device_t::GetEcoFromNVS");
+	NVS Memory(NVSDeviceArea);
+	return (Memory.GetInt8Bit(NVSDeviceEco) == 1) ? true : false;
+}
+
+void Device_t::SetEcoFromNVS(bool Eco) {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetInt8Bit(NVSDeviceEco, (Eco) ? 1 : 0);
+	Memory.Commit();
 }
 
 void Device_t::SetIDToNVS(uint32_t ID) {
@@ -369,8 +387,21 @@ bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& 
 	}
 
 	return false;
-
 }
+
+bool Device_t::POSTEco(map<string,string> Params) {
+	if (Params.count("ecomode") > 0) {
+		bool EcoOn = Converter::ToLower(Params["ecomode"]) == "on" ? true : false;
+		SetEcoFromNVS(EcoOn);
+
+		PowerManagement::SetPMType(EcoOn, (Device.PowerMode == CONST));
+
+		return true;
+	}
+
+	return false;
+}
+
 
 string Device_t::TypeToString() {
 	return Type.ToString();
@@ -433,3 +464,8 @@ string Device_t::HomeKitToString() {
 	if (!HomeKit::IsEnabledForDevice()) return "0";
 	return (HomeKit::IsExperimentalMode()) ? "2" : "1";
 }
+
+string Device_t::EcoToString() {
+	return GetEcoFromNVS() ? "on" : "off";
+}
+

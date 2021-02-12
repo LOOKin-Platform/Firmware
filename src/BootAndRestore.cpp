@@ -80,6 +80,14 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		NVS Memory(NVSLogArea);
 		Memory.EraseStartedWith(NVSLogArray);
 	}
+
+	// Set sensor mode on for all updated and new devices
+	if (OldFirmware < "2.14")
+	{
+		NVS Memory(NVSDeviceArea);
+		Memory.SetInt8Bit(NVSDeviceEco, 1);
+		Memory.Commit();
+	}
 }
 
 void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {

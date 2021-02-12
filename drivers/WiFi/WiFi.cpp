@@ -146,7 +146,6 @@ void WiFi_t::Init() {
 void WiFi_t::DeInit() {
 	if (!m_initCalled) return;
 
-	::esp_wifi_set_ps(WIFI_PS_NONE);
 	::esp_wifi_stop();
 	::esp_wifi_deinit();
 

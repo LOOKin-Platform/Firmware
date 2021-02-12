@@ -31,6 +31,8 @@ void EnergyPeriodicHandler::Pool() {
 	    uint16_t ConstValueSrc		= 0;
 	    uint16_t BatteryValueSrc	= 0;
 
+		ESP_LOGE("POWER MANAGEMENT MODE", "%d", PowerManagement::GetPMType());
+
 		if (Settings.GPIOData.GetCurrent().PowerMeter.ConstPowerChannel != ADC1_CHANNEL_MAX)
 			ConstValueSrc	= (uint16_t)adc1_get_raw(Settings.GPIOData.GetCurrent().PowerMeter.ConstPowerChannel);
 
@@ -41,14 +43,16 @@ void EnergyPeriodicHandler::Pool() {
 		uint16_t BatteryValue 		= Converter::VoltageFromADC(BatteryValueSrc, 100, 51 );
 
 		if (ConstValue > 5000) {
-			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::BATTERY)
-				PowerManagement::SetIsActive(false);
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::BATTERY) {
+				PowerManagement::SetPMType(Device.GetEcoFromNVS(), true);
+			}
 
 			Device.PowerMode = DevicePowerMode::CONST;
 		}
 		else {
-			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::CONST)
-				PowerManagement::SetIsActive(true);
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::CONST) {
+				PowerManagement::SetPMType(Device.GetEcoFromNVS(), false);
+			}
 
 			Device.PowerMode = DevicePowerMode::BATTERY;
 		}

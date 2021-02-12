@@ -214,7 +214,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE ||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_EXPIRE)
 			{
-				::esp_wifi_set_ps(WIFI_PS_NONE);
 				FreeRTOS::Sleep(5000);
 			}
 
@@ -274,6 +273,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 				if (!IsIPCheckSuccess)
 					return ESP_OK;
 
+				PowerManagement::SetWiFiOptions();
 
 				WiFi.IsIPCheckSuccess 		= true;
 				Wireless.IsFirstWiFiStart 	= false;

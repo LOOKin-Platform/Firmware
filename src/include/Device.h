@@ -40,6 +40,7 @@ using namespace std;
 #define NVSDevicePowerMode			"PowerMode"
 #define	NVSDevicePowerModeVoltage	"PowerModeVoltage"
 #define	NVSDeviceSensorMode			"SensorMode"
+#define	NVSDeviceEco				"Eco"
 
 class DeviceType_t {
 	public:
@@ -85,6 +86,9 @@ class Device_t {
 		static uint32_t		GetIDFromNVS();
 		static void			SetIDToNVS(uint32_t);
 
+		static bool 		GetEcoFromNVS();
+		static void 		SetEcoFromNVS(bool);
+
 		static bool			GetSensorModeFromNVS();
 		static void			SetSensorModeToNVS(bool);
 
@@ -104,6 +108,7 @@ class Device_t {
 		bool 				POSTTimezone(map<string,string>);
 		bool 				POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request, WebServer_t::QueryTransportType);
 		bool 				POSTSensorMode(map<string,string>, WebServer_t::Response &);
+		bool 				POSTEco(map<string,string> Params);
 
 		string 				StatusToString();
 		string 				NameToString();
@@ -113,6 +118,7 @@ class Device_t {
 		string 				CurrentVoltageToString();
 		string				SensorModeToString();
 		string				MRDCToString();
+		string				EcoToString();
 };
 
 #endif

@@ -23,8 +23,11 @@ struct PowerManagementLock {
 
 class PowerManagement {
 	public:
-		static void SetIsActive(bool);
-		static bool GetIsActive();
+		enum PowerManagementType { NONE, LIGHT, MAX };
+
+		static void SetPMType(PowerManagementType);
+		static void SetPMType(bool IsActive, bool IsConstPower);
+		static PowerManagementType GetPMType();
 
 		static void SetPMOptions();
 		static void SetWiFiOptions();
@@ -34,7 +37,7 @@ class PowerManagement {
 		static void ReleaseLock(string);
 	private:
 		static map<string, PowerManagementLock> Locks;
-		static bool IsActive;
+		static PowerManagementType ActivePMType;
 
 };
 

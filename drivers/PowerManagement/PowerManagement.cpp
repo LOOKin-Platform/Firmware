@@ -7,17 +7,19 @@
 
 static char tag[] = "PowerManagement";
 
-bool PowerManagement::IsActive = false;
+PowerManagement::PowerManagementType PowerManagement::ActivePMType = NONE;
 map<string, PowerManagementLock> PowerManagement::Locks = map<string, PowerManagementLock>();
 
 
-void PowerManagement::SetIsActive(bool Value) {
-	if (Value == IsActive)
+void PowerManagement::SetPMType(PowerManagementType PMType) {
+	if (PMType == ActivePMType)
 		return;
 
-	IsActive = Value;
+	ESP_LOGE("PowerManagement::SetPMType", "%d", PMType);
 
-	if (IsActive)
+	ActivePMType = PMType;
+
+	if (PMType > 0)
 		Log::Add(Log::Events::System::PowerManageOn);
 	else
 		Log::Add(Log::Events::System::PowerManageOff);
@@ -27,16 +29,23 @@ void PowerManagement::SetIsActive(bool Value) {
 	SetPMOptions();
 }
 
-bool PowerManagement::GetIsActive() {
-	return IsActive;
+void PowerManagement::SetPMType(bool IsActive, bool IsConstPower) {
+	if (IsConstPower)
+		SetPMType((IsActive) ? PowerManagement::LIGHT : PowerManagement::NONE);
+	else
+		SetPMType((IsActive) ? PowerManagement::MAX : PowerManagement::LIGHT);
+}
+
+PowerManagement::PowerManagementType PowerManagement::GetPMType() {
+	return ActivePMType;
 }
 
 void PowerManagement::SetPMOptions() {
 	esp_pm_config_esp32_t pm_config;
 
 	pm_config.max_freq_mhz 			= 160;
-    pm_config.min_freq_mhz 			= (IsActive) ? 40 : 160;
-    pm_config.light_sleep_enable 	= IsActive;
+    pm_config.min_freq_mhz 			= (ActivePMType != NONE) ? 40 : 160;
+    pm_config.light_sleep_enable 	= (ActivePMType != NONE);
 
     esp_err_t ret;
     if((ret = esp_pm_configure(&pm_config)) != ESP_OK)
@@ -44,18 +53,24 @@ void PowerManagement::SetPMOptions() {
 }
 
 void PowerManagement::SetWiFiOptions() {
-	::esp_wifi_set_ps(IsActive ? WIFI_PS_MAX_MODEM : WIFI_PS_NONE);
+	switch (ActivePMType)
+	{
+		case NONE	: esp_wifi_set_ps(WIFI_PS_NONE); break;
+		case LIGHT	: esp_wifi_set_ps(WIFI_PS_MIN_MODEM); break;
+		case MAX	: esp_wifi_set_ps(WIFI_PS_MAX_MODEM); break;
+
+	}
 }
 
 void PowerManagement::SetBLEOptions() {
 	if (BLE::IsRunning())
-		BLE::SetSleep(IsActive);
+		BLE::SetSleep((ActivePMType == NONE) ? false : true);
 }
 
 void PowerManagement::AddLock(string LockName) {
 	PowerManagementLock Lock;
 
-	if (!IsActive) {
+	if (ActivePMType == NONE) {
 		ESP_LOGE(tag, "PowerManagement not in active state. Can't set lock %s", LockName.c_str());
 		return;
 	}
