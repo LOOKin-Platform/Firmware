@@ -31,8 +31,6 @@ void EnergyPeriodicHandler::Pool() {
 	    uint16_t ConstValueSrc		= 0;
 	    uint16_t BatteryValueSrc	= 0;
 
-		ESP_LOGE("POWER MANAGEMENT MODE", "%d", PowerManagement::GetPMType());
-
 		if (Settings.GPIOData.GetCurrent().PowerMeter.ConstPowerChannel != ADC1_CHANNEL_MAX)
 			ConstValueSrc	= (uint16_t)adc1_get_raw(Settings.GPIOData.GetCurrent().PowerMeter.ConstPowerChannel);
 

@@ -226,7 +226,6 @@ uint32_t Device_t::GetIDFromNVS() {
 }
 
 bool Device_t::GetEcoFromNVS() {
-	ESP_LOGE("!", "Device_t::GetEcoFromNVS");
 	NVS Memory(NVSDeviceArea);
 	return (Memory.GetInt8Bit(NVSDeviceEco) == 1) ? true : false;
 }
