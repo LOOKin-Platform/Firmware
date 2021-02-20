@@ -117,6 +117,10 @@ class WiFi_t {
 		static esp_netif_t* NetIfSTAHandle;
 		static esp_netif_t* NetIfAPHandle;
 
+	    static esp_event_handler_instance_t instance_any_id;
+	    static esp_event_handler_instance_t instance_got_ip;
+
+
 	public:
 		void                Init();
 		void 				DeInit();
