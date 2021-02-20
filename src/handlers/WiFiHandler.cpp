@@ -61,7 +61,10 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 			ClientModeNextTime = 0;
 
 			if (WiFi_t::GetAPClientsCount() == 0 && Network.WiFiSettings.size() > 0) {
-				WiFi.DeInit();
+				//WiFi.DeInit();
+				::esp_wifi_stop();
+				//FreeRTOS::Sleep(1000);
+
 				Network.WiFiScannedList = WiFi.Scan();
 				Wireless.StartInterfaces();
 				SetClientModeNextTime(Settings.WiFi.STAModeInterval);
