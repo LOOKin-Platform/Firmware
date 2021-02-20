@@ -423,6 +423,7 @@ class DataRemote_t : public DataEndpoint_t {
 			while(it != IRDevicesCache.end()) {
 
 			    if (it->DeviceID == UUID) {
+			    	it->Functions.clear();
 			        it = IRDevicesCache.erase(it);
 			    }
 			    else ++it;
@@ -1189,6 +1190,8 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			bool SaveFunction(string UUID, string Function, string Item, uint8_t Index, uint8_t DeviceType) {
+				ESP_LOGE("SaveFunction", "%s", Item.c_str());
+
 				if (!DevicesHelper.IsValidKeyForType(DeviceType, Function))
 					return static_cast<uint8_t>(DataRemote_t::Error::UnsupportedFunction);
 

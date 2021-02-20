@@ -74,7 +74,10 @@ void DataEndpoint_t::Defragment() {
 		}
 	}
 
-    if (MemoryMap.size() == 0) return;
+    if (MemoryMap.size() == 0) {
+    	EraseAll();
+    	return;
+    }
 
     sort(MemoryMap.begin(), MemoryMap.end());
 
@@ -92,6 +95,32 @@ void DataEndpoint_t::Defragment() {
     }
 
 	nvs_close(handle);
+
+    // check last free address
+	nvs_open(DataEndpoint_t::NVSArea.c_str(), NVS_READONLY, &handle);
+	vector<uint32_t> FindFreeMemoryAddresVector = vector<uint32_t>();
+
+	nvs_iterator_t FreeIt = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY);
+	while (FreeIt != NULL)
+	{
+		nvs_entry_info_t info;
+		nvs_entry_info(FreeIt, &info);
+		FreeIt = nvs_entry_next(FreeIt);
+
+		uint64_t AddressAndSize;
+		esp_err_t nvs_err = nvs_get_u64(handle, info.key, &AddressAndSize);
+
+		if (nvs_err == ESP_OK)
+			FindFreeMemoryAddresVector.push_back((uint32_t)(AddressAndSize >> 32) + (uint32_t)((AddressAndSize << 32) >> 32));
+	}
+
+    sort(FindFreeMemoryAddresVector.begin(), FindFreeMemoryAddresVector.end());
+
+	nvs_close(handle);
+
+	if (FindFreeMemoryAddresVector.size() > 0) {
+		SetFreeMemoryAddress(FindFreeMemoryAddresVector.back());
+	}
 }
 
 void DataEndpoint_t::Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Size) {
@@ -136,14 +165,13 @@ void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
     ::esp_partition_read(Partition, Start + Length	, TailBuffer, (BlockStart + BlocksToErase*MemoryBlockSize - Start - Length));
 
     /*
-    ESP_LOGE(Tag, "EraseRange() In data: Start: %d, Length: %d", Start, Length);
-    ESP_LOGE(Tag, "EraseRange() BlockStart: %d, BlocksToErase: %d", BlockStart, BlocksToErase);
-    ESP_LOGE(Tag, "EraseRange() Start address: %d, Size: %d", BlockStart, (Start - BlockStart));
-    ESP_LOGE(Tag, "EraseRange() End address: %d, Size: %d", Start + Length, (BlockStart + BlocksToErase*MemoryBlockSize - Start - Length));
+    ESP_LOGE(Tag, "EraseRange() In data: Start: %08X, Length: %08X", Start, Length);
+    ESP_LOGE(Tag, "EraseRange() BlockStart: %08X, BlocksToErase: %08X", BlockStart, BlocksToErase);
+    ESP_LOGE(Tag, "EraseRange() Start address: %08X, Size: %08X", BlockStart, (Start - BlockStart));
+    ESP_LOGE(Tag, "EraseRange() End address: %08X, Size: %08X", Start + Length, (BlockStart + BlocksToErase*MemoryBlockSize - Start - Length));
     */
 
-    for (int i=0; i < BlocksToErase; i++)
-    	::esp_partition_erase_range(Partition, (BlockStart + i*MemoryBlockSize) / MemoryBlockSize, BlockStart + BlocksToErase*MemoryBlockSize);
+    ::esp_partition_erase_range(Partition, BlockStart, BlocksToErase * MemoryBlockSize);
 
     if ((Start - BlockStart) > 0)
     	::esp_partition_write(Partition, BlockStart	, HeadBuffer, (Start - BlockStart));
@@ -168,6 +196,7 @@ bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 
     uint32_t ReplacementAddress = 0xFFFFFFFF;
 	uint64_t ExistedAddress = Memory.GetUInt64Bit(ItemName);
+
 	if (ExistedAddress > 0) { // key already exists
 		pair<uint32_t, uint32_t> CurrentAddress = SplitAddres(ExistedAddress);
 
@@ -192,9 +221,9 @@ bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 
     Memory.SetUInt64Bit(ItemName, JoinAddress(AddressToSave, Item.size()));
 
-    AddressToSave += Item.size();
-
-    SetFreeMemoryAddress(AddressToSave + Item.size());
+    if (ReplacementAddress == 0xFFFFFFFF) {
+        SetFreeMemoryAddress(AddressToSave + Item.size());
+    }
 
 	return true;
 }
@@ -214,7 +243,9 @@ string DataEndpoint_t::GetItem(string ItemName) {
     pair<uint32_t, uint32_t> AddressAndSize = SplitAddres(Memory.GetUInt64Bit(ItemName));
 
     char ReadBuffer[AddressAndSize.second];
-    esp_err_t Result = esp_partition_read(Partition, AddressAndSize.first, ReadBuffer, AddressAndSize.second);
+    memset(ReadBuffer, 0, AddressAndSize.second);
+
+    esp_err_t Result = esp_partition_read(Partition, AddressAndSize.first, &ReadBuffer[0], AddressAndSize.second);
 
     if (Result != ESP_OK) return "";
 
