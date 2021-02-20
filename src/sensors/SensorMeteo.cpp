@@ -141,7 +141,7 @@ class SensorMeteo_t : public Sensor_t {
 				uint32_t DeltaHumidity 	= (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
 				uint32_t DeltaTime 		= Time::Uptime() - PreviousHumidityTime;
 
-				if (DeltaHumidity < 3 && DeltaTime < 60)
+				if (DeltaHumidity < 4 && DeltaTime < 60)
 					ShouldUpdate = false;
 			}
 
@@ -165,7 +165,7 @@ class SensorMeteo_t : public Sensor_t {
 				uint32_t Delta 		= (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
 				uint32_t DeltaTime 	= Time::Uptime() - PreviousPressureTime;
 
-				if (Delta < 2 && DeltaTime < 60)
+				if (Delta < 50 && DeltaTime < 60)
 					ShouldUpdate = false;
 			}
 
@@ -192,11 +192,14 @@ class SensorMeteo_t : public Sensor_t {
 			Result.Humidity		= sensor_data.humidity;
 			Result.Pressure		= sensor_data.pressure;
 
-			return Result;
+			// корректировка значения BME280 (без учета времени старта, нахолодную)
+			float TempCorrection = 3;
+			if (Time::Uptime() < 1800)
+				TempCorrection = 0.9 * log10(Time::Uptime() + 1);
 
-			/*
-		        Temperature: 22.99oC, Humidity: 26.77%, Pressure: 101685.11Pa
-		    */
+			Result.Temperature -= TempCorrection;
+
+			return Result;
 		}
 
 		uint32_t ReceiveValue(string Key = "Primary") override {
