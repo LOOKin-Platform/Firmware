@@ -61,7 +61,8 @@ uint8_t Sensor_t::GetDeviceTypeHex() {
 
 void Sensor_t::UpdateSensors() {
 	for (auto& Sensor : Sensors)
-		Sensor->Update();
+		if (Sensor->ShouldUpdateInMainLoop())
+			Sensor->Update();
 }
 
 void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
@@ -85,31 +86,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			return;
 		}
 
-		if (Sensor->Values.size() > 0) {
-			JSON JSONObject;
-
-			if (Sensor->HasPrimaryValue())
-				JSONObject.SetItems(vector<pair<string,string>>({
-					make_pair("Value", Sensor->FormatValue()), make_pair("Updated", Converter::ToString(Sensor->Values["Primary"].Updated))
-				}));
-
-			// Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
-			if (Sensor->Values.size() > 1) {
-				for (const auto &Value : Sensor->Values)
-					if (Value.first != "Primary") {
-						SensorValueItem SensorValue = Value.second;
-
-						JSONObject.SetObject(Value.first,
-						{
-							{ "Value"   , Sensor->FormatValue(Value.first)},
-							{ "Updated" , Converter::ToString(SensorValue.Updated)}
-						});
-					}
-			}
-			Result.Body = JSONObject.ToString();
-
-			return;
-		}
+		Result.Body = Sensor->RootSensorJSON();
+		return;
 	}
 
 	// Запрос строковых значений состояния конкретного сенсора
@@ -117,26 +95,15 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 	if (Query.GetURLPartsCount() == 3) {
 		for (Sensor_t* Sensor : Sensors)
 			if (Query.CheckURLPart(Converter::ToLower(Sensor->Name),1)) {
-				if (Query.CheckURLPart("value",2)) {
-					Result.Body = Sensor->FormatValue();
-					break;
-				}
-
-				if (Query.CheckURLPart("updated",2)) {
-					Result.Body = Converter::ToString(Sensor->Values["Primary"].Updated);
-					break;
+				if (Converter::ToLower(Query.GetStringURLPartByNumber(2)) == "updated") {
+					Result.Body = Converter::ToString(Sensor->Updated);
+					return;
 				}
 
 				if (Sensor->Values.size() > 0)
 					for (const auto &Value : Sensor->Values) {
-
 						if (Query.CheckURLPart(Converter::ToLower(Value.first), 2)) {
-							JSON JSONObject;
-
-							JSONObject.SetItem("Value"	, Sensor->FormatValue(Value.first));
-							JSONObject.SetItem("Updated", Converter::ToString(Value.second.Updated));
-
-							Result.Body = JSONObject.ToString();
+							Result.Body = Sensor->FormatValue(Value.first);
 							break;
 						}
 					}
@@ -151,7 +118,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 					if (Query.CheckURLPart(Converter::ToLower(Value.first),2))
 					{
 						if (Query.CheckURLPart("value",3)) 		Result.Body = Sensor->FormatValue(Value.first);
-						if (Query.CheckURLPart("updated",3)) 	Result.Body = Converter::ToString(Value.second.Updated);
+						if (Query.CheckURLPart("updated",3)) 	Result.Body = Converter::ToString(Sensor->Updated);
 
 						break;
 					}
@@ -161,18 +128,47 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 
 // возвращаемое значение - было ли изменено значение в памяти
 bool Sensor_t::SetValue(uint32_t Value, string Key, uint32_t UpdatedTime) {
-	if (Values.count(Key) > 0) {
-		if (Values[Key].Value != Value || UpdatedTime > 0) {
-			Values[Key] = SensorValueItem(Value, (UpdatedTime > 0) ? UpdatedTime : Time::Unixtime());
-			return true;
+	bool IsChanged = SetValue(Value, Key);
+
+	if (IsChanged)
+		Updated = (UpdatedTime > 0) ? UpdatedTime : Time::Unixtime();
+
+	return IsChanged;
+}
+
+bool Sensor_t::SetValue(uint32_t Value, string Key) {
+	bool IsChanged = true;
+
+	if (Values.count(Key) > 0)
+		if (Values[Key] == Value)
+			IsChanged = false;
+
+	if (!IsChanged) return false;
+
+	Values[Key] = Value;
+
+	return true;
+}
+
+string Sensor_t::RootSensorJSON() {
+	if (Values.size() > 0) {
+		JSON JSONObject;
+
+		if (HasPrimaryValue())
+			JSONObject.SetItem("Value", FormatValue());
+
+		// Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
+		if (Values.size() > 1) {
+			for (const auto &Value : Values)
+				if (Value.first != "Primary")
+					JSONObject.SetItem(Value.first, FormatValue(Value.first));
 		}
-	}
-	else {
-		Values[Key] = SensorValueItem(Value, (UpdatedTime > 0) ? UpdatedTime : Time::Unixtime());
-		return true;
+
+		JSONObject.SetItem("Updated", Converter::ToString(Updated));
+		return JSONObject.ToString();
 	}
 
-	return false;
+	return "{}";
 }
 
 string Sensor_t::EchoSummaryJSON() {
@@ -188,9 +184,9 @@ string Sensor_t::EchoSummaryJSON() {
 	return Response.Body;
 }
 
-SensorValueItem Sensor_t::GetValue(string Key) {
-	if (!(Values.count(Key) > 0))
-		SetValue(ReceiveValue(Key));
+uint32_t Sensor_t::GetValue(string Key) {
+	if (Values.count(Key) == 0)
+		return Settings.Memory.Empty32Bit;
 
 	return Values[Key];
 }

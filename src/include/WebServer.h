@@ -41,8 +41,8 @@ class WebServer_t {
 				TYPE			ContentType		= TYPE::JSON ;
 
 				void 			SetSuccess();
-				void 			SetFail();
-				void			SetInvalid();
+				void 			SetFail(string Reason = "");
+				void			SetInvalid(string Reason = "");
 
 				void 			Clear();
 
@@ -88,7 +88,7 @@ class WebServer_t {
 
 		static string			UDPAliveBody();
 		static string			UDPDiscoverBody(string ID = "");
-		static string			UDPUpdatedBody(uint8_t SensorID, string Value, string Operand = "");
+		static string			UDPUpdatedBody(string SensorID, string Value, string Operand = "");
 
 		static string			AllowOriginHeader;
 	private:

@@ -22,6 +22,7 @@
 
 using namespace std;
 
+#define  NVSNetworkArea			"Network"
 #define  NVSNetworkWiFiSettings	"WiFiSettings"
 #define  NVSNetworkDevicesArray "Devices"
 #define  NVSNetworkAllowOrigin 	"AllowOrigin"

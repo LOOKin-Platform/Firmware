@@ -48,7 +48,7 @@ vector<Sensor_t*>	Sensors;
 vector<Command_t*>	Commands;
 
 RemoteControl_t		RemoteControl;
-MQTT_t				MQTT;
+LocalMQTT_t			LocalMQTT;
 
 const char tag[] = "Main";
 
@@ -69,6 +69,7 @@ void app_main(void) {
 	Device.Init();
 	Network.Init();
 	Automation.Init();
+	LocalMQTT.Init();
 	RemoteControl.Init();
 
 	Data = DataEndpoint_t::GetForDevice();

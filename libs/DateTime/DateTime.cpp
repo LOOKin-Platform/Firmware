@@ -105,6 +105,11 @@ bool Time::IsUptime(uint32_t Time) {
 	return (Time < 31536000) ? true : false;
 }
 
+uint32_t Time::UptimeToUnixTime(uint32_t Uptime) {
+	return Uptime + Offset + TimezoneOffset*3600;
+}
+
+
 void Time::ServerSync(string URL) {
 	if (Offset != 0)
 		return;

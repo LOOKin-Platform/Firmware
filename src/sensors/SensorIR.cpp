@@ -54,40 +54,46 @@ class SensorIR_t : public Sensor_t {
 
 			::esp_timer_create(&TimerArgs, &SignalReceivedTimer);
 
+			SetValue(0, "Protocol");
+			SetValue(0, "Signal");
+			SetValue(0, "Raw");
+			SetValue(0, "IsRepeated");
+			SetValue(0, "RepeatSignal");
+			SetValue(0, "RepeatPause");
+
 			SetIsInited(true);
 		}
 
+		bool HasPrimaryValue() override {
+			return false;
+		}
+
+		bool ShouldUpdateInMainLoop() override {
+			return false;
+		}
 
 		void Update() override {
 			Values.clear();
 
-			uint64_t SignalDetectionTime = NewSignalEnd;
-
-			if (LastSignal.Protocol == IR_PROTOCOL_RAW && LastSignal.RawData.size() == 0) {
-				SetValue(0, "Primary"		, SignalDetectionTime);
-				SetValue(0, "Signal"		, SignalDetectionTime);
-				SetValue(0, "Raw"			, SignalDetectionTime);
-				SetValue(0, "IsRepeated"	, SignalDetectionTime);
-				SetValue(0, "RepeatSignal"	, SignalDetectionTime);
-				SetValue(0, "RepeatPause"	, SignalDetectionTime);
-				return;
-			}
+			uint32_t SignalDetectionTime = Time::UptimeToUnixTime((uint32_t)(NewSignalEnd / 1000));
 
 			if (Time::IsUptime(SignalDetectionTime) && Time::Offset > 0)
 				SignalDetectionTime = Time::Unixtime() - (Time::Uptime() - SignalDetectionTime);
 
-			SetValue(LastSignal.Protocol			, "Primary"		, SignalDetectionTime);
-			SetValue(LastSignal.Uint32Data			, "Signal" 		, SignalDetectionTime);
-			SetValue(0								, "Raw"			, SignalDetectionTime);
-			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated"	, SignalDetectionTime);
-			SetValue(0								, "RepeatSignal", SignalDetectionTime);
-			SetValue(0								, "RepeatPause"	, SignalDetectionTime);
+			SetValue(LastSignal.Protocol			, "Protocol");
+			SetValue(LastSignal.Uint32Data			, "Signal");
+			SetValue(0								, "Raw");
+			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated");
+			SetValue(0								, "RepeatSignal");
+			SetValue(0								, "RepeatPause");
+
+			Updated = SignalDetectionTime;
 
 		}
 
 		string FormatValue(string Key = "Primary") override {
-			if (Key == "Primary")
-				return Converter::ToHexString(Values[Key].Value, 2);
+			if (Key == "Protocol")
+				return Converter::ToHexString(Values[Key], 2);
 
 			if (Key == "Signal" && LastSignal.Protocol == IR_PROTOCOL_RAW)
 				return "0";
@@ -104,7 +110,7 @@ class SensorIR_t : public Sensor_t {
 			if (Key == "RepeatPause")
 				return (LastSignal.IsRepeated) ? Converter::ToString(RepeatPause) : "0";
 
-			return Converter::ToHexString(Values[Key].Value, 8);
+			return Converter::ToHexString(Values[Key], 8);
 		}
 
 		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
@@ -189,8 +195,6 @@ class SensorIR_t : public Sensor_t {
 
 			uint64_t Pause = (LastSignalEnd > 0) ? NewSignalStart - LastSignalEnd : 0;
 
-			ESP_LOGE("PAUSE", "%d", (uint32_t)Pause);
-
 			FollowingSignal = IRLib(SensorIRCurrentMessage);
 
 			bool IsFollowingRepeatSignal = false;
@@ -240,14 +244,11 @@ class SensorIR_t : public Sensor_t {
 			if (LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
 				return;
 
+			Sensor_t* Sensor = Sensor_t::GetSensorByID(SensorIRID);
+			Sensor->Update();
+
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
-
-			/*
-			if (Settings.eFuse.DeviceID == 0x00000002) {
-				MQTT_t::SendMessage(LastSignal.GetRawSignal().c_str() , "/00000002/sensors/ir/raw", 2);
-			}
-			*/
 
 			if (Settings.eFuse.Type == Settings.Devices.Remote)
 				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(LastSignal);

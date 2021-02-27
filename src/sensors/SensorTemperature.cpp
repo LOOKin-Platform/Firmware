@@ -16,28 +16,28 @@ class SensorTemperature_t : public Sensor_t {
 			Name        = "Temperature";
 			EventCodes  = { 0x00, 0x01, 0x02 };
 
-			SetValue(0);
+			SetValue(0, "Primary");
 
 			SetIsInited(true);
 		}
 
 		void Update() override {
-			Wireless.SendBroadcastUpdated(ID, "00", Converter::ToHexString(GetValue().Value,4));
+			Wireless.SendBroadcastUpdated(ID, "00", Converter::ToHexString(GetValue(),4));
 			Automation.SensorChanged(ID);
 		};
 
 		string FormatValue(string Key = "Primary") override {
 			if (Key == "Primary")
-				return (Values[Key].Value >= 0x1000)
-						? "-" + Converter::ToString(((float)(Values[Key].Value-0x1000) / 10))
-						: Converter::ToString(((float)Values[Key].Value / 10));
+				return (Values[Key] >= 0x1000)
+						? "-" + Converter::ToString(((float)(Values[Key]-0x1000) / 10))
+						: Converter::ToString(((float)Values[Key] / 10));
 
-			return Converter::ToHexString(Values[Key].Value, 2);
+			return Converter::ToHexString(Values[Key], 2);
 		}
 
 		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
 			float Previous 	= ConvertToFloat(PreviousValue);
-			float Current 	= ConvertToFloat(GetValue().Value);
+			float Current 	= ConvertToFloat(GetValue());
 			float Operand	= ConvertToFloat(SceneEventOperand);
 
 			if (SceneEventCode == 0x02 && Previous <= Operand && Current > Operand)

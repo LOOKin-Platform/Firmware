@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 14, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 20, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -117,7 +117,7 @@ class Settings_t {
         	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_P6;//ESP_PWR_LVL_P3 и ESP_PWR_LVL_N0; - не работает на части мобильных телефонов?
 		} Bluetooth;
 
-		struct MQTT_t {
+		struct RemoteControl_t {
 			const string 					Server					= "mqtts://mqtt.look-in.club:8883";
 			const uint8_t					MaxConnectionTries		= 3;
 
@@ -125,7 +125,17 @@ class Settings_t {
 			const uint8_t					DefaultRetain			= 0;
 
 			const string					DeviceTopicPrefix		= "/devices/";
-		} MQTT;
+		} RemoteControl;
+
+		struct LocalMQTT_t {
+			const uint8_t					MaxConnectionTries		= 3;
+
+			const uint8_t					DefaultQOS				= 2;
+			const uint8_t					DefaultRetain			= 0;
+
+			const string					TopicPrefix				= "/LOOKin/";
+		} LocalMQTT;
+
 
 		struct WebServer_t {
 			const uint16_t					MaxQueryBodyLength		= 4096;

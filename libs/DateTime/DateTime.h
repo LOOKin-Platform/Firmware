@@ -33,21 +33,23 @@ struct DateTime_t {
 
 class Time {
   public:
-    static uint32_t   Offset;
-    static int8_t     TimezoneOffset;
+    static uint32_t		Offset;
+    static int8_t		TimezoneOffset;
 
-    static uint32_t   Uptime();
-    static uint64_t   UptimeU();
-    static uint32_t   Unixtime();
-    static DateTime_t DateTime();
-    static string     UnixtimeString();
-    static void       SetTime(string CurrentTime);
+    static uint32_t		Uptime();
+    static uint64_t		UptimeU();
+    static uint32_t		Unixtime();
+    static DateTime_t	DateTime();
+    static string		UnixtimeString();
+    static void			SetTime(string CurrentTime);
 
-    static void       SetTimezone();
-    static void       SetTimezone(string TimezoneOffset);
-    static int8_t     Timezone();
-    static string     TimezoneStr();
-    static bool       IsUptime(uint32_t Time);
+    static void			SetTimezone();
+    static void			SetTimezone(string TimezoneOffset);
+    static int8_t		Timezone();
+    static string		TimezoneStr();
+    static bool			IsUptime(uint32_t Time);
+
+    static uint32_t		UptimeToUnixTime(uint32_t);
 
     static void       ServerSync(string URL);
 

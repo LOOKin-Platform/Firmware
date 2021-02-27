@@ -8,7 +8,7 @@ set(srcs
 	"Log.cpp"
 	"main.cpp"
 	"RemoteControl.cpp"
-	"MQTT.cpp"
+	"LocalMQTT.cpp"
 	"Network.cpp"
 	"Query.cpp"
 	"Scenarios.cpp"

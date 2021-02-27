@@ -50,14 +50,25 @@ void Wireless_t::StopBluetooth() {
 }
 
 void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand, bool IsScheduled) {
+	SendBroadcastUpdated(Converter::ToHexString(SensorID, 2), EventID, Operand, IsScheduled);
+}
+
+void Wireless_t::SendBroadcastUpdated(string SensorOrServiceID, string EventID, string Operand, bool IsScheduled) {
 	if (Device.Status == UPDATING)
 		return;
 
-	string UpdatedString = WebServer.UDPUpdatedBody(SensorID, EventID, Operand);
+	string UpdatedString = WebServer.UDPUpdatedBody(SensorOrServiceID, EventID, Operand);
 
 	if (WiFi.IsRunning())
 	{
 		WebServer.UDPSendBroadcast(UpdatedString, IsScheduled);
+
+		if (LocalMQTT.GetStatus() == LocalMQTT_t::CONNECTED) {
+			Sensor_t* Sensor = Sensor_t::GetSensorByID(Converter::UintFromHexString<uint8_t>(SensorOrServiceID));
+
+			if (Sensor != nullptr)
+				LocalMQTT.SendMessage(Sensor->RootSensorJSON(), "/sensors/" + Converter::ToLower(Sensor->Name));
+		}
 
 		if (RemoteControl.GetStatus() == RemoteControl_t::CONNECTED)
 			RemoteControl.SendMessage(UpdatedString, "/devices/" + Device.IDToString() + "/UDP", 2);

@@ -7,7 +7,6 @@
 #include "Network.h"
 
 const char tag[] 				= "Network_t";
-const char NVSNetworkArea[]		= "Network";
 
 Network_t::Network_t() {}
 
@@ -388,6 +387,12 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 
 				Result.SetSuccess();
 			}
+
+			if (Query.CheckURLPart("localmqtt", 1)) {
+				Result.Body = LocalMQTT.GetCredentialsJSON();
+				Result.ContentType = WebServer_t::Response::TYPE::JSON;
+				return;
+			}
 		}
 
 		if (Query.GetURLPartsCount() == 3)
@@ -404,7 +409,6 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 					return;
 				}
 			}
-
 
 			if (Query.CheckURLPart("remotecontrol", 1))
 			{
@@ -453,6 +457,74 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			Result.SetSuccess();
 			return;
 		}
+
+		if (Query.GetURLPartsCount() >= 2 && Query.CheckURLPart("localmqtt", 1)) {
+			if (Query.GetURLPartsCount() == 2) {
+				map<string, string> Params = JSON(Query.GetBody()).GetItems();
+
+				bool IsActive = true;
+
+				if (Params.count("isactive") > 0)
+					if (Converter::ToLower(Params["isactive"]) == "false" || Converter::ToLower(Params["isactive"]) == "0")
+						IsActive = false;
+
+				string 		URI 	= (Params.count("serveruri") > 0)? Params["serveruri"]: "";
+				string 		Username= (Params.count("username") > 0) ? Params["username"] : "";
+				string 		Password= (Params.count("password") > 0) ? Params["password"] : "";
+				string 		ClientID= (Params.count("clientid") > 0) ? Params["clientid"] : "";
+
+				if (Params.count("isactive") > 0 && Params.size() == 1) {
+					LocalMQTT.SetIsActive(IsActive);
+
+					if (IsActive)
+						LocalMQTT.Start();
+					else
+						LocalMQTT.Stop();
+
+					Result.SetSuccess();
+					return;
+				}
+
+				if (URI == "") {
+					Result.SetFail("URI should be not empty");
+					return;
+				}
+
+				if (Username != Password && (Username == "" || Password == "")) {
+					Result.SetFail("Username and Password must be filled or both empty");
+					return;
+				}
+
+				if (ClientID == "") {
+					Result.SetFail("ClientID should be not empty");
+					return;
+				}
+
+				LocalMQTT.SetCredentials(IsActive, URI, Username, Password, ClientID);
+
+				Result.SetSuccess();
+				return;
+			}
+			else if (Query.GetURLPartsCount() == 3) {
+				if (Query.CheckURLPart("start", 2)) {
+					LocalMQTT.Start();
+					Result.SetSuccess();
+					return;
+				}
+
+				if (Query.CheckURLPart("stop", 2)) {
+					LocalMQTT.Stop();
+					Result.SetSuccess();
+					return;
+				}
+
+				if (Query.CheckURLPart("reconnect", 2)) {
+					LocalMQTT.Reconnect();
+					Result.SetSuccess();
+					return;
+				}
+			}
+		}
 	}
 
 	// DELETE запрос - удаление данных
@@ -481,7 +553,8 @@ JSON Network_t::RootInfo() {
 	JSONObject.SetItems(vector<pair<string,string>>({
 		make_pair("Mode"		, ModeToString()),
 		make_pair("IP"			, IPToString()),
-		make_pair("CurrentSSID"	, WiFiCurrentSSIDToString())
+		make_pair("CurrentSSID"	, WiFiCurrentSSIDToString()),
+		make_pair("LocalMQTT"	, LocalMQTT_t::GetStatusString())
 	}));
 
 	vector<string> WiFiSettingsVector = vector<string>();
@@ -500,6 +573,8 @@ JSON Network_t::RootInfo() {
 	});
 
 	JSONObject.SetObjectsArray("Map", NetworkMap);
+
+
 
 	return JSONObject;
 }

@@ -40,6 +40,10 @@ class SensorMeteo_t : public Sensor_t {
 			return false;
 		}
 
+		bool ShouldUpdateInMainLoop() override {
+			return false;
+		}
+
 		SensorMeteo_t() {
 			if (GetIsInited()) return;
 
@@ -47,7 +51,6 @@ class SensorMeteo_t : public Sensor_t {
 			Name        = "Meteo";
 			EventCodes  = { 0x00, 0x01, 0x02 };
 
-			SetValue(0);
 			SetValue(0, "Temperature");
 			SetValue(0, "Humidity");
 			SetValue(0, "Pressure");
@@ -57,11 +60,11 @@ class SensorMeteo_t : public Sensor_t {
 
 		string FormatValue(string Key = "Primary") override {
 			if (Key == "Primary" || Key == "Temperature")
-				return (Values[Key].Value >= 0x1000)
-						? "-" + Converter::ToString(((float)(Values[Key].Value-0x1000) / 10))
-						: Converter::ToString(((float)Values[Key].Value / 10));
+				return (Values[Key] >= 0x1000)
+						? "-" + Converter::ToString(((float)(Values[Key]-0x1000) / 10))
+						: Converter::ToString(((float)Values[Key] / 10));
 
-			return Converter::ToString(((float)Values[Key].Value)/10);
+			return Converter::ToString(((float)Values[Key])/10);
 		}
 
 		void Pool() override {
@@ -109,7 +112,7 @@ class SensorMeteo_t : public Sensor_t {
 
 		bool UpdateTempValue(float Temperature) {
 			uint32_t 	NewValue 	= ValueToUint32(Temperature, "Temperature");
-			uint32_t	OldValue	= GetValue().Value;
+			uint32_t	OldValue	= GetValue("Temperature");
 
 			bool ShouldUpdate = true;
 
@@ -133,7 +136,7 @@ class SensorMeteo_t : public Sensor_t {
 
 		bool UpdateHumidityValue(float Humidity) {
 			uint32_t 	NewValue 	= ValueToUint32(Humidity, "Humidity");
-			uint32_t	OldValue	= GetValue("Humidity").Value;
+			uint32_t	OldValue	= GetValue("Humidity");
 
 			bool ShouldUpdate = true;
 
@@ -157,7 +160,7 @@ class SensorMeteo_t : public Sensor_t {
 
 		void UpdatePressureValue(float Pressure) {
 			uint32_t 	NewValue 	= ValueToUint32(Pressure, "Pressure");
-			uint32_t	OldValue	= GetValue("Pressure").Value;
+			uint32_t	OldValue	= GetValue("Pressure");
 
 			bool ShouldUpdate = true;
 
@@ -216,11 +219,13 @@ class SensorMeteo_t : public Sensor_t {
 					return 0;
 			}
 
-			return GetValue(Key).Value;
+			return GetValue(Key);
 		};
 
 		void Update() override {
-			string NewStatus = Converter::ToHexString(GetValue("Temperature").Value,4) + Converter::ToHexString(GetValue("Humidity").Value,4);
+			Updated = Time::Unixtime();
+
+			string NewStatus = Converter::ToHexString(GetValue("Temperature"),4) + Converter::ToHexString(GetValue("Humidity"),4);
 
 			if (LastSendedStatus != NewStatus)
 			{

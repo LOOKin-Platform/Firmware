@@ -75,8 +75,8 @@ class SensorTouch_t : public Sensor_t {
 		}
 
 		void Update() override {
-			if (SetValue(ReceiveValue())) {
-				Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
+			if (SetValue(ReceiveValue(), "Primary"), 0) {
+				Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
 				Automation.SensorChanged(ID);
 			}
 		};

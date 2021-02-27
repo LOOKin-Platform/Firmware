@@ -38,7 +38,7 @@ class SensorMultiSwitch_t : public Sensor_t {
 					string Channel = "channel" + Converter::ToString<uint8_t>(i+1);
 					uint32_t Value = ReceiveValue(Channel);
 
-					if (Value != GetValue(Channel).Value)
+					if (Value != GetValue(Channel))
 					{
 						Wireless.SendBroadcastUpdated(ID, Converter::ToHexString((uint64_t)((i+1) * 16 + Value), 2));
 						Automation.SensorChanged(ID);
@@ -71,13 +71,12 @@ class SensorMultiSwitch_t : public Sensor_t {
 
 		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
 			if (SceneEventCode < 16)
-				return ((uint8_t)(GetValue().Value + 1) == SceneEventCode);
+				return ((uint8_t)(GetValue() + 1) == SceneEventCode);
 
 			uint8_t ChannelNum 	= (uint8_t)(SceneEventCode / 16);
 			uint8_t State		= (uint8_t)(SceneEventCode % 16);
-			SensorValueItem ValueItem = GetValue("channel" + ChannelNum);
 
-			if ((uint8_t)ValueItem.Value == State)
+			if ((uint8_t)GetValue("channel" + ChannelNum) == State)
 				return true;
 
 			return false;

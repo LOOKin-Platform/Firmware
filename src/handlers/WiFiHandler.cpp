@@ -205,6 +205,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			WebServer.HTTPStop();
 			WebServer.UDPStop();
 
+			LocalMQTT.Stop();
 			RemoteControl.Stop();
 
 			if (Device.Status == UPDATING)
@@ -331,12 +332,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
 
+			LocalMQTT.Start();
 			RemoteControl.Start();
-
-			/*
-			if (Settings.eFuse.DeviceID == 0x00000002)
-				MQTT.Start();
-			*/
 
 			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
 

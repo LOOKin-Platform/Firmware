@@ -19,8 +19,8 @@
 #include "WebServer.h"
 #include "BLEServer.h"
 #include "BLEClient.h"
+#include "LocalMQTT.h"
 #include "RemoteControl.h"
-#include "MQTT.h"
 #include "Wireless.h"
 #include "Settings.h"
 
@@ -44,6 +44,6 @@ extern BLEClient_t				BLEClient;
 
 extern Wireless_t				Wireless;
 extern RemoteControl_t			RemoteControl;
-extern MQTT_t					MQTT;
+extern LocalMQTT_t				LocalMQTT;
 
 #endif

@@ -93,8 +93,6 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			if (Query.CheckURLPart("homekit"		, 1))	Result.Body = HomeKitToString();
 			if (Query.CheckURLPart("ecomode"		, 1))	Result.Body = EcoToString();
 
-			if (Query.CheckURLPart("restart"		, 1))	esp_restart();
-
 			if ((Query.CheckURLPart("sensormode", 1)) && Device.Type.Hex == Settings.Devices.Remote)
 				Result.Body = SensorModeToString();
 
@@ -133,10 +131,17 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 		if (Query.GetURLPartsCount() == 2) {
 			if (Query.CheckURLPart("factory-reset", 1)) {
 				Result.SetSuccess();
-				BootAndRestore::HardReset();
+				BootAndRestore::HardReset(true);
+				return;
+			}
+
+			if (Query.CheckURLPart("reboot", 1)) {
+				Result.SetSuccess();
+				BootAndRestore::Reboot(true);
 				return;
 			}
 		}
+
 
 		if (Query.GetURLPartsCount() == 3) {
 			if (Query.CheckURLPart("firmware", 1)) {

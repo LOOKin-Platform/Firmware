@@ -96,7 +96,7 @@ void WebServer_t::SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Req
 	{
 		ESP_LOGE("REQUEST", "%s", Response.Body.c_str());
 		WebServer_t::SetHeaders(Response, Request);
-		esp_err_t Err = httpd_resp_send(Request, Response.Body.c_str(), Response.Body.size());
+		httpd_resp_send(Request, Response.Body.c_str(), Response.Body.size());
 	}
 }
 
@@ -285,7 +285,7 @@ void WebServer_t::UDPSendBroadcastDiscover() {
 
 void WebServer_t::UDPSendBroadcastUpdated(uint8_t SensorID, string EventID, uint8_t Repeat, string Operand) {
 	for (int i=0; i < Repeat; i++)
-		UDPSendBroadcast(UDPUpdatedBody(SensorID, EventID, Operand));
+		UDPSendBroadcast(UDPUpdatedBody(Converter::ToHexString(SensorID,2), EventID, Operand));
 }
 
 string WebServer_t::UDPAliveBody() {
@@ -305,8 +305,8 @@ string WebServer_t::UDPDiscoverBody(string ID) {
 	return Settings.WiFi.UDPPacketPrefix + Message;
 }
 
-string WebServer_t::UDPUpdatedBody(uint8_t SensorID, string Value, string Operand) {
-	string Message = "Updated!" + Device.IDToString() + ":" + Converter::ToHexString(SensorID, 2) + ":" + Value;
+string WebServer_t::UDPUpdatedBody(string SensorID, string Value, string Operand) {
+	string Message = "Updated!" + Device.IDToString() + ":" + SensorID + ":" + Value;
 
 	if (Operand != "") Message += ":" + Operand;
 
@@ -561,16 +561,24 @@ void WebServer_t::Response::SetSuccess() {
 	Body          	= "{\"success\" : \"true\"}";
 }
 
-void WebServer_t::Response::SetFail() {
+void WebServer_t::Response::SetFail(string Reason) {
 	ResponseCode  	= CODE::ERROR;
 	ContentType   	= TYPE::JSON;
-	Body          	= "{\"success\" : \"false\"}";
+
+	if (Reason == "")
+		Body = "{\"success\" : \"false\"}";
+	else
+		Body = "{\"success\" : \"false\", \"message\" : \"" + Reason + "\"}";
 }
 
-void WebServer_t::Response::SetInvalid() {
+void WebServer_t::Response::SetInvalid(string Reason) {
 	ResponseCode  	= CODE::INVALID;
 	ContentType   	= TYPE::JSON;
-	Body          	= "{\"success\" : \"false\"}";
+
+	if (Reason == "")
+		Body = "{\"success\" : \"false\"}";
+	else
+		Body = "{\"success\" : \"false\", \"message\" : \"" + Reason + "\"}";
 }
 
 void WebServer_t::Response::Clear() {

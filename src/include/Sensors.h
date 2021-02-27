@@ -25,37 +25,36 @@
 #include "HardwareIO.h"
 #include "DateTime.h"
 #include "Commands.h"
+#include "LocalMQTT.h"
 #include "Storage.h"
 #include "Log.h"
-#include "MQTT.h"
 
 using namespace std;
 
-struct SensorValueItem {
-	uint32_t		Value;
-	uint32_t		Updated;
-	SensorValueItem(uint32_t Value = 0, uint32_t Updated = 0) : Value(Value), Updated(Updated) {}
-};
-
 class Sensor_t {
 	public:
-		uint8_t           	ID = 0x0;
-		string            	Name;
-		vector<uint8_t>   	EventCodes;
+		uint8_t           			ID = 0x0;
+		string            			Name;
+		vector<uint8_t>   			EventCodes;
 
-		map<string, SensorValueItem> Values;
+		map<string, uint32_t> 		Values = map<string, uint32_t>();
+		uint32_t					Updated = 0;
+
 		Sensor_t();
 		virtual ~Sensor_t() = default;
 
 		virtual void				Update() {};
 		virtual uint32_t			ReceiveValue(string = "") 			{ return 0; };
 		virtual bool				CheckOperand(uint8_t, uint8_t) 		{ return false; };
-		virtual string				FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key).Value); };
+		virtual string				FormatValue(string Key = "Primary") { return Converter::ToString(GetValue(Key)); };
+
 		virtual bool				HasPrimaryValue() 					{ return true; }
+		virtual bool				ShouldUpdateInMainLoop()			{ return true; }
 
+		bool						SetValue(uint32_t Value, string Key, uint32_t UpdatedTime);
+		bool						SetValue(uint32_t Value, string Key);
 
-		bool						SetValue(uint32_t Value, string Key = "Primary", uint32_t UpdatedTime = 0);
-		SensorValueItem				GetValue(string Key = "Primary");
+		uint32_t					GetValue(string Key = "Primary");
 
 		virtual string				StorageEncode(map<string,string>) 	{ return ""; };
 		virtual map<string,string>	StorageDecode(string) 				{ return map<string,string> ();};
@@ -65,6 +64,7 @@ class Sensor_t {
 
 		virtual void				Pool()								{ }
 
+		string						RootSensorJSON();
 		string						EchoSummaryJSON();
 		virtual string				SummaryJSON()						{ return ""; };
 

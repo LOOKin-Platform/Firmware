@@ -42,11 +42,11 @@ class RemoteControl_t {
 		static esp_err_t 	mqtt_event_handler(esp_mqtt_event_handle_t event);
 
 		static int 			SendMessage (string Payload, string Topic = "",
-				uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+				uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
 
-		static string		StartChunk 	(int MessageID = 0, uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
-		static void 		SendChunk 	(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID = 0,uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
-		static void 		EndChunk 	(string ChunkHash, int MessageID = 0,uint8_t QOS = Settings.MQTT.DefaultQOS, uint8_t Retain = Settings.MQTT.DefaultRetain);
+		static string		StartChunk 	(int MessageID = 0, uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
+		static void 		SendChunk 	(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID = 0,uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
+		static void 		EndChunk 	(string ChunkHash, int MessageID = 0,uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
 
 		static bool 		IsCredentialsSet();
 		static Status_t 	GetStatus();
