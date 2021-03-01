@@ -49,7 +49,7 @@ class SensorMeteo_t : public Sensor_t {
 
 			ID          = 0xFE;
 			Name        = "Meteo";
-			EventCodes  = { 0x00, 0x01, 0x02 };
+			EventCodes  = { 0x00, 0x02, 0x03, 0x05, 0x06  };
 
 			SetValue(0, "Temperature");
 			SetValue(0, "Humidity");
@@ -234,6 +234,53 @@ class SensorMeteo_t : public Sensor_t {
 				Automation.SensorChanged(ID);
 			}
 		};
+
+		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
+			ESP_LOGE("CheckOperand", "%02X %02X", SceneEventCode, SceneEventOperand);
+
+			if (SceneEventCode == 0x02 || SceneEventCode == 0x03) {
+				float Previous 				= ConvertToFloat(PreviousTempValue);
+				float Current				= ConvertToFloat(GetValue("Temperature"));
+				float Operand				= ConvertToFloat(SceneEventOperand);
+
+				ESP_LOGE("!", "Previos %f Current %f Operand %f", Previous, Current, Operand);
+
+				if (SceneEventCode == 0x02 && Previous <= Operand && Current > Operand)
+					return true;
+
+				if (SceneEventCode == 0x03 && Previous >= Operand && Current < Operand)
+					return true;
+			}
+
+			if (SceneEventCode == 0x05 || SceneEventCode == 0x06) {
+				float Previous 				= ConvertToFloat(PreviousHumidityValue);
+				float Current				= ConvertToFloat(GetValue("Humidity"));
+				float Operand				= ConvertToFloat(SceneEventOperand);
+
+				if (SceneEventCode == 0x05 && Previous <= Operand && Current > Operand)
+					return true;
+
+				if (SceneEventCode == 0x06 && Previous >= Operand && Current < Operand)
+					return true;
+			}
+
+			return false;
+		}
+
+		float ConvertToFloat(uint32_t Temperature)
+		{
+			bool IsNegative = false;
+
+			if (Temperature >= 0x1000)
+				IsNegative = true;
+
+			return (IsNegative) ? -((float)(Temperature - 0x1000) / 10) : (float)Temperature / 10;
+		}
+
+		float ConvertToFloat(uint8_t Temperature)
+		{
+			return (Temperature >= 127) ? (Temperature - 127) : (127 - Temperature);
+		}
 
 };
 

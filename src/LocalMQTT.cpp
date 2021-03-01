@@ -63,7 +63,7 @@ void LocalMQTT_t::SetCredentials(bool sIsActive, string sServerURI, string sUser
 	IsActive	= sIsActive;
 
 	if (IsActive) {
-		FreeRTOS::Sleep(1000);
+		FreeRTOS::Sleep(1500);
 		Start();
 	}
 

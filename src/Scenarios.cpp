@@ -79,6 +79,8 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 
 	uint32_t ScenarioID = 0;
 
+	PowerManagement::AddLock("AutomationTask");
+
 	if (Queue != 0)
 		while (FreeRTOS::Queue::Receive(Scenario_t::Queue, &ScenarioID, (TickType_t) Settings.Scenarios.TaskStackSize)) {
 			Scenario_t Scenario;
@@ -109,6 +111,8 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 					}
 				}
 			}
+
+	PowerManagement::ReleaseLock("AutomationTask");
 
 	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
 	Scenario_t::ThreadsCounter--;
