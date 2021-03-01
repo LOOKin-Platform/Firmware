@@ -703,8 +703,6 @@ void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
 		return;
 
 	for (uint32_t AddressItem : AddressVector) {
-		ESP_LOGE("Storage ", "EraseRange %d %d",AddressItem, Settings.Storage.Data.ItemSize);
-
 		SPIFlash::EraseRange(AddressItem, Settings.Storage.Data.ItemSize);
 
 		if (MemoryStoredItemsSize > 0) MemoryStoredItemsSize --;
@@ -756,7 +754,6 @@ vector<uint8_t> IRAM_ATTR Storage_t::GetItemsTypes() {
 		if (Header.MemoryID != Settings.Memory.Empty16Bit && Header.TypeID != Settings.Memory.Empty8Bit)
 			if (find(Result.begin(), Result.end(), Header.TypeID) == Result.end()) {
 				Result.push_back(Header.TypeID);
-				ESP_LOGE("Header.TypeID", "%02X", Header.TypeID);
 			}
 
 		Address += Settings.Storage.Data.ItemSize;
@@ -901,6 +898,7 @@ vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version, uint3
 	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
 
 	vector<uint16_t> Result = vector<uint16_t>();
+	uint32_t LastAddressIn = LastAddress;
 
 	if (StartAdress == UINT32MAX)
 		StartAdress = (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
@@ -927,6 +925,10 @@ vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version, uint3
 		else if (RightPart == Version) {
 			VersionFinded = true;
 			goto increment;
+		}
+		else if (!VersionFinded && (LeftPart > Version || RightPart > Version))
+		{
+			break;
 		}
 		else if (VersionFinded && LeftPart > 0x2000) {
 			break;
@@ -998,6 +1000,10 @@ vector<Storage_t::Item> IRAM_ATTR Storage_t::GetUpgradeItems(uint16_t From, uint
 
 		if (PartCount + TotalCount > Settings.Storage.Versions.VersionMaxSize)
 			break;
+		else if (PartCount == 0 && From < LastVersion)
+		{
+			continue;
+		}
 		else
 		{
 			Result.insert(Result.end(), ResultPart.begin(), ResultPart.end());
