@@ -118,11 +118,11 @@ string Converter::ToUTF16String(uint16_t SrcString[], uint8_t Size) {
 
 vector<uint16_t> Converter::ToUTF16Vector(string SrcString) {
 	// legacy mode
-	//vector<uint16_t> Result((SrcString.size() + sizeof(uint16_t) - 1) / sizeof(uint16_t));
-	//copy_n(SrcString.data(), SrcString.size(), reinterpret_cast<char*>(&Result[0]));
+	// vector<uint16_t> Result((SrcString.size() + sizeof(uint16_t) - 1) / sizeof(uint16_t));
+	// copy_n(SrcString.data(), SrcString.size(), reinterpret_cast<char*>(&Result[0]));
 
 	vector<uint16_t> Result = {};
-	vector<string> Items = StringToVector(SrcString, "u");
+	vector<string> Items = StringToVector(SrcString, "\\u");
 
 	while (Items.size()) {
 		uint16_t Number = UintFromHexString<uint16_t>(Items.front());

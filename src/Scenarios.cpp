@@ -298,7 +298,7 @@ Scenario_t Scenario_t::DeserializeScene(const char* JSONString) {
 		vector<uint16_t> UTF16Name = Converter::ToUTF16Vector(JSONObject.GetItem("name"));
 
 		for (int i=0; i < UTF16Name.size() && i < Settings.Scenarios.NameLength; i++)
-			Scene.Name[i] = UTF16Name[i];
+            Scene.Name[i] = UTF16Name[i];
 
 		for (auto &CommandString : JSONObject.GetStringArray("commands")) {
 			ScenesCommandItem_t Command;

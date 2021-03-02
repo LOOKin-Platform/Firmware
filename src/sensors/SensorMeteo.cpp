@@ -236,14 +236,10 @@ class SensorMeteo_t : public Sensor_t {
 		};
 
 		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-			ESP_LOGE("CheckOperand", "%02X %02X", SceneEventCode, SceneEventOperand);
-
 			if (SceneEventCode == 0x02 || SceneEventCode == 0x03) {
 				float Previous 				= ConvertToFloat(PreviousTempValue);
 				float Current				= ConvertToFloat(GetValue("Temperature"));
 				float Operand				= ConvertToFloat(SceneEventOperand);
-
-				ESP_LOGE("!", "Previos %f Current %f Operand %f", Previous, Current, Operand);
 
 				if (SceneEventCode == 0x02 && Previous <= Operand && Current > Operand)
 					return true;
