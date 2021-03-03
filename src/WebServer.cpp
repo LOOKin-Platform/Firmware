@@ -116,8 +116,8 @@ void WebServer_t::SetHeaders(WebServer_t::Response &Response, httpd_req_t *Reque
 	}
 
 	switch (Response.ContentType) {
-		case Response::TYPE::JSON  		: httpd_resp_set_type	(Request, HTTPD_TYPE_JSON); break;
-		default							: httpd_resp_set_type	(Request, HTTPD_TYPE_TEXT); break;
+		case Response::TYPE::JSON  		: httpd_resp_set_type	(Request, "application/json;charset=utf-8"); break;
+		default							: httpd_resp_set_type	(Request, "text/html;charset=utf-8"); break;
 	}
 
 	if (AllowOriginHeader != "")
