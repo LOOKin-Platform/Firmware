@@ -109,21 +109,6 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 					}
 			}
 	}
-
-	// Запрос строковых значений состояния дополнительного поля конкретного сенсора
-	if (Query.GetURLPartsCount() == 4) {
-		for (Sensor_t* Sensor : Sensors)
-			if (Query.CheckURLPart(Converter::ToLower(Sensor->Name),1))
-				for (const auto &Value : Sensor->Values) {
-					if (Query.CheckURLPart(Converter::ToLower(Value.first),2))
-					{
-						if (Query.CheckURLPart("value",3)) 		Result.Body = Sensor->FormatValue(Value.first);
-						if (Query.CheckURLPart("updated",3)) 	Result.Body = Converter::ToString(Sensor->Updated);
-
-						break;
-					}
-				}
-	}
 }
 
 // возвращаемое значение - было ли изменено значение в памяти
