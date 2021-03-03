@@ -25,6 +25,6 @@ set(srcs
 
 idf_component_register(SRCS "${srcs}"
                       INCLUDE_DIRS "HomeKit/include" "include" 
-                      REQUIRES "bt BLE Converter DateTime HTTPClient libJSON esp_http_server WiFi OTA HardwareIO ISR RMT IRLib mqtt UART Sleep mdns PowerManagement esp_hap_platform esp_hap_apple_profiles esp32-ds18b20 esp32-owb esp-bme280")
+                      REQUIRES "bt BLE Converter DateTime HTTPClient libJSON esp_http_server WiFi OTA HardwareIO ISR RMT IRLib mqtt UART Sleep mdns PowerManagement esp_hap_platform esp_hap_apple_profiles esp32-ds18b20 esp32-owb esp-bme280 hdc1080")
 
 target_compile_options(${COMPONENT_LIB} PRIVATE "-D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG")

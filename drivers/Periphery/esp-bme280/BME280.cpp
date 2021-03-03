@@ -5,7 +5,8 @@
 *      Author: Alexander Sparkowsky
 */
 
-#include "BME280.h"
+#include "../../Periphery/esp-bme280/BME280.h"
+
 #include <esp_log.h>
 #include <math.h>
 #include <cstdint>

@@ -1,6 +1,0 @@
-[submodule "drivers/esp32-owb"]
-	path = drivers/esp32-owb
-	url = https://github.com/DavidAntliff/esp32-owb.git
-[submodule "drivers/esp32-ds18b20"]
-	path = drivers/esp32-ds18b20
-	url = https://github.com/DavidAntliff/esp32-ds18b20.git

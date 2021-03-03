@@ -8,13 +8,16 @@
 #define SENSORS_TEMPERATURE_REMOTE
 
 #include "BME280.h"
+#include "hdc1080.h"
 
 #define SDA_PIN GPIO_NUM_18
 #define SCL_PIN GPIO_NUM_19
 
 class SensorMeteo_t : public Sensor_t {
 	private:
-		BME280 		bme280			= 0;
+		BME280 				bme280			= 0;
+		hdc1080_sensor_t* 	HDC1080			= NULL;
+
 		bool		IsSensorHWInited= false;
 
 		uint32_t	Value			= 0x0000;
@@ -179,28 +182,56 @@ class SensorMeteo_t : public Sensor_t {
 			}
 		}
 
+
 		SensorData GetValueFromSensor() {
-			if (!IsSensorHWInited) {
-			    bme280.setDebug(false);
-			    bme280.init();
+			//Settings.eFuse.Revision = 2;
+
+			if (!IsSensorHWInited) // Init sensors
+			{
+				if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision == 1)
+				{
+				    bme280.setDebug(false);
+				    bme280.init();
+				}
+				else if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision > 1)
+				{
+				    i2c_init(0, GPIO_NUM_19, GPIO_NUM_18, I2C_FREQ_100K);
+
+					HDC1080 = hdc1080_init_sensor(0, HDC1080_ADDR);
+
+					hdc1080_registers_t registers = hdc1080_get_registers(HDC1080);
+			        printf("Initialized HDC1080 sensor: manufacurer 0x%x, device id 0x%x\n", hdc1080_get_manufacturer_id(HDC1080), hdc1080_get_device_id(HDC1080));
+			        printf("Config: %x\n", registers.raw);
+			        registers.acquisition_mode = 1;
+			        hdc1080_set_registers(HDC1080, registers);
+				}
+
 			    IsSensorHWInited = true;
 			}
 
-			bme280_reading_data sensor_data = bme280.readSensorData();
-
-			//printf("Temperature: %.2foC, Humidity: %.2f%%, Pressure: %.2fPa\n", (double)sensor_data.temperature, (double)sensor_data.humidity, (double)sensor_data.pressure);
-
 			SensorData Result;
-			Result.Temperature 	= sensor_data.temperature;
-			Result.Humidity		= sensor_data.humidity;
-			Result.Pressure		= sensor_data.pressure;
+			Result.Temperature = 0;
+			Result.Humidity = 0;
+			Result.Pressure = 0;
 
-			// корректировка значения BME280 (без учета времени старта, нахолодную)
-			float TempCorrection = 3;
-			if (Time::Uptime() < 1800)
-				TempCorrection = 0.9 * log10(Time::Uptime() + 1);
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision == 1) {
+				bme280_reading_data sensor_data = bme280.readSensorData();
 
-			Result.Temperature -= TempCorrection;
+				Result.Temperature 	= sensor_data.temperature;
+				Result.Humidity		= sensor_data.humidity;
+				Result.Pressure		= sensor_data.pressure;
+
+				// корректировка значения BME280 (без учета времени старта, нахолодную)
+				float TempCorrection = 3;
+				if (Time::Uptime() < 1800)
+					TempCorrection = 0.9 * log10(Time::Uptime() + 1);
+
+				Result.Temperature -= TempCorrection;
+			}
+			else if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision > 1)
+			{
+		        hdc1080_read(HDC1080, &Result.Temperature, &Result.Humidity);
+			}
 
 			return Result;
 		}
