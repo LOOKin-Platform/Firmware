@@ -42,7 +42,10 @@ class JSON {
     string								GetItem					(string Key);
     void								SetItem					(string Key, string Value);
 
+    vector<string>						GetKeys					();
+
     JSON								Detach					(string Key);
+    void								Attache					(string Key, JSON);
 
     void								SetItems				(map<string,string>, cJSON *Item = NULL);
     void								SetItems				(vector<pair<string,string>>, cJSON *Item = NULL);

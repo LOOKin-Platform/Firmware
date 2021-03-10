@@ -329,6 +329,9 @@ class CommandIR_t : public Command_t {
 			if (Settings.GPIOData.GetCurrent().IR.SenderGPIOExt != GPIO_NUM_0)
 				GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
 
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
+				((DataRemote_t *)Data)->ClearChannels(GPIO);
+
 			RMT::TXSend(GPIO, TXChannel, Frequency);
 			InOperation = false;
 

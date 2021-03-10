@@ -91,6 +91,23 @@ void JSON::SetItem(string Key, string Value) {
 	cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());
 }
 
+vector<string> JSON::GetKeys() {
+	vector<string> Result = vector<string>();
+
+	if (Root != NULL)
+	{
+		cJSON *Child = Root->child;
+
+		while(Child)
+		{
+			Result.push_back(string(Child->string));
+			Child = Child->next;
+		}
+	}
+
+	return Result;
+}
+
 JSON JSON::Detach(string Key) {
 	if (Root != NULL) {
 
@@ -104,6 +121,15 @@ JSON JSON::Detach(string Key) {
 	return JSON();
 }
 
+void JSON::Attache(string Key, JSON Item) {
+	if (Item.Root == NULL)
+		return;
+
+	if (IsItemExists(Key))
+		cJSON_ReplaceItemInObject(Root, Key.c_str(), Item.Root);
+	else
+		cJSON_AddItemToObject(Root, Key.c_str(), Item.Root);
+}
 
 void JSON::SetItems(map<string,string> Values, cJSON *Item) {
 	SetItemsTemplated<map<string,string>>(Values, Item);
@@ -186,15 +212,16 @@ vector<string> JSON::GetStringArray(string Key) {
 	if (Root != NULL) {
 		cJSON *Array = (!Key.empty()) ? cJSON_GetObjectItem(Root, Key.c_str()) : Root;
 
-	    if (Array->type == cJSON_Array) {
-	    		cJSON *Child = Array->child;
+	    if (Array->type == cJSON_Array)
+	    {
+	    	cJSON *Child = Array->child;
 
-	    		while(Child) {
-	    			if (Child->type == cJSON_String)
-	    				Result.push_back(Child->valuestring);
+	    	while(Child) {
+	    		if (Child->type == cJSON_String)
+	    			Result.push_back(Child->valuestring);
 
-	        Child = Child->next;
-	    		}
+	    		Child = Child->next;
+	    	}
 	    }
 	}
 

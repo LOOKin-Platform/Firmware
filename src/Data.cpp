@@ -304,6 +304,82 @@ bool DataEndpoint_t::DeleteStartedWith(string Key) {
     return true;
 }
 
+void DataEndpoint_t::HandleHTTPRequest(WebServer_t::Response &Response, Query_t &Query) {
+	if (Query.GetURLPartsCount() == 2 && Query.CheckURLPart("settings", 1))
+	{
+		NVS Memory(DataEndpoint_t::NVSArea);
+
+		if (Query.Type == QueryType::GET)
+		{
+			Response.SetSuccess();
+
+			Response.Body = Memory.GetString(NVSSettingsKey);
+
+			if (Response.Body == "")
+				Response.Body = "{}";
+
+			return;
+		}
+		else if (Query.Type == QueryType::POST) {
+			JSON JSONObject(Query.GetBody());
+
+			if (JSONObject.GetRoot() == NULL)
+				Response.SetInvalid();
+			else
+			{
+				Memory.SetString(NVSSettingsKey, JSONObject.ToString());
+				Memory.Commit();
+
+				Response.SetSuccess();
+			}
+		}
+		else if (Query.Type == QueryType::PUT)
+		{
+			JSON JSONObject(Query.GetBody());
+
+			if (JSONObject.GetRoot() == NULL)
+				Response.SetInvalid("Invalid JSON format");
+			else
+			{
+				JSON MemoryJSON(Memory.GetString(NVSSettingsKey));
+
+				if (MemoryJSON.GetRoot() == NULL)
+				{
+					Memory.SetString(NVSSettingsKey, Query.GetBody());
+					Memory.Commit();
+				}
+				else
+				{
+					vector<string> KeysInMemory = MemoryJSON.GetKeys();
+
+					JSONObject.SetDestructable(false);
+
+					for (auto& KeyInJSON : JSONObject.GetKeys()) {
+						JSON Item = JSONObject.Detach(KeyInJSON);
+						Item.SetDestructable(false);
+						MemoryJSON.Attache(KeyInJSON, Item);
+					}
+				}
+
+				Response.SetSuccess();
+
+				if (MemoryJSON.GetRoot() == NULL)
+					Response.SetInvalid("Invalid JSON format");
+				else
+				{
+					Memory.SetString(NVSSettingsKey, MemoryJSON.ToString());
+					Memory.Commit();
+					Response.SetSuccess();
+				}
+			}
+		}
+
+		return;
+	}
+
+	InnerHTTPRequest(Response, Query);
+}
+
 void DataEndpoint_t::EraseAll() {
 	NVS Memory(DataEndpoint_t::NVSArea);
 	Memory.EraseNamespace();

@@ -27,6 +27,8 @@ class DataEndpoint_t {
 	public:
 		static 	const char		*Tag;
 		static 	string 			NVSArea;
+		const 	char* 			NVSSettingsKey 	= "Settings";
+
 		const 	char*			PartitionName 	= "dataitems";
 		const 	uint8_t			PartitionType	= 0x81;
 
@@ -37,7 +39,8 @@ class DataEndpoint_t {
 		static	DataEndpoint_t*	GetForDevice();
 		virtual void 			Init() {};
 
-		virtual void 			HandleHTTPRequest(WebServer_t::Response &, Query_t &) { };
+		void 					HandleHTTPRequest(WebServer_t::Response &, Query_t &);
+		virtual void 			InnerHTTPRequest(WebServer_t::Response &, Query_t &) { };
 		virtual string			RootInfo() { return "{}"; }
 
 		void					Defragment();

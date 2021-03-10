@@ -436,7 +436,6 @@ void WebServer_t::UDPListenerTask(void *data) {
     		ESP_LOGE(tag, "Unable to create socket: errno %d", errno);
     		break;
     	}
-    	ESP_LOGI(tag, "Socket created");
 
     	int option = 1;
         if(setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,(char*)&option,sizeof(option)) < 0)
@@ -446,11 +445,9 @@ void WebServer_t::UDPListenerTask(void *data) {
     	if (err < 0) {
     		ESP_LOGE(tag, "Socket unable to bind: errno %d", errno);
     	}
-    	ESP_LOGI(tag, "Socket bound, port %d", Settings.WiFi.UPDPort);
 
-
-    	do {
-            ESP_LOGI(tag, "Waiting for data");
+    	do
+    	{
             struct sockaddr_in6 source_addr; // Large enough for both IPv4 or IPv6
             socklen_t socklen = sizeof(source_addr);
             int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);

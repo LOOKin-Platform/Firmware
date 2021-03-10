@@ -481,7 +481,70 @@ class DataRemote_t : public DataEndpoint_t {
 			return Result;
 		}
 
-		void HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) override {
+		void ClearChannels(vector<gpio_num_t> &GPIOs) {
+			ESP_LOGE("!", "ClearChannels");
+
+			if (GPIOs.size() < 4)
+				return;
+
+			NVS Memory(DataEndpoint_t::NVSArea);
+			JSON GPIOSettingsJSON(Memory.GetString(NVSSettingsKey));
+
+			map<string,string> GPIOSettingsFromMemory = GPIOSettingsJSON.GetItems();
+			map<string,string> GPIOSettings = map<string,string>();
+
+			for(auto& SettingsItem : GPIOSettingsFromMemory)
+				GPIOSettings[Converter::ToLower(SettingsItem.first)] = Converter::ToLower(SettingsItem.second);
+
+			if (GPIOSettings.count("channel1") == 0 && GPIOSettings.count("channel2") == 0
+				&& GPIOSettings.count("channel3") == 0 && GPIOSettings.count("external") == 0)
+				return;
+
+			bool IsChannel1On = true;
+			if (GPIOSettings.count("channel1") > 0) {
+				if (GPIOSettings["channel1"] == "false" || GPIOSettings["channel1"] == "0")
+					IsChannel1On = false;
+			}
+			else
+				IsChannel1On = false;
+
+
+			bool IsChannel2On = true;
+			if (GPIOSettings.count("channel2") > 0) {
+				if (GPIOSettings["channel2"] == "false" || GPIOSettings["channel2"] == "0")
+					IsChannel2On = false;
+			}
+			else
+				IsChannel2On = false;
+
+
+			bool IsChannel3On = true;
+			if (GPIOSettings.count("channel3") > 0) {
+				if (GPIOSettings["channel3"] == "false" || GPIOSettings["channel3"] == "0")
+					IsChannel3On = false;
+			}
+			else
+				IsChannel3On = false;
+
+
+			bool IsExternalOn = true;
+			if (GPIOSettings.count("external") > 0) {
+				if (GPIOSettings["external"] == "false" || GPIOSettings["external"] == "0")
+					IsExternalOn = false;
+			}
+			else
+				IsExternalOn = false;
+
+			if (!IsChannel1On && !IsChannel2On && !IsChannel3On && !IsExternalOn)
+				return;
+
+			if (!IsChannel1On) GPIOs[0] = GPIO_NUM_0;
+			if (!IsChannel2On) GPIOs[1] = GPIO_NUM_0;
+			if (!IsChannel3On) GPIOs[2] = GPIO_NUM_0;
+			if (!IsExternalOn) GPIOs[3] = GPIO_NUM_0;
+		}
+
+		void InnerHTTPRequest(WebServer_t::Response &Result, Query_t &Query) override {
 			if (Query.Type == QueryType::GET) {
 				if (Query.GetURLPartsCount() == 1) {
 					if (Query.GetParams().count("statuses"))
