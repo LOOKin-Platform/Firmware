@@ -200,8 +200,6 @@ class SensorMeteo_t : public Sensor_t {
 					HDC1080 = hdc1080_init_sensor(0, HDC1080_ADDR);
 
 					hdc1080_registers_t registers = hdc1080_get_registers(HDC1080);
-			        printf("Initialized HDC1080 sensor: manufacurer 0x%x, device id 0x%x\n", hdc1080_get_manufacturer_id(HDC1080), hdc1080_get_device_id(HDC1080));
-			        printf("Config: %x\n", registers.raw);
 			        registers.acquisition_mode = 1;
 			        hdc1080_set_registers(HDC1080, registers);
 				}
@@ -222,9 +220,9 @@ class SensorMeteo_t : public Sensor_t {
 				Result.Pressure		= sensor_data.pressure;
 
 				// корректировка значения BME280 (без учета времени старта, нахолодную)
-				float TempCorrection = 3;
+				float TempCorrection = 3.3;
 				if (Time::Uptime() < 1800)
-					TempCorrection = 0.9 * log10(Time::Uptime() + 1);
+                    TempCorrection = 1.015 * log10(Time::Uptime());
 
 				Result.Temperature -= TempCorrection;
 			}
