@@ -225,6 +225,10 @@ class SensorMeteo_t : public Sensor_t {
                     TempCorrection = 1.015 * log10(Time::Uptime());
 
 				Result.Temperature -= TempCorrection;
+
+				Result.Humidity += 15.2;
+				if (Result.Humidity > 100)
+					Result.Humidity = 100;
 			}
 			else if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision > 1)
 			{
