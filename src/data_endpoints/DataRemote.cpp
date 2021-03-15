@@ -482,8 +482,6 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		void ClearChannels(vector<gpio_num_t> &GPIOs) {
-			ESP_LOGE("!", "ClearChannels");
-
 			if (GPIOs.size() < 4)
 				return;
 
@@ -502,7 +500,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 			bool IsChannel1On = true;
 			if (GPIOSettings.count("channel1") > 0) {
-				if (GPIOSettings["channel1"] == "false" || GPIOSettings["channel1"] == "0")
+				if (GPIOSettings["channel1"] == "false" || GPIOSettings["channel1"] == "0" || GPIOSettings["channel1"] == "off")
 					IsChannel1On = false;
 			}
 			else
@@ -511,7 +509,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 			bool IsChannel2On = true;
 			if (GPIOSettings.count("channel2") > 0) {
-				if (GPIOSettings["channel2"] == "false" || GPIOSettings["channel2"] == "0")
+				if (GPIOSettings["channel2"] == "false" || GPIOSettings["channel2"] == "0" || GPIOSettings["channel2"] == "off")
 					IsChannel2On = false;
 			}
 			else
@@ -520,7 +518,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 			bool IsChannel3On = true;
 			if (GPIOSettings.count("channel3") > 0) {
-				if (GPIOSettings["channel3"] == "false" || GPIOSettings["channel3"] == "0")
+				if (GPIOSettings["channel3"] == "false" || GPIOSettings["channel3"] == "0" || GPIOSettings["channel3"] == "off")
 					IsChannel3On = false;
 			}
 			else
@@ -529,7 +527,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 			bool IsExternalOn = true;
 			if (GPIOSettings.count("external") > 0) {
-				if (GPIOSettings["external"] == "false" || GPIOSettings["external"] == "0")
+				if (GPIOSettings["external"] == "false" || GPIOSettings["external"] == "0" || GPIOSettings["external"] == "off")
 					IsExternalOn = false;
 			}
 			else
@@ -542,6 +540,8 @@ class DataRemote_t : public DataEndpoint_t {
 			if (!IsChannel2On) GPIOs[1] = GPIO_NUM_0;
 			if (!IsChannel3On) GPIOs[2] = GPIO_NUM_0;
 			if (!IsExternalOn) GPIOs[3] = GPIO_NUM_0;
+
+			GPIOs.erase(std::remove_if(GPIOs.begin(), GPIOs.end(), [](gpio_num_t i) { return i ==  GPIO_NUM_0; }), GPIOs.end());
 		}
 
 		void InnerHTTPRequest(WebServer_t::Response &Result, Query_t &Query) override {

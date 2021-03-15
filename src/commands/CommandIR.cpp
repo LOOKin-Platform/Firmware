@@ -162,10 +162,10 @@ class CommandIR_t : public Command_t {
 			if (EventCode == 0xEF) { // AC by codeset
 				ACOperand ACData(Operand);
 
-				ESP_LOGE("ACOperand", "Mode %s", Converter::ToString<uint8_t>(ACData.Mode).c_str());
-				ESP_LOGE("ACOperand", "Temperature %s", Converter::ToString<uint8_t>(ACData.Temperature).c_str());
-				ESP_LOGE("ACOperand", "FanMode %s", Converter::ToString<uint8_t>(ACData.FanMode).c_str());
-				ESP_LOGE("ACOperand", "SwingMode %s", Converter::ToString<uint8_t>(ACData.SwingMode).c_str());
+				//ESP_LOGI("ACOperand", "Mode %s", Converter::ToString<uint8_t>(ACData.Mode).c_str());
+				//ESP_LOGI("ACOperand", "Temperature %s", Converter::ToString<uint8_t>(ACData.Temperature).c_str());
+				//ESP_LOGI("ACOperand", "FanMode %s", Converter::ToString<uint8_t>(ACData.FanMode).c_str());
+				//ESP_LOGI("ACOperand", "SwingMode %s", Converter::ToString<uint8_t>(ACData.SwingMode).c_str());
 
 				if (ACData.Codeset == 0) {
 					ESP_LOGE("CommandIR","Can't parse AC codeset");
@@ -329,8 +329,14 @@ class CommandIR_t : public Command_t {
 			if (Settings.GPIOData.GetCurrent().IR.SenderGPIOExt != GPIO_NUM_0)
 				GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
 
-			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
+
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1) {
+				// deinit all pins for gpio output
+				for (auto& PinItem : GPIO)
+					gpio_matrix_out(PinItem, 0x100, 0, 0);
+
 				((DataRemote_t *)Data)->ClearChannels(GPIO);
+			}
 
 			RMT::TXSend(GPIO, TXChannel, Frequency);
 			InOperation = false;
@@ -375,6 +381,7 @@ class CommandIR_t : public Command_t {
 
 				if (Pos != string::npos) {
 					RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
+					//ESP_LOGE("TXITEM", "%d", Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
 					IRACReadBuffer.erase(0, Pos + 1);
 				}
 				else
@@ -387,6 +394,7 @@ class CommandIR_t : public Command_t {
 		static void ACReadFinished(char IP[]) {
 			if (IRACReadBuffer.size() > 0) {
 				RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer));
+				//ESP_LOGE("TXITEM", "%d", Converter::ToInt32(IRACReadBuffer));
 				IRACReadBuffer = "";
 			}
 

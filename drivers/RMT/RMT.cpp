@@ -208,9 +208,10 @@ void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t 
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 0, 0));
 	//ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_APB));
 
-	for (int i = 1; i < GPIO.size(); i++)
+	for (int i = 1; i < GPIO.size(); i++) {
 		if (GPIO[i] != GPIO_NUM_0)
 			rmt_set_pin(Channel, RMT_MODE_TX, GPIO[i]);
+	}
 
 	/*
 	rmt_set_pin(Channel, RMT_MODE_TX, GPIO_NUM_36);
@@ -331,10 +332,23 @@ void IRAM_ATTR RMT::TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint1
 	if (GPIO.size() == 0)
 		return;
 
-	if (GPIO[0] == GPIO_NUM_0)
+
+	bool IsAllEmpty = true;
+
+	for(auto& GPIOItem : GPIO)
+		if (GPIOItem != GPIO_NUM_0)
+		{
+			IsAllEmpty = false;
+			break;
+		}
+
+	if (IsAllEmpty)
 		return;
 
 	PowerManagement::AddLock("RMTSend");
+
+	for(auto& GPIOItem : GPIO)
+		ESP_LOGE("GPIO", "%d", GPIOItem);
 
 	SetTXChannel(GPIO, Channel, Frequency);
 
