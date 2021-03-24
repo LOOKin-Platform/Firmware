@@ -256,10 +256,7 @@ hap_char_t *hap_char_custom_target_heater_cooler_state_create(uint8_t targ_heate
         return NULL;
     }
 
-    hap_char_int_set_constraints(hc, 0, 2, 1);
-
-    uint8_t ValidVals[] = { 2 };
-    hap_char_add_valid_vals(hc, ValidVals, 1);
+    hap_char_int_set_constraints(hc, 1, 2, 1);
 
     return hc;
 }
@@ -441,14 +438,12 @@ hap_serv_t *hap_serv_ac_create(uint8_t curr_heater_cooler_state, float curr_temp
         goto err;
     }
     */
-    if (hap_serv_add_char(hs, hap_char_custom_cooling_threshold_temperature_create(20.0)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_custom_cooling_threshold_temperature_create(targ_temp)) != HAP_SUCCESS) {
     	goto err;
     }
-    /*
-    if (hap_serv_add_char(hs, hap_char_custom_heating_threshold_temperature_create(20.0)) != HAP_SUCCESS) {
+    if (hap_serv_add_char(hs, hap_char_custom_heating_threshold_temperature_create(targ_temp)) != HAP_SUCCESS) {
     	goto err;
     }
-    */
     return hs;
 err:
     hap_serv_delete(hs);
@@ -480,11 +475,11 @@ err:
     return NULL;
 }
 
+extern Device_t	Device;
+
 void HomeKitUpdateCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
 	HomeKitUpdateCharValue((uint32_t)Converter::UintFromHexString<uint16_t>(StringAID), ServiceUUID, CharUUID, Value);
 }
-
-extern Device_t	Device;
 
 void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value)
 {
@@ -499,6 +494,24 @@ void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *C
 	if (Char == NULL) 		return;
 
 	hap_char_update_val(Char, &Value);
+}
+
+const hap_val_t* HomeKitGetCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID) {
+	return HomeKitGetCharValue((uint32_t)Converter::UintFromHexString<uint16_t>(StringAID), ServiceUUID, CharUUID);
+}
+
+const hap_val_t* HomeKitGetCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID) {
+	hap_acc_t* Accessory = HomeKit::IsExperimentalMode() ? hap_acc_get_by_aid(AID) : hap_get_first_acc();
+
+	if (Accessory == NULL) 	return NULL;
+
+	hap_serv_t *Service  	= hap_acc_get_serv_by_uuid(Accessory, ServiceUUID);
+	if (Service == NULL) 	return NULL;
+
+	hap_char_t *Char 		= hap_serv_get_char_by_uuid(Service, CharUUID);
+	if (Char == NULL) 		return NULL;
+
+	return hap_char_get_val(Char);
 }
 
 

@@ -59,4 +59,7 @@ hap_serv_t *hap_serv_ac_fan_create(bool IsActive, uint8_t TargetFanState, uint8_
 void HomeKitUpdateCharValue(string AIDString, const char *ServiceUUID, const char *CharUUID, hap_val_t Value);
 void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value);
 
+const hap_val_t* HomeKitGetCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID);
+const hap_val_t* HomeKitGetCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID);
+
 #endif

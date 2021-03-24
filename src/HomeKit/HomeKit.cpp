@@ -319,7 +319,20 @@ bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
         	default: break;
         }
 
-    	if (Value == 2) {
+        // change temeprature because of it may depends on selected mode
+        const hap_val_t* NewTempValue  = HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER,
+        		(Value == 3) ? HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE : HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE);
+
+        if (NewTempValue != NULL)
+            StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra, 0xE1, round(NewTempValue->f), false);
+
+
+        // change current heater cooler state
+        hap_val_t CurrentHeaterCoolerState;
+        CurrentHeaterCoolerState.u =  (Value == 3) ? 2 : 3;
+        HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, CurrentHeaterCoolerState);
+
+    	if (Value > 0) {
     		hap_val_t ValueForACFanActive;
     		ValueForACFanActive.u = 1;
     		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
@@ -356,6 +369,9 @@ bool HomeKit::ThresholdTemperature(float Value, uint16_t AID, bool IsCooling) {
 
         if (Value > 30) Value = 30;
         if (Value < 16) Value = 16;
+
+        hap_val_t HAPValue;
+        HAPValue.f = Value;
 
         StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE1, round(Value));
         return true;
