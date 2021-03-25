@@ -56,6 +56,8 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_CONNECTED) {
 		ESP_LOGI(tag, "WIFI_EVENT_STA_CONNECTED");
 
+        esp_netif_create_ip6_linklocal(WiFi_t::GetNetIf());
+
 		::esp_netif_set_hostname(WiFi_t::GetNetIf(), STAHostName.c_str());
 
 		esp_ip_addr_t GoogleDNS;
@@ -135,6 +137,7 @@ void WiFi_t::Init() {
 
 		::esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID		, &eventHandler, this, &WiFi_t::instance_any_id);
 		::esp_event_handler_instance_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this, &WiFi_t::instance_got_ip);
+		::esp_event_handler_instance_register(IP_EVENT	, IP_EVENT_GOT_IP6		, &eventHandler, this, &WiFi_t::instance_got_ip);
 
 		PowerManagement::SetWiFiOptions();
 
