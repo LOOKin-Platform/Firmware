@@ -47,7 +47,6 @@ using namespace std;
 class ACOperand {
 	public:
 		uint16_t		Codeset			= 0x0;
-
 		uint8_t			Mode			= 0x0;
 		uint8_t			Temperature		= 0x0;
 		uint8_t			FanMode			= 0x0;
@@ -61,10 +60,24 @@ class ACOperand {
 			SwingMode 		= (uint8_t)((Operand << 28) >> 28);
 		}
 
+		static bool IsSwingSeparateForCodeset(uint16_t CodesetInHEX) {
+			if (CodesetInHEX == 0x9015 || CodesetInHEX == 0x9016)
+				return true;
+
+			return false;
+		}
+
+		static bool IsOnSeparateForCodeset(uint16_t CodesetInHEX) {
+			if (CodesetInHEX == 0x9000 || CodesetInHEX == 0x9013)
+				return true;
+
+			return false;
+		}
+
 		string GetQuery() {
 			string Result = Converter::ToString<uint16_t>(Codeset);
 			while (Result.size() < 4) Result = "0" + Result;
-			Result = "operand=" + Result + Converter::ToString<uint8_t>(Mode) + Converter::ToHexString(Temperature - 16, 1) + Converter::ToString<uint8_t>(FanMode) + Converter::ToString<uint8_t>(SwingMode);
+			Result = "operand=" + Result + Converter::ToHexString(Mode, 1) + Converter::ToHexString(Temperature - 16, 1) +  Converter::ToHexString(FanMode, 1) +  Converter::ToHexString(SwingMode,1);
 			return Result;
 		}
 
@@ -93,11 +106,21 @@ class ACOperand {
 			}
 		}
 
-
 		uint32_t ToUint32() {
 			uint32_t Result = 0x00;
 
 			Result = (uint32_t)Codeset;
+			Result = (Result << 4) + (uint8_t)Mode;
+			Result = (Result << 4) + (uint8_t)(Temperature - 16);
+			Result = (Result << 4) + (uint8_t)FanMode;
+			Result = (Result << 4) + (uint8_t)SwingMode;
+
+			return Result;
+		}
+
+		uint16_t ToUint16() {
+			uint32_t Result = 0x00;
+
 			Result = (Result << 4) + (uint8_t)Mode;
 			Result = (Result << 4) + (uint8_t)(Temperature - 16);
 			Result = (Result << 4) + (uint8_t)FanMode;

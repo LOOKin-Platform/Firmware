@@ -319,20 +319,32 @@ bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
         	default: break;
         }
 
-        // change temeprature because of it may depends on selected mode
+        if (IRDeviceItem.Status < 0x1000 && Value > 1 && ACOperand::IsOnSeparateForCodeset(IRDeviceItem.Extra))
+        {
+        	ESP_LOGE("HomeKit", "Switch ON AC");
+
+            CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+            if (IRCommand != nullptr) {
+            	string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
+                IRCommand->Execute(0xEF, Operand.c_str());
+                FreeRTOS::Sleep(1000);
+            }
+        }
+
+        // change temperature because of it may depends on selected mode
         const hap_val_t* NewTempValue  = HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER,
         		(Value == 3) ? HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE : HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE);
 
         if (NewTempValue != NULL)
             StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra, 0xE1, round(NewTempValue->f), false);
 
-
-        // change current heater cooler state
-        hap_val_t CurrentHeaterCoolerState;
-        CurrentHeaterCoolerState.u =  (Value == 3) ? 2 : 3;
-        HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, CurrentHeaterCoolerState);
-
     	if (Value > 0) {
+            // change current heater cooler state
+            hap_val_t CurrentHeaterCoolerState;
+            CurrentHeaterCoolerState.u =  (Value == 3) ? 2 : 3;
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, CurrentHeaterCoolerState);
+
     		hap_val_t ValueForACFanActive;
     		ValueForACFanActive.u = 1;
     		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
@@ -529,7 +541,13 @@ void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t Functi
 
     if (IRCommand == nullptr) return;
 
-    string Operand = Converter::ToHexString(Codeset,4) + Converter::ToHexString(Result.second,4);
+    string Operand = Converter::ToHexString(Codeset,4);
+
+    if (FunctionID == 0xE3 && ACOperand::IsSwingSeparateForCodeset(Codeset))
+    	Operand += ("FFF" + Converter::ToHexString((Value == 0) ? 2 : 1,1));
+    else
+    	Operand += Converter::ToHexString(Result.second,4);
+
     IRCommand->Execute(0xEF, Operand.c_str());
 }
 

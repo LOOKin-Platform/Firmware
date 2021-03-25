@@ -1013,7 +1013,17 @@ class DataRemote_t : public DataEndpoint_t {
 			ACOperand ACOperandPrev((uint32_t)Status);
 			ACOperand ACOperandNext((uint32_t)NewStatus);
 
-			StatusSave(DeviceID, NewStatus);
+			if (NewStatus >= 0xFFF0) { // one of control commands
+				ACOperandNext = ACOperandPrev;
+
+				switch (NewStatus) {
+					case 0xFFF0:/*    on    */ 	ACOperandNext.Mode = (ACOperandNext.Mode == 0) ? 2 : 0; break; // on
+					case 0xFFF1:/*Swing move*/	ACOperandNext.SwingMode = 1; break;
+					case 0xFFF2:/*Swing stop*/	ACOperandNext.SwingMode = 0; break;
+				}
+			}
+
+			StatusSave(DeviceID, ACOperandNext.ToUint16());
 
 			if (IsHomeKitEnabled()) {
 				if (ACOperandPrev.Mode 			!= ACOperandNext.Mode) 			HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE0, ACOperandNext.Mode);
@@ -1022,9 +1032,9 @@ class DataRemote_t : public DataEndpoint_t {
 				if (ACOperandPrev.SwingMode 	!= ACOperandNext.SwingMode) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE3, ACOperandNext.SwingMode);
 			}
 
-			StatusTriggerUpdated(DeviceID, 0xEF, 0, 0, NewStatus);
+			StatusTriggerUpdated(DeviceID, 0xEF, 0, 0, ACOperandNext.ToUint16());
 
-			return make_pair(true, NewStatus);
+			return make_pair(true, ACOperandNext.ToUint16());
 		}
 
 		bool SetExternalStatusByIRCommand(IRLib &Signal) {
@@ -1183,36 +1193,67 @@ class DataRemote_t : public DataEndpoint_t {
 					break;
 				}
 				case 0xE0: { // AC mode
-					HAPValue.u = (Value > 0) ? 3 : 0;
-					ESP_LOGE("HAPValue.u", "%d", HAPValue.u);
+					if (Value > 0) {
+						static hap_val_t HAPValueCurrent;
 
-					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValue);
+						if (Value == 3)
+							HAPValueCurrent.u = 2;
+						else
+							HAPValueCurrent.u = 3;
+
+						ESP_LOGE("HAPVALUECURRENT", "%d", HAPValueCurrent.u);
+
+						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValueCurrent);
+
+						static hap_val_t HAPValueTarget;
+						HAPValueTarget.u = HAPValueCurrent.u - 1;
+						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE, HAPValueTarget);
+
+						ESP_LOGE("HAPVALUETARGET", "%d", HAPValueTarget.u);
+					}
 
 					HAPValue.b = (Value > 0);
 					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER	, HAP_CHAR_UUID_ACTIVE, HAPValue);
 					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ACTIVE, HAPValue);
 
+					ESP_LOGE("MODE HAPVALUE", "%d", (uint8_t)HAPValue.b);
 
-					static hap_val_t HAPValueFanRotation;
-					static hap_val_t HAPValueFanAuto;
+					if (Value > 0) {
+						static hap_val_t HAPValueFanRotation;
+						static hap_val_t HAPValueFanAuto;
 
-			        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = GetDeviceFromCache(DeviceID);
-					uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
+				        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = GetDeviceFromCache(DeviceID);
+						uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
 
-					if (FanStatus > 3) FanStatus = 3;
+						if (FanStatus > 3) FanStatus = 3;
 
-					HAPValueFanRotation.f 	= (Value > 0) ? ((FanStatus > 0) ? FanStatus : 2) : 0;
-					HAPValueFanAuto.u 		= (Value > 0) ? ((FanStatus == 0) ? 1 : 0) : 0;
+						HAPValueFanRotation.f 	= (Value > 0) ? ((FanStatus > 0) ? FanStatus : 2) : 0;
+						HAPValueFanAuto.u 		= (Value > 0) ? ((FanStatus == 0) ? 1 : 0) : 0;
 
-					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, HAPValueFanRotation);
-					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValueFanAuto);
+						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, HAPValueFanRotation);
+						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, HAPValueFanAuto);
+					}
+
 					break;
 				}
-				case 0xE1: // AC Temeperature
+				case 0xE1: { // AC Temeperature
 					HAPValue.f = (float)Value;
 					//UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAPValue);
-					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE, HAPValue);
+
+					ESP_LOGE("temperature", "%d", Value);
+
+					const hap_val_t* IsActive 		= HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE);
+					if (IsActive->b)
+					{
+						ESP_LOGE("FURTHER", "%d", (uint8_t)(IsActive->b));
+
+						const hap_val_t* CurrentMode 	= HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE);
+
+						if (CurrentMode != NULL)
+							HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, (CurrentMode->u == 1) ?  HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE :  HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE, HAPValue);
+					}
 					break;
+				}
 				case 0xE2: // Fan Mode
 					HAPValue.f = (float) ((Value > 0) ? Value: 0);
 					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ROTATION_SPEED, HAPValue);
