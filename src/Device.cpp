@@ -343,14 +343,20 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 
 	Device.Status = DeviceStatus::UPDATING;
 
+	RemoteControl.Stop();
+	LocalMQTT.Stop();
+	HomeKit::Stop();
+
+	FreeRTOS::Sleep(1000);
+
 	PostFirmwareTransportType = TransportType;
 
-	OTA::Update(OTAUrl, &OTACallbackSuccessfulStarted, &OTACallbackFileDoesntExist);
+	OTA::Update(OTAUrl, &OTAStartedCallback, &OTAFailedCallback);
 
 	return true;
 }
 
-void Device_t::OTACallbackSuccessfulStarted() {
+void Device_t::OTAStartedCallback() {
 	Device.Status = DeviceStatus::UPDATING;
 
 	WebServer_t::Response Response;
@@ -361,14 +367,11 @@ void Device_t::OTACallbackSuccessfulStarted() {
 		WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
 }
 
-void Device_t::OTACallbackFileDoesntExist() {
-	Device.Status = DeviceStatus::RUNNING;
 
-	WebServer_t::Response Response;
-	Response.Body = "{ \"success\": \"false\", \"Message\": \"Firmware update failed. No such file.\" }";
-	Response.ResponseCode = WebServer_t::Response::CODE::ERROR;
-
-	WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
+void Device_t::OTAFailedCallback() {
+	RemoteControl.Start();
+	LocalMQTT.Start();
+	HomeKit::Start();
 }
 
 bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& Response)

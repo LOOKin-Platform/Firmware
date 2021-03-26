@@ -27,13 +27,13 @@ using namespace std;
 #define BUFFSIZE      1024
 #define TEXT_BUFFSIZE 1024
 
-typedef void (*OTAStarted)			();
-typedef void (*OTAFileDoesntExist)	();
+typedef void (*OTAStarted)	();
+typedef void (*OTAFailed)	();
 
 class OTA {
 	public:
 		OTA();
-		static void 				Update(string URL, OTAStarted Started = NULL, OTAFileDoesntExist FileDoesntExist = NULL);
+		static void 				Update(string URL, OTAStarted StartedCallback, OTAFailed FailedCallback = NULL);
 		static esp_err_t			PerformUpdate(string URL);
 
 		static bool 				Rollback();
@@ -49,6 +49,8 @@ class OTA {
 		static bool					IsFileCheckEnded;
 
 	private:
+		static OTAFailed			OTAFailedCallback;
+
 		static int					BinaryFileLength;
 		static esp_ota_handle_t		OutHandle;
 		static esp_partition_t		OperatePartition;

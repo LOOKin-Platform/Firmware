@@ -20,25 +20,29 @@ bool						OTA::IsFileCheckEnded			= false;
 
 FreeRTOS::Timer*			OTA::DelayedRebootTimer			= nullptr;
 
+OTAFailed					OTA::OTAFailedCallback			= NULL;
+
 OTA::OTA() {
 	BinaryFileLength  = 0;
 	OutHandle         = 0;
 };
 
-void OTA::Update(string URL, OTAStarted Started, OTAFileDoesntExist FileDoesntExist) {
+void OTA::Update(string URL, OTAStarted StartedCallback, OTAFailed FailedCallback) {
 	Attempts 				= 0;
 
 	IsOTAFileExist			= false;
 	IsFileCheckEnded		= false;
 
-	if (Started != NULL)
-		Started();
+	if (StartedCallback != NULL)
+		StartedCallback();
+
+	OTAFailedCallback		= FailedCallback;
 
 	PerformUpdate(URL);
 }
 
 esp_err_t OTA::PerformUpdate(string URL) {
-	ESP_LOGI(tag, "Starting OTA from URL %s...", URL.c_str());
+	ESP_LOGI(tag, "Starting OTA from URL %s", URL.c_str());
 
 	esp_http_client_config_t Config;
 	Config.username					= NULL;
@@ -79,21 +83,28 @@ esp_err_t OTA::PerformUpdate(string URL) {
     {
     	ESP_LOGE(tag, "OTA succeed");
     	Log::Add(Log::Events::System::OTASucceed);
+
         esp_restart();
     }
     else
     {
-    	ESP_LOGE(tag, "OTA failed, %d", ret);
+    	ESP_LOGE(tag, "OTA failed, %d, %s", ret, Converter::ErrorToString(ret));
 
-		Device.Status = DeviceStatus::RUNNING;
 		PowerManagement::ReleaseLock("OTA");
 
 		Attempts++;
 
 		if (Attempts < Settings.OTA.MaxAttempts)
 			OTA::PerformUpdate(URL);
+		else
+		{
+			Device.Status = DeviceStatus::RUNNING;
 
-		Log::Add((ret == ESP_ERR_OTA_VALIDATE_FAILED) ? Log::Events::System::OTAVerifyFailed : Log::Events::System::OTAFailed);
+			Log::Add((ret == ESP_ERR_OTA_VALIDATE_FAILED) ? Log::Events::System::OTAVerifyFailed : Log::Events::System::OTAFailed);
+
+			if (OTAFailedCallback != NULL)
+				OTAFailedCallback();
+		}
 
         return ESP_FAIL;
     }

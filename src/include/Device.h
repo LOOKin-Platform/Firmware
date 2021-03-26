@@ -99,8 +99,8 @@ class Device_t {
 
 		static uint32_t 	GenerateID();
 
-		static void			OTACallbackSuccessfulStarted();
-		static void			OTACallbackFileDoesntExist();
+		static void			OTAStartedCallback();
+		static void			OTAFailedCallback();
 		static	httpd_req_t	*CachedRequest;
 	private:
 		bool 				POSTName(map<string,string>);
