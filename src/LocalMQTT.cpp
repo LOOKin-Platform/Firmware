@@ -151,9 +151,9 @@ esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t even
 			ConnectionTries = 0;
 
 			::esp_mqtt_client_subscribe(client, string(DeviceTopic + "/#").c_str() , Settings.LocalMQTT.DefaultQOS);
-			::esp_mqtt_client_subscribe(client, string(DeviceTopic + "/status").c_str(), Settings.LocalMQTT.DefaultQOS);
+			::esp_mqtt_client_subscribe(client, string(Settings.LocalMQTT.TopicPrefix + "broadcast").c_str(), Settings.LocalMQTT.DefaultQOS);
 
-			SendMessage(WebServer.UDPAliveBody(), "/status");
+			SendMessage(WebServer.UDPAliveBody(), Settings.LocalMQTT.TopicPrefix + "broadcast");
 			break;
 
         case MQTT_EVENT_DISCONNECTED:
@@ -180,10 +180,10 @@ esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t even
 		{
 			string Topic(event->topic, event->topic_len);
 
-			if (Topic == DeviceTopic + "/status")
+			if (Topic == Settings.LocalMQTT.TopicPrefix + "broadcast")
 			{
 				if (string(event->data, event->data_len) == WebServer_t::UDPDiscoverBody())
-					SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");
+					SendMessage(WebServer.UDPAliveBody(), Settings.LocalMQTT.TopicPrefix + "broadcast");
 			}
 
 			if (Topic.size() > (DeviceTopic.size() + 1))
@@ -228,7 +228,15 @@ int LocalMQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t 
 	if (CurrentStatus != CONNECTED)
 		return -1;
 
-	Topic = Settings.LocalMQTT.TopicPrefix + Device.IDToString() + Topic;
+	bool IsTopicFull = false;
+
+	if (Topic.size() >= Settings.LocalMQTT.TopicPrefix.size())
+		if (Topic.rfind(Settings.LocalMQTT.TopicPrefix, 0) == 0)
+			IsTopicFull = true;
+
+
+	if (!IsTopicFull)
+		Topic = Settings.LocalMQTT.TopicPrefix + Device.IDToString() + Topic;
 
 	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
 }
