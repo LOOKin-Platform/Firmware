@@ -75,7 +75,6 @@ void app_main(void) {
 	Data = DataEndpoint_t::GetForDevice();
 	Data->Init();
 	Storage.Init();
-
 	HomeKit::Init();
 
 	// Remote temporary hack

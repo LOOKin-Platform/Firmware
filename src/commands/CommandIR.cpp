@@ -172,6 +172,8 @@ class CommandIR_t : public Command_t {
 					return false;
 				}
 
+				ESP_LOGE("QUERY", "%s", (Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery()).c_str());
+
 				HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
 									QueryType::POST, true,
 									&ACReadStarted,
@@ -329,7 +331,6 @@ class CommandIR_t : public Command_t {
 			if (Settings.GPIOData.GetCurrent().IR.SenderGPIOExt != GPIO_NUM_0)
 				GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
 
-
 			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1) {
 				// deinit all pins for gpio output
 				for (auto& PinItem : GPIO)
@@ -412,7 +413,6 @@ class CommandIR_t : public Command_t {
 					((DataRemote_t*)Data)->SetExternalStatusForAC(
 							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(0, 4)),
 							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4)));
-
 		}
 
 		static void ACReadAborted(char IP[]) {

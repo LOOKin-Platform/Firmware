@@ -347,9 +347,6 @@ void IRAM_ATTR RMT::TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint1
 
 	PowerManagement::AddLock("RMTSend");
 
-	for(auto& GPIOItem : GPIO)
-		ESP_LOGE("GPIO", "%d", GPIOItem);
-
 	SetTXChannel(GPIO, Channel, Frequency);
 
 	if (OutputItems == 0) return;

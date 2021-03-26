@@ -359,11 +359,6 @@ void Device_t::OTACallbackSuccessfulStarted() {
 
 	if (PostFirmwareTransportType == WebServer_t::QueryTransportType::WebServer)
 		WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
-
-	/*
-	if (PostFirmwareTransportType == WebServer_t::QueryTransportType::MQTT)
-		MQTT.SendMessage("200 " + Response.Body, Settings.MQTT.DeviceTopicPrefix + Device.IDToString() + "/0");
-	*/
 }
 
 void Device_t::OTACallbackFileDoesntExist() {
