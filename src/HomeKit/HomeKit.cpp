@@ -975,8 +975,30 @@ void HomeKit::Task(void *) {
 
 	if (Mode == ModeEnum::BASIC)
 	{
-		// first Remote2 batch fix
 
+		/*
+		// check is information exists in factory_nvs
+		bool IsDataSavedInNVS = false;
+
+		const char* DefaultHomeKitPartition = "factory_nvs";
+
+		if (nvs_flash_init_partition(DefaultHomeKitPartition) == ESP_OK) {
+
+			nvs_handle m_handle;
+			if (nvs_open_from_partition(DefaultHomeKitPartition, "hap_setup", NVS_READONLY, &m_handle) == ESP_OK) {
+				size_t length;
+				esp_err_t nvs_err = nvs_get_blob(m_handle, "setup_id", NULL, &length);
+
+				ESP_LOGE("NVS CHECK", "LENGTH %d", length);
+
+				if (nvs_err == ESP_OK && length > 0)
+					IsDataSavedInNVS = true;
+			}
+			nvs_flash_deinit_partition("factory_nvs");
+		}
+		*/
+
+		// first Remote2 batch fix
 		string 	Pin 	= "";
 		string	SetupID = "";
 
@@ -1010,10 +1032,52 @@ void HomeKit::Task(void *) {
 				Pin 	= "905-86-070";
 				SetupID = "FF11";
 				break;
+
+			case 0x98F3302A: Pin = "48885380"; SetupID = "VXAE"; break;
+			case 0x98F3302B: Pin = "91821683"; SetupID = "06WA"; break;
+			case 0x98F3302C: Pin = "31101079"; SetupID = "E049"; break;
+			case 0x98F3302D: Pin = "47674974"; SetupID = "GGYQ"; break;
+			case 0x98F3302E: Pin = "55844407"; SetupID = "3KH4"; break;
+			case 0x98F3302F: Pin = "91293933"; SetupID = "HMYV"; break;
+			case 0x98F33031: Pin = "38610943"; SetupID = "E2YF"; break;
+			case 0x98F33032: Pin = "03186050"; SetupID = "PPC2"; break;
+			case 0x98F33033: Pin = "76600867"; SetupID = "IP50"; break;
+			case 0x98F33034: Pin = "87129689"; SetupID = "8AIG"; break;
+			case 0x98F33035: Pin = "96302487"; SetupID = "CZGJ"; break;
+			case 0x98F33036: Pin = "21030134"; SetupID = "O3KK"; break;
+			case 0x98F33037: Pin = "57632541"; SetupID = "H039"; break;
+			case 0x98F33038: Pin = "14097060"; SetupID = "16RI"; break;
+			case 0x98F33039: Pin = "61176935"; SetupID = "9M43"; break;
+			case 0x98F33042: Pin = "83580299"; SetupID = "EUNL"; break;
+			case 0x98F33043: Pin = "48792510"; SetupID = "MZ3O"; break;
+			case 0x98F33044: Pin = "66358001"; SetupID = "OFNT"; break;
+			case 0x98F33045: Pin = "52036031"; SetupID = "TC4G"; break;
+			case 0x98F33046: Pin = "53202426"; SetupID = "4ITH"; break;
+			case 0x98F33047: Pin = "40335631"; SetupID = "BD5B"; break;
+			case 0x98F33048: Pin = "73137534"; SetupID = "CVOB"; break;
+			case 0x98F33049: Pin = "36030335"; SetupID = "YXK1"; break;
+			case 0x98F3304A: Pin = "23690738"; SetupID = "YMWW"; break;
+			case 0x98F3304B: Pin = "88148820"; SetupID = "CC35"; break;
+			case 0x98F3304C: Pin = "89586372"; SetupID = "TZ9B"; break;
+			case 0x98F3304D: Pin = "13137569"; SetupID = "4INO"; break;
+			case 0x98F3304E: Pin = "29260813"; SetupID = "KLRF"; break;
+			case 0x98F3304F: Pin = "20234374"; SetupID = "54JY"; break;
+			case 0x98F33050: Pin = "93304411"; SetupID = "Z978"; break;
+			case 0x98F33051: Pin = "87543328"; SetupID = "ZNU6"; break;
+			case 0x98F33052: Pin = "57401543"; SetupID = "JGJL"; break;
+			case 0x98F33053: Pin = "09360873"; SetupID = "110U"; break;
+			case 0x98F33054: Pin = "98697209"; SetupID = "MVHM"; break;
+			case 0x98F33055: Pin = "54514768"; SetupID = "CYLT"; break;
+			case 0x98F33056: Pin = "72627202"; SetupID = "ZY7Y"; break;
 		}
 
-
-		if (Pin != "") {
+		//if (IsDataSavedInNVS) {
+		//	hap_enable_mfi_auth(HAP_MFI_AUTH_NONE);
+		//	hap_set_setup_id("VXAE");
+		//}
+		//else if (Pin != "")
+		if (Pin != "")
+		{
 		    hap_enable_mfi_auth(HAP_MFI_AUTH_NONE);
 		    hap_set_setup_code(Pin.c_str());
 		    hap_set_setup_id(SetupID.c_str());
