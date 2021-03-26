@@ -151,6 +151,8 @@ class Settings_t {
 
 		struct {
 			const uint8_t 					MaxIRItemSignals= 16;
+			const uint32_t					StatusSaveDelay	= 10000000; // 10 seconds
+
 		} Data;
 
 		struct {

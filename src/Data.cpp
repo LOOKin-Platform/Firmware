@@ -158,8 +158,8 @@ void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
     uint32_t	BlockStart 		= (Start / MemoryBlockSize) * MemoryBlockSize; // block starts every 4kb
     uint8_t		BlocksToErase 	= ceil((Start + Length) / (float)MemoryBlockSize) - BlockStart / MemoryBlockSize;
 
-    uint32_t	*HeadBuffer 	= (uint32_t *) calloc((Start - BlockStart), sizeof(uint32_t));
-    uint32_t	*TailBuffer 	= (uint32_t *) calloc((BlockStart + BlocksToErase*MemoryBlockSize - Start - Length), sizeof(uint32_t));
+    char		*HeadBuffer 	= (char*) calloc((Start - BlockStart), sizeof(char));
+    char		*TailBuffer 	= (char*) calloc((BlockStart + BlocksToErase*MemoryBlockSize - Start - Length), sizeof(char));
 
 	::esp_partition_read(Partition, BlockStart		, HeadBuffer, (Start - BlockStart));
     ::esp_partition_read(Partition, Start + Length	, TailBuffer, (BlockStart + BlocksToErase*MemoryBlockSize - Start - Length));
@@ -183,7 +183,7 @@ void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
     free(TailBuffer);
 }
 
-bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
+IRAM_ATTR bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 	NVS Memory(DataEndpoint_t::NVSArea);
 
 	if (Settings.DeviceGeneration == 1) {
@@ -214,6 +214,8 @@ bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
     static uint32_t AddressToSave = 0;
     AddressToSave = (ReplacementAddress == 0xFFFFFFFF) ? GetFreeMemoryAddress() : ReplacementAddress;
 
+    ESP_LOGE("SAVE ITEM", "%s To: %08X Normalized: %08X  DATA: %s", ItemName.c_str(), AddressToSave, NormalizedItemAddress(Item.size()), Item.c_str());
+
     EraseRange(AddressToSave, NormalizedItemAddress(Item.size()));
 
     if (ESP_OK != esp_partition_write(Partition, AddressToSave, Item.c_str(), Item.size()))
@@ -228,7 +230,7 @@ bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 	return true;
 }
 
-string DataEndpoint_t::GetItem(string ItemName) {
+IRAM_ATTR string DataEndpoint_t::GetItem(string ItemName) {
 	NVS Memory(DataEndpoint_t::NVSArea);
 	if (Settings.DeviceGeneration == 1)
 		return Memory.GetString(ItemName);

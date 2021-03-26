@@ -25,7 +25,11 @@
 
 #include "Custom.h"
 
+extern DataEndpoint_t *Data;
+
 using namespace std;
+
+static esp_timer_handle_t StatusSaveTimer = NULL;
 
 class DataDeviceItem_t {
 	public:
@@ -294,6 +298,9 @@ class DataRemote_t : public DataEndpoint_t {
 			uint16_t		Status 		{ 0x0 };
 			uint16_t		Extra		{ 0x0 };
 			uint32_t		Updated		{ 0x0 };
+
+			bool			StatusSaved	{ true };
+
 			map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>
 							Functions = map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>();
 
@@ -1087,9 +1094,6 @@ class DataRemote_t : public DataEndpoint_t {
 			uint16_t NewStatus = UpdateStatusResult.first;
 			Value = UpdateStatusResult.second;
 
-			ESP_LOGE("OLD STATUS", "%04X", Status);
-			ESP_LOGE("NEW STATUS", "%04X", NewStatus);
-
 			if (Status == NewStatus)
 				return make_pair(false, Status);
 
@@ -1102,16 +1106,48 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		void StatusSave(string DeviceID, uint16_t Status) {
+			bool IsStatusSyncNeeded = false;
+
 			for (int i = 0; i< IRDevicesCache.size(); i++)
 				if (IRDevicesCache[i].DeviceID == DeviceID)
 				{
-					IRDevicesCache[i].Status = Status;
-
-					IRDevice DeviceItem = LoadDevice(DeviceID);
-					DeviceItem.Status = Status;
-					SaveDevice(DeviceItem);
+					if (IRDevicesCache[i].Status != Status) {
+						IRDevicesCache[i].Status = Status;
+						IRDevicesCache[i].StatusSaved = false;
+						IsStatusSyncNeeded = true;
+					}
 
 					break;
+				}
+
+			if (IsStatusSyncNeeded) {
+				if (StatusSaveTimer == NULL) {
+					const esp_timer_create_args_t TimerArgs = {
+						.callback 			= &StatusSaveCallback,
+						.arg 				= NULL,
+						.dispatch_method 	= ESP_TIMER_TASK,
+						.name				= "StatusSaveTimer"
+					};
+
+					::esp_timer_create(&TimerArgs, &StatusSaveTimer);
+				}
+
+
+				::esp_timer_stop(StatusSaveTimer);
+				::esp_timer_start_once(StatusSaveTimer, Settings.Data.StatusSaveDelay);
+			}
+		}
+
+		static void StatusSaveCallback(void *Param)
+		{
+			for (int i = 0; i< ((DataRemote_t*)Data)->IRDevicesCache.size(); i++)
+				if (((DataRemote_t*)Data)->IRDevicesCache[i].StatusSaved == false)
+				{
+					IRDevice DeviceItem = ((DataRemote_t*)Data)->LoadDevice(((DataRemote_t*)Data)->IRDevicesCache[i].DeviceID);
+					DeviceItem.Status = ((DataRemote_t*)Data)->IRDevicesCache[i].Status;
+					((DataRemote_t*)Data)->SaveDevice(DeviceItem);
+
+					((DataRemote_t*)Data)->IRDevicesCache[i].StatusSaved = true;
 				}
 		}
 
@@ -1282,6 +1318,15 @@ class DataRemote_t : public DataEndpoint_t {
 			IRDevice LoadDevice(string UUID) {
 				UUID = Converter::ToUpper(UUID);
 				IRDevice Result(GetItem(UUID), UUID);
+
+				for (int i = 0; i< IRDevicesCache.size(); i++)
+					if (IRDevicesCache[i].DeviceID == UUID)
+					{
+						if (IRDevicesCache[i].StatusSaved == false)
+							Result.Status = IRDevicesCache[i].Status;
+
+						break;
+					}
 				return Result;
 			}
 
