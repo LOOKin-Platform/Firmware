@@ -61,7 +61,7 @@ class ACOperand {
 		}
 
 		static bool IsSwingSeparateForCodeset(uint16_t CodesetInHEX) {
-			if (CodesetInHEX == 0x9015 || CodesetInHEX == 0x9016 || CodesetInHEX = 0x9017)
+			if (CodesetInHEX == 0x9015 || CodesetInHEX == 0x9016 || CodesetInHEX == 0x9017 || CodesetInHEX == 0x9019)
 				return true;
 
 			return false;
