@@ -132,19 +132,7 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         	uint8_t NewValue = 0;
         	uint8_t CurrentMode = ((DataRemote_t*)Data)->DevicesHelper.GetDeviceForType(0xEF)->GetStatusByte(IRDeviceItem.Status , 0);
 
-        	if (Value)
-        	{
-        		const hap_val_t *ValueForCurrentState = hap_char_get_val(hap_serv_get_char_by_uuid(hap_char_get_parent(Char), HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE));
-
-                switch (ValueForCurrentState->u) {
-                	case 0: NewValue = 1; break;
-                	case 1: NewValue = 3; break;
-                	case 2: NewValue = 2; break;
-                }
-        	}
-
-        	if ((!Value && CurrentMode > 0) || (Value && CurrentMode == 0))
-        		StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, NewValue);
+        	//on
 
         	if (Value == 0) {
         		hap_val_t ValueForACFanActive;
@@ -158,6 +146,23 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         		hap_val_t ValueForACFanAuto;
         		ValueForACFanAuto.u = 0;
         		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+
+        		StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 0);
+        	}
+        	else
+        	{
+                if (IRDeviceItem.Status < 0x1000 && ACOperand::IsOnSeparateForCodeset(IRDeviceItem.Extra))
+                {
+                	ESP_LOGE("HomeKit", "Switch ON AC");
+
+                    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+                    if (IRCommand != nullptr) {
+                    	string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
+                        IRCommand->Execute(0xEF, Operand.c_str());
+                        FreeRTOS::Sleep(1000);
+                    }
+                }
         	}
 
         	return HAP_STATUS_SUCCESS;
@@ -319,19 +324,6 @@ bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
         	default: break;
         }
 
-        if (IRDeviceItem.Status < 0x1000 && Value > 1 && ACOperand::IsOnSeparateForCodeset(IRDeviceItem.Extra))
-        {
-        	ESP_LOGE("HomeKit", "Switch ON AC");
-
-            CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
-
-            if (IRCommand != nullptr) {
-            	string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
-                IRCommand->Execute(0xEF, Operand.c_str());
-                FreeRTOS::Sleep(1000);
-            }
-        }
-
         // change temperature because of it may depends on selected mode
         const hap_val_t* NewTempValue  = HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER,
         		(Value == 3) ? HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE : HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE);
@@ -342,7 +334,12 @@ bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
     	if (Value > 0) {
             // change current heater cooler state
             hap_val_t CurrentHeaterCoolerState;
-            CurrentHeaterCoolerState.u =  (Value == 3) ? 2 : 3;
+
+
+            CurrentHeaterCoolerState.u = 0;
+            if (Value == 1) CurrentHeaterCoolerState.u = 2;
+            if (Value == 2) CurrentHeaterCoolerState.u = 3;
+
             HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, CurrentHeaterCoolerState);
 
     		hap_val_t ValueForACFanActive;
