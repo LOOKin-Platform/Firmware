@@ -425,14 +425,14 @@ bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t
 }
 
 bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
-	ESP_LOGE("TargetFanState", "UUID: %04X, Value: %d", AID, Value);
+	ESP_LOGE("TargetFanState", "UUID: %04X, Value: %d, Iterator: %d", AID, Value, Iterator);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
     	if (Iterator > 0) return true;
 
         DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
 
-        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditioner
         	return false;
 
         // switch on
@@ -1060,12 +1060,55 @@ void HomeKit::Task(void *) {
 			case 0x98F3304E: Pin = "292-60-813"; SetupID = "KLRF"; break;
 			case 0x98F3304F: Pin = "202-34-374"; SetupID = "54JY"; break;
 			case 0x98F33050: Pin = "933-04-411"; SetupID = "Z978"; break;
-			case 0x98F33051: Pin = "875-43-328"; SetupID = "ZNU6"; break;
-			case 0x98F33052: Pin = "574-01-543"; SetupID = "JGJL"; break;
-			case 0x98F33053: Pin = "093-60-873"; SetupID = "110U"; break;
-			case 0x98F33054: Pin = "986-97-209"; SetupID = "MVHM"; break;
-			case 0x98F33055: Pin = "545-14-768"; SetupID = "CYLT"; break;
-			case 0x98F33056: Pin = "726-27-202"; SetupID = "ZY7Y"; break;
+			case 0x98F33051: Pin = "952-67-082"; SetupID = "DT19"; break;
+			case 0x98F33052: Pin = "696-57-197"; SetupID = "0G81"; break;
+			case 0x98F33053: Pin = "823-84-040"; SetupID = "SJ67"; break;
+			case 0x98F33054: Pin = "372-17-936"; SetupID = "2B26"; break;
+			case 0x98F33055: Pin = "524-33-993"; SetupID = "8638"; break;
+			case 0x98F33056: Pin = "728-40-775"; SetupID = "VS49"; break;
+			case 0x98F33057: Pin = "158-72-855"; SetupID = "WG63"; break;
+			case 0x98F33058: Pin = "584-27-402"; SetupID = "0278"; break;
+			case 0x98F33059: Pin = "867-84-622"; SetupID = "YO45"; break;
+			case 0x98F3305A: Pin = "501-79-192"; SetupID = "T944"; break;
+			case 0x98F3305B: Pin = "239-09-376"; SetupID = "HK47"; break;
+			case 0x98F3305C: Pin = "330-92-293"; SetupID = "I478"; break;
+			case 0x98F3305D: Pin = "362-17-166"; SetupID = "UK25"; break;
+			case 0x98F3305E: Pin = "371-77-165"; SetupID = "TE63"; break;
+			case 0x98F3305F: Pin = "336-08-468"; SetupID = "ZH64"; break;
+			case 0x98F33060: Pin = "708-07-628"; SetupID = "F233"; break;
+			case 0x98F33061: Pin = "691-15-657"; SetupID = "TW93"; break;
+			case 0x98F33062: Pin = "953-36-842"; SetupID = "2556"; break;
+			case 0x98F33063: Pin = "810-42-944"; SetupID = "E677"; break;
+			case 0x98F33064: Pin = "417-70-582"; SetupID = "CJ36"; break;
+			case 0x98F33065: Pin = "713-16-488"; SetupID = "2432"; break;
+			case 0x98F33066: Pin = "407-28-149"; SetupID = "YJ82"; break;
+			case 0x98F33067: Pin = "415-62-866"; SetupID = "E852"; break;
+			case 0x98F33068: Pin = "656-18-628"; SetupID = "3Y96"; break;
+			case 0x98F33069: Pin = "101-35-086"; SetupID = "EU49"; break;
+			case 0x98F3306A: Pin = "736-43-083"; SetupID = "EW14"; break;
+			case 0x98F3306B: Pin = "781-00-894"; SetupID = "1Y78"; break;
+			case 0x98F3306C: Pin = "441-40-107"; SetupID = "W949"; break;
+			case 0x98F3306D: Pin = "298-17-188"; SetupID = "T874"; break;
+			case 0x98F3306E: Pin = "280-33-162"; SetupID = "PU81"; break;
+			case 0x98F3306F: Pin = "564-74-043"; SetupID = "SU61"; break;
+			case 0x98F33070: Pin = "693-26-344"; SetupID = "1368"; break;
+			case 0x98F33071: Pin = "822-63-648"; SetupID = "P389"; break;
+			case 0x98F33072: Pin = "337-00-622"; SetupID = "TS25"; break;
+			case 0x98F33073: Pin = "566-54-307"; SetupID = "D637"; break;
+			case 0x98F33074: Pin = "336-47-796"; SetupID = "L724"; break;
+			case 0x98F33075: Pin = "908-73-402"; SetupID = "V512"; break;
+			case 0x98F33076: Pin = "061-32-489"; SetupID = "FL42"; break;
+			case 0x98F33077: Pin = "576-31-875"; SetupID = "EP49"; break;
+			case 0x98F33078: Pin = "028-37-770"; SetupID = "7R56"; break;
+			case 0x98F33079: Pin = "672-27-632"; SetupID = "CK27"; break;
+			case 0x98F3307A: Pin = "107-08-510"; SetupID = "XO41"; break;
+			case 0x98F3307B: Pin = "279-38-745"; SetupID = "OS28"; break;
+			case 0x98F3307C: Pin = "645-42-393"; SetupID = "X691"; break;
+			case 0x98F3307D: Pin = "997-00-221"; SetupID = "VP41"; break;
+			case 0x98F3307E: Pin = "658-33-443"; SetupID = "YY27"; break;
+			case 0x98F3307F: Pin = "469-10-808"; SetupID = "R982"; break;
+			case 0x98F33080: Pin = "378-08-297"; SetupID = "S552"; break;
+			case 0x98F33081: Pin = "513-28-525"; SetupID = "VI61"; break;
 		}
 
 		//if (IsDataSavedInNVS) {

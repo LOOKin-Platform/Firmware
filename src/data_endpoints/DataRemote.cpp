@@ -1237,22 +1237,16 @@ class DataRemote_t : public DataEndpoint_t {
 						else
 							HAPValueCurrent.u = 3;
 
-						ESP_LOGE("HAPVALUECURRENT", "%d", HAPValueCurrent.u);
-
 						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValueCurrent);
 
 						static hap_val_t HAPValueTarget;
 						HAPValueTarget.u = HAPValueCurrent.u - 1;
 						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE, HAPValueTarget);
-
-						ESP_LOGE("HAPVALUETARGET", "%d", HAPValueTarget.u);
 					}
 
 					HAPValue.b = (Value > 0);
 					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER	, HAP_CHAR_UUID_ACTIVE, HAPValue);
 					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ACTIVE, HAPValue);
-
-					ESP_LOGE("MODE HAPVALUE", "%d", (uint8_t)HAPValue.b);
 
 					if (Value > 0) {
 						static hap_val_t HAPValueFanRotation;

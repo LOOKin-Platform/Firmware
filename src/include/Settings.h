@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 21, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 23, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -163,8 +163,9 @@ class Settings_t {
 		struct {
 			const uint16_t					Interval 		= 1000;
 
-			const uint32_t					MQTTInterval	= 90*1000; 		// 90 секунд
-			const uint32_t					PingInterval	= 30*60*1000; 	// 30 минут
+			const uint32_t					MQTTInterval		= 90*1000; 		// 90 секунд
+			const uint32_t					ServerPingInterval	= 30*60*1000; 	// 30 минут
+			const uint32_t					RouterPingInterval 	= 10*60*1000;	// 10 минут
 
 			struct {
 				const uint16_t				Inverval 		= 4000;

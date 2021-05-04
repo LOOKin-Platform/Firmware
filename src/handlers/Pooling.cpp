@@ -6,9 +6,9 @@
 #include "BluetoothHandler.cpp"
 #include "EnergyHandler.cpp"
 #include "SensorPeriodicHandler.cpp"
-#include "PingPeriodicHandler.cpp"
 #include "NetworkMapHandler.cpp"
 #include "ExternalTempHandler.cpp"
+#include "PingPeriodicHandler.cpp"
 #include "RemoteControlPeriodicHandler.cpp"
 
 class Pooling_t {

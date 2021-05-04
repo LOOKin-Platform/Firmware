@@ -8,19 +8,28 @@ class PingPeriodicHandler {
 		static void FirmwareCheckStarted(char IP[]);
 		static bool FirmwareCheckReadBody(char Data[], int DataLen, char IP[]);
 		static void FirmwareCheckFinished(char IP[]);
-		static void OTAFailed();
 
 		static void	ExecuteOTATask	(void*);
+		static void OTAStartedCallback();
+		static void OTAFailed();
 
 	private:
+		static FreeRTOS::Semaphore IsRouterPingFinished;
+		static void PerformLocalPing();
+		static void RouterPingFinished(esp_ping_handle_t hdl, void *args);
+
 		static TaskHandle_t	OTATaskHandler;
-		static uint32_t 	PingRestartCounter;
+		static uint32_t 	RemotePingRestartCounter;
+		static uint32_t 	RouterPingRestartCounter;
 		static string		FirmwareUpdateURL;
 };
 
-uint32_t 		PingPeriodicHandler::PingRestartCounter = 0;
-string 			PingPeriodicHandler::FirmwareUpdateURL = "";
-TaskHandle_t	PingPeriodicHandler::OTATaskHandler = NULL;
+uint32_t 			PingPeriodicHandler::RemotePingRestartCounter 	= 0;
+uint32_t 			PingPeriodicHandler::RouterPingRestartCounter 	= 0;
+string 				PingPeriodicHandler::FirmwareUpdateURL 			= "";
+TaskHandle_t		PingPeriodicHandler::OTATaskHandler 			= NULL;
+FreeRTOS::Semaphore	PingPeriodicHandler::IsRouterPingFinished 		= FreeRTOS::Semaphore("IsRouterPingFinished");
+
 
 void PingPeriodicHandler::FirmwareCheckStarted(char IP[]) {
 	FirmwareUpdateURL = "";
@@ -43,10 +52,25 @@ void PingPeriodicHandler::FirmwareCheckFinished(char IP[]) {
 	if (FirmwareUpdateURL.size() == 0)
 		return;
 
-	Device.Status = DeviceStatus::UPDATING;
-
 	if (OTATaskHandler == NULL)
 		OTATaskHandler = FreeRTOS::StartTask(PingPeriodicHandler::ExecuteOTATask, "ExecuteOTATask", NULL, 10240, 7);
+}
+
+
+void PingPeriodicHandler::ExecuteOTATask(void*) {
+	ESP_LOGE("OTA UPDATE STARTED", "");
+
+	LocalMQTT.Stop();
+	RemoteControl.Stop();
+	HomeKit::Stop();
+	FreeRTOS::Sleep(5000);
+
+	OTA::Update(FirmwareUpdateURL, OTAStartedCallback, OTAFailed);
+}
+
+void PingPeriodicHandler::OTAStartedCallback() {
+	ESP_LOGE("OTA UPDATE STARTED", "");
+	Device.Status = DeviceStatus::UPDATING;
 }
 
 void PingPeriodicHandler::OTAFailed() {
@@ -57,23 +81,12 @@ void PingPeriodicHandler::OTAFailed() {
 
 	HomeKit::Start();
 
+	Device.Status = DeviceStatus::RUNNING;
+
 	if (OTATaskHandler != NULL) {
 		FreeRTOS::DeleteTask(OTATaskHandler);
 		OTATaskHandler = NULL;
 	}
-}
-
-void PingPeriodicHandler::ExecuteOTATask(void*) {
-	ESP_LOGE("OTA UPDATE STARTED", "");
-
-	LocalMQTT.Stop();
-	RemoteControl.Stop();
-
-	HomeKit::Stop();
-
-	FreeRTOS::Sleep(5000);
-
-	OTA::Update(FirmwareUpdateURL, NULL, OTAFailed);
 }
 
 void PingPeriodicHandler::Pool() {
@@ -83,10 +96,12 @@ void PingPeriodicHandler::Pool() {
 	if (WiFi.GetMode() != WIFI_MODE_STA_STR)
 		return;
 
-	PingRestartCounter += Settings.Pooling.Interval;
+	RemotePingRestartCounter += Settings.Pooling.Interval;
+	RouterPingRestartCounter += Settings.Pooling.Interval;
 
-	if (PingRestartCounter >= Settings.Pooling.PingInterval) {
-		PingRestartCounter = 0;
+	if (RemotePingRestartCounter >= Settings.Pooling.ServerPingInterval) {
+		RemotePingRestartCounter = 0;
+		RouterPingRestartCounter = 0;
 
 		if (Time::IsUptime(Time::Unixtime()))
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
@@ -94,12 +109,61 @@ void PingPeriodicHandler::Pool() {
 		{
 			DateTime_t CurrentTime = Time::DateTime();
 
-			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.PingInterval / 60*1000))
+			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000))
 				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
 			else
 				HTTPClient::Query(Settings.ServerUrls.Ping, QueryType::GET, true, NULL, NULL, NULL, NULL);
 		}
 	}
+	else if (RouterPingRestartCounter >= Settings.Pooling.RouterPingInterval) {
+		RouterPingRestartCounter = 0;
+
+		PerformLocalPing();
+	}
+}
+
+void PingPeriodicHandler::PerformLocalPing() {
+	IsRouterPingFinished.Take("IsRouterPingFinished");
+
+	ip_addr_t RouterServerIP;
+
+	RouterServerIP.u_addr.ip4.addr = WiFi.GetIPInfo().ip.addr;
+	RouterServerIP.type = IPADDR_TYPE_V4;
+
+	esp_ping_config_t ping_config 	= ESP_PING_DEFAULT_CONFIG();
+	ping_config.target_addr 		= RouterServerIP;
+	ping_config.count 				= 3;
+	ping_config.timeout_ms			= 1000;
+	ping_config.interval_ms			= 500;
+
+	esp_ping_callbacks_t cbs;
+	cbs.on_ping_success = NULL;
+	cbs.on_ping_timeout = NULL;
+	cbs.on_ping_end 	= PingPeriodicHandler::RouterPingFinished;
+	cbs.cb_args 		= NULL;  // arguments that will feed to all callback functions, can be NULL
+
+	esp_ping_handle_t PingHandler;
+	esp_ping_new_session(&ping_config, &cbs, &PingHandler);
+	esp_ping_start(PingHandler);
+
+	IsRouterPingFinished.Wait("IsRouterPingFinished");
+
+	esp_ping_stop(PingHandler);
+	esp_ping_delete_session(PingHandler);
+}
+
+void PingPeriodicHandler::RouterPingFinished(esp_ping_handle_t hdl, void *args)
+{
+    uint32_t transmitted;
+    uint32_t received;
+    uint32_t total_time_ms;
+
+    esp_ping_get_profile(hdl, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
+    esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
+    printf("%d packets transmitted, %d received, time %dms\n", transmitted, received, total_time_ms);
+
+    IsRouterPingFinished.Give();
 }
 
 #endif
