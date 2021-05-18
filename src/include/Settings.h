@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 23, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 25, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -328,6 +328,17 @@ class Settings_t {
 				const uint16_t				TaskDelay		= 50;		// Задержка в запуске процесса проверки значений в мс
 			} TouchSensor;
 		} SensorsConfig;
+
+		struct {
+			struct {
+				const uint64_t				ProntoHexBlockedDelayU = 3*1000000;
+			} IR;
+
+			struct {
+				const uint8_t				QueueSize		= 50; 		// Размер очереди сенсора
+				const uint16_t				TaskDelay		= 50;		// Задержка в запуске процесса проверки значений в мс
+			} TouchSensor;
+		} CommandsConfig;
 
 		// Commands and sensors data
 

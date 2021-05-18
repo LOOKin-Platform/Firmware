@@ -18,6 +18,10 @@ static rmt_channel_t TXChannel = RMT_CHANNEL_0;
 static string 	IRACReadBuffer 	= "";
 static uint16_t	IRACFrequency	= 38000;
 
+static string 	ProntoHexBlockedBuffer = "";
+static esp_timer_handle_t ProntoHexBlockedTimer = NULL;
+
+
 class CommandIR_t : public Command_t {
 	public:
 		struct LastSignal_t {
@@ -27,14 +31,14 @@ class CommandIR_t : public Command_t {
 		};
 
 		CommandIR_t() {
-			ID          			= 0x07;
-			Name        			= "IR";
+			ID          				= 0x07;
+			Name        				= "IR";
 
-			Events["nec1"]			= 0x01;
-			Events["sony"]			= 0x03;
-			Events["necx"]			= 0x04;
-			Events["panasonic"]		= 0x05;
-			Events["samsung36"]		= 0x06;
+			Events["nec1"]				= 0x01;
+			Events["sony"]				= 0x03;
+			Events["necx"]				= 0x04;
+			Events["panasonic"]			= 0x05;
+			Events["samsung36"]			= 0x06;
 
 			/*
 			Events["daikin"]		= 0x08;
@@ -43,16 +47,26 @@ class CommandIR_t : public Command_t {
 			Events["haier-ac"] 		= 0x0B;
 			*/
 
-			Events["aiwa"]			= 0x14;
+			Events["aiwa"]				= 0x14;
 
-			Events["repeat"]		= 0xED;
+			Events["repeat"]			= 0xED;
 
-			Events["saved"]			= 0xEE;
-			Events["ac"]			= 0xEF;
-			Events["prontohex"]		= 0xF0;
+			Events["saved"]				= 0xEE;
+			Events["ac"]				= 0xEF;
+			Events["prontohex"]			= 0xF0;
+			Events["prontohex-blocked"]	= 0xF1;
 
-			Events["localremote"]	= 0xFE;
-			Events["raw"]			= 0xFF;
+			Events["localremote"]		= 0xFE;
+			Events["raw"]				= 0xFF;
+
+			const esp_timer_create_args_t TimerArgs = {
+				.callback 			= &ProntoHexBlockedCallback,
+				.arg 				= NULL,
+				.dispatch_method 	= ESP_TIMER_TASK,
+				.name				= "ProntoHexBlockedTimer"
+			};
+
+			::esp_timer_create(&TimerArgs, &ProntoHexBlockedTimer);
 		}
 
 		LastSignal_t LastSignal;
@@ -202,6 +216,18 @@ class CommandIR_t : public Command_t {
 				return true;
 			}
 
+			if (EventCode == 0xF1) { // Blocked ProntoHEX
+				if (ProntoHexBlockedBuffer != "")
+					return false;
+
+				ProntoHexBlockedBuffer = StringOperand;
+
+				::esp_timer_stop(ProntoHexBlockedTimer);
+				::esp_timer_start_once(ProntoHexBlockedTimer, Settings.CommandsConfig.IR.ProntoHexBlockedDelayU);
+
+				return Execute(0xF0, StringOperand);
+			}
+
 			if (EventCode == 0xFE) { // local saved remote in /data
 				if (strlen(StringOperand) != 8 || InOperation)
 					return false;
@@ -315,6 +341,10 @@ class CommandIR_t : public Command_t {
 			}
 
 			return false;
+		}
+
+		static void ProntoHexBlockedCallback(void *Param) {
+			ProntoHexBlockedBuffer = "";
 		}
 
 		void TXSend(uint16_t Frequency) {
