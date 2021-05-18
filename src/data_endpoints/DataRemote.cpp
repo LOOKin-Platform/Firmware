@@ -1167,7 +1167,7 @@ class DataRemote_t : public DataEndpoint_t {
 			if (!IsHomeKitEnabled())
 				return;
 
-			ESP_LOGE("StatusTriggerUpdated", "FunctionID: %04x Value: %d", FunctionID, Value);
+			ESP_LOGE("HomeKitStatusTriggerUpdated", "FunctionID: %04X Value: %d DeviceID: %s", FunctionID, Value, DeviceID.c_str());
 
 			uint32_t AID = (uint32_t)Converter::UintFromHexString<uint16_t>(DeviceID);
 
@@ -1228,25 +1228,35 @@ class DataRemote_t : public DataEndpoint_t {
 					HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueVolumeControlType);
 					break;
 				}
-				case 0xE0: { // AC mode
-					if (Value > 0) {
-						static hap_val_t HAPValueCurrent;
+				case 0xE0:  // AC mode
+				{
+					static hap_val_t HAPValueCurrent;
+					static hap_val_t HAPValueTarget;
 
-						if (Value == 3)
-							HAPValueCurrent.u = 2;
-						else
+					switch (Value) {
+						case 0:
+							HAPValueCurrent.u = 0;
+							HAPValueTarget.u = 0;
+							break;
+						case 1:
+						case 2:
+						case 4:
+						case 5:
 							HAPValueCurrent.u = 3;
-
-						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValueCurrent);
-
-						static hap_val_t HAPValueTarget;
-						HAPValueTarget.u = HAPValueCurrent.u - 1;
-						HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE, HAPValueTarget);
+							HAPValueTarget.u = 2;
+							break;
+						case 3:
+							HAPValueCurrent.u = 2;
+							HAPValueTarget.u = 1;
+							break;
 					}
 
-					HAPValue.b = (Value > 0);
+					HAPValue.u = (Value == 0) ? 0 : 1;
 					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER	, HAP_CHAR_UUID_ACTIVE, HAPValue);
 					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2		, HAP_CHAR_UUID_ACTIVE, HAPValue);
+
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, HAPValueCurrent);
+					HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE, HAPValueTarget);
 
 					if (Value > 0) {
 						static hap_val_t HAPValueFanRotation;

@@ -187,7 +187,7 @@ void WebServer_t::UDPStart() {
 	ESP_LOGD(tag, "UDPServer -> Start");
 
 	if (UDPListenerTaskHandle == NULL) {
-		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 3072);
+		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 3072, 6);
 	}
 }
 
@@ -468,7 +468,7 @@ void WebServer_t::UDPListenerTask(void *data) {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string...
 
                 string Datagram = rx_buffer;
-    			ESP_LOGI(tag, "UDP received \"%s\" from port %d", Datagram.c_str(), ntohs(source_addr.sin6_port));
+    			ESP_LOGE(tag, "UDP received \"%s\" from port %d", Datagram.c_str(), ntohs(source_addr.sin6_port));
 
     			if(find(UDPPorts.begin(), UDPPorts.end(), ntohs(source_addr.sin6_port)) == UDPPorts.end()) {
     				if (UDPPorts.size() == Settings.WiFi.UDPHoldPortsMax)

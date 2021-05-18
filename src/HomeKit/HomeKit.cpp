@@ -738,6 +738,19 @@ hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 		//hap_serv_link_serv(ServiceAC, ServiceACFan);
 		hap_acc_add_serv(Accessory, ServiceACFan);
 
+		float HumidityValue = 0;
+		Sensor_t* SensorMeteo = Sensor_t::GetSensorByID(0xFE);
+		if (SensorMeteo != nullptr)
+			HumidityValue = Converter::ToFloat(SensorMeteo->FormatValue("Humidity"));
+
+		hap_serv_t *ServiceACHumidity;
+		ServiceACHumidity = hap_serv_humidity_sensor_create(HumidityValue);
+		hap_serv_add_char(ServiceACHumidity, hap_char_name_create("Humidity"));
+		hap_serv_set_priv(ServiceACHumidity, (void *)(uint32_t)UUID);
+		hap_serv_set_write_cb(ServiceACHumidity, WriteCallback);
+		//hap_serv_link_serv(ServiceAC, ServiceACFan);
+		hap_acc_add_serv(Accessory, ServiceACHumidity);
+
 
 		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
 		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));

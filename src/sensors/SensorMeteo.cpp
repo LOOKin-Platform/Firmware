@@ -107,6 +107,18 @@ class SensorMeteo_t : public Sensor_t {
 						}
 				}
 			}
+			else if (Type == "Humidity") {
+				Result	+= (uint32_t)abs(Value * 10);
+
+				if (IsHomeKitEnabled()) {
+					for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
+						if (IRDevice.DeviceType == 0xEF) {
+							hap_val_t CurrentHumidityValue;
+							CurrentHumidityValue.f = Value;
+							HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
+						}
+				}
+			}
 			else
 				Result	+= (uint32_t)abs(Value * 10);
 
