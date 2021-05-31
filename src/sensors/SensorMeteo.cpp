@@ -238,14 +238,21 @@ class SensorMeteo_t : public Sensor_t {
 
 				Result.Temperature -= TempCorrection;
 
-				Result.Humidity += 15.2;
-				if (Result.Humidity > 100)
-					Result.Humidity = 100;
 			}
 			else if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision > 1)
 			{
 		        hdc1080_read(HDC1080, &Result.Temperature, &Result.Humidity);
+
+				float TempCorrection = 2.76;
+				if (Time::Uptime() < 1800)
+                    TempCorrection = 0.85 * log10(Time::Uptime());
+
+				Result.Temperature -= TempCorrection;
 			}
+
+			Result.Humidity += 15.2;
+			if (Result.Humidity > 100)
+				Result.Humidity = 100;
 
 			return Result;
 		}

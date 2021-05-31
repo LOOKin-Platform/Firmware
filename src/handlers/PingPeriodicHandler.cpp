@@ -111,8 +111,17 @@ void PingPeriodicHandler::Pool() {
 
 			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000))
 				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
-			else
-				HTTPClient::Query(Settings.ServerUrls.Ping, QueryType::GET, true, NULL, NULL, NULL, NULL);
+			else {
+				JSON TelemetryData;
+
+				TelemetryData.SetItem("Uptime", Converter::ToString<uint32_t>(Time::Uptime()));
+				TelemetryData.SetItem("Eco", (Device.GetEcoFromNVS()) ? "1" : "0");
+				TelemetryData.SetItem("HomeKit", Device.HomeKitToString());
+				TelemetryData.SetItem("IsBattery", (Device.PowerMode == DevicePowerMode::BATTERY) ? "1" : "0");
+				TelemetryData.SetItem("RC", RemoteControl.IsCredentialsSet() ? "1" : "0");
+
+				HTTPClient::Query(Settings.ServerUrls.Telemetry, QueryType::POST, true, NULL, NULL, NULL, NULL, TelemetryData.ToString());
+			}
 		}
 	}
 	else if (RouterPingRestartCounter >= Settings.Pooling.RouterPingInterval) {

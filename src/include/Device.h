@@ -102,6 +102,8 @@ class Device_t {
 		static void			OTAStartedCallback();
 		static void			OTAFailedCallback();
 		static	httpd_req_t	*CachedRequest;
+
+
 	private:
 		bool 				POSTName(map<string,string>);
 		bool 				POSTTime(map<string,string>);

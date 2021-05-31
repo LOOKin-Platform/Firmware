@@ -37,6 +37,11 @@ void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
 	QueryData.Method  				= Type;
 	QueryData.BufferSize 			= 1024;
 
+	if (POSTData.size() > 0) {
+		QueryData.POSTData = new char[POSTData.size() + 1];
+		strcpy(QueryData.POSTData, POSTData.c_str());
+	}
+
 	QueryData.ReadStartedCallback   = ReadStartedCallback;
 	QueryData.ReadBodyCallback      = ReadBodyCallback;
 	QueryData.ReadFinishedCallback  = ReadFinishedCallback;
@@ -170,6 +175,9 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 				esp_http_client_close(Handle);
 				esp_http_client_cleanup(Handle);
 			}
+
+			if (ClientData.POSTData != nullptr)
+				delete ClientData.POSTData;
 		}
 
 	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);

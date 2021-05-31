@@ -64,7 +64,7 @@ class Settings_t {
 			const string 					BaseURL			= "http://api.look-in.club/v1";
 
 			const string					SyncTime		= BaseURL + "/time";
-			const string					Ping			= BaseURL + "/ping";
+			const string					Telemetry		= BaseURL + "/telemetry";
 			const string					FirmwareCheck	= BaseURL + "/firmwares/check";
 			const string					GetACCode		= BaseURL + "/ac/codesets";
 
