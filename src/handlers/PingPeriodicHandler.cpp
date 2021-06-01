@@ -120,7 +120,16 @@ void PingPeriodicHandler::Pool() {
 				TelemetryData.SetItem("IsBattery", (Device.PowerMode == DevicePowerMode::BATTERY) ? "1" : "0");
 				TelemetryData.SetItem("RC", RemoteControl.IsCredentialsSet() ? "1" : "0");
 
-				HTTPClient::Query(Settings.ServerUrls.Telemetry, QueryType::POST, true, NULL, NULL, NULL, NULL, TelemetryData.ToString());
+				HTTPClient::HTTPClientData_t QueryData;
+				strcpy(QueryData.URL, Settings.ServerUrls.Telemetry.c_str());
+				QueryData.Method 	= QueryType::POST;
+
+				static char POSTBuffer[256] = "\0";
+
+				strcpy(POSTBuffer, TelemetryData.ToString().c_str());
+				QueryData.POSTData = &POSTBuffer[0];
+
+				HTTPClient::Query(QueryData, true);
 			}
 		}
 	}
