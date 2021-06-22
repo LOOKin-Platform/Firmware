@@ -192,6 +192,6 @@ void Settings_t::eFuse_t::ReadData() {
 
 	FillDevices();
 
-	Settings.WiFi.APSSID 			= "LOOK.in_" + Device.IDToString();
+	Settings.WiFi.APSSID 			= "LOOKin_" + Device.IDToString();
 	Settings.WiFi.APPassword		= Device.IDToString();
 }
