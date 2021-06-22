@@ -122,6 +122,9 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			Operand = Params[ "operand" ];
 			Params.erase ( "operand" );
 		}
+		else if (Query.Type == QueryType::POST) {
+			Operand = string(Query.GetBody());
+		}
 
 		Command_t* Command = Command_t::GetCommandByName(CommandName);
 		if (Command == nullptr)

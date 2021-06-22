@@ -179,6 +179,7 @@ esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t even
         case MQTT_EVENT_DATA:
 		{
 			string Topic(event->topic, event->topic_len);
+			string Data(event->data, event->data_len);
 
 			if (Topic == Settings.LocalMQTT.TopicPrefix + "broadcast")
 			{
@@ -205,7 +206,7 @@ esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t even
 				if (Command == NULL)
 					return ESP_OK;
 
-				Command->Execute(Command->GetEventCode(TopicParts[2]), event->data);
+				Command->Execute(Command->GetEventCode(TopicParts[2]), Data.c_str());
 
 				return ESP_OK;
 			}
