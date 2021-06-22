@@ -299,8 +299,11 @@ class SensorIR_t : public Sensor_t {
 			for (string CodesetItem : Codesets) {
 				if (CodesetItem.size() != 8) continue;
 
-				uint16_t Codeset 	= Converter::UintFromHexString<uint16_t>(CodesetItem.substr(0, 4));
-				uint16_t Status		= Converter::UintFromHexString<uint16_t>(CodesetItem.substr(4, 4));
+				string CodesetString= CodesetItem.substr(0, 4);
+				string StatusString	= CodesetItem.substr(4, 4);
+
+				uint16_t Codeset 	= Converter::UintFromHexString<uint16_t>(CodesetString);
+				uint16_t Status		= Converter::UintFromHexString<uint16_t>(StatusString);
 
 				if (Codeset == 0) return;
 
@@ -309,6 +312,7 @@ class SensorIR_t : public Sensor_t {
 				if (Settings.eFuse.Type == Settings.Devices.Remote)
 					((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Status);
 
+				LocalMQTTSend(StatusString, "/sensors/ir/ac/" + CodesetString);
 			}
 		}
 

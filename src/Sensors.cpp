@@ -58,6 +58,9 @@ uint8_t Sensor_t::GetDeviceTypeHex() {
 	return Device.Type.Hex;
 }
 
+void Sensor_t::LocalMQTTSend(string Payload, string Topic) {
+	LocalMQTT.SendMessage(Payload, Topic);
+}
 
 void Sensor_t::UpdateSensors() {
 	for (auto& Sensor : Sensors)

@@ -74,6 +74,8 @@ class Sensor_t {
 		static Sensor_t*			GetSensorByID(uint8_t);
 		static uint8_t				GetDeviceTypeHex();
 
+		static void					LocalMQTTSend(string Payload, string Topic);
+
 		static void HandleHTTPRequest(WebServer_t::Response &, Query_t &);
 
 	private:
