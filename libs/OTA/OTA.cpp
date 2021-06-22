@@ -58,7 +58,8 @@ esp_err_t OTA::PerformUpdate(string URL) {
 	Config.timeout_ms 				= 7000;
 	Config.buffer_size 				= Settings.OTA.BufferSize;
 	Config.buffer_size_tx 			= Settings.OTA.BufferSize;
-	Config.max_redirection_count 	= 0;
+	Config.max_redirection_count 	= 10;
+	Config.disable_auto_redirect	= true;
 	Config.method 					= esp_http_client_method_t::HTTP_METHOD_GET;
 
 	Config.user_data 				= NULL;

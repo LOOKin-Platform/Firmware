@@ -66,7 +66,7 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 	ChannelsMap[Channel].CallbackBody 	= CallbackBody;
 	ChannelsMap[Channel].CallbackEnd 	= CallbackEnd;
 
-	::rmt_memory_rw_rst(Channel);
+	::rmt_rx_memory_reset(Channel);
 
 	//rtc_gpio_isolate(Pin);
 }

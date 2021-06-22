@@ -29,6 +29,8 @@
 #undef min
 #undef max
 
+#undef MODLOG_DFLT
+
 #include <string>
 
 using namespace std;

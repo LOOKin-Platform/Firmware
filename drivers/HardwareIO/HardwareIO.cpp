@@ -117,6 +117,7 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
 	ledc_channel.channel	= PWMChannel;
 	ledc_channel.gpio_num	= GPIO;
 	ledc_channel.hpoint		= 0;
+	ledc_channel.intr_type	= LEDC_INTR_FADE_END;
 
 	::ledc_channel_config(&ledc_channel);
 	::ledc_fade_func_install(0);

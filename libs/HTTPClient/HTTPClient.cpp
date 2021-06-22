@@ -125,6 +125,12 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 			Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
 
+			Config.path						= "/";
+			Config.host						= NULL;
+			Config.query					= NULL;
+			Config.username					= NULL;
+			Config.password					= NULL;
+
 			Config.cert_pem					= NULL;
 			Config.client_cert_pem			= NULL;
 			Config.client_key_pem			= NULL;
@@ -134,8 +140,9 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			Config.timeout_ms 				= 7000;
 			Config.buffer_size 				= ClientData.BufferSize;
 			Config.buffer_size_tx 			= ClientData.BufferSize;
-			Config.max_redirection_count 	= 0;
 
+			Config.disable_auto_redirect	= true;
+			Config.max_redirection_count 	= 10;
 
 			switch (ClientData.Method) {
 				case POST   : Config.method = esp_http_client_method_t::HTTP_METHOD_POST; 	break;
@@ -150,8 +157,9 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			string URLString= ClientData.URL;
 			Config.url 		= ClientData.URL;
 
+			Config.user_agent = UserAgent.c_str();
+
 			esp_http_client_handle_t Handle = esp_http_client_init(&Config);
-			esp_http_client_set_header(Handle, "User-Agent", UserAgent.c_str());
 
 			if (ClientData.POSTData != nullptr && strlen(ClientData.POSTData) > 0 && ClientData.Method == POST)
 				::esp_http_client_set_post_field(Handle, ClientData.POSTData, strlen(ClientData.POSTData));

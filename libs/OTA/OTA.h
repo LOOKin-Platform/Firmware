@@ -9,7 +9,6 @@
 
 #include <string.h>
 
-#include <esp_spi_flash.h>
 #include <esp_partition.h>
 #include <esp_ota_ops.h>
 

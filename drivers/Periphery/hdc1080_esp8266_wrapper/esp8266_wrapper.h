@@ -7,10 +7,6 @@
 
 #ifdef ESP_PLATFORM  // ESP32 (ESP-IDF)
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -20,6 +16,9 @@ extern "C" {
 
 #include "hal/gpio_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 /*
  * esp-open-rtos SDK function wrapper 
  */
