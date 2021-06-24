@@ -154,7 +154,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	private:
 		esp_err_t apStart() {
 			Log::Add(Log::Events::WiFi::APStart);
-			WebServer.HTTPStart();
+			//WebServer.HTTPStart();
 			WebServer.UDPStart();
 
 			Wireless.IsFirstWiFiStart = false;
@@ -172,7 +172,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t apStop() {
 			Log::Add(Log::Events::WiFi::APStop);
 
-			WebServer.HTTPStop();
+			//WebServer.HTTPStop();
 			WebServer.UDPStop();
 
 			Wireless.IsEventDrivenStart = false;
@@ -202,7 +202,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
 
-			WebServer.HTTPStop();
+			//WebServer.HTTPStop();
 			WebServer.UDPStop();
 
 			LocalMQTT.Stop();
@@ -291,8 +291,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			else
 				WiFi.IsIPCheckSuccess = true;
 
-			if (!HomeKit::IsEnabledForDevice())
-				WebServer.HTTPStart();
+			//if (!HomeKit::IsEnabledForDevice())
+			//	WebServer.HTTPStart();
 
 			WebServer.UDPStart();
 
