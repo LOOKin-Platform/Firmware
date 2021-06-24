@@ -50,6 +50,9 @@ void HomeKit::Init() {
 
 	if (Mode != ModeEnum::NONE)
 		HomeKit::Start();
+	else
+		WebServer.HTTPStart();
+
 }
 
 void HomeKit::Start() {
