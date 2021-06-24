@@ -44,13 +44,13 @@ void PowerManagement::SetPMOptions() {
 
     esp_err_t ret;
     if((ret = esp_pm_configure(&pm_config)) != ESP_OK)
-        ESP_LOGI(tag, "pm config error %s\n",  ret == ESP_ERR_INVALID_ARG ?  "ESP_ERR_INVALID_ARG": "ESP_ERR_NOT_SUPPORTED");
+        ESP_LOGI(tag, "pm config error %s", Converter::ErrorToString(ret));
 }
 
 void PowerManagement::SetWiFiOptions() {
 	switch (ActivePMType)
 	{
-		case NONE	: esp_wifi_set_ps(WIFI_PS_NONE); break;
+		case NONE	: //esp_wifi_set_ps(WIFI_PS_NONE); break;
 		case LIGHT	: esp_wifi_set_ps(WIFI_PS_MIN_MODEM); break;
 		case MAX	: esp_wifi_set_ps(WIFI_PS_MAX_MODEM); break;
 	}

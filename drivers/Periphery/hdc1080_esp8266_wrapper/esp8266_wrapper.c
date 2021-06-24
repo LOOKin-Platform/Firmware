@@ -75,6 +75,8 @@ void i2c_init (int bus, gpio_num_t scl, gpio_num_t sda, uint32_t freq)
     conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = freq;
+    conf.clk_flags = 0;
+
     i2c_param_config(bus, &conf);
     i2c_driver_install(bus, I2C_MODE_MASTER, 0, 0, 0);
 }

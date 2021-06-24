@@ -41,12 +41,14 @@ void I2C::Init(uint8_t address, gpio_num_t sdaPin, gpio_num_t sclPin, uint32_t c
 	m_address = address;
 
 	i2c_config_t conf;
-	conf.mode             = I2C_MODE_MASTER;
-	conf.sda_io_num       = sdaPin;
-	conf.scl_io_num       = sclPin;
-	conf.sda_pullup_en    = GPIO_PULLUP_ENABLE;
-	conf.scl_pullup_en    = GPIO_PULLUP_ENABLE;
-	conf.master.clk_speed =  100000;
+	conf.mode             	= I2C_MODE_MASTER;
+	conf.sda_io_num       	= sdaPin;
+	conf.scl_io_num       	= sclPin;
+	conf.sda_pullup_en    	= GPIO_PULLUP_ENABLE;
+	conf.scl_pullup_en    	= GPIO_PULLUP_ENABLE;
+	conf.master.clk_speed 	=  100000;
+    conf.clk_flags 			= 0;
+
 	esp_err_t errRc = ::i2c_param_config(m_portNum, &conf);
 
 	if (errRc != ESP_OK)
