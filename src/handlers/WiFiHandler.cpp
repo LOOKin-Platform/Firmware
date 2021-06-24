@@ -328,6 +328,22 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			else
 			    mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 
+
+		    mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
+		    mdns_service_add(NULL, "_lookin", "_udp", Settings.WiFi.MDNSServicePort, NULL, 0);
+
+		    string HTTPServiceName = Settings.Bluetooth.DeviceNamePrefix + Device.IDToString();
+		    mdns_service_instance_name_set("_http", "_tcp", HTTPServiceName.c_str());
+		    mdns_service_instance_name_set("_lookin", "_udp", HTTPServiceName.c_str());
+
+		    mdns_txt_item_t ServiceTxtData[2];
+		    ServiceTxtData[0].key = "id";
+		    ServiceTxtData[0].value = Device.IDToString().c_str();
+		    ServiceTxtData[1].key = "manufactorer";
+		    ServiceTxtData[1].value = "LOOKin";
+
+		    mdns_service_txt_set("_lookin", "_udp", ServiceTxtData, 2);
+
 			IsConnectedBefore = true;
 
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
