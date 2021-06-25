@@ -3,9 +3,9 @@
 
 
 if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-	set(PARTITION_CSV_PATH "/Users/thecashit/Documents/LOOK.in/Firmware/Source/partitions_4mb.csv")	
+	set(PARTITION_CSV_PATH "/Users/thecashit/Documents/LOOKin/Firmware/Source/partitions_4mb.csv")	
 else()
-	set(PARTITION_CSV_PATH "/Users/thecashit/Documents/LOOK.in/Firmware/Source/partitions_16mb.csv")
+	set(PARTITION_CSV_PATH "/Users/thecashit/Documents/LOOKin/Firmware/Source/partitions_16mb.csv")
 endif()
 
 

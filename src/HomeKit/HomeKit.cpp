@@ -713,7 +713,7 @@ hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 		hap_acc_cfg_t cfg = {
 			.name 				= AccessoryData.Name,
 			.model 				= AccessoryData.Model,
-			.manufacturer 		= "LOOK.in",
+			.manufacturer 		= "LOOKin",
 			.serial_num 		= AccessoryData.ID,
 			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
 			.hw_rev 			= NULL,
@@ -784,7 +784,7 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 		hap_acc_cfg_t cfg = {
 			.name 				= AccessoryData.Name,
 			.model 				= AccessoryData.Model,
-			.manufacturer 		= "LOOK.in",
+			.manufacturer 		= "LOOKin",
 			.serial_num 		= AccessoryData.ID,
 			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
 			.hw_rev 			= NULL,
@@ -1174,6 +1174,9 @@ void HomeKit::Task(void *) {
 			case 0x98F330B0: Pin = "995-71-083"; SetupID = "8NFV"; break;
 			case 0x98F330B1: Pin = "001-33-392"; SetupID = "4NWG"; break;
 			case 0x98F330B2: Pin = "901-90-100"; SetupID = "CCJT"; break;
+
+			// test
+			case 0xF9DDD4ED: Pin = "111-11-111"; SetupID = "ABCD"; break;
 		}
 
 		//if (IsDataSavedInNVS) {
