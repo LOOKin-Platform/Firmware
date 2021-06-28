@@ -15,7 +15,7 @@ string						RemoteControl_t::Password		= "";
 RemoteControl_t::Status_t 	RemoteControl_t::Status			= RemoteControl_t::Status_t::UNACTIVE;
 uint8_t						RemoteControl_t::ConnectionTries	= 0;
 
-esp_mqtt_client_handle_t 	RemoteControl_t::ClientHandle = NULL;
+esp_mqtt_client_handle_t 	RemoteControl_t::ClientHandle 	= NULL;
 
 RemoteControl_t::RemoteControl_t(string Username, string Password) {
 	SetCredentials	(Username, Password);

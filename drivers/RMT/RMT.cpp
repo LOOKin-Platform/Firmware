@@ -202,7 +202,7 @@ void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t 
 	config.tx_config.idle_level      = (rmt_idle_level_t)0;
 	config.tx_config.carrier_freq_hz = Frequency;
 	config.tx_config.carrier_level   = (rmt_carrier_level_t)1;
-	config.tx_config.carrier_duty_percent = 50;
+	config.tx_config.carrier_duty_percent = 25;
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 0, 0));
