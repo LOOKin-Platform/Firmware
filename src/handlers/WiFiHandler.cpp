@@ -336,13 +336,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		    mdns_service_instance_name_set("_http", "_tcp", HTTPServiceName.c_str());
 		    mdns_service_instance_name_set("_lookin", "_udp", HTTPServiceName.c_str());
 
-		    mdns_txt_item_t ServiceTxtData[2];
-		    ServiceTxtData[0].key = "id";
-		    ServiceTxtData[0].value = Device.IDToString().c_str();
-		    ServiceTxtData[1].key = "manufactorer";
-		    ServiceTxtData[1].value = "LOOKin";
-
-		    mdns_service_txt_set("_lookin", "_udp", ServiceTxtData, 2);
+		    MDNSSetServiceText();
 
 			IsConnectedBefore = true;
 
@@ -355,6 +349,29 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			return ESP_OK;
 		}
+
+	void MDNSSetServiceText() {
+	    mdns_txt_item_t ServiceTxtData[6];
+	    ServiceTxtData[0].key = "id";
+	    ServiceTxtData[0].value = Device.IDToString().c_str();
+
+	    ServiceTxtData[1].key = "manufactorer";
+	    ServiceTxtData[1].value = "LOOKin";
+
+	    ServiceTxtData[2].key = "type";
+	    ServiceTxtData[2].value = Device.Type.ToHexString().c_str();
+
+	    ServiceTxtData[3].key = "isbattery";
+	    ServiceTxtData[3].value = Device.Type.IsBattery() ? "0" : "1";
+
+	    ServiceTxtData[4].key = "automation";
+	    ServiceTxtData[4].value = Converter::ToHexString(Automation.CurrentVersion(),8).c_str();
+
+	    ServiceTxtData[5].key = "storage";
+	    ServiceTxtData[5].value = Converter::ToHexString(Storage.CurrentVersion(),4).c_str();
+
+	    mdns_service_txt_set("_lookin", "_udp", ServiceTxtData, 6);
+	}
 };
 
 #endif
