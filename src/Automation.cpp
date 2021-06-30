@@ -160,6 +160,22 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Que
 
 	// DELETE запрос - удаление сценариев
 	if (Query.Type == QueryType::DELETE) {
+		if (Query.GetURLPartsCount() == 1) {
+			if (Settings.DeviceGeneration == 1)
+				SPIFlash::EraseRange(Settings.Scenarios.Memory.Start4MB, Settings.Scenarios.Memory.Size4MB);
+			else
+				PartitionAPI::ErasePartition("scenarios");
+
+			ScenariosCache.clear();
+			VersionMap.clear();
+
+			NVS Memory(NVSAutomationArea);
+			Memory.SetString(NVSAutomationVersionMap, "");
+
+			Result.ResponseCode = WebServer_t::Response::CODE::OK;
+			Result.Body = "{\"success\" : \"true\"}";
+		}
+
 		if (Query.GetURLPartsCount() == 3) {
 			if (Query.CheckURLPart("scenarios",1)) {
 				vector<string> ScenariosToDelete = Converter::StringToVector(Query.GetStringURLPartByNumber(2), ",");
