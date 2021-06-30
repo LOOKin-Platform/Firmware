@@ -325,7 +325,7 @@ void WebServer_t::UDPSendBroadcast(string Message, bool IsScheduled) {
 			Message = Message.substr(0, 128);
 
 		for (uint16_t Port : UDPPorts) {
-			struct sockaddr_in dest_addr, cliaddr;
+			struct sockaddr_in dest_addr;
 			dest_addr.sin_addr.s_addr = inet_addr("255.255.255.255");
 			dest_addr.sin_family = AF_INET;
 			dest_addr.sin_port = htons(Port);
@@ -349,11 +349,6 @@ void WebServer_t::UDPSendBroadcast(string Message, bool IsScheduled) {
 			if(setsockopt(sock, SOL_SOCKET, SO_BROADCAST,(char*)&option,sizeof(option)) < 0)
 				ESP_LOGE(tag, "setsockopt SO_BROADCAST failed");
 
-			cliaddr.sin_family = AF_INET;
-			cliaddr.sin_addr.s_addr= htonl(INADDR_ANY);
-			cliaddr.sin_port=htons(Port); //source port for outgoing packets
-			bind(sock,(struct sockaddr *)&cliaddr,sizeof(cliaddr));
-
 			int err = sendto(sock, Message.c_str(), Message.length(), 0, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
 
 			if (err < 0) {
@@ -361,10 +356,10 @@ void WebServer_t::UDPSendBroadcast(string Message, bool IsScheduled) {
 				break;
 			}
 
-			ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d", Message.c_str(), Port);
+			ESP_LOGI(tag, "UDP broadcast \"%s\" sended to port %d, sock: %d", Message.c_str(), Port, sock);
 
 	        if (sock != -1) {
-	            shutdown(sock, 0);
+	            shutdown(sock, 2);
 	            close(sock);
 	        }
 		}
