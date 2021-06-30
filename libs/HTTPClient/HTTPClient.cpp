@@ -154,10 +154,9 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			Config.user_data 	= (void*)&ClientData;
 			Config.event_handler= QueryHandler;
 
-			string URLString= ClientData.URL;
-			Config.url 		= ClientData.URL;
+			Config.url 			= ClientData.URL;
 
-			Config.user_agent = UserAgent.c_str();
+			Config.user_agent 	= UserAgent.c_str();
 
 			esp_http_client_handle_t Handle = esp_http_client_init(&Config);
 

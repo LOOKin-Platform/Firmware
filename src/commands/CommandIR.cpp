@@ -15,12 +15,11 @@ extern DataEndpoint_t *Data;
 
 static rmt_channel_t TXChannel = RMT_CHANNEL_0;
 
-static string 	IRACReadBuffer 	= "";
-static uint16_t	IRACFrequency	= 38000;
+static string 				IRACReadBuffer 			= "";
+static uint16_t				IRACFrequency			= 38000;
 
-static string 	ProntoHexBlockedBuffer = "";
-static esp_timer_handle_t ProntoHexBlockedTimer = NULL;
-
+static string 				ProntoHexBlockedBuffer 	= "";
+static esp_timer_handle_t 	ProntoHexBlockedTimer 	= NULL;
 
 class CommandIR_t : public Command_t {
 	public:
