@@ -332,7 +332,6 @@ void IRAM_ATTR RMT::TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint1
 	if (GPIO.size() == 0)
 		return;
 
-
 	bool IsAllEmpty = true;
 
 	for(auto& GPIOItem : GPIO)

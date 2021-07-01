@@ -56,8 +56,8 @@ class HTTPClient {
 			Aborted       		AbortedCallback       	= NULL;   /*!< Callback function invoked when reading data from server failed */
 		};
 
-		static void 			Query(HTTPClientData_t, bool ToFront = false);
-		static void 			Query(string URL, QueryType Type = GET, bool ToFront = false,
+		static void 			Query(HTTPClientData_t, bool ToFront = false, bool IsSystem = false);
+		static void 			Query(string URL, QueryType Type = GET, bool ToFront = false, bool IsSystem = false,
 									ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL, string POSTData="");
 
 		static esp_err_t		QueryHandler(esp_http_client_event_t *event);
@@ -69,6 +69,8 @@ class HTTPClient {
 	private:
 		static string			UserAgent;
 		static QueueHandle_t  	Queue;
+		static QueueHandle_t  	SystemQueue;
+
 		static uint8_t        	ThreadsCounter;
 };
 

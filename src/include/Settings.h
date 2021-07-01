@@ -228,8 +228,9 @@ class Settings_t {
 		} eFuse;
 
 		struct HTTPClient_t {
-			static constexpr uint16_t 		QueueSize		= 16;
 			static constexpr uint8_t		ThreadsMax		= 2;
+			static constexpr uint16_t 		QueueSize		= 16;
+			static constexpr uint16_t 		SystemQueueSize	= 8;
 			static constexpr uint8_t		BlockTicks		= 50;
 			static constexpr uint16_t		NetbuffLen		= 512;
 			static constexpr uint8_t		NewThreadStep	= 2;

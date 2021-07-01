@@ -21,6 +21,9 @@ static uint16_t				IRACFrequency			= 38000;
 static string 				ProntoHexBlockedBuffer 	= "";
 static esp_timer_handle_t 	ProntoHexBlockedTimer 	= NULL;
 
+//static FreeRTOS::Semaphore 	IsIRSignalReadyToSend 	= FreeRTOS::Semaphore("IsIRSignalReadyToSend");
+
+
 class CommandIR_t : public Command_t {
 	public:
 		struct LastSignal_t {
@@ -188,7 +191,7 @@ class CommandIR_t : public Command_t {
 				ESP_LOGE("QUERY", "%s", (Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery()).c_str());
 
 				HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
-									QueryType::POST, true,
+									QueryType::POST, false, true,
 									&ACReadStarted,
 									&ACReadBody,
 									&ACReadFinished,
@@ -347,6 +350,10 @@ class CommandIR_t : public Command_t {
 		}
 
 		void TXSend(uint16_t Frequency) {
+			//IsIRSignalReadyToSend.Wait("IsIRSignalReadyToSend");
+			//IsIRSignalReadyToSend.Take("IsIRSignalReadyToSend");
+
+
 			if (RMT::TXItemsCount() == 0)
 				return;
 
@@ -377,6 +384,8 @@ class CommandIR_t : public Command_t {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
 				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
+
+			//IsIRSignalReadyToSend.Give();
 		}
 
 		void TriggerStateChange(IRLib &Signal) {

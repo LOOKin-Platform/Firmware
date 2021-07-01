@@ -115,7 +115,7 @@ void Time::ServerSync(string URL) {
 		return;
 
 	ESP_LOGI(tag, "Time sync started");
-	HTTPClient::Query(URL, QueryType::GET, true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
+	HTTPClient::Query(URL, QueryType::GET, true, false, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
 }
 
 void Time::ReadStarted(char IP[]) {

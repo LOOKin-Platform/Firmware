@@ -9,9 +9,11 @@
 
 static char tag[] = "HTTPClient";
 
-QueueHandle_t HTTPClient::Queue = FreeRTOS::Queue::Create(Settings.HTTPClient.QueueSize, sizeof( struct HTTPClientData_t ));
-uint8_t HTTPClient::ThreadsCounter = 0;
-string HTTPClient::UserAgent = "";
+QueueHandle_t 	HTTPClient::Queue 			= FreeRTOS::Queue::Create(Settings.HTTPClient.QueueSize, sizeof( struct HTTPClientData_t ));
+QueueHandle_t	HTTPClient::SystemQueue		= FreeRTOS::Queue::Create(Settings.HTTPClient.SystemQueueSize, sizeof( struct HTTPClientData_t ));
+uint8_t 		HTTPClient::ThreadsCounter 	= 0;
+string 			HTTPClient::UserAgent 		= "";
+
 /**
  * @brief Add query to the request queue.
  *
@@ -27,7 +29,8 @@ string HTTPClient::UserAgent = "";
  * @param [in] AbortedCallback Callback function invoked when reading failed
  * @param [in] POSTData Post data for sending to server
  */
-void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
+
+void HTTPClient::Query(string URL, QueryType Type, bool ToFront, bool IsSystem,
         ReadStarted ReadStartedCallback, ReadBody ReadBodyCallback, ReadFinished ReadFinishedCallback, Aborted AbortedCallback, string POSTData) {
 
 	HTTPClientData_t QueryData;
@@ -42,7 +45,7 @@ void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
 	QueryData.ReadFinishedCallback  = ReadFinishedCallback;
 	QueryData.AbortedCallback       = AbortedCallback;
 
-	Query(QueryData, ToFront);
+	Query(QueryData, ToFront, IsSystem);
 }
 
 /**
@@ -52,7 +55,7 @@ void HTTPClient::Query(string URL, QueryType Type, bool ToFront,
  * @param [in] ToFront If query is primary it will be better to send it to the front of queue
  */
 
-void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
+void HTTPClient::Query(HTTPClientData_t Query, bool ToFront, bool IsSystem) {
 	if( Queue == 0 ) {
 		ESP_LOGE(tag, "Failed to create queue");
 		return;
@@ -60,16 +63,13 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront) {
 
 	CheckUserAgent();
 
-	if (ToFront)
-		FreeRTOS::Queue::SendToFront(Queue, &Query, (TickType_t) Settings.HTTPClient.BlockTicks );
-	else
-		FreeRTOS::Queue::SendToBack(Queue, &Query, (TickType_t) Settings.HTTPClient.BlockTicks );
+	FreeRTOS::Queue::Send((IsSystem) ? SystemQueue : Queue, &Query, ToFront, (TickType_t) Settings.HTTPClient.BlockTicks);
 
 	if (ThreadsCounter <= 0) {
 		ThreadsCounter = 1;
 		FreeRTOS::StartTask(HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.ThreadStackSize);
 	}
-	else if (FreeRTOS::Queue::Count(Queue) >= Settings.HTTPClient.NewThreadStep && ThreadsCounter < Settings.HTTPClient.ThreadsMax) {
+	else if (!IsSystem && FreeRTOS::Queue::Count(Queue) >= Settings.HTTPClient.NewThreadStep && ThreadsCounter < Settings.HTTPClient.ThreadsMax) {
 		ThreadsCounter++;
 		FreeRTOS::StartTask(HTTPClient::HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.ThreadStackSize);
 	}
@@ -119,65 +119,82 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 	HTTPClientData_t ClientData;
 
-	if (Queue != 0)
-		while (FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks)) {
-			esp_http_client_config_t Config;
+	uint32_t ThreadNumber = (uint32_t)TaskData;
 
-			Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
+	portBASE_TYPE IsItemReceived = false;
 
-			Config.path						= "/";
-			Config.host						= NULL;
-			Config.query					= NULL;
-			Config.username					= NULL;
-			Config.password					= NULL;
+	do
+	{
+		IsItemReceived = false;
 
-			Config.cert_pem					= NULL;
-			Config.client_cert_pem			= NULL;
-			Config.client_key_pem			= NULL;
+		if (ThreadNumber == 1 && SystemQueue != 0)
+			IsItemReceived = FreeRTOS::Queue::Receive(HTTPClient::SystemQueue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks);
 
-			Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
+		if (!IsItemReceived && Queue != 0)
+			IsItemReceived = FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks);
 
-			Config.timeout_ms 				= 7000;
-			Config.buffer_size 				= ClientData.BufferSize;
-			Config.buffer_size_tx 			= ClientData.BufferSize;
+		if (!IsItemReceived)
+			break;
 
-			Config.disable_auto_redirect	= true;
-			Config.max_redirection_count 	= 10;
+		esp_http_client_config_t Config;
 
-			switch (ClientData.Method) {
-				case POST   : Config.method = esp_http_client_method_t::HTTP_METHOD_POST; 	break;
-				case DELETE : Config.method = esp_http_client_method_t::HTTP_METHOD_DELETE; break;
-				case GET    :
-				default     : Config.method = esp_http_client_method_t::HTTP_METHOD_GET; 	break;
-			}
+		Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
 
-			Config.user_data 	= (void*)&ClientData;
-			Config.event_handler= QueryHandler;
+		Config.path						= "/";
+		Config.host						= NULL;
+		Config.query					= NULL;
+		Config.username					= NULL;
+		Config.password					= NULL;
 
-			Config.url 			= ClientData.URL;
+		Config.cert_pem					= NULL;
+		Config.client_cert_pem			= NULL;
+		Config.client_key_pem			= NULL;
 
-			Config.user_agent 	= UserAgent.c_str();
+		Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
 
-			esp_http_client_handle_t Handle = esp_http_client_init(&Config);
+		Config.timeout_ms 				= 7000;
+		Config.buffer_size 				= ClientData.BufferSize;
+		Config.buffer_size_tx 			= ClientData.BufferSize;
 
-			if (ClientData.POSTData != nullptr && strlen(ClientData.POSTData) > 0 && ClientData.Method == POST)
-				::esp_http_client_set_post_field(Handle, ClientData.POSTData, strlen(ClientData.POSTData));
+		Config.disable_auto_redirect	= true;
+		Config.max_redirection_count 	= 10;
 
-			esp_err_t err = esp_http_client_perform(Handle);
-
-			if (err == ESP_OK) {
-				ESP_LOGI(tag, "Performing HTTP request success");
-			}
-			if (err != ESP_OK) {
-				ESP_LOGE(tag, "Connect to http server failed: %s", esp_err_to_name(err));
-				HTTPClient::Failed(ClientData);
-			}
-
-			if (Handle != NULL) {
-				esp_http_client_close(Handle);
-				esp_http_client_cleanup(Handle);
-			}
+		switch (ClientData.Method) {
+			case POST   : Config.method = esp_http_client_method_t::HTTP_METHOD_POST; 	break;
+			case DELETE : Config.method = esp_http_client_method_t::HTTP_METHOD_DELETE; break;
+			case GET    :
+			default     : Config.method = esp_http_client_method_t::HTTP_METHOD_GET; 	break;
 		}
+
+		Config.user_data 	= (void*)&ClientData;
+		Config.event_handler= QueryHandler;
+
+		Config.url 						= ClientData.URL;
+		Config.user_agent 				= UserAgent.c_str();
+
+		Config.is_async					= false;
+
+		esp_http_client_handle_t Handle = esp_http_client_init(&Config);
+
+		if (ClientData.POSTData != nullptr && strlen(ClientData.POSTData) > 0 && ClientData.Method == POST)
+			::esp_http_client_set_post_field(Handle, ClientData.POSTData, strlen(ClientData.POSTData));
+
+		esp_err_t err = esp_http_client_perform(Handle);
+
+		if (err == ESP_OK) {
+			ESP_LOGI(tag, "Performing HTTP request success");
+		}
+		if (err != ESP_OK) {
+			ESP_LOGE(tag, "Connect to http server failed: %s", esp_err_to_name(err));
+			HTTPClient::Failed(ClientData);
+		}
+
+		if (Handle != NULL) {
+			esp_http_client_close(Handle);
+			esp_http_client_cleanup(Handle);
+		}
+	}
+	while (IsItemReceived);
 
 	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
     HTTPClient::ThreadsCounter--;

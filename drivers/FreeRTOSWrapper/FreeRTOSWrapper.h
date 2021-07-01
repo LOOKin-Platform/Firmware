@@ -91,6 +91,7 @@ class FreeRTOS {
 		class Queue {
 			public:
 				static QueueHandle_t 		Create				(uint16_t Items, uint16_t ItemSize);
+				static BaseType_t			Send				(QueueHandle_t QueueHandle, void *Item, bool IsFront = false, TickType_t xTicksToWait = 50);
 				static BaseType_t			SendToBack			(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
 				static BaseType_t			SendToFront			(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
 				static BaseType_t			Receive				(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);

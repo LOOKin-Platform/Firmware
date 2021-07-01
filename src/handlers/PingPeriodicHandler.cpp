@@ -110,7 +110,7 @@ void PingPeriodicHandler::Pool() {
 			DateTime_t CurrentTime = Time::DateTime();
 
 			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000))
-				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
+				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
 			else {
 				JSON TelemetryData;
 

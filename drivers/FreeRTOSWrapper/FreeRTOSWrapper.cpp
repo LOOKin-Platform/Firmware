@@ -367,6 +367,14 @@ QueueHandle_t FreeRTOS::Queue::Create(uint16_t Items, uint16_t ItemSize ) {
 	return ::xQueueCreate(Items, ItemSize);
 }
 
+BaseType_t FreeRTOS::Queue::Send(QueueHandle_t QueueHandle, void *Item, bool IsFront, TickType_t xTicksToWait) {
+	if (!IsFront)
+		return FreeRTOS::Queue::SendToBack(QueueHandle, Item, xTicksToWait);
+	else
+		return FreeRTOS::Queue::SendToFront(QueueHandle, Item, xTicksToWait);
+}
+
+
 BaseType_t FreeRTOS::Queue::SendToBack(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait) {
 	return ::xQueueSendToBack(QueueHandle, Item, xTicksToWait);
 }
