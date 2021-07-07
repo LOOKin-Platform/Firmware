@@ -5,6 +5,7 @@
 */
 
 #include "Settings.h"
+#include "BootAndRestore.h"
 #include "Globals.h"
 
 map<uint8_t, Settings_t::GPIOData_t::DeviceInfo_t> Settings_t::GPIOData_t::Devices = {};
@@ -96,19 +97,19 @@ uint32_t Settings_t::eFuse_t::ReverseBytes(uint32_t Value) {
 	return Result;
 }
 
-void Settings_t::eFuse_t::ReadData() {
+void Settings_t::eFuse_t::ReadDataOrInit() {
 	uint32_t eFuseData1, eFuseData2, eFuseData3, eFuseData4 = 0x00;
 
-	eFuseData1 = REG_READ(EFUSE_BLK3_RDATA7_REG);
-	eFuseData2 = REG_READ(EFUSE_BLK3_RDATA6_REG);
-	eFuseData3 = REG_READ(EFUSE_BLK3_RDATA5_REG);
-	eFuseData4 = REG_READ(EFUSE_BLK3_RDATA4_REG);
+	eFuseData1 = esp_efuse_read_reg(EFUSE_BLK3, 7);
+	eFuseData2 = esp_efuse_read_reg(EFUSE_BLK3, 6);
+	eFuseData3 = esp_efuse_read_reg(EFUSE_BLK3, 5);
+	eFuseData4 = esp_efuse_read_reg(EFUSE_BLK3, 4);
 
 	if (eFuseData1 + eFuseData2 + eFuseData3 + eFuseData4 == 0x0) {
-		eFuseData1 = REG_READ(EFUSE_BLK3_RDATA0_REG);
-		eFuseData2 = REG_READ(EFUSE_BLK3_RDATA1_REG);
-		eFuseData3 = REG_READ(EFUSE_BLK3_RDATA2_REG);
-		eFuseData4 = REG_READ(EFUSE_BLK3_RDATA3_REG);
+		eFuseData1 = esp_efuse_read_reg(EFUSE_BLK3, 0);
+		eFuseData2 = esp_efuse_read_reg(EFUSE_BLK3, 1);
+		eFuseData3 = esp_efuse_read_reg(EFUSE_BLK3, 2);
+		eFuseData4 = esp_efuse_read_reg(EFUSE_BLK3, 3);
 	}
 
 	//check is valid efuse or not - different SOC versions has different storage schemes
@@ -121,6 +122,9 @@ void Settings_t::eFuse_t::ReadData() {
 		eFuseData3 = ReverseBytes(eFuseData3);
 		eFuseData4 = ReverseBytes(eFuseData4);
 	}
+
+	if (eFuseData1 + eFuseData2 + eFuseData3 + eFuseData4 == 0x0)
+		InitFromNVS();
 
 	Type 				= (uint8_t)(eFuseData1 >> 16);
 
@@ -195,3 +199,86 @@ void Settings_t::eFuse_t::ReadData() {
 	Settings.WiFi.APSSID 			= "LOOKin_" + Device.IDToString();
 	Settings.WiFi.APPassword		= Device.IDToString();
 }
+
+void Settings_t::eFuse_t::InitFromNVS() {
+	string Partition = "factory_nvs";
+
+	NVS::Init(Partition);
+	//NVS::DeInit("factory_nvs");
+
+	NVS Memory(Partition, "init", NVS_READONLY);
+
+	if (Memory.GetLastError() != ESP_OK)
+		return;
+
+	Log::Add(0x00F1);
+
+	uint32_t 	DeviceID 		= Converter::UintFromHexString<uint32_t>(Memory.GetString("id"));
+	uint8_t 	DeviceType 		= Memory.GetInt8Bit("type");
+	uint8_t 	DeviceModel 	= Memory.GetInt8Bit("model");
+	uint8_t 	DeviceRevision 	= Memory.GetInt8Bit("revision");
+	uint8_t 	Misc 			= Memory.GetInt8Bit("misc");
+
+	uint8_t 	Manufactorer 	= Memory.GetInt8Bit("manufactorer");
+	uint8_t 	Country 		= Memory.GetInt8Bit("country");
+	string 		Date			= Memory.GetString("date");
+
+	string 		HKSetupID		= Memory.GetString("hksetupid");
+	string 		HKPinCode		= Memory.GetString("hkpincode");
+
+	uint32_t eFuseData1 = 0;
+	uint32_t eFuseData2 = 0;
+	uint32_t eFuseData3 = 0;
+	uint32_t eFuseData4 = 0;
+
+	//00810001
+	eFuseData1 = ((uint32_t)DeviceType) << 16;
+	eFuseData1 = eFuseData1 + DeviceRevision;
+	eFuseData1 = ReverseBytes(eFuseData1);
+
+	eFuseData2 = ((uint32_t)DeviceModel) << 24;
+	eFuseData2 = (eFuseData2 + (DeviceID >> 8));
+	eFuseData2 = ReverseBytes(eFuseData2);
+
+	eFuseData3 = (DeviceID << 24);
+	eFuseData3 = eFuseData3 + (((uint32_t)Misc) << 16);
+
+	vector<string> DateArray = Converter::StringToVector(Date, ".");
+	uint32_t Month 	= ((uint32_t)Converter::UintFromHexString<uint8_t>(DateArray[1])) << 8;
+	uint32_t Day 	= ((uint32_t)Converter::UintFromHexString<uint8_t>(DateArray[0]));
+
+	eFuseData3 		= ReverseBytes(eFuseData3 + Month + Day);
+
+	uint32_t Year 	= Converter::UintFromHexString<uint32_t>(DateArray[2]);
+	eFuseData4 		= (Year << 16);
+	eFuseData4 		= eFuseData4 + (Manufactorer << 8);
+	eFuseData4 		= eFuseData4 + Country;
+	eFuseData4		= ReverseBytes(eFuseData4);
+
+	//Записываем в eFuse
+
+	esp_efuse_write_reg(EFUSE_BLK3, 7, eFuseData1);
+	esp_efuse_write_reg(EFUSE_BLK3, 6, eFuseData2);
+	esp_efuse_write_reg(EFUSE_BLK3, 5, eFuseData3);
+	esp_efuse_write_reg(EFUSE_BLK3, 4, eFuseData4);
+	esp_efuse_set_write_protect(EFUSE_BLK3);
+
+	::nvs_flash_erase_partition(Partition.c_str());
+
+	NVS::Init(Partition);
+
+	if (HKSetupID != "" && HKPinCode != "")
+	{
+		NVS MemoryHAP(Partition, "hap_custom");
+		MemoryHAP.SetString("setupid", HKSetupID);
+		MemoryHAP.SetString("pin", HKPinCode);
+		MemoryHAP.Commit();
+	}
+
+	Settings.DeviceGeneration = 2;
+
+	BootAndRestore::HardResetFromInit();
+
+	FreeRTOS::Sleep(60000);
+}
+

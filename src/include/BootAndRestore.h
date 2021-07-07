@@ -28,6 +28,7 @@ class BootAndRestore {
 
 		static 	void 	Reboot(bool IsDelayed = true);
 		static 	void 	HardReset(bool IsDelayed = true);
+		static 	void 	HardResetFromInit();
 
 	protected:
 		static 	bool	IsDeviceFullyStarted;

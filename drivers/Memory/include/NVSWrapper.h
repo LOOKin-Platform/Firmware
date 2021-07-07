@@ -20,8 +20,14 @@ using namespace std;
 class NVS {
 	public:
 		static void Init();
+		static void Init(string Partition);
+
+		static void Deinit(string Partition);
+
 
 		NVS(string name, nvs_open_mode openMode = NVS_READWRITE);
+		NVS(string Partition, string name, nvs_open_mode openMode = NVS_READWRITE);
+
 
 		virtual 			~NVS();
 		void 				Commit();
@@ -31,6 +37,8 @@ class NVS {
 		void 				EraseStartedWith(string Key);
 		void 				EraseNamespace();
 		static void			ClearAll();
+
+		esp_err_t			GetLastError();
 
 		vector<string>		FindAllStartedWith(string Key);
 
@@ -75,6 +83,7 @@ class NVS {
 	private:
 		string 				m_name;
 		nvs_handle 			m_handle;
+		esp_err_t			m_lasterror;
 
 		static bool 		isInited;
 

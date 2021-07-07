@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 30, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 32, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -223,7 +223,8 @@ class Settings_t {
 					uint8_t		Destination	= 0x00;
 				} Produced;
 
-				void ReadData();
+				void ReadDataOrInit();
+				void InitFromNVS();
 				uint32_t ReverseBytes(uint32_t);
 		} eFuse;
 

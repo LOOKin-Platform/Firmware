@@ -19,7 +19,7 @@ class Pooling_t {
 
 			while (1) {
 				if (Time::Uptime() % 10 == 0)
-					ESP_LOGE("Pooling","RAM left %d", esp_get_free_heap_size());
+					ESP_LOGI("Pooling","RAM left %d", esp_get_free_heap_size());
 
 				/*
 				Command_t* CommandIR = Command_t::GetCommandByID(0x07);

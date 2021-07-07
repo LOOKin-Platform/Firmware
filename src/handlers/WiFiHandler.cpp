@@ -328,13 +328,12 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			else
 			    mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 
-
-		    mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
-		    mdns_service_add(NULL, "_lookin", "_udp", Settings.WiFi.MDNSServicePort, NULL, 0);
+		    //mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
+		    mdns_service_add(NULL, "_lookin", "_tcp", Settings.WiFi.MDNSServicePort, NULL, 0);
 
 		    string HTTPServiceName = Settings.Bluetooth.DeviceNamePrefix + Device.IDToString();
-		    mdns_service_instance_name_set("_http", "_tcp", HTTPServiceName.c_str());
-		    mdns_service_instance_name_set("_lookin", "_udp", HTTPServiceName.c_str());
+		    //mdns_service_instance_name_set("_http", "_tcp", HTTPServiceName.c_str());
+		    mdns_service_instance_name_set("_lookin", "_tcp", HTTPServiceName.c_str());
 
 		    MDNSSetServiceText();
 
@@ -370,7 +369,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	    ServiceTxtData[5].key = "storage";
 	    ServiceTxtData[5].value = Converter::ToHexString(Storage.CurrentVersion(),4).c_str();
 
-	    mdns_service_txt_set("_lookin", "_udp", ServiceTxtData, 6);
+	    mdns_service_txt_set("_lookin", "_tcp", ServiceTxtData, 6);
 	}
 };
 

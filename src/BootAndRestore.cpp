@@ -66,6 +66,10 @@ void BootAndRestore::HardReset(bool IsDelayed) {
 	RunOperation(OperationTypeEnum::HARDRESET, IsDelayed);
 }
 
+void BootAndRestore::HardResetFromInit() {
+	RunOperation(OperationTypeEnum::HARDRESET_ON_START, false);
+}
+
 
 void BootAndRestore::RunOperation(OperationTypeEnum Operation, bool IsDelayed) {
 	if (IsDelayed)
@@ -119,6 +123,9 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 			//PartitionAPI::ErasePartition("constants");
 
 			NVS::ClearAll();
+
+			if (HomeKit::IsEnabledForDevice())
+				HomeKit::ResetData();
 
 			ExecuteOperationNow(REBOOT);
 

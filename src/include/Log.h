@@ -95,6 +95,8 @@ class Log {
 					OTAVerifyFailed	= 0x0041,
 					OTAFailed		= 0x1142,
 
+					FirstDeviceInit	= 0x00f1,
+
 					// Неинвазивные системные события 0xX100...0xX1FF
 					DeviceOverheat	= 0x1105,
 					DeviceCooled	= 0x1106,

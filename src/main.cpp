@@ -57,8 +57,7 @@ void app_main(void) {
 	NVS::Init();
 
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
-
-	Settings.eFuse.ReadData();
+	Settings.eFuse.ReadDataOrInit();
 
 	BootAndRestore::OnDeviceStart();
 

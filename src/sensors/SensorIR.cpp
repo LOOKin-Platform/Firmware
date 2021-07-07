@@ -272,7 +272,8 @@ class SensorIR_t : public Sensor_t {
 				QueryData.ReadBodyCallback 		= &ACCheckBody;
 				QueryData.ReadFinishedCallback	= &ACCheckFinished;
 
-				HTTPClient::Query(QueryData, true);
+				//HTTPClient::Query(QueryData, false);
+				HTTPClient::Query(QueryData, false, true);
 			}
 		}
 

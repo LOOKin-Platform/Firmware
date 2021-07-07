@@ -27,11 +27,33 @@ void NVS::Init() {
     else 				{	ESP_LOGE("Default NVS", "Error while NVS flash init, %d", err);	}
 }
 
+void NVS::Init(string Partition) {
+    esp_err_t err = ::nvs_flash_init_partition(Partition.c_str());
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase_partition(Partition.c_str()));
+        err = nvs_flash_init_partition(Partition.c_str());
+    }
+
+    if (err == ESP_OK) 	{	ESP_LOGI("Partition NVS", "NVS flash  partition init success");				}
+    else 				{	ESP_LOGE("Partition NVS", "Error while NVS partition flash init, %d", err);	}
+}
+
+void NVS::Deinit(string Partition) {
+	::nvs_flash_deinit_partition(Partition.c_str());
+}
+
+
+
 NVS::NVS(string name, nvs_open_mode openMode) {
 	m_name = name;
 	nvs_open(name.c_str(), openMode, &m_handle);
 } // NVS
 
+
+NVS::NVS(string Partition, string name, nvs_open_mode openMode) {
+	m_name = name;
+	m_lasterror = nvs_open_from_partition(Partition.c_str(), name.c_str(), openMode, &m_handle);
+} // NVS
 
 NVS::~NVS() {
 	nvs_close(m_handle);
@@ -83,6 +105,11 @@ void NVS::EraseNamespace() {
 void NVS::ClearAll() {
 	nvs_flash_erase();
 } // erase all items in NVS
+
+
+esp_err_t NVS::GetLastError() {
+	return m_lasterror;
+}
 
 
 /**

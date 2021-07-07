@@ -12,7 +12,7 @@ QueueHandle_t Scenario_t::Queue = FreeRTOS::Queue::Create(Settings.Scenarios.Que
 uint8_t       Scenario_t::ThreadsCounter = 0;
 
 Scenario_t::Scenario_t(uint8_t TypeHex) {
-	this->ID			= 0;
+	this->ID		= 0;
 	this->Type		= TypeHex;
 	this->Commands	= vector<ScenesCommandItem_t>();
 

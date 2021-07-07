@@ -259,6 +259,7 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
 		case Events::System		::OTAStarted		: Execute(230	, 57 	, 155	, BLINKING	, 300);	break;
 		case Events::System		::OTAFailed			:
 		case Events::System		::OTAVerifyFailed	: Execute(0		, 0 	, 0		, CONST		, 2);	break;
+		case Events::System		::FirstDeviceInit	: Execute(0xEA	, 0x55	, 0x15	, BLINKING	, 300); break;
 
 		case Events::System		::PowerManageOn		: Execute(255	, 239	, 213 	, CONST		, 3);	break;
 
