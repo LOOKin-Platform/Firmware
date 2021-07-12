@@ -65,8 +65,8 @@ class ACOperand {
 				CodesetInHEX == 0x0131 || CodesetInHEX == 0x0132 || CodesetInHEX == 0x0133 || CodesetInHEX == 0x0134 ||
 				CodesetInHEX == 0x0136 || CodesetInHEX == 0x0137 || CodesetInHEX == 0x0297 || CodesetInHEX == 0x0298 ||
 				CodesetInHEX == 0x0464 || CodesetInHEX == 0x1834 || CodesetInHEX == 0x2000 || CodesetInHEX == 0x3712 ||
-				CodesetInHEX == 0x9015 || CodesetInHEX == 0x9016 || CodesetInHEX == 0x9017 || CodesetInHEX == 0x9019 ||
-				CodesetInHEX == 0x9020 || CodesetInHEX == 0x9035 || CodesetInHEX == 0x9036)
+				CodesetInHEX == 0x9003 || CodesetInHEX == 0x9015 || CodesetInHEX == 0x9016 || CodesetInHEX == 0x9017 ||
+				CodesetInHEX == 0x9019 || CodesetInHEX == 0x9020 || CodesetInHEX == 0x9035 || CodesetInHEX == 0x9036)
 				return true;
 
 			return false;
