@@ -58,7 +58,7 @@ class HTTPClient {
 
 		static void 			Query(HTTPClientData_t, bool ToFront = false, bool IsSystem = false);
 		static void 			Query(string URL, QueryType Type = GET, bool ToFront = false, bool IsSystem = false,
-									ReadStarted = NULL, ReadBody=NULL,ReadFinished=NULL, Aborted=NULL, string POSTData="");
+									ReadStarted = NULL, ReadBody=NULL, ReadFinished=NULL, Aborted=NULL, string POSTData="");
 
 		static esp_err_t		QueryHandler(esp_http_client_event_t *event);
 		static void				HTTPClientTask(void *);

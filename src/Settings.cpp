@@ -158,6 +158,11 @@ void Settings_t::eFuse_t::ReadDataOrInit() {
 		Produced.Year	= 2018;
 	}
 
+	if (DeviceID == 0x3) // switch to hdc1080 sensor
+	{
+		Revision = 2;
+	}
+
 	// Type verification
 	if (Type == 0x0 || Type == Settings.Memory.Empty8Bit) {
 		Type = Device.GetTypeFromNVS();

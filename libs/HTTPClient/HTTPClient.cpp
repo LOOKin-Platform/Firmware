@@ -100,11 +100,15 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
         case HTTP_EVENT_ON_FINISH:
 			if (ClientData.ReadFinishedCallback != NULL)
 				ClientData.ReadFinishedCallback(ClientData.URL);
+
+
+
 			break;
 
         case HTTP_EVENT_DISCONNECTED:
             break;
     }
+
     return ESP_OK;
 }
 
@@ -193,6 +197,9 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			esp_http_client_close(Handle);
 			esp_http_client_cleanup(Handle);
 		}
+		else
+		    esp_http_client_cleanup(Handle);
+
 	}
 	while (IsItemReceived);
 
