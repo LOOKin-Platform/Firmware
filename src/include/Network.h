@@ -94,10 +94,10 @@ class NetworkSync {
 		static void 			StorageHistoryQuery();
 
     	// HTTP Callbacks
-    	static void 			ReadStorageStarted (char IP[]);
-    	static bool 			ReadStorageBody    (char Data[], int DataLen, char IP[]);
-    	static void 			ReadStorageFinished(char IP[]);
-    	static void 			StorageAborted     (char IP[]);
+    	static void 			ReadStorageStarted (const char *IP);
+    	static bool 			ReadStorageBody    (char Data[], int DataLen, const char *IP);
+    	static void 			ReadStorageFinished(const char *IP);
+    	static void 			StorageAborted     (const char *IP);
 
 	private:
     	static uint8_t			SameQueryCount;

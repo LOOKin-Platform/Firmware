@@ -24,7 +24,7 @@ using namespace std;
 
 class RemoteControl_t {
 	public:
-		enum Status_t { UNACTIVE, CONNECTED, ERROR };
+		enum Status_t { UNACTIVE, STARTED, CONNECTED, ERROR};
 
 		RemoteControl_t							(string Username = "", string Password = "");
 
@@ -35,7 +35,9 @@ class RemoteControl_t {
 
 		void Start();
 		void Stop();
-		void Reconnect();
+		void Reconnect(uint16_t Delay = 1000);
+
+		string GetStatusString();
 
 		string GetClientID();
 
@@ -54,6 +56,8 @@ class RemoteControl_t {
 	private:
 		static string		Username;
 		static string		Password;
+
+		static uint8_t		ErrorCounter;
 
 		static esp_mqtt_client_handle_t ClientHandle;
 

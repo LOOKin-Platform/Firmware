@@ -395,14 +395,14 @@ class CommandIR_t : public Command_t {
 
 		// AC Codeset callbacks
 
-		static void ACReadStarted(char IP[]) {
+		static void ACReadStarted(const char *IP) {
 			RMT::TXClear();
 
 			IRACFrequency 		= 38000;
 			IRACReadBuffer 		= "";
 		}
 
-		static bool ACReadBody(char Data[], int DataLen, char IP[]) {
+		static bool ACReadBody(char Data[], int DataLen, const char *IP) {
 			IRACReadBuffer += string(Data, DataLen);
 
 			size_t FrequencyDelimeterPos = IRACReadBuffer.find(";");
@@ -430,7 +430,7 @@ class CommandIR_t : public Command_t {
 			return true;
 		};
 
-		static void ACReadFinished(char IP[]) {
+		static void ACReadFinished(const char *IP) {
 			if (IRACReadBuffer.size() > 0) {
 				RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer));
 				//ESP_LOGE("TXITEM", "%d", Converter::ToInt32(IRACReadBuffer));
@@ -453,7 +453,7 @@ class CommandIR_t : public Command_t {
 							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4)));
 		}
 
-		static void ACReadAborted(char IP[]) {
+		static void ACReadAborted(const char *IP) {
 			IRACReadBuffer = "";
 
 			RMT::TXClear();

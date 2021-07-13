@@ -13,7 +13,8 @@ static char Tag[] = "RemoteControl";
 string						RemoteControl_t::Username		= "";
 string						RemoteControl_t::Password		= "";
 RemoteControl_t::Status_t 	RemoteControl_t::Status			= RemoteControl_t::Status_t::UNACTIVE;
-uint8_t						RemoteControl_t::ConnectionTries	= 0;
+uint8_t						RemoteControl_t::ConnectionTries= 0;
+uint8_t						RemoteControl_t::ErrorCounter	= 0;
 
 esp_mqtt_client_handle_t 	RemoteControl_t::ClientHandle 	= NULL;
 
@@ -60,10 +61,10 @@ void RemoteControl_t::Stop() {
 	}
 }
 
-void RemoteControl_t::Reconnect() {
+void RemoteControl_t::Reconnect(uint16_t Delay) {
 	if (Status == CONNECTED  && ClientHandle != NULL) {
 		Stop();
-		FreeRTOS::Sleep(1000);
+		FreeRTOS::Sleep(Delay);
 		Start();
 		return;
 	}
@@ -105,6 +106,7 @@ void RemoteControl_t::ChangeOrSetCredentialsBLE(string Username, string Password
 	switch (Status)
 	{
 		case UNACTIVE	: ESP_LOGE("Status", "Unactive"); break;
+		case STARTED	: ESP_LOGE("Status", "STARTED"); break;
 		case CONNECTED	: ESP_LOGE("Status", "Connected"); break;
 		case ERROR		: ESP_LOGE("Status", "Error");  break;
 	}
@@ -114,15 +116,20 @@ void RemoteControl_t::ChangeOrSetCredentialsBLE(string Username, string Password
 	Start();
 }
 
-esp_err_t IRAM_ATTR RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
+
+
+esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     esp_mqtt_client_handle_t client = event->client;
 
     string DeviceTopic = Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString();
+
+    int MessageID = 0;
 
     // your_context_t *context = event->context;
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
 			Status = CONNECTED;
+	    	RemoteControl_t::ErrorCounter = 0;
 
 			ESP_LOGI(Tag, "MQTT_EVENT_CONNECTED");
 			ConnectionTries = 0;
@@ -142,19 +149,29 @@ esp_err_t IRAM_ATTR RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t 
             break;
 
         case MQTT_EVENT_SUBSCRIBED:
+        	RemoteControl_t::ErrorCounter = 0;
             ESP_LOGI(Tag, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_UNSUBSCRIBED:
+        	RemoteControl_t::ErrorCounter = 0;
             ESP_LOGI(Tag, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_PUBLISHED:
+        	RemoteControl_t::ErrorCounter = 0;
             ESP_LOGI(Tag, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_DATA:
 		{
+	    	RemoteControl_t::ErrorCounter = 0;
+
+	    	if (event->msg_id > 0)
+	    	{
+	    		MessageID = event->msg_id;
+	    	}
+
 			string Topic(event->topic, event->topic_len);
 
 			if (Topic == DeviceTopic + "/UDP")
@@ -170,7 +187,7 @@ esp_err_t IRAM_ATTR RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t 
 
 				Query_t Query(event->data);
 				Query.Transport 		= WebServer.QueryTransportType::MQTT;
-				Query.MQTTMessageID 	= event->msg_id;
+				Query.MQTTMessageID 	= MessageID;
 
 				API::Handle(Response, Query);
 
@@ -183,16 +200,22 @@ esp_err_t IRAM_ATTR RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t 
 
 				SendMessage(Response.Body,
 							Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() +
-							"/" + Converter::ToString(event->msg_id));
+							"/" + Converter::ToString(MessageID));
 			}
 			break;
 		}
         case MQTT_EVENT_ERROR:
             ESP_LOGI(Tag, "MQTT_EVENT_ERROR");
+
+        	RemoteControl_t::ErrorCounter++;
+
+            if (RemoteControl_t::ErrorCounter > 3)
+            	RemoteControl.Reconnect();
             break;
 
         default:
             ESP_LOGI(Tag, "Other event id:%d", event->event_id);
+
             break;
     }
 
@@ -206,7 +229,9 @@ int RemoteControl_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint
 	if (Topic == "")
 		Topic = Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString();
 
-	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
+	//return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
+	return esp_mqtt_client_enqueue(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain, false);
+
 }
 
 string RemoteControl_t::StartChunk(int MessageID, uint8_t QOS, uint8_t Retain) {
@@ -227,6 +252,20 @@ void RemoteControl_t::EndChunk (string ChunkHash, int MessageID, uint8_t QOS, ui
 bool RemoteControl_t::IsCredentialsSet() {
 	return (Username != "" && Password != "");
 }
+
+string RemoteControl_t::GetStatusString() {
+	switch (RemoteControl_t::GetStatus())
+	{
+		case RemoteControl_t::UNACTIVE	: return "Unactive"	; break;
+		case RemoteControl_t::STARTED	: return "Started"	; break;
+		case RemoteControl_t::CONNECTED	: return "Connected"; break;
+		case RemoteControl_t::ERROR		: return "Error"	; break;
+
+		default:
+			return "";
+	}
+}
+
 
 RemoteControl_t::Status_t RemoteControl_t::GetStatus() {
 	return Status;

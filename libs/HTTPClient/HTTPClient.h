@@ -15,6 +15,7 @@ using namespace std;
 #include <stdio.h>
 #include <string.h>
 #include <vector>
+#include <map>
 
 #include <sys/socket.h>
 #include <netdb.h>
@@ -27,10 +28,10 @@ using namespace std;
 
 enum QueryType { NONE, POST, GET, DELETE, PUT, PATCH };
 
-typedef void (*ReadStarted)	(char[]);
-typedef bool (*ReadBody)	(char[], int, char[]);
-typedef void (*ReadFinished)(char[]);
-typedef void (*Aborted)		(char[]);
+typedef void (*ReadStarted)	(const char *);
+typedef bool (*ReadBody)	(char[], int, const char *);
+typedef void (*ReadFinished)(const char *);
+typedef void (*Aborted)		(const char *);
 
 /**
  * @brief Interface to performing HTTP queries
@@ -42,10 +43,10 @@ class HTTPClient {
 	 * @brief Struct to hold HTTP query data
 	 */
 		struct HTTPClientData_t {
-			char      			URL[64]		= "\0";				/*!< Hostname string, e. g. look-in.club */
+			string      		URL			= "";				/*!< Hostname string, e. g. look-in.club */
 			QueryType			Method		= QueryType::GET;	/*!< Query method, e. g. QueryType::POST */
 			int 				BufferSize	= 0;
-			char				*POSTData	= nullptr;
+			string 				POSTData	= "";
 
 			esp_http_client_handle_t
 								Handle		= NULL;				/*!< Client handle */
@@ -58,7 +59,7 @@ class HTTPClient {
 
 		static void 			Query(HTTPClientData_t, bool ToFront = false, bool IsSystem = false);
 		static void 			Query(string URL, QueryType Type = GET, bool ToFront = false, bool IsSystem = false,
-									ReadStarted = NULL, ReadBody=NULL, ReadFinished=NULL, Aborted=NULL, string POSTData="");
+									ReadStarted = NULL, ReadBody = NULL, ReadFinished = NULL, Aborted = NULL, string POSTData = "");
 
 		static esp_err_t		QueryHandler(esp_http_client_event_t *event);
 		static void				HTTPClientTask(void *);
@@ -66,12 +67,15 @@ class HTTPClient {
 		static void				Failed              (HTTPClientData_t &);
 
 		static void				CheckUserAgent		();
+
 	private:
 		static string			UserAgent;
 		static QueueHandle_t  	Queue;
 		static QueueHandle_t  	SystemQueue;
 
 		static uint8_t        	ThreadsCounter;
+
+		static map<uint32_t, HTTPClientData_t> QueryData;
 };
 
 #endif /* DRIVERS_HTTPCLIENT_H_ */

@@ -51,13 +51,13 @@ class Time {
 
     static uint32_t		UptimeToUnixTime(uint32_t);
 
-    static void       ServerSync(string URL);
+    static void       	ServerSync(string URL);
 
     // HTTP Callbacks
-    static void ReadStarted (char IP[]);
-    static bool ReadBody    (char Data[], int DataLen, char IP[]);
-    static void ReadFinished(char IP[]);
-    static void Aborted     (char IP[]);
+    static void ReadStarted (const char *IP);
+    static bool ReadBody    (char Data[], int DataLen, const char *IP);
+    static void ReadFinished(const char *IP);
+    static void Aborted     (const char *IP);
 
   private:
     static string     ReadBuffer;

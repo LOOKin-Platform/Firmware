@@ -5,9 +5,9 @@ class PingPeriodicHandler {
 	public:
 		static void Pool();
 
-		static void FirmwareCheckStarted(char IP[]);
-		static bool FirmwareCheckReadBody(char Data[], int DataLen, char IP[]);
-		static void FirmwareCheckFinished(char IP[]);
+		static void FirmwareCheckStarted(const char *IP);
+		static bool FirmwareCheckReadBody(char Data[], int DataLen, const char *IP);
+		static void FirmwareCheckFinished(const char *IP);
 
 		static void	ExecuteOTATask	(void*);
 		static void OTAStartedCallback();
@@ -31,11 +31,11 @@ TaskHandle_t		PingPeriodicHandler::OTATaskHandler 			= NULL;
 FreeRTOS::Semaphore	PingPeriodicHandler::IsRouterPingFinished 		= FreeRTOS::Semaphore("IsRouterPingFinished");
 
 
-void PingPeriodicHandler::FirmwareCheckStarted(char IP[]) {
+void PingPeriodicHandler::FirmwareCheckStarted(const char *IP) {
 	FirmwareUpdateURL = "";
 }
 
-bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, char IP[]) {
+bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, const char *IP) {
 	const uint8_t MaxFirmwareUpdate = 255;
 
 	if ((DataLen + FirmwareUpdateURL.size()) > MaxFirmwareUpdate)
@@ -46,7 +46,7 @@ bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, char I
 	return true;
 }
 
-void PingPeriodicHandler::FirmwareCheckFinished(char IP[]) {
+void PingPeriodicHandler::FirmwareCheckFinished(const char *IP) {
 	ESP_LOGE("URL TO OTA UPDATE", "%s", FirmwareUpdateURL.c_str());
 
 	if (FirmwareUpdateURL.size() == 0)
@@ -118,16 +118,13 @@ void PingPeriodicHandler::Pool() {
 				TelemetryData.SetItem("Eco", (Device.GetEcoFromNVS()) ? "1" : "0");
 				TelemetryData.SetItem("HomeKit", Device.HomeKitToString());
 				TelemetryData.SetItem("IsBattery", (Device.PowerMode == DevicePowerMode::BATTERY) ? "1" : "0");
-				TelemetryData.SetItem("RC", RemoteControl.IsCredentialsSet() ? "1" : "0");
+				TelemetryData.SetItem("RCStatus", RemoteControl.GetStatusString());
+				TelemetryData.SetItem("Memory", Converter::ToString(::esp_get_free_heap_size()));
 
 				HTTPClient::HTTPClientData_t QueryData;
-				strcpy(QueryData.URL, Settings.ServerUrls.Telemetry.c_str());
+				QueryData.URL 		=  Settings.ServerUrls.Telemetry;
 				QueryData.Method 	= QueryType::POST;
-
-				static char POSTBuffer[256] = "\0";
-
-				strcpy(POSTBuffer, TelemetryData.ToString().c_str());
-				QueryData.POSTData = &POSTBuffer[0];
+				QueryData.POSTData 	= TelemetryData.ToString();
 
 				HTTPClient::Query(QueryData, true);
 			}

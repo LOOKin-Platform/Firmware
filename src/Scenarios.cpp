@@ -346,11 +346,11 @@ template void Scenario_t::AddRangeTo<32>(bitset<Settings.Scenarios.OperandBitLen
 /*      Scenarios HTTP client       */
 /************************************/
 
-void Scenario_t::ReadFinished(char IP[]) {
+void Scenario_t::ReadFinished(const char *IP) {
 	ESP_LOGI(tag,"HTTP Command to device with IP %s sent", IP);
 }
 
-void Scenario_t::Aborted(char IP[]) {
+void Scenario_t::Aborted(const char *IP) {
 	ESP_LOGE(tag,"HTTP Command sending to device with IP %s failed", IP);
 	Network.SetNetworkDeviceFlagByIP(IP, false);
 }

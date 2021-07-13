@@ -9,10 +9,11 @@
 
 static char tag[] = "HTTPClient";
 
-QueueHandle_t 	HTTPClient::Queue 			= FreeRTOS::Queue::Create(Settings.HTTPClient.QueueSize, sizeof( struct HTTPClientData_t ));
-QueueHandle_t	HTTPClient::SystemQueue		= FreeRTOS::Queue::Create(Settings.HTTPClient.SystemQueueSize, sizeof( struct HTTPClientData_t ));
+QueueHandle_t 	HTTPClient::Queue 			= FreeRTOS::Queue::Create(Settings.HTTPClient.QueueSize, sizeof(uint32_t));
+QueueHandle_t	HTTPClient::SystemQueue		= FreeRTOS::Queue::Create(Settings.HTTPClient.SystemQueueSize, sizeof(uint32_t));
 uint8_t 		HTTPClient::ThreadsCounter 	= 0;
 string 			HTTPClient::UserAgent 		= "";
+map<uint32_t, HTTPClient::HTTPClientData_t> HTTPClient::QueryData = map<uint32_t, HTTPClient::HTTPClientData_t>();
 
 /**
  * @brief Add query to the request queue.
@@ -35,7 +36,8 @@ void HTTPClient::Query(string URL, QueryType Type, bool ToFront, bool IsSystem,
 
 	HTTPClientData_t QueryData;
 
-	strncpy(QueryData.URL   , URL.c_str(), 64);
+	QueryData.URL 					= URL;
+	QueryData.POSTData 				= POSTData;
 
 	QueryData.Method  				= Type;
 	QueryData.BufferSize 			= 1024;
@@ -63,7 +65,13 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront, bool IsSystem) {
 
 	CheckUserAgent();
 
-	FreeRTOS::Queue::Send((IsSystem) ? SystemQueue : Queue, &Query, ToFront, (TickType_t) Settings.HTTPClient.BlockTicks);
+	static uint32_t HashID = esp_random();
+	while (QueryData.count(HashID) > 0)
+		HashID = esp_random();
+
+	QueryData[HashID] = Query;
+
+	FreeRTOS::Queue::Send((IsSystem) ? SystemQueue : Queue, &HashID, ToFront, (TickType_t) Settings.HTTPClient.BlockTicks);
 
 	if (ThreadsCounter <= 0) {
 		ThreadsCounter = 1;
@@ -77,7 +85,9 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront, bool IsSystem) {
 
 esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
 {
-	HTTPClientData_t ClientData = *(HTTPClientData_t*)event->user_data;
+	uint32_t HashID = (uint32_t)event->user_data;
+
+	HTTPClientData_t ClientData = QueryData[HashID];
 
     switch(event->event_id) {
         case HTTP_EVENT_ERROR:
@@ -85,7 +95,7 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
             break;
         case HTTP_EVENT_ON_CONNECTED:
 			if (ClientData.ReadStartedCallback != NULL)
-				ClientData.ReadStartedCallback(ClientData.URL);
+				ClientData.ReadStartedCallback(ClientData.URL.c_str());
             break;
         case HTTP_EVENT_HEADER_SENT:
             break;
@@ -94,14 +104,12 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
         case HTTP_EVENT_ON_DATA:
 			if (ClientData.ReadBodyCallback != NULL)
 	            //if (!esp_http_client_is_chunked_response(event->client))
-					if (!ClientData.ReadBodyCallback((char*)event->data, event->data_len, ClientData.URL))
+					if (!ClientData.ReadBodyCallback((char*)event->data, event->data_len, ClientData.URL.c_str()))
 						HTTPClient::Failed(ClientData);
             break;
         case HTTP_EVENT_ON_FINISH:
 			if (ClientData.ReadFinishedCallback != NULL)
-				ClientData.ReadFinishedCallback(ClientData.URL);
-
-
+				ClientData.ReadFinishedCallback(ClientData.URL.c_str());
 
 			break;
 
@@ -121,8 +129,7 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
 void HTTPClient::HTTPClientTask(void *TaskData) {
 	ESP_LOGD(tag, "Task %u created", (uint32_t)TaskData);
 
-	HTTPClientData_t ClientData;
-
+	uint32_t HashID;
 	uint32_t ThreadNumber = (uint32_t)TaskData;
 
 	portBASE_TYPE IsItemReceived = false;
@@ -132,13 +139,15 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		IsItemReceived = false;
 
 		if (ThreadNumber == 1 && SystemQueue != 0)
-			IsItemReceived = FreeRTOS::Queue::Receive(HTTPClient::SystemQueue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks);
+			IsItemReceived = FreeRTOS::Queue::Receive(HTTPClient::SystemQueue, &HashID, (TickType_t) Settings.HTTPClient.BlockTicks);
 
 		if (!IsItemReceived && Queue != 0)
-			IsItemReceived = FreeRTOS::Queue::Receive(HTTPClient::Queue, &ClientData, (TickType_t) Settings.HTTPClient.BlockTicks);
+			IsItemReceived = FreeRTOS::Queue::Receive(HTTPClient::Queue, &HashID, (TickType_t) Settings.HTTPClient.BlockTicks);
 
 		if (!IsItemReceived)
 			break;
+
+		HTTPClientData_t ClientData = QueryData[HashID];
 
 		esp_http_client_config_t Config;
 
@@ -170,18 +179,18 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 			default     : Config.method = esp_http_client_method_t::HTTP_METHOD_GET; 	break;
 		}
 
-		Config.user_data 	= (void*)&ClientData;
-		Config.event_handler= QueryHandler;
+		Config.user_data 				= (void*)HashID;
+		Config.event_handler			= QueryHandler;
 
-		Config.url 						= ClientData.URL;
+		Config.url 						= ClientData.URL.c_str();;
 		Config.user_agent 				= UserAgent.c_str();
 
 		Config.is_async					= false;
 
 		esp_http_client_handle_t Handle = esp_http_client_init(&Config);
 
-		if (ClientData.POSTData != nullptr && strlen(ClientData.POSTData) > 0 && ClientData.Method == POST)
-			::esp_http_client_set_post_field(Handle, ClientData.POSTData, strlen(ClientData.POSTData));
+		if (ClientData.POSTData != "" && ClientData.Method == POST)
+			::esp_http_client_set_post_field(Handle, ClientData.POSTData.c_str(), ClientData.POSTData.size());
 
 		esp_err_t err = esp_http_client_perform(Handle);
 
@@ -200,6 +209,9 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		else
 		    esp_http_client_cleanup(Handle);
 
+		if (QueryData.count(HashID) > 0)
+			QueryData.erase(HashID);
+
 	}
 	while (IsItemReceived);
 
@@ -217,7 +229,7 @@ void HTTPClient::Failed(HTTPClientData_t &ClientData) {
 	ESP_LOGE(tag, "Exiting HTTPClient task due to fatal error...");
 
 	if (ClientData.AbortedCallback != NULL)
-		ClientData.AbortedCallback(ClientData.URL);
+		ClientData.AbortedCallback(ClientData.URL.c_str());
 }
 
 void HTTPClient::CheckUserAgent() {

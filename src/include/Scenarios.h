@@ -78,8 +78,8 @@ class Scenario_t {
 		template <size_t SrcSize>     static void AddRangeTo(bitset<Settings_t::Scenarios_t::OperandBitLength> &, bitset<SrcSize>, size_t Position);
 
 		// HTTP Callbacks
-		static void ReadFinished(char[]);
-		static void Aborted(char[]);
+		static void ReadFinished(const char *);
+		static void Aborted(const char *);
 
 	private:
 		static QueueHandle_t  Queue;

@@ -118,16 +118,16 @@ void Time::ServerSync(string URL) {
 	HTTPClient::Query(URL, QueryType::GET, true, false, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
 }
 
-void Time::ReadStarted(char IP[]) {
+void Time::ReadStarted(const char *IP) {
 	ReadBuffer = "";
 }
 
-bool Time::ReadBody(char Data[], int DataLen, char IP[]) {
+bool Time::ReadBody(char Data[], int DataLen, const char *IP) {
 	ReadBuffer += Data;
 	return true;
 };
 
-void Time::ReadFinished(char IP[]) {
+void Time::ReadFinished(const char *IP) {
 	if (ReadBuffer.length() == 0) {
 		ESP_LOGE(tag, "Empty data received");
 		return;
@@ -147,6 +147,6 @@ void Time::ReadFinished(char IP[]) {
 	Log::CorrectTime();
 }
 
-void Time::Aborted(char IP[]) {
+void Time::Aborted(const char *IP) {
 	ESP_LOGE(tag, "Failed to retrieve time from server");
 }

@@ -651,9 +651,9 @@ void NetworkSync::StorageHistoryQuery() {
 	HTTPClient::Query(QueryURL, QueryType::GET, true, false, &ReadStorageStarted, &ReadStorageBody, &ReadStorageFinished, &StorageAborted);
 }
 
-void NetworkSync::ReadStorageStarted (char IP[]) {}
+void NetworkSync::ReadStorageStarted (const char *IP) {}
 
-bool NetworkSync::ReadStorageBody (char Data[], int DataLen, char IP[]) {
+bool NetworkSync::ReadStorageBody (char Data[], int DataLen, const char *IP) {
 
 	if (ToVersionUpgrade == 0)
 		Chunk = string(Data,DataLen);
@@ -703,7 +703,7 @@ bool NetworkSync::ReadStorageBody (char Data[], int DataLen, char IP[]) {
 	return true;
 }
 
-void NetworkSync::ReadStorageFinished(char IP[]) {
+void NetworkSync::ReadStorageFinished(const char *IP) {
 	SameQueryCount = 0;
 	Chunk = "";
 
@@ -717,7 +717,7 @@ void NetworkSync::ReadStorageFinished(char IP[]) {
 		StorageHistoryQuery();
 }
 
-void NetworkSync::StorageAborted(char IP[]) {
+void NetworkSync::StorageAborted(const char *IP) {
 	SameQueryCount++;
 	Chunk = "";
 	StorageHistoryQuery();

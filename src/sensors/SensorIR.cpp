@@ -262,11 +262,11 @@ class SensorIR_t : public Sensor_t {
 				ESP_LOGE("CRC", "%s", CRC.c_str());
 
 				HTTPClient::HTTPClientData_t QueryData;
-				strcpy(QueryData.URL, URL.c_str());
+				QueryData.URL 		= URL;
 				QueryData.Method 	= QueryType::POST;
 
 				strcpy(SensorIRSignalCRCBuffer, CRC.c_str());
-				QueryData.POSTData = &SensorIRSignalCRCBuffer[0];
+				QueryData.POSTData = string(SensorIRSignalCRCBuffer);
 
 				QueryData.ReadStartedCallback 	= &ACCheckStarted;
 				QueryData.ReadBodyCallback 		= &ACCheckBody;
@@ -277,16 +277,16 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		// AC check signal callbacks
-		static void ACCheckStarted(char IP[]) {
+		static void ACCheckStarted(const char *IP) {
 			SensorIRACCheckBuffer = "";
 		}
 
-		static bool ACCheckBody(char Data[], int DataLen, char IP[]) {
+		static bool ACCheckBody(char Data[], int DataLen, const char *IP) {
 			SensorIRACCheckBuffer += string(Data, DataLen);
 			return true;
 		};
 
-		static void ACCheckFinished(char IP[]) {
+		static void ACCheckFinished(const char *IP) {
 			if (SensorIRACCheckBuffer.size() == 0)
 				return;
 
@@ -316,7 +316,7 @@ class SensorIR_t : public Sensor_t {
 			}
 		}
 
-		static void ACReadAborted(char IP[]) {
+		static void ACReadAborted(const char *IP) {
 			SensorIRACCheckBuffer = "";
 		}
 
