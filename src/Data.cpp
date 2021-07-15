@@ -144,6 +144,9 @@ void DataEndpoint_t::Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Siz
 }
 
 void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
+	if (Length == 0)
+		return;
+
     const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
     if (Partition == NULL) return;
 
@@ -194,6 +197,9 @@ IRAM_ATTR bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 	if (ItemName == FREE_MEMORY_NVS)
 		return false;
 
+	if (Item.size() == 0)
+		return false;
+
     uint32_t ReplacementAddress = 0xFFFFFFFF;
 	uint64_t ExistedAddress = Memory.GetUInt64Bit(ItemName);
 
@@ -212,11 +218,14 @@ IRAM_ATTR bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
     if (Partition == NULL) return false;
 
     static uint32_t AddressToSave = 0;
-    AddressToSave = (ReplacementAddress == 0xFFFFFFFF) ? GetFreeMemoryAddress() : ReplacementAddress;
+    static uint32_t NormalizedAddress = 0;
 
-    ESP_LOGE("SAVE ITEM", "%s To: %08X Normalized: %08X  DATA: %s", ItemName.c_str(), AddressToSave, NormalizedItemAddress(Item.size()), Item.c_str());
+    AddressToSave 		= (ReplacementAddress == 0xFFFFFFFF) ? GetFreeMemoryAddress() : ReplacementAddress;
+    NormalizedAddress 	= NormalizedItemAddress(Item.size());
 
-    EraseRange(AddressToSave, NormalizedItemAddress(Item.size()));
+    ESP_LOGE("SAVE ITEM", "%s To: %08X Normalized: %08X  DATA: %s", ItemName.c_str(), AddressToSave, NormalizedAddress, Item.c_str());
+
+    EraseRange(AddressToSave, NormalizedAddress);
 
     if (ESP_OK != esp_partition_write(Partition, AddressToSave, Item.c_str(), Item.size()))
     	return false;
@@ -243,6 +252,11 @@ IRAM_ATTR string DataEndpoint_t::GetItem(string ItemName) {
     if (Partition == NULL) return "";
 
     pair<uint32_t, uint32_t> AddressAndSize = SplitAddres(Memory.GetUInt64Bit(ItemName));
+
+    ESP_LOGE("GetItem", "%08X %08X", AddressAndSize.first, AddressAndSize.second);
+
+    if (AddressAndSize.first == 0 && AddressAndSize.second == 0)
+    	return string("");
 
     char ReadBuffer[AddressAndSize.second];
     memset(ReadBuffer, 0, AddressAndSize.second);

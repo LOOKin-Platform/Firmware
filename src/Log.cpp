@@ -304,7 +304,8 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 			.callback 			= &IndicatorCallback,
 			.arg 				= NULL,
 			.dispatch_method 	= ESP_TIMER_TASK,
-			.name				= "IndicatorTimer"
+			.name				= "IndicatorTimer",
+			.skip_unhandled_events = false
 		};
 
 		::esp_timer_create(&TimerArgs, &IndicatorTimer);

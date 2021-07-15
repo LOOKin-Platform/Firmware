@@ -65,7 +65,8 @@ class CommandIR_t : public Command_t {
 				.callback 			= &ProntoHexBlockedCallback,
 				.arg 				= NULL,
 				.dispatch_method 	= ESP_TIMER_TASK,
-				.name				= "ProntoHexBlockedTimer"
+				.name				= "ProntoHexBlockedTimer",
+				.skip_unhandled_events = false
 			};
 
 			::esp_timer_create(&TimerArgs, &ProntoHexBlockedTimer);

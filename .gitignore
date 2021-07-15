@@ -13,3 +13,6 @@ zconf.hash.s
 docs/
 Doxyfile
 
+remote_factory.bin
+remote_factory.csv
+TestFactoryNVS

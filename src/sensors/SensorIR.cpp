@@ -49,7 +49,8 @@ class SensorIR_t : public Sensor_t {
 				.callback 			= &SignalReceivedCallback,
 				.arg 				= NULL,
 				.dispatch_method 	= ESP_TIMER_TASK,
-				.name				= "SignalReceivedTimer"
+				.name				= "SignalReceivedTimer",
+				.skip_unhandled_events = false
 			};
 
 			::esp_timer_create(&TimerArgs, &SignalReceivedTimer);

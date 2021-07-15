@@ -831,6 +831,12 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		void PUTorPOSTDeviceFunction(Query_t &Query, string UUID, string Function, WebServer_t::Response &Result) {
+			if (Query.GetBody() == NULL)
+				return;
+
+			if (strlen(Query.GetBody()) == 0)
+				return;
+
 			JSON JSONObject(Query.GetBody());
 
 			DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
@@ -1126,7 +1132,8 @@ class DataRemote_t : public DataEndpoint_t {
 						.callback 			= &StatusSaveCallback,
 						.arg 				= NULL,
 						.dispatch_method 	= ESP_TIMER_TASK,
-						.name				= "StatusSaveTimer"
+						.name				= "StatusSaveTimer",
+						.skip_unhandled_events = false
 					};
 
 					::esp_timer_create(&TimerArgs, &StatusSaveTimer);

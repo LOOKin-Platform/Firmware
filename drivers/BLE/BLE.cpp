@@ -109,7 +109,7 @@ void BLE::Advertise() {
 
     rc = ble_gap_adv_set_fields(&fields);
     if (rc != 0) {
-        ESP_LOGE(Tag, "error setting advertisement data; rc=%d\n", rc);
+        //ESP_LOGE(Tag, "error setting advertisement data; rc=%d\n", rc);
         return;
     }
 
@@ -122,7 +122,7 @@ void BLE::Advertise() {
 
     rc = ble_gap_adv_start(OwnAddrType, NULL, BLE_HS_FOREVER, &adv_params, BLE::GAPEvent, NULL);
     if (rc != 0) {
-    	ESP_LOGE(Tag, "error enabling advertisement; rc=%d\n", rc);
+    	//ESP_LOGE(Tag, "error enabling advertisement; rc=%d\n", rc);
         return;
     }
 
@@ -159,12 +159,11 @@ int BLE::GAPEvent(struct ble_gap_event *event, void *arg)
     {
     	case BLE_GAP_EVENT_CONNECT:
     		/* A new connection was established or a connection attempt failed. */
-    		ESP_LOGI(Tag, "connection %s; status=%d ", event->connect.status == 0 ? "established" : "failed", event->connect.status);
+    		//MODLOG_DFLT(INFO, "connection %s; status=%d\n", event->connect.status == 0 ? "established" : "failed", event->connect.status);
     		if (event->connect.status == 0) {
     			rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
     			assert(rc == 0);
     		}
-    		ESP_LOGI(Tag, "\n");
 
     		if (event->connect.status != 0) {
     			/* Connection failed; resume advertising. */
@@ -173,8 +172,7 @@ int BLE::GAPEvent(struct ble_gap_event *event, void *arg)
     		return 0;
 
     	case BLE_GAP_EVENT_DISCONNECT:
-    		ESP_LOGI(Tag, "disconnect; reason=%d ", event->disconnect.reason);
-    		ESP_LOGI(Tag, "\n");
+    		//MODLOG_DFLT(INFO, "disconnect; reason=%d \n", event->disconnect.reason);
 
     		/* Connection terminated; resume advertising. */
     		Advertise();
@@ -182,19 +180,20 @@ int BLE::GAPEvent(struct ble_gap_event *event, void *arg)
 
     	case BLE_GAP_EVENT_CONN_UPDATE:
     		/* The central has updated the connection parameters. */
-    		ESP_LOGI(Tag, "connection updated; status=%d ", event->conn_update.status);
+    		//MODLOG_DFLT(INFO, "connection updated; status=%d\n", event->conn_update.status);
     		rc = ble_gap_conn_find(event->conn_update.conn_handle, &desc);
     		assert(rc == 0);
         	ESP_LOGI(Tag, "\n");
         	return 0;
 
     	case BLE_GAP_EVENT_ADV_COMPLETE:
-    		ESP_LOGI(Tag, "advertise complete; reason=%d", event->adv_complete.reason);
+    		//MODLOG_DFLT(INFO, "advertise complete; reason=%d\n", event->adv_complete.reason);
     		Advertise();
     		return 0;
 
     	case BLE_GAP_EVENT_SUBSCRIBE:
-    		ESP_LOGI(Tag, "subscribe event; conn_handle=%d attr_handle=%d reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
+    		/*
+    		MODLOG_DFLT(INFO, "subscribe event; conn_handle=%d attr_handle=%d reason=%d prevn=%d curn=%d previ=%d curi=%d\n",
                     event->subscribe.conn_handle,
                     event->subscribe.attr_handle,
                     event->subscribe.reason,
@@ -202,13 +201,16 @@ int BLE::GAPEvent(struct ble_gap_event *event, void *arg)
                     event->subscribe.cur_notify,
                     event->subscribe.prev_indicate,
                     event->subscribe.cur_indicate);
+            */
     		return 0;
 
     	case BLE_GAP_EVENT_MTU:
-    		ESP_LOGI(Tag, "mtu update event; conn_handle=%d cid=%d mtu=%d\n",
+    		/*
+    		MODLOG_DFLT(INFO, "mtu update event; conn_handle=%d cid=%d mtu=%d\n",
                     event->mtu.conn_handle,
                     event->mtu.channel_id,
                     event->mtu.value);
+            */
     		return 0;
     }
 
@@ -228,7 +230,7 @@ void BLE::OnSync(void) {
     /* Figure out address to use while advertising (no privacy for now) */
     rc = ble_hs_id_infer_auto(0, &OwnAddrType);
     if (rc != 0) {
-        ESP_LOGE(Tag, "error determining address type; rc=%d\n", rc);
+        //ESP_LOGE(Tag, "error determining address type; rc=%d\n", rc);
         return;
     }
 
@@ -236,7 +238,7 @@ void BLE::OnSync(void) {
     uint8_t addr_val[6] = {0};
     rc = ble_hs_id_copy_addr(OwnAddrType, addr_val, NULL);
 
-    ESP_LOGI(Tag, "Device Address: ");
+    //ESP_LOGI(Tag, "Device Address: ");
     /* Begin advertising. */
     Advertise();
 }
