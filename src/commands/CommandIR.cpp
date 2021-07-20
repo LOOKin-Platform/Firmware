@@ -448,10 +448,13 @@ class CommandIR_t : public Command_t {
 			map<string,string> Params = Query.GetParams();
 
 			if (Params.count("operand") > 0 && Settings.eFuse.Type == Settings.Devices.Remote)
-				if (Params["operand"].size() == 8)
+				if (Params["operand"].size() == 8) {
 					((DataRemote_t*)Data)->SetExternalStatusForAC(
 							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(0, 4)),
 							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4)));
+
+					Command_t::SendLocalMQTT(Params["operand"], "/ir/ac/sent");
+				}
 		}
 
 		static void ACReadAborted(const char *IP) {

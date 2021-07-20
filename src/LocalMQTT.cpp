@@ -239,7 +239,9 @@ int LocalMQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t 
 	if (!IsTopicFull)
 		Topic = Settings.LocalMQTT.TopicPrefix + Device.IDToString() + Topic;
 
-	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
+	//return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
+	return ::esp_mqtt_client_enqueue(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain, false);
+
 }
 
 bool LocalMQTT_t::IsCredentialsSet() {

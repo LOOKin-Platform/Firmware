@@ -165,3 +165,7 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 		}
     }
 }
+
+void Command_t::SendLocalMQTT(string Payload, string Topic) {
+	LocalMQTT.SendMessage(Payload, "/commands" + Topic);
+}

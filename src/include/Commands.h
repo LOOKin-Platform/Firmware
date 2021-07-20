@@ -50,6 +50,8 @@ class Command_t {
 
 		static vector<Command_t*>	GetCommandsForDevice();
 		static void					HandleHTTPRequest(WebServer_t::Response &, Query_t &Query);
+
+		static void					SendLocalMQTT(string Payload, string Topic);
 };
 
 extern Storage_t Storage;

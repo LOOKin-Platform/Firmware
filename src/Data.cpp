@@ -253,8 +253,6 @@ IRAM_ATTR string DataEndpoint_t::GetItem(string ItemName) {
 
     pair<uint32_t, uint32_t> AddressAndSize = SplitAddres(Memory.GetUInt64Bit(ItemName));
 
-    ESP_LOGE("GetItem", "%08X %08X", AddressAndSize.first, AddressAndSize.second);
-
     if (AddressAndSize.first == 0 && AddressAndSize.second == 0)
     	return string("");
 

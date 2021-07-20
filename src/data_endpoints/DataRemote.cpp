@@ -39,6 +39,10 @@ class DataDeviceItem_t {
 			return make_pair(Status, Value);
 		}
 
+		virtual uint16_t LastStatusUpdate(uint16_t SavedLastStatus, uint16_t CurrentStatus, uint16_t NewStatus) {
+			return CurrentStatus;
+		}
+
 		virtual ~DataDeviceItem_t() {};
 
 		static uint8_t GetStatusByte(uint16_t Status, uint8_t ByteID) {
@@ -204,6 +208,17 @@ class DataDeviceAC_t : public DataDeviceItem_t {
 			return make_pair((uint16_t)((Operand.ToUint32() << 16) >> 16), Value);
 		}
 
+		uint16_t LastStatusUpdate(uint16_t SavedLastStatus, uint16_t CurrentStatus, uint16_t NewStatus) override
+		{
+			uint8_t CurrentMode 	= DataDeviceItem_t::GetStatusByte(CurrentStatus, 0);
+			uint8_t NewMode 		= DataDeviceItem_t::GetStatusByte(NewStatus, 0);
+
+			if (CurrentMode == 0 && NewMode == 0)
+				return SavedLastStatus;
+
+			return CurrentStatus;
+		}
+
 		virtual ~DataDeviceAC_t() {};
 };
 
@@ -296,6 +311,7 @@ class DataRemote_t : public DataEndpoint_t {
 			string 			DeviceID 	{ ""  };
 			uint8_t			DeviceType 	{ 0x0 };
 			uint16_t		Status 		{ 0x0 };
+			uint16_t		LastStatus	{ 0x0 };
 			uint16_t		Extra		{ 0x0 };
 			uint32_t		Updated		{ 0x0 };
 
@@ -311,12 +327,13 @@ class DataRemote_t : public DataEndpoint_t {
 
 		class IRDevice {
 			public:
-				string 		UUID 	= "";
-				uint8_t 	Type 	= 0xFF;
-				uint32_t	Updated = 0;
-				string 		Name	= "";
-				uint16_t	Extra 	= 0;
-				uint16_t	Status	= 0;
+				string 		UUID 		= "";
+				uint8_t 	Type 		= 0xFF;
+				uint32_t	Updated 	= 0;
+				string 		Name		= "";
+				uint16_t	Extra 		= 0;
+				uint16_t	Status		= 0;
+				uint16_t	LastStatus 	= 0;
 
 				map<string,string> Functions = map<string,string>();
 
@@ -324,20 +341,23 @@ class DataRemote_t : public DataEndpoint_t {
 					if (Items.size() == 0)
 						return;
 
-					if (Items.count("t")) 		{ Type 		= Converter::UintFromHexString<uint8_t>(Items["t"]); 		Items.erase("t"); }
-					if (Items.count("type")) 	{ Type 		= Converter::UintFromHexString<uint8_t>(Items["type"]);		Items.erase("type"); }
+					if (Items.count("t")) 			{ Type 		= Converter::UintFromHexString<uint8_t>(Items["t"]); 		Items.erase("t"); }
+					if (Items.count("type")) 		{ Type 		= Converter::UintFromHexString<uint8_t>(Items["type"]);		Items.erase("type"); }
 
-					if (Items.count("n")) 		{ Name 		= Items["n"]; 		Items.erase("n"); }
-					if (Items.count("name")) 	{ Name 		= Items["name"]; 	Items.erase("name"); }
+					if (Items.count("n")) 			{ Name 		= Items["n"]; 		Items.erase("n"); }
+					if (Items.count("name")) 		{ Name 		= Items["name"]; 	Items.erase("name"); }
 
-					if (Items.count("e")) 		{ Extra 	= Converter::UintFromHexString<uint16_t>(Items["e"]);  		Items.erase("e"); }
-					if (Items.count("extra")) 	{ Extra 	= Converter::UintFromHexString<uint16_t>(Items["extra"]); 	Items.erase("extra"); }
+					if (Items.count("e")) 			{ Extra 	= Converter::UintFromHexString<uint16_t>(Items["e"]);  		Items.erase("e"); }
+					if (Items.count("extra")) 		{ Extra 	= Converter::UintFromHexString<uint16_t>(Items["extra"]); 	Items.erase("extra"); }
 
-					if (Items.count("u")) 		{ Updated 	= Converter::ToUint32(Items["u"]); 		Items.erase("u"); }
-					if (Items.count("updated")) { Updated 	= Converter::ToUint32(Items["updated"]);Items.erase("updated"); }
+					if (Items.count("u")) 			{ Updated 	= Converter::ToUint32(Items["u"]); 		Items.erase("u"); }
+					if (Items.count("updated")) 	{ Updated 	= Converter::ToUint32(Items["updated"]);Items.erase("updated"); }
 
-					if (Items.count("s")) 		{ Status 	= Converter::UintFromHexString<uint16_t>(Items["s"]); 		Items.erase("s"); }
-					if (Items.count("status"))	{ Status 	= Converter::UintFromHexString<uint16_t>(Items["status"]);	Items.erase("status"); }
+					if (Items.count("s")) 			{ Status 	= Converter::UintFromHexString<uint16_t>(Items["s"]); 		Items.erase("s"); }
+					if (Items.count("status"))		{ Status 	= Converter::UintFromHexString<uint16_t>(Items["status"]);	Items.erase("status"); }
+
+					if (Items.count("ls")) 			{ LastStatus 	= Converter::UintFromHexString<uint16_t>(Items["ls"]); 		Items.erase("ls"); }
+					if (Items.count("laststatus"))	{ LastStatus 	= Converter::UintFromHexString<uint16_t>(Items["laststatus"]);	Items.erase("laststatus"); }
 
 					if (Items.count("uuid")) 	{ UUID		= Converter::ToUpper(Items["uuid"]); 	Items.erase("uuid"); }
 
@@ -379,6 +399,9 @@ class DataRemote_t : public DataEndpoint_t {
 
 					if (Status > 0)
 						JSONObject.SetItem((IsShortened) ? "s" : "Status", Converter::ToHexString(Status,4));
+
+					if (LastStatus > 0)
+						JSONObject.SetItem((IsShortened) ? "ls" : "LastStatus", Converter::ToHexString(LastStatus,4));
 
 					if (IsShortened) {
 						for (auto& FunctionItem : Functions)
@@ -444,6 +467,7 @@ class DataRemote_t : public DataEndpoint_t {
 				CacheItem.DeviceID 		= DeviceItem.UUID;
 				CacheItem.DeviceType 	= DeviceItem.Type;
 				CacheItem.Status		= DeviceItem.Status;
+				CacheItem.LastStatus	= DeviceItem.LastStatus;
 				CacheItem.Extra			= DeviceItem.Extra;
 				CacheItem.Updated		= DeviceItem.Updated;
 
@@ -1111,14 +1135,17 @@ class DataRemote_t : public DataEndpoint_t {
 			return make_pair(true, NewStatus);
 		}
 
-		void StatusSave(string DeviceID, uint16_t Status) {
+		void StatusSave(string DeviceID, uint16_t StatusToSave) {
 			bool IsStatusSyncNeeded = false;
 
 			for (int i = 0; i< IRDevicesCache.size(); i++)
 				if (IRDevicesCache[i].DeviceID == DeviceID)
 				{
-					if (IRDevicesCache[i].Status != Status) {
-						IRDevicesCache[i].Status = Status;
+					if (IRDevicesCache[i].Status != StatusToSave)
+					{
+						ESP_LOGE("Status Last", "%04X", IRDevicesCache[i].Status);
+						IRDevicesCache[i].LastStatus = (DevicesHelper.GetDeviceForType(IRDevicesCache[i].DeviceType))->LastStatusUpdate(IRDevicesCache[i].LastStatus, IRDevicesCache[i].Status, StatusToSave);
+						IRDevicesCache[i].Status = StatusToSave;
 						IRDevicesCache[i].StatusSaved = false;
 						IsStatusSyncNeeded = true;
 					}
@@ -1150,8 +1177,9 @@ class DataRemote_t : public DataEndpoint_t {
 			for (int i = 0; i< ((DataRemote_t*)Data)->IRDevicesCache.size(); i++)
 				if (((DataRemote_t*)Data)->IRDevicesCache[i].StatusSaved == false)
 				{
-					IRDevice DeviceItem = ((DataRemote_t*)Data)->LoadDevice(((DataRemote_t*)Data)->IRDevicesCache[i].DeviceID);
-					DeviceItem.Status = ((DataRemote_t*)Data)->IRDevicesCache[i].Status;
+					IRDevice DeviceItem 	= ((DataRemote_t*)Data)->LoadDevice(((DataRemote_t*)Data)->IRDevicesCache[i].DeviceID);
+					DeviceItem.Status 		= ((DataRemote_t*)Data)->IRDevicesCache[i].Status;
+					DeviceItem.LastStatus 	= ((DataRemote_t*)Data)->IRDevicesCache[i].LastStatus;
 					((DataRemote_t*)Data)->SaveDevice(DeviceItem);
 
 					((DataRemote_t*)Data)->IRDevicesCache[i].StatusSaved = true;
