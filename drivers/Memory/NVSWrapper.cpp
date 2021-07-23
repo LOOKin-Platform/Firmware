@@ -304,6 +304,21 @@ void NVS::SetBlob(string key, void *Data, size_t datalen) {
 } // set
 
 /**
+ * @brief Check if blob exists.
+ *
+ * @param [in] key The key to set from the namespace.
+ */
+
+bool NVS::CheckBlobExists(string Key) {
+	size_t Length = 0;  // value will default to 0, if not set yet in NVS
+
+	esp_err_t nvs_err = nvs_get_blob(m_handle, Key.c_str(), NULL, &Length);
+
+	return (nvs_err == ESP_OK && Length > 0);
+}
+
+
+/**
  * @brief Add item in the Blob array .
  *
  * @param [in] ArrayName Array name.

@@ -60,6 +60,7 @@ class NVS {
 
 		pair<void *, size_t>GetBlob(string key);
 		void 				SetBlob(string key, void *data, size_t datalen = 0);
+		bool				CheckBlobExists(string Key);
 
 		/* Methods to work with blob arrays in NVS */
 

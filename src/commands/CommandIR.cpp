@@ -11,15 +11,32 @@
 
 #include "Data.h"
 
+#define CommandIRArea 			"RMT"
+#define CommandIRTXQueuePrefix 	"tx_"
+
 extern DataEndpoint_t *Data;
 
 static rmt_channel_t TXChannel = RMT_CHANNEL_0;
 
-static string 				IRACReadBuffer 			= "";
-static uint16_t				IRACFrequency			= 38000;
+static string 					IRACReadBuffer 			= "";
+static uint16_t					IRACFrequency			= 38000;
 
-static string 				ProntoHexBlockedBuffer 	= "";
-static esp_timer_handle_t 	ProntoHexBlockedTimer 	= NULL;
+static string 					ProntoHexBlockedBuffer 	= "";
+static esp_timer_handle_t 		ProntoHexBlockedTimer 	= NULL;
+
+static QueueHandle_t 			CommandIRTXQueue		= FreeRTOS::Queue::Create(8, sizeof( uint32_t ));
+static TaskHandle_t 			CommandIRTXHandle		= NULL;
+
+struct CommandIRTXQueueData {
+	string      		NVSItem;
+	uint16_t			Frequency;
+	vector<gpio_num_t>	TXGPIO;
+	rmt_channel_t		TXChannel;
+};
+
+static map<uint32_t, CommandIRTXQueueData>
+								CommandIRTXDataMap		= map<uint32_t, CommandIRTXQueueData>();
+
 
 //static FreeRTOS::Semaphore 	IsIRSignalReadyToSend 	= FreeRTOS::Semaphore("IsIRSignalReadyToSend");
 
@@ -107,8 +124,7 @@ class CommandIR_t : public Command_t {
 				if (Operand == 0x0 && Misc == 0x0)
 					return false;
 
-				RMT::TXSetItems(IRSignal.GetRawDataForSending());
-				TXSend(IRSignal.GetProtocolFrequency());
+				TXSend(IRSignal.GetRawDataForSending(), IRSignal.GetProtocolFrequency());
 				TriggerStateChange(IRSignal);
 
 				return true;
@@ -129,8 +145,7 @@ class CommandIR_t : public Command_t {
 				if (RepeatedSignal.size() == 0)
 					return false;
 
-				RMT::TXSetItems(RepeatedSignal);
-				TXSend(IRSignal.GetProtocolFrequency());
+				TXSend(RepeatedSignal, IRSignal.GetProtocolFrequency());
 
 				return true;
 			}
@@ -160,8 +175,7 @@ class CommandIR_t : public Command_t {
 						LastSignal.Data 		= IRSignal.Uint32Data;
 						LastSignal.Misc			= IRSignal.MiscData;
 
-						RMT::TXSetItems(IRSignal.GetRawDataForSending());
-						TXSend(IRSignal.Frequency);
+						TXSend(IRSignal.GetRawDataForSending(), IRSignal.Frequency);
 						TriggerStateChange(IRSignal);
 
 						return true;
@@ -211,8 +225,7 @@ class CommandIR_t : public Command_t {
 				LastSignal.Data 	= IRSignal->Uint32Data;
 				LastSignal.Misc		= IRSignal->MiscData;
 
-				RMT::TXSetItems(IRSignal->GetRawDataForSending());
-				TXSend(IRSignal->Frequency);
+				TXSend(IRSignal->GetRawDataForSending(), IRSignal->Frequency, false);
 				TriggerStateChange(*IRSignal);
 
 				delete IRSignal;
@@ -274,8 +287,7 @@ class CommandIR_t : public Command_t {
 					if (Operand == 0x0 && Misc == 0x0)
 						return false;
 
-					RMT::TXSetItems(it->GetRawDataForSending());
-					TXSend(it->GetProtocolFrequency());
+					TXSend(it->GetRawDataForSending(), it->GetProtocolFrequency());
 
 			    	it = SignalsToSend.erase(it);
 			    }
@@ -327,16 +339,7 @@ class CommandIR_t : public Command_t {
 				LastSignal.Data 	= IRSignal->Uint32Data;
 				LastSignal.Misc		= IRSignal->MiscData;
 
-				if (LastSignal.Protocol != 0xFF)
-					RMT::TXSetItems(IRSignal->GetRawDataForSending());
-				else {
-					RMT::TXClear();
-
-					while (IRSignal->RawData.size())
-						RMT::TXAddItem(IRSignal->RawPopItem());
-				}
-
-				TXSend(Frequency);
+				TXSend(IRSignal->GetRawDataForSending(), Frequency);
 				TriggerStateChange(*IRSignal);
 
 				delete IRSignal;
@@ -350,18 +353,57 @@ class CommandIR_t : public Command_t {
 			ProntoHexBlockedBuffer = "";
 		}
 
-		void TXSend(uint16_t Frequency) {
-			//IsIRSignalReadyToSend.Wait("IsIRSignalReadyToSend");
-			//IsIRSignalReadyToSend.Take("IsIRSignalReadyToSend");
+		static void TXSend(vector<int32_t> TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
+			NVS Memory(CommandIRArea);
 
-
-			if (RMT::TXItemsCount() == 0)
+			if (TXItemData.empty())
 				return;
 
-			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
-				RMT::UnsetRXChannel(RMT_CHANNEL_0);
+			static uint32_t HashID = esp_random();
+			string HashIDStr = CommandIRTXQueuePrefix + Converter::ToLower(Converter::ToHexString(HashID,8));
 
-			InOperation = true;
+			while (Memory.CheckBlobExists(HashIDStr)) {
+				HashID 		= esp_random();
+				HashIDStr 	= CommandIRTXQueuePrefix + Converter::ToLower(Converter::ToHexString(HashID,8));
+			}
+
+			if (HashIDStr.size() > 15)
+				return;
+
+			/*
+			for (int32_t Item : TXItemData)
+				ESP_LOGE("Item", "%d", Item);
+			*/
+
+			void *Buffer = (void*)&TXItemData[0];
+
+			Memory.SetBlob(HashIDStr, Buffer, TXItemData.size()*4);// static_cast<void*>(QueueTXItem.data()), 0);
+			Memory.Commit();
+
+			if (ShouldFree)
+				free(Buffer);
+
+			CommandIRTXQueueData TXData;
+			TXData.NVSItem		= HashIDStr;
+			TXData.Frequency 	= Frequency;
+
+			CommandIRTXDataMap[HashID] = TXData;
+
+		    ESP_LOGE("RMT", "Added to queue");
+
+			FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID);
+
+			if (CommandIRTXHandle == NULL)
+				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096);
+		}
+
+		static void CommandIRTXTask(void *TaskData) {
+			ESP_LOGE("CommandIRTXTask", "RMT TX Task created");
+
+			static uint32_t HashID;
+
+			if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 0 && Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
+				RMT::UnsetRXChannel(RMT_CHANNEL_0);
 
 			vector<gpio_num_t> GPIO = Settings.GPIOData.GetCurrent().IR.SenderGPIOs;
 
@@ -369,24 +411,58 @@ class CommandIR_t : public Command_t {
 				GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
 
 			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1) {
-				// deinit all pins for gpio output
 				for (auto& PinItem : GPIO)
 					gpio_matrix_out(PinItem, 0x100, 0, 0);
 
 				((DataRemote_t *)Data)->ClearChannels(GPIO);
 			}
 
-			RMT::TXSend(GPIO, TXChannel, Frequency);
-			InOperation = false;
+			NVS Memory(CommandIRArea);
 
-			Log::Add(Log::Events::Commands::IRExecuted);
+			while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID)) {
+				if (CommandIRTXDataMap.count(HashID) == 0)
+					continue;
+
+				CommandIRTXQueueData TXData = CommandIRTXDataMap[HashID];
+				CommandIRTXDataMap.erase(HashID);
+
+				ESP_LOGE("RMT TX TASK", "Received from Queue, ItemKey: %s", TXData.NVSItem.c_str());
+
+				pair<void*, size_t> Item = Memory.GetBlob(TXData.NVSItem);
+
+				if (Item.second == 0)
+					continue;
+
+				ESP_LOGE("RMT TX TASK", "BLOB SIZE %d", Item.second);
+
+				vector<int32_t> DataToSend(static_cast<int32_t*>(Item.first), static_cast<int32_t*>(Item.first) + Item.second/4);
+
+				RMT::TXClear();
+
+				for (int32_t Item : DataToSend) {
+					RMT::TXAddItem(Item);
+					//ESP_LOGE("TX Item", "%d", Item);
+				}
+
+				RMT::TXSend(GPIO, TXChannel, TXData.Frequency);
+
+				Log::Add(Log::Events::Commands::IRExecuted);
+
+				free(Item.first);
+			}
+
+			Memory.EraseStartedWith(CommandIRTXQueuePrefix);
+			Memory.Commit();
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
 				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
 
-			//IsIRSignalReadyToSend.Give();
+			ESP_LOGE("CommandIRTXTask", "RMT TX Task removed");
+		    CommandIRTXHandle = NULL;
+		    CommandIRTXDataMap.clear();
+		    FreeRTOS::DeleteTask();
 		}
 
 		void TriggerStateChange(IRLib &Signal) {
@@ -412,15 +488,18 @@ class CommandIR_t : public Command_t {
 				IRACReadBuffer 	= IRACReadBuffer.substr(FrequencyDelimeterPos+1);
 			}
 
-			if (IRACReadBuffer.find(" ") == string::npos)
-				return true;
+			return true;
+		};
+
+		static void ACReadFinished(const char *IP) {
+			static vector<int32_t> ACCode = vector<int32_t>();
 
 			while (IRACReadBuffer.size() > 0)
 			{
 				size_t Pos = IRACReadBuffer.find(" ");
 
 				if (Pos != string::npos) {
-					RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
+					ACCode.push_back(Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
 					//ESP_LOGE("TXITEM", "%d", Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
 					IRACReadBuffer.erase(0, Pos + 1);
 				}
@@ -428,21 +507,19 @@ class CommandIR_t : public Command_t {
 					break;
 			}
 
-			return true;
-		};
+			if (ACCode.size() > 0)
+				if (ACCode.back() != -Settings.SensorsConfig.IR.SignalEndingLen)
+					ACCode.push_back(-Settings.SensorsConfig.IR.SignalEndingLen);
 
-		static void ACReadFinished(const char *IP) {
-			if (IRACReadBuffer.size() > 0) {
-				RMT::TXAddItem(Converter::ToInt32(IRACReadBuffer));
-				//ESP_LOGE("TXITEM", "%d", Converter::ToInt32(IRACReadBuffer));
-				IRACReadBuffer = "";
-			}
+			IRACReadBuffer.clear();
 
 			CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
 			if (CommandIR == nullptr)
 				ESP_LOGE("CommandIR","Can't get IR command");
 			else
-				CommandIR->TXSend(IRACFrequency);
+				CommandIR->TXSend(ACCode, IRACFrequency, false);
+
+			ACCode.clear();
 
 			Query_t Query(IP, WebServer_t::QueryTransportType::WebServer);
 			map<string,string> Params = Query.GetParams();
