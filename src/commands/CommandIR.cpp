@@ -203,14 +203,42 @@ class CommandIR_t : public Command_t {
 					return false;
 				}
 
-				ESP_LOGE("QUERY", "%s", (Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery()).c_str());
+				/// FFF0  	- switch on
+				/// FFF1	- swing
+				/// FFF2	- swing
 
-				HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
-									QueryType::POST, false, true,
-									&ACReadStarted,
-									&ACReadBody,
-									&ACReadFinished,
-									&ACReadAborted);
+				int 		OnType 		= 0;
+				uint16_t 	OnStatus	= 0;
+
+				if (ACData.ToUint16() == 0xFFF0) {
+					OnType = (ACOperand::IsOnSeparateForCodeset(ACData.Codeset)) ? 1 : 2;
+
+					if (Settings.eFuse.Type == Settings.Devices.Remote)
+						OnStatus = ((DataRemote_t*)Data)->GetLastStatus(0xEF, ACData.GetCodesetHEX());
+				}
+
+				ESP_LOGE("ACDATA", "%04X", ACData.ToUint16());
+				ESP_LOGE("OnStatus", "%04X", OnStatus);
+				ESP_LOGE("Codeset", "%d", ACData.Codeset);
+
+				if (OnType < 2)
+					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
+										QueryType::POST, false, true,
+										&ACReadStarted,
+										&ACReadBody,
+										&ACReadFinished,
+										&ACReadAborted);
+
+				if (OnType > 0 && OnStatus > 0) {
+					ACData.SetStatus(OnStatus);
+
+					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
+										QueryType::POST, false, true,
+										&ACReadStarted,
+										&ACReadBody,
+										&ACReadFinished,
+										&ACReadAborted);
+				}
 
 				return true;
 			}

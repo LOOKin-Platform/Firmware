@@ -54,10 +54,14 @@ class ACOperand {
 
 		ACOperand(uint32_t Operand) {
 			Codeset			= Converter::InterpretHexAsDec<uint16_t>((uint16_t)(Operand >> 16));
-			Mode			= (uint8_t)((Operand << 16) >> 28);
-			Temperature		= (uint8_t)((Operand << 20) >> 28) + 16;
-			FanMode  		= (uint8_t)((Operand << 24) >> 28);
-			SwingMode 		= (uint8_t)((Operand << 28) >> 28);
+			SetStatus((uint16_t)((Operand << 16) >> 16));
+		}
+
+		void SetStatus(uint16_t Status) {
+			Mode			= (uint8_t)((Status & 0xF000) >> 12);
+			Temperature		= (uint8_t)((Status & 0x0F00) >> 8) + 16;
+			FanMode  		= (uint8_t)((Status & 0x00F0) >> 4);
+			SwingMode 		= (uint8_t)(Status & 0x000F);
 		}
 
 		static bool IsSwingSeparateForCodeset(uint16_t CodesetInHEX) {
@@ -77,6 +81,13 @@ class ACOperand {
 				return true;
 
 			return false;
+		}
+
+		uint16_t GetCodesetHEX() {
+			string HEXStr = Converter::ToString<uint16_t>(Codeset);
+			while (HEXStr.size() < 4) HEXStr = "0" + HEXStr;
+
+			return Converter::UintFromHexString<uint16_t>(HEXStr);
 		}
 
 		string GetQuery() {

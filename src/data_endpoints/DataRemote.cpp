@@ -460,6 +460,18 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 		}
 
+		uint16_t GetLastStatus(uint8_t Type, uint16_t Extra) {
+			for (auto& CacheItem : IRDevicesCache) {
+				ESP_LOGE("GetLastStatus", "Item: %02X %04X, Input: %02X %04X", CacheItem.DeviceType, CacheItem.Extra, Type, Extra);
+
+				if (CacheItem.DeviceType == Type && CacheItem.Extra == Extra)
+					return CacheItem.LastStatus;
+
+			}
+
+			return 0;
+		}
+
 		void AddOrUpdateDeviceToCache(DataRemote_t::IRDevice DeviceItem) {
 			if (DeviceItem.IsCorrect()) {
 				IRDeviceCacheItem_t CacheItem;
