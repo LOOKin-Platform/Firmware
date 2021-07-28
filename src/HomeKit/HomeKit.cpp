@@ -154,7 +154,18 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         	}
         	else
         	{
-                if (IRDeviceItem.Status < 0x1000 && ACOperand::IsOnSeparateForCodeset(IRDeviceItem.Extra))
+        		if (IRDeviceItem.Status < 0x1000) {
+                    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+                    if (IRCommand != nullptr) {
+                    	string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
+                        IRCommand->Execute(0xEF, Operand.c_str());
+                        FreeRTOS::Sleep(1000);
+                    }
+        		}
+
+        		/*
+                if (IRDeviceItem.Status < 0x1000) && ACOperand::IsOnSeparateForCodeset(IRDeviceItem.Extra))
                 {
                 	ESP_LOGE("HomeKit", "Switch ON AC");
 
@@ -166,6 +177,7 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
                         FreeRTOS::Sleep(1000);
                     }
                 }
+                */
         	}
 
         	return HAP_STATUS_SUCCESS;

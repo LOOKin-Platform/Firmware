@@ -62,6 +62,8 @@ void RemoteControl_t::Stop() {
 }
 
 void RemoteControl_t::Reconnect(uint16_t Delay) {
+	//ESP_LOGE("RECONNECT CREDENTIALS", "%s %s", Username.c_str(), Password.c_str());
+
 	if (Status == CONNECTED  && ClientHandle != NULL) {
 		Stop();
 		FreeRTOS::Sleep(Delay);
@@ -88,6 +90,7 @@ void RemoteControl_t::SetCredentials(string Username, string Password) {
 	NVS Memory(NVSMQTTArea);
 	Memory.SetString(NVSMQTTClientID	, Username);
 	Memory.SetString(NVSMQTTClientSecret, Password);
+	Memory.Commit();
 }
 
 void RemoteControl_t::ChangeOrSetCredentialsBLE(string Username, string Password) {
@@ -229,8 +232,8 @@ int RemoteControl_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint
 	if (Topic == "")
 		Topic = Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString();
 
-	//return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
-	return esp_mqtt_client_enqueue(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain, false);
+	return ::esp_mqtt_client_publish(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain);
+	//return esp_mqtt_client_enqueue(ClientHandle, Topic.c_str(), Payload.c_str(), Payload.length(), QOS, Retain, false);
 
 }
 
@@ -324,7 +327,7 @@ esp_mqtt_client_config_t RemoteControl_t::ConfigDefault() {
 	Config.refresh_connection_after_ms
 								= 0;
 
-    Config.task_stack			= 8192;
+    Config.task_stack			= 10240;//8192;
 
 	Config.buffer_size			= 4096;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size

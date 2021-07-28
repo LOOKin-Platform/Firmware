@@ -24,7 +24,7 @@ static uint16_t					IRACFrequency			= 38000;
 static string 					ProntoHexBlockedBuffer 	= "";
 static esp_timer_handle_t 		ProntoHexBlockedTimer 	= NULL;
 
-static QueueHandle_t 			CommandIRTXQueue		= FreeRTOS::Queue::Create(8, sizeof( uint32_t ));
+static QueueHandle_t 			CommandIRTXQueue		= FreeRTOS::Queue::Create(16, sizeof( uint32_t ));
 static TaskHandle_t 			CommandIRTXHandle		= NULL;
 
 struct CommandIRTXQueueData {
@@ -217,10 +217,6 @@ class CommandIR_t : public Command_t {
 						OnStatus = ((DataRemote_t*)Data)->GetLastStatus(0xEF, ACData.GetCodesetHEX());
 				}
 
-				ESP_LOGE("ACDATA", "%04X", ACData.ToUint16());
-				ESP_LOGE("OnStatus", "%04X", OnStatus);
-				ESP_LOGE("Codeset", "%d", ACData.Codeset);
-
 				if (OnType < 2)
 					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
 										QueryType::POST, false, true,
@@ -403,13 +399,8 @@ class CommandIR_t : public Command_t {
 				ESP_LOGE("Item", "%d", Item);
 			*/
 
-			void *Buffer = (void*)&TXItemData[0];
-
-			Memory.SetBlob(HashIDStr, Buffer, TXItemData.size()*4);// static_cast<void*>(QueueTXItem.data()), 0);
+			Memory.SetBlob(HashIDStr, (void*)TXItemData.data(), TXItemData.size()*4);// static_cast<void*>(QueueTXItem.data()), 0);
 			Memory.Commit();
-
-			if (ShouldFree)
-				free(Buffer);
 
 			CommandIRTXQueueData TXData;
 			TXData.NVSItem		= HashIDStr;
@@ -417,16 +408,25 @@ class CommandIR_t : public Command_t {
 
 			CommandIRTXDataMap[HashID] = TXData;
 
-		    ESP_LOGE("RMT", "Added to queue");
+		    bool IsQueueFull = false;
 
-			FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID);
+		    if (Settings.DeviceGeneration < 2)
+		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 8) ? false : true;
+		    else
+		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 16) ? false : true;
+
+
+		    if (!IsQueueFull) {
+		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID);
+				ESP_LOGD("RMT", "Added to queue");
+		    }
 
 			if (CommandIRTXHandle == NULL)
-				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096);
+				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, 7);
 		}
 
 		static void CommandIRTXTask(void *TaskData) {
-			ESP_LOGE("CommandIRTXTask", "RMT TX Task created");
+			ESP_LOGD("CommandIRTXTask", "RMT TX Task created");
 
 			static uint32_t HashID;
 
@@ -451,45 +451,45 @@ class CommandIR_t : public Command_t {
 				if (CommandIRTXDataMap.count(HashID) == 0)
 					continue;
 
-				CommandIRTXQueueData TXData = CommandIRTXDataMap[HashID];
-				CommandIRTXDataMap.erase(HashID);
+				ESP_LOGE("RMT TX TASK", "Received from Queue, ItemKey: %s", CommandIRTXDataMap[HashID].NVSItem.c_str());
 
-				ESP_LOGE("RMT TX TASK", "Received from Queue, ItemKey: %s", TXData.NVSItem.c_str());
-
-				pair<void*, size_t> Item = Memory.GetBlob(TXData.NVSItem);
+				pair<void*, size_t> Item = Memory.GetBlob(CommandIRTXDataMap[HashID].NVSItem);
 
 				if (Item.second == 0)
 					continue;
 
 				ESP_LOGE("RMT TX TASK", "BLOB SIZE %d", Item.second);
 
-				vector<int32_t> DataToSend(static_cast<int32_t*>(Item.first), static_cast<int32_t*>(Item.first) + Item.second/4);
-
 				RMT::TXClear();
 
-				for (int32_t Item : DataToSend) {
-					RMT::TXAddItem(Item);
-					//ESP_LOGE("TX Item", "%d", Item);
-				}
+				int32_t *ItemsToSend = (int32_t *)Item.first;
 
-				RMT::TXSend(GPIO, TXChannel, TXData.Frequency);
+			    for (uint16_t i = 0; i < Item.second / 4; i++) {
+					RMT::TXAddItem(*(ItemsToSend + i));
+			    }
+
+			    ESP_LOGE("TXTask", "Ready to send");
+
+				RMT::TXSend(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
+
+				free(Item.first);
 
 				Log::Add(Log::Events::Commands::IRExecuted);
 
-				free(Item.first);
+				CommandIRTXDataMap.erase(HashID);
 			}
-
-			Memory.EraseStartedWith(CommandIRTXQueuePrefix);
-			Memory.Commit();
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
 				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
 
-			ESP_LOGE("CommandIRTXTask", "RMT TX Task removed");
-		    CommandIRTXHandle = NULL;
+			ESP_LOGD("CommandIRTXTask", "RMT TX Task removed");
 		    CommandIRTXDataMap.clear();
+
+		    Memory.EraseStartedWith(CommandIRTXQueuePrefix);
+
+		    CommandIRTXHandle = NULL;
 		    FreeRTOS::DeleteTask();
 		}
 

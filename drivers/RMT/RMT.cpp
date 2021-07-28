@@ -240,6 +240,8 @@ void RMT::UnsetTXChannel(rmt_channel_t Channel) {
  * @param [in] Bit Bit to add to the queue. Negative means 0, positive - 1. Modul means duration of the bit
  */
 void IRAM_ATTR RMT::TXAddItem(int32_t Bit) {
+//	ESP_LOGE("TXADDItem", "%d", Bit);
+
 	// hack for large pauses between signals
 	if (abs(Bit) >= Settings.SensorsConfig.IR.Threshold)// && abs(Bit) != Settings.SensorsConfig.IR.SignalEndingLen)
 	{

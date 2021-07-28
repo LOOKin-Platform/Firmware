@@ -32,6 +32,8 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 
 		uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 		memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
+
+		free(DataFromNVS.first);
 		//if (DataFromNVS.first != NULL) free(DataFromNVS.first);
 
 		// shift left
@@ -197,6 +199,8 @@ void Log::CorrectTime() {
 	uint64_t LogBlob[Settings.Log.SystemLogSize] = {0};
 	memcpy(LogBlob, DataFromNVS.first, DataFromNVS.second);
 	//if (DataFromNVS.first != NULL) free(DataFromNVS.first);
+
+	free(DataFromNVS.first);
 
 	for (int i=0; i < (DataFromNVS.second / sizeof(uint64_t)); i++) {
 		Item ItemToModify;
