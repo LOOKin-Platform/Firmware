@@ -430,6 +430,8 @@ class CommandIR_t : public Command_t {
 
 			static uint32_t HashID;
 
+			PowerManagement::AddLock("CommandIRTXTask");
+
 			if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 0 && Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
 				RMT::UnsetRXChannel(RMT_CHANNEL_0);
 
@@ -468,8 +470,6 @@ class CommandIR_t : public Command_t {
 					RMT::TXAddItem(*(ItemsToSend + i));
 			    }
 
-			    ESP_LOGE("TXTask", "Ready to send");
-
 				RMT::TXSend(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
 
 				free(Item.first);
@@ -484,10 +484,12 @@ class CommandIR_t : public Command_t {
 				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
 
-			ESP_LOGD("CommandIRTXTask", "RMT TX Task removed");
 		    CommandIRTXDataMap.clear();
-
 		    Memory.EraseStartedWith(CommandIRTXQueuePrefix);
+
+			PowerManagement::ReleaseLock("CommandIRTXTask");
+
+			ESP_LOGD("CommandIRTXTask", "RMT TX Task removed");
 
 		    CommandIRTXHandle = NULL;
 		    FreeRTOS::DeleteTask();
