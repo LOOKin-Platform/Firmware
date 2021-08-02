@@ -70,7 +70,7 @@ class IRLib {
 
 		string 			ProntoHexConstruct(bool SpaceDelimeter = true);
 
-		bool			CRCCompareFunction(uint16_t Item1, uint16_t Item2);
+		bool			CRCCompareFunction(uint16_t Item1, uint16_t Item2, float Threshold = 0.3);
 
 		static vector<IRProto *> Protocols;
 };

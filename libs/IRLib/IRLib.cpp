@@ -147,7 +147,7 @@ string IRLib::GetSignalCRC() {
 			ZeroPair.second = Second;
 		}
 
-		if (CRCCompareFunction(First, ZeroPair.first) && CRCCompareFunction(Second, ZeroPair.second)) {
+		if (CRCCompareFunction(First, ZeroPair.first, 0.4) && CRCCompareFunction(Second, ZeroPair.second, 0.4)) {
 			CRCItem = CRCItem << 1;
 			CRCItem += 0;
 			BitCounter++;
@@ -160,7 +160,7 @@ string IRLib::GetSignalCRC() {
 				OnePair.second = Second;
 			}
 
-			if (CRCCompareFunction(First, OnePair.first) && CRCCompareFunction(Second, OnePair.second)) {
+			if (CRCCompareFunction(First, OnePair.first, 0.4) && CRCCompareFunction(Second, OnePair.second, 0.4)) {
 				CRCItem = CRCItem << 1;
 				CRCItem += 1;
 				BitCounter++;
@@ -415,11 +415,11 @@ string IRLib::ProntoHexConstruct(bool SpaceDelimeter) {
 	return Result;
 }
 
-bool IRLib::CRCCompareFunction(uint16_t Item1, uint16_t Item2) {
-	if (Item1 > 0.70*Item2 && Item1 < 1.3*Item2)
+bool IRLib::CRCCompareFunction(uint16_t Item1, uint16_t Item2, float Threshold) {
+	if (Item1 > (1-Threshold)*Item2 && Item1 < (1+Threshold)*Item2)
 		return true;
 
-	if (Item2 > 0.70*Item1 && Item2 < 1.3*Item1)
+	if (Item2 > (1-Threshold)*Item1 && Item2 < (1+Threshold)*Item1)
 		return true;
 
 	return false;

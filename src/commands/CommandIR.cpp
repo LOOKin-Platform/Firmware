@@ -417,12 +417,13 @@ class CommandIR_t : public Command_t {
 
 
 		    if (!IsQueueFull) {
-		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID);
+		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false, 1000);
 				ESP_LOGD("RMT", "Added to queue");
 		    }
 
-			if (CommandIRTXHandle == NULL)
-				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, 7);
+			if (CommandIRTXHandle == NULL) {
+				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, 6);
+			}
 		}
 
 		static void CommandIRTXTask(void *TaskData) {
@@ -432,6 +433,7 @@ class CommandIR_t : public Command_t {
 
 			PowerManagement::AddLock("CommandIRTXTask");
 
+sendir:
 			if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 0 && Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
 				RMT::UnsetRXChannel(RMT_CHANNEL_0);
 
@@ -449,7 +451,9 @@ class CommandIR_t : public Command_t {
 
 			NVS Memory(CommandIRArea);
 
-			while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID)) {
+			vector<string> ItemsToDelete = vector<string>();
+
+			while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 2000)) {
 				if (CommandIRTXDataMap.count(HashID) == 0)
 					continue;
 
@@ -466,13 +470,16 @@ class CommandIR_t : public Command_t {
 
 				int32_t *ItemsToSend = (int32_t *)Item.first;
 
-			    for (uint16_t i = 0; i < Item.second / 4; i++) {
+			    for (uint16_t i = 0; i < Item.second / 4; i++)
 					RMT::TXAddItem(*(ItemsToSend + i));
-			    }
+
+				ESP_LOGE("RMT TX TASK", "Prepare to send with frequency %u", CommandIRTXDataMap[HashID].Frequency);
 
 				RMT::TXSend(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
 
 				free(Item.first);
+
+				ItemsToDelete.push_back(CommandIRTXDataMap[HashID].NVSItem);
 
 				Log::Add(Log::Events::Commands::IRExecuted);
 
@@ -485,13 +492,22 @@ class CommandIR_t : public Command_t {
 			}
 
 		    CommandIRTXDataMap.clear();
-		    Memory.EraseStartedWith(CommandIRTXQueuePrefix);
 
-			PowerManagement::ReleaseLock("CommandIRTXTask");
+		    for (auto& ItemToDelete : ItemsToDelete)
+		    	Memory.Erase(ItemToDelete);
+
+		    Memory.Commit();
+
+		    if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 0) {
+		    	ESP_LOGE("CommandIRTXTask", "goto resolved");
+		    	goto sendir;
+		    }
 
 			ESP_LOGD("CommandIRTXTask", "RMT TX Task removed");
+			PowerManagement::ReleaseLock("CommandIRTXTask");
 
 		    CommandIRTXHandle = NULL;
+
 		    FreeRTOS::DeleteTask();
 		}
 
