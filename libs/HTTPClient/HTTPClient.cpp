@@ -77,7 +77,8 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront, bool IsSystem) {
 		ThreadsCounter = 1;
 		FreeRTOS::StartTask(HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.SystemThreadStackSize);
 	}
-	else if (!IsSystem && FreeRTOS::Queue::Count(Queue) >= Settings.HTTPClient.NewThreadStep && ThreadsCounter < Settings.HTTPClient.ThreadsMax) {
+
+	if (!IsSystem && FreeRTOS::Queue::Count(Queue) >= Settings.HTTPClient.NewThreadStep && ThreadsCounter < Settings.HTTPClient.ThreadsMax) {
 		ThreadsCounter++;
 		FreeRTOS::StartTask(HTTPClient::HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.ThreadStackSize);
 	}
@@ -144,8 +145,12 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		if (!IsItemReceived && Queue != 0)
 			IsItemReceived = FreeRTOS::Queue::Receive(HTTPClient::Queue, &HashID, (TickType_t) Settings.HTTPClient.BlockTicks);
 
-		if (!IsItemReceived)
-			break;
+		if (!IsItemReceived) {
+			if (ThreadNumber == 1)
+				continue;
+			else
+				break;
+		}
 
 		HTTPClientData_t ClientData = QueryData[HashID];
 
@@ -212,8 +217,10 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		if (QueryData.count(HashID) > 0)
 			QueryData.erase(HashID);
 
+		if (ThreadNumber == 1)
+			FreeRTOS::Sleep(100);
 	}
-	while (IsItemReceived);
+	while (IsItemReceived || ThreadNumber == 1);
 
 	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
     HTTPClient::ThreadsCounter--;

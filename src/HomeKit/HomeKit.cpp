@@ -117,7 +117,7 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
     	if (Iterator > 0) return HAP_STATUS_SUCCESS;
 
-    	ESP_LOGE("ON", "UUID: %04X, Value: %d", AID, Value);
+    	ESP_LOGE("ON", "UUID: %04X, Value: %d, Iterator: %d", AID, Value, Iterator);
 
         DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
 
@@ -159,10 +159,12 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
 
                     if (IRCommand != nullptr) {
                     	string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
-                        IRCommand->Execute(0xEF, Operand.c_str());
+                    	IRCommand->Execute(0xEF, Operand.c_str());
                         FreeRTOS::Sleep(1000);
                     }
         		}
+        		else
+        			return HAP_STATUS_SUCCESS;
 
         		/*
                 if (IRDeviceItem.Status < 0x1000) && ACOperand::IsOnSeparateForCodeset(IRDeviceItem.Extra))
@@ -550,16 +552,19 @@ void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t Functi
 	if (!Result.first) return;
 	if (Codeset == 0) return;
 
+	/*
 	// Если было ноль а стало не ноль - отправить FFF0
 	// Если было не ноль, а стало ноль - отправить как есть
 	if (FunctionID == 0xE0) {
 		uint8_t OldMode = (uint8_t)(Result.second >> 12);
 		uint8_t NewMode	= (uint8_t)(Value >> 12);
 
+		if (OldMode == 0 && NewMode > 0)
+			Result.second = 0xFFF0;
+
 		ESP_LOGE("StatusACUpdateIRSend", "OldMode %u NewMode %u", OldMode, NewMode);
 	}
-
-
+	 */
 
     CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
