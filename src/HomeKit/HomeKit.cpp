@@ -186,7 +186,6 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         ((DataRemote_t*)Data)->StatusUpdateForDevice(IRDeviceItem.DeviceID, 0xE0, Value);
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(IRDeviceItem.DeviceID);
 
-
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
         string Operand = IRDeviceItem.DeviceID;
@@ -544,10 +543,23 @@ bool HomeKit::SetConfiguredName(char* Value, uint16_t AID, hap_char_t *Char, uin
 void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
 	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value, "", false);
 
+	ESP_LOGE("RESULT", "StatusACUpdateIRSend %02X %02X %u Result.second %04X", FunctionID, Value, Send, Result.second);
+
 	if (!Send) return;
 
 	if (!Result.first) return;
 	if (Codeset == 0) return;
+
+	// Если было ноль а стало не ноль - отправить FFF0
+	// Если было не ноль, а стало ноль - отправить как есть
+	if (FunctionID == 0xE0) {
+		uint8_t OldMode = (uint8_t)(Result.second >> 12);
+		uint8_t NewMode	= (uint8_t)(Value >> 12);
+
+		ESP_LOGE("StatusACUpdateIRSend", "OldMode %u NewMode %u", OldMode, NewMode);
+	}
+
+
 
     CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 

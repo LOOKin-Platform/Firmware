@@ -19,6 +19,9 @@ static bool 				IsIPCheckSuccess 	= false;
 static bool					IsEventDrivenStart	= false;
 static bool					IsConnectedBefore 	= false;
 
+static esp_timer_handle_t 	RemoteControlStartTimer = NULL;
+
+
 class WiFiUptimeHandler {
 	public:
 		static void Start();
@@ -26,6 +29,8 @@ class WiFiUptimeHandler {
 		static void SetClientModeNextTime(uint32_t);
 
 		static bool GetIsIPCheckSuccess();
+
+		static void RemoteControlStartTimerCallback(void *Param);
 	private:
 		static uint64_t WiFiStartedTime;
 		static uint32_t BatteryUptime;
@@ -41,6 +46,16 @@ void WiFiUptimeHandler::SetClientModeNextTime(uint32_t Value) {
 }
 
 void WiFiUptimeHandler::Start() {
+	const esp_timer_create_args_t TimerArgs = {
+		.callback 			= &WiFiUptimeHandler::RemoteControlStartTimerCallback,
+		.arg 				= NULL,
+		.dispatch_method 	= ESP_TIMER_TASK,
+		.name				= "RCStartTimer",
+		.skip_unhandled_events = false
+	};
+
+	::esp_timer_create(&TimerArgs, &RemoteControlStartTimer);
+
 	if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
 		WiFiStartedTime = 0;
 		Network.KeepWiFiTimer = 0;
@@ -120,6 +135,11 @@ static void GatewayPingSuccess(esp_ping_handle_t hdl, void *args)
 		IsIPCheckSuccess = true;
 
 	IsCorrectIPData.Give();
+}
+
+void WiFiUptimeHandler::RemoteControlStartTimerCallback(void *Param) {
+	LocalMQTT.Start();
+	RemoteControl.Start();
 }
 
 static void GatewayPingEnd(esp_ping_handle_t hdl, void *args)
@@ -202,6 +222,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
 
+			::esp_timer_stop(RemoteControlStartTimer);
+
 			//WebServer.HTTPStop();
 			WebServer.UDPStop();
 
@@ -216,7 +238,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 
 			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE ||
-				DisconnectedInfo.reason == WIFI_REASON_ASSOC_EXPIRE)
+				DisconnectedInfo.reason == WIFI_REASON_ASSOC_EXPIRE ||
+				DisconnectedInfo.reason == WIFI_REASON_BEACON_TIMEOUT)
 			{
 				FreeRTOS::Sleep(5000);
 			}
@@ -341,8 +364,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
 
-			LocalMQTT.Start();
-			RemoteControl.Start();
+			::esp_timer_stop(RemoteControlStartTimer);
+			::esp_timer_start_once(RemoteControlStartTimer, 5000000);
 
 			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
 

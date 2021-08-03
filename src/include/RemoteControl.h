@@ -26,7 +26,7 @@ class RemoteControl_t {
 	public:
 		enum Status_t { UNACTIVE, STARTED, CONNECTED, ERROR};
 
-		RemoteControl_t							(string Username = "", string Password = "");
+		RemoteControl_t					(string Username = "", string Password = "");
 
 		void SetCredentials				(string Username = "", string Password = "");
 		void ChangeOrSetCredentialsBLE	(string Username = "", string Password = "");

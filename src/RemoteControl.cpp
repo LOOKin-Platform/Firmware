@@ -208,7 +208,7 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 			break;
 		}
         case MQTT_EVENT_ERROR:
-            ESP_LOGI(Tag, "MQTT_EVENT_ERROR");
+            ESP_LOGI(Tag, "MQTT_EVENT_ERROR: %d", event->event_id);
 
         	RemoteControl_t::ErrorCounter++;
 
@@ -327,7 +327,7 @@ esp_mqtt_client_config_t RemoteControl_t::ConfigDefault() {
 	Config.refresh_connection_after_ms
 								= 0;
 
-    Config.task_stack			= 10240;//8192;
+    Config.task_stack			= 10240;//12288;//10240;//8192;
 
 	Config.buffer_size			= 4096;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size

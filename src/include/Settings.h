@@ -236,6 +236,7 @@ class Settings_t {
 			static constexpr uint16_t		NetbuffLen		= 512;
 			static constexpr uint8_t		NewThreadStep	= 2;
 			static constexpr uint16_t		ThreadStackSize = 4096;
+			static constexpr uint16_t		SystemThreadStackSize = 4096;
 		} HTTPClient;
 
 		struct Memory_t {

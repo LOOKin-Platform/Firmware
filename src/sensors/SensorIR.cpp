@@ -227,8 +227,6 @@ class SensorIR_t : public Sensor_t {
 
 			SensorIRCurrentMessage.empty();
 
-			ESP_LOGE("Signal received", "%s", LastSignal.GetRawSignal().c_str()); // fix to prevent freez in /sensors/ir endpoint
-
 			if (LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
 				Log::Add(Log::Events::Sensors::IRReceived);
 

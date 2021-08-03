@@ -18,8 +18,9 @@ extern DataEndpoint_t *Data;
 
 static rmt_channel_t TXChannel = RMT_CHANNEL_0;
 
-static string 					IRACReadBuffer 			= "";
 static uint16_t					IRACFrequency			= 38000;
+static string 					ACReadPart				= "";
+
 
 static string 					ProntoHexBlockedBuffer 	= "";
 static esp_timer_handle_t 		ProntoHexBlockedTimer 	= NULL;
@@ -36,6 +37,9 @@ struct CommandIRTXQueueData {
 
 static map<uint32_t, CommandIRTXQueueData>
 								CommandIRTXDataMap		= map<uint32_t, CommandIRTXQueueData>();
+
+
+static vector<int32_t> ACCode = vector<int32_t>();
 
 
 //static FreeRTOS::Semaphore 	IsIRSignalReadyToSend 	= FreeRTOS::Semaphore("IsIRSignalReadyToSend");
@@ -87,6 +91,9 @@ class CommandIR_t : public Command_t {
 			};
 
 			::esp_timer_create(&TimerArgs, &ProntoHexBlockedTimer);
+
+			ACCode.reserve(800);
+
 		}
 
 		LastSignal_t LastSignal;
@@ -124,7 +131,8 @@ class CommandIR_t : public Command_t {
 				if (Operand == 0x0 && Misc == 0x0)
 					return false;
 
-				TXSend(IRSignal.GetRawDataForSending(), IRSignal.GetProtocolFrequency());
+				vector<int32_t> DataToSend = IRSignal.GetRawDataForSending();
+				TXSend(DataToSend, IRSignal.GetProtocolFrequency());
 				TriggerStateChange(IRSignal);
 
 				return true;
@@ -175,7 +183,9 @@ class CommandIR_t : public Command_t {
 						LastSignal.Data 		= IRSignal.Uint32Data;
 						LastSignal.Misc			= IRSignal.MiscData;
 
-						TXSend(IRSignal.GetRawDataForSending(), IRSignal.Frequency);
+						vector<int32_t> DataToSend = IRSignal.GetRawDataForSending();
+
+						TXSend(DataToSend, IRSignal.Frequency);
 						TriggerStateChange(IRSignal);
 
 						return true;
@@ -217,6 +227,8 @@ class CommandIR_t : public Command_t {
 						OnStatus = ((DataRemote_t*)Data)->GetLastStatus(0xEF, ACData.GetCodesetHEX());
 				}
 
+				ESP_LOGE("OnType", "%d On Status: %d", OnType, OnStatus);
+
 				if (OnType < 2)
 					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
 										QueryType::POST, false, true,
@@ -249,7 +261,9 @@ class CommandIR_t : public Command_t {
 				LastSignal.Data 	= IRSignal->Uint32Data;
 				LastSignal.Misc		= IRSignal->MiscData;
 
-				TXSend(IRSignal->GetRawDataForSending(), IRSignal->Frequency, false);
+
+				vector<int32_t> DataToSend = IRSignal->GetRawDataForSending();
+				TXSend(DataToSend, IRSignal->Frequency, false);
 				TriggerStateChange(*IRSignal);
 
 				delete IRSignal;
@@ -311,7 +325,9 @@ class CommandIR_t : public Command_t {
 					if (Operand == 0x0 && Misc == 0x0)
 						return false;
 
-					TXSend(it->GetRawDataForSending(), it->GetProtocolFrequency());
+					vector<int32_t> DataToSend = it->GetRawDataForSending();
+
+					TXSend(DataToSend, it->GetProtocolFrequency());
 
 			    	it = SignalsToSend.erase(it);
 			    }
@@ -363,7 +379,10 @@ class CommandIR_t : public Command_t {
 				LastSignal.Data 	= IRSignal->Uint32Data;
 				LastSignal.Misc		= IRSignal->MiscData;
 
-				TXSend(IRSignal->GetRawDataForSending(), Frequency);
+
+				vector<int32_t> DataToSend = IRSignal->GetRawDataForSending();
+
+				TXSend(DataToSend, Frequency);
 				TriggerStateChange(*IRSignal);
 
 				delete IRSignal;
@@ -377,30 +396,35 @@ class CommandIR_t : public Command_t {
 			ProntoHexBlockedBuffer = "";
 		}
 
-		static void TXSend(vector<int32_t> TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
-			NVS Memory(CommandIRArea);
+		static void TXSend(vector<int32_t> &TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
+			ESP_LOGI("TXSEND", "<<");
+
+			PowerManagement::AddLock("CommandIRTXSend");
+
+			NVS *Memory = new NVS(CommandIRArea);
 
 			if (TXItemData.empty())
 				return;
 
-			static uint32_t HashID = esp_random();
+			uint32_t HashID = esp_random();
 			string HashIDStr = CommandIRTXQueuePrefix + Converter::ToLower(Converter::ToHexString(HashID,8));
 
+			/*
 			while (Memory.CheckBlobExists(HashIDStr)) {
 				HashID 		= esp_random();
 				HashIDStr 	= CommandIRTXQueuePrefix + Converter::ToLower(Converter::ToHexString(HashID,8));
 			}
+			*/
 
 			if (HashIDStr.size() > 15)
 				return;
 
-			/*
-			for (int32_t Item : TXItemData)
-				ESP_LOGE("Item", "%d", Item);
-			*/
+			Memory->SetBlob(HashIDStr, (void*)TXItemData.data(), TXItemData.size()*4);// static_cast<void*>(QueueTXItem.data()), 0);
+			Memory->Commit();
 
-			Memory.SetBlob(HashIDStr, (void*)TXItemData.data(), TXItemData.size()*4);// static_cast<void*>(QueueTXItem.data()), 0);
-			Memory.Commit();
+			delete Memory;
+
+			TXItemData.clear();
 
 			CommandIRTXQueueData TXData;
 			TXData.NVSItem		= HashIDStr;
@@ -417,11 +441,12 @@ class CommandIR_t : public Command_t {
 
 
 		    if (!IsQueueFull) {
-		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false, 1000);
-				ESP_LOGD("RMT", "Added to queue");
+				ESP_LOGD("RMT", "Added to queue ID %s", HashIDStr.c_str());
+		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false);
 		    }
 
 			if (CommandIRTXHandle == NULL) {
+				ESP_LOGD("CommandIRTXSend", "Invoke CommandIRTXTask start");
 				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, 6);
 			}
 		}
@@ -431,9 +456,6 @@ class CommandIR_t : public Command_t {
 
 			static uint32_t HashID;
 
-			PowerManagement::AddLock("CommandIRTXTask");
-
-sendir:
 			if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 0 && Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
 				RMT::UnsetRXChannel(RMT_CHANNEL_0);
 
@@ -449,17 +471,15 @@ sendir:
 				((DataRemote_t *)Data)->ClearChannels(GPIO);
 			}
 
-			NVS Memory(CommandIRArea);
-
-			vector<string> ItemsToDelete = vector<string>();
-
-			while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 2000)) {
+			while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 1000)) {
 				if (CommandIRTXDataMap.count(HashID) == 0)
 					continue;
 
+				NVS *Memory = new NVS(CommandIRArea);
+
 				ESP_LOGE("RMT TX TASK", "Received from Queue, ItemKey: %s", CommandIRTXDataMap[HashID].NVSItem.c_str());
 
-				pair<void*, size_t> Item = Memory.GetBlob(CommandIRTXDataMap[HashID].NVSItem);
+				pair<void*, size_t> Item = Memory->GetBlob(CommandIRTXDataMap[HashID].NVSItem);
 
 				if (Item.second == 0)
 					continue;
@@ -468,10 +488,12 @@ sendir:
 
 				RMT::TXClear();
 
-				int32_t *ItemsToSend = (int32_t *)Item.first;
+				static int32_t *ItemsToSend = (int32_t *)Item.first;
 
-			    for (uint16_t i = 0; i < Item.second / 4; i++)
-					RMT::TXAddItem(*(ItemsToSend + i));
+			    for (uint16_t i = 0; i < Item.second / 4; i++) {
+			    	static int32_t ItemToSend = *(ItemsToSend + i);
+					RMT::TXAddItem(ItemToSend);
+			    }
 
 				ESP_LOGE("RMT TX TASK", "Prepare to send with frequency %u", CommandIRTXDataMap[HashID].Frequency);
 
@@ -479,11 +501,14 @@ sendir:
 
 				free(Item.first);
 
-				ItemsToDelete.push_back(CommandIRTXDataMap[HashID].NVSItem);
-
 				Log::Add(Log::Events::Commands::IRExecuted);
 
+				Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
+			    Memory->Commit();
+			    delete (Memory);
+
 				CommandIRTXDataMap.erase(HashID);
+				HashID = 0;
 			}
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
@@ -491,22 +516,11 @@ sendir:
 				RMT::ReceiveStart(RMT_CHANNEL_0);
 			}
 
-		    CommandIRTXDataMap.clear();
-
-		    for (auto& ItemToDelete : ItemsToDelete)
-		    	Memory.Erase(ItemToDelete);
-
-		    Memory.Commit();
-
-		    if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 0) {
-		    	ESP_LOGE("CommandIRTXTask", "goto resolved");
-		    	goto sendir;
-		    }
-
 			ESP_LOGD("CommandIRTXTask", "RMT TX Task removed");
-			PowerManagement::ReleaseLock("CommandIRTXTask");
 
 		    CommandIRTXHandle = NULL;
+
+			PowerManagement::ReleaseLock("CommandIRTXSend");
 
 		    FreeRTOS::DeleteTask();
 		}
@@ -521,43 +535,70 @@ sendir:
 		static void ACReadStarted(const char *IP) {
 			RMT::TXClear();
 
-			IRACFrequency 		= 38000;
-			IRACReadBuffer 		= "";
+			IRACFrequency = 38000;
+			ACCode.clear();
+			ACReadPart = "";
 		}
 
-		static bool ACReadBody(char Data[], int DataLen, const char *IP) {
-			IRACReadBuffer += string(Data, DataLen);
+		static bool ACReadBody(char* Data, int DataLen, const char *IP) {
+			char *FreqDelimeterPos = (char*)memchr(Data, ':', DataLen);
 
-			size_t FrequencyDelimeterPos = IRACReadBuffer.find(";");
-			if (FrequencyDelimeterPos != std::string::npos) {
-				IRACFrequency 	= Converter::ToUint16(IRACReadBuffer.substr(0, FrequencyDelimeterPos));
-				IRACReadBuffer 	= IRACReadBuffer.substr(FrequencyDelimeterPos+1);
+			//;ESP_LOGE("ACReadBody", "%u %s", DataLen, Data);
+
+			if (FreqDelimeterPos != NULL && (FreqDelimeterPos - Data) < 10) {
+				string Frequency(Data, (Data - FreqDelimeterPos - 1));
+				ESP_LOGE("Frequency", "%s" ,Frequency.c_str());
+				IRACFrequency = Converter::ToUint16(Frequency);
+			}
+
+			if (FreqDelimeterPos == NULL)
+				FreqDelimeterPos = Data;
+
+			char *LastSpacePos = FreqDelimeterPos;
+			for (int i = (FreqDelimeterPos - Data); i < DataLen; i++) {
+				char* SpacePos = (char*)memchr(Data + i, ' ', DataLen - i);
+
+				if (SpacePos == NULL)
+					break;
+
+				int DigitsGroupLen = SpacePos - LastSpacePos;
+
+				string Item(Data + i, DigitsGroupLen);
+				if (ACReadPart != "") {
+					Item = ACReadPart + Item;
+					ACReadPart = "";
+				}
+
+				Converter::Trim(Item);
+
+				ACCode.push_back(Converter::ToInt32(Item));
+				//ESP_LOGE("ITEM FROM HTTP", "DigitsGroupLen %i %s", DigitsGroupLen , Item.c_str());
+				i += DigitsGroupLen;
+
+				LastSpacePos = SpacePos + 1;
+			}
+
+			if (LastSpacePos != NULL && (LastSpacePos - Data) > 0)
+			{
+				ACReadPart = string(LastSpacePos, DataLen - (LastSpacePos - Data));
+				//ESP_LOGE("ReadPart", "%s", ACReadPart.c_str());
 			}
 
 			return true;
 		};
 
 		static void ACReadFinished(const char *IP) {
-			static vector<int32_t> ACCode = vector<int32_t>();
 
-			while (IRACReadBuffer.size() > 0)
+			if (ACReadPart != "")
 			{
-				size_t Pos = IRACReadBuffer.find(" ");
-
-				if (Pos != string::npos) {
-					ACCode.push_back(Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
-					//ESP_LOGE("TXITEM", "%d", Converter::ToInt32(IRACReadBuffer.substr(0,Pos)));
-					IRACReadBuffer.erase(0, Pos + 1);
-				}
-				else
-					break;
+				Converter::Trim(ACReadPart);
+				ACCode.push_back(Converter::ToInt32(ACReadPart));
+				ACReadPart = "";
 			}
 
 			if (ACCode.size() > 0)
 				if (ACCode.back() != -Settings.SensorsConfig.IR.SignalEndingLen)
 					ACCode.push_back(-Settings.SensorsConfig.IR.SignalEndingLen);
-
-			IRACReadBuffer.clear();
 
 			CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
 			if (CommandIR == nullptr)
@@ -581,7 +622,7 @@ sendir:
 		}
 
 		static void ACReadAborted(const char *IP) {
-			IRACReadBuffer = "";
+			ACCode.clear();
 
 			RMT::TXClear();
 			ESP_LOGE("CommandIR", "Failed to retrieve ac code from server");
