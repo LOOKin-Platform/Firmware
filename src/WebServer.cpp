@@ -44,6 +44,7 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 
 	Query.Cleanup();
 
+
 	PowerManagement::ReleaseLock("GETHandler");
 
 	return ESP_OK;

@@ -468,6 +468,8 @@ class CommandIR_t : public Command_t {
 						((DataRemote_t *)Data)->ClearChannels(GPIO);
 					}
 
+					static int32_t *ItemsToSend;
+
 					while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 500)) {
 						if (CommandIRTXDataMap.count(HashID) == 0)
 							continue;
@@ -485,11 +487,11 @@ class CommandIR_t : public Command_t {
 
 						RMT::TXClear();
 
-						static int32_t *ItemsToSend = (int32_t *)Item.first;
+						ItemsToSend = NULL;
+						ItemsToSend = (int32_t *)Item.first;
 
 						for (uint16_t i = 0; i < Item.second / 4; i++) {
-							static int32_t ItemToSend = *(ItemsToSend + i);
-							RMT::TXAddItem(ItemToSend);
+							RMT::TXAddItem(*(ItemsToSend + i));
 						}
 
 						ESP_LOGE("RMT TX TASK", "Prepare to send with frequency %u", CommandIRTXDataMap[HashID].Frequency);
