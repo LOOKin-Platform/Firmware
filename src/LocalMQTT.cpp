@@ -327,9 +327,8 @@ esp_mqtt_client_config_t LocalMQTT_t::ConfigDefault() {
 
     Config.task_stack			= 4096;
 
-	Config.buffer_size			= 2048;
+	Config.buffer_size			= 4096;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size
-	Config.task_stack			= 0;
 	Config.task_prio			= 5;
 
 	Config.protocol_ver 		= MQTT_PROTOCOL_V_3_1;

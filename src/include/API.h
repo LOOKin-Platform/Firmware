@@ -33,6 +33,7 @@ class API {
 	public:
 		static void 	Handle(WebServer_t::Response &, Query_t &);
 
+		static uint32_t	LastAPQueryTime;
 	private:
 		static string 	GetSetupPage();
 };

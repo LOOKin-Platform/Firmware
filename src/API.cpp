@@ -7,7 +7,16 @@
 #include "API.h"
 #include <HomeKit.h>
 
+uint32_t API::LastAPQueryTime = 0;
+
 void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
+
+	if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+		API::LastAPQueryTime = Time::Unixtime();
+
+	//if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
+	//	WiFiUptimeHandler::LastAPQueryTime();
+
 	if (Query.GetURLPartsCount() == 0) {
 		map<string,string> Params = Query.GetParams();
 

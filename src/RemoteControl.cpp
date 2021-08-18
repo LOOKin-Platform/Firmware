@@ -8,13 +8,15 @@
 #include "Globals.h"
 #include "API.h"
 
+#include "HomeKit.h"
+
+
 static char Tag[] = "RemoteControl";
 
 string						RemoteControl_t::Username		= "";
 string						RemoteControl_t::Password		= "";
 RemoteControl_t::Status_t 	RemoteControl_t::Status			= RemoteControl_t::Status_t::UNACTIVE;
 uint8_t						RemoteControl_t::ConnectionTries= 0;
-uint8_t						RemoteControl_t::ErrorCounter	= 0;
 
 esp_mqtt_client_handle_t 	RemoteControl_t::ClientHandle 	= NULL;
 
@@ -30,30 +32,38 @@ void RemoteControl_t::Init() {
 }
 
 void RemoteControl_t::Start() {
-	if (Username != "" && Status != CONNECTED) {
+	ESP_LOGE("Start", "Username %s Password %s", Username.c_str(), Password.c_str());
+
+	if (Username != "" && Status != CONNECTED)
+	{
 		ESP_LOGI(Tag, "Started RAM left %d", esp_get_free_heap_size());
 
-	    static esp_mqtt_client_config_t mqtt_cfg = CreateConfig();
+		if (ClientHandle == NULL)
+		{
+		    static esp_mqtt_client_config_t mqtt_cfg = CreateConfig();
 
-		ConnectionTries = 0;
+			ConnectionTries = 0;
 
-	    RemoteControl_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
+		    RemoteControl_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
 
-	    if (ClientHandle != NULL)
-			esp_mqtt_client_start(RemoteControl_t::ClientHandle);
-	    else
-			ESP_LOGE(Tag, "esp_mqtt_client_init failed");
+		    ESP_LOGI(Tag, "RC MQTT inited");
+		}
 
-	    ESP_LOGI(Tag, "Started");
+		esp_err_t err = esp_mqtt_client_start(RemoteControl_t::ClientHandle);
+	    ESP_LOGI(Tag, "%s", (err == ESP_OK) ? "Started" : "Start error");
 	}
 }
 
 void RemoteControl_t::Stop() {
+	ESP_LOGE("ClientHandle", "%s", (ClientHandle != NULL) ? "NOT NULL" : "NULL");
+
 	if (ClientHandle && Status != UNACTIVE) {
 		Status = UNACTIVE;
 
-		if (ClientHandle != NULL)
+		if (ClientHandle != NULL) {
+			::esp_mqtt_client_stop(ClientHandle);
 			::esp_mqtt_client_destroy(ClientHandle);
+		}
 
 		ClientHandle	= NULL;
 
@@ -62,22 +72,15 @@ void RemoteControl_t::Stop() {
 }
 
 void RemoteControl_t::Reconnect(uint16_t Delay) {
-	//ESP_LOGE("RECONNECT CREDENTIALS", "%s %s", Username.c_str(), Password.c_str());
-
-	if (Status == CONNECTED  && ClientHandle != NULL) {
-		Stop();
-		FreeRTOS::Sleep(Delay);
+	if (Status == UNACTIVE && ClientHandle == NULL)
 		Start();
-		return;
-	}
 
 	if (Status != UNACTIVE && ClientHandle != NULL) {
 		::esp_mqtt_client_reconnect(ClientHandle);
 		return;
 	}
-
-	Start();
 }
+
 
 string RemoteControl_t::GetClientID() {
 	return Username;
@@ -132,8 +135,6 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
     switch (event->event_id) {
         case MQTT_EVENT_CONNECTED:
 			Status = CONNECTED;
-	    	RemoteControl_t::ErrorCounter = 0;
-
 			ESP_LOGI(Tag, "MQTT_EVENT_CONNECTED");
 			ConnectionTries = 0;
 
@@ -152,24 +153,19 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
             break;
 
         case MQTT_EVENT_SUBSCRIBED:
-        	RemoteControl_t::ErrorCounter = 0;
             ESP_LOGI(Tag, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_UNSUBSCRIBED:
-        	RemoteControl_t::ErrorCounter = 0;
             ESP_LOGI(Tag, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_PUBLISHED:
-        	RemoteControl_t::ErrorCounter = 0;
             ESP_LOGI(Tag, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
             break;
 
         case MQTT_EVENT_DATA:
 		{
-	    	RemoteControl_t::ErrorCounter = 0;
-
 	    	if (event->msg_id > 0)
 	    	{
 	    		MessageID = event->msg_id;
@@ -192,6 +188,8 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 				Query.Transport 		= WebServer.QueryTransportType::MQTT;
 				Query.MQTTMessageID 	= MessageID;
 
+				ESP_LOGE("MQTT DAta", "%s", event->data);
+
 				API::Handle(Response, Query);
 
 				Query.Cleanup();
@@ -210,10 +208,6 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
         case MQTT_EVENT_ERROR:
             ESP_LOGI(Tag, "MQTT_EVENT_ERROR: %d", event->event_id);
 
-        	RemoteControl_t::ErrorCounter++;
-
-            if (RemoteControl_t::ErrorCounter > 3)
-            	RemoteControl.Reconnect();
             break;
 
         default:
@@ -277,7 +271,8 @@ RemoteControl_t::Status_t RemoteControl_t::GetStatus() {
 esp_mqtt_client_config_t RemoteControl_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
-	Config.uri 			= Settings.RemoteControl.Server.c_str();
+	//Config.host			= "mqtt.look-in.club";
+	Config.uri 			= (!HomeKit::IsExperimentalMode()) ? Settings.RemoteControl.Server.c_str() : Settings.RemoteControl.ServerUnsecure.c_str();
 	Config.port			= 8883;
 
 	Config.event_handle = mqtt_event_handler;
@@ -327,11 +322,9 @@ esp_mqtt_client_config_t RemoteControl_t::ConfigDefault() {
 	Config.refresh_connection_after_ms
 								= 0;
 
-    Config.task_stack			= 8192;//8192;
-
-	Config.buffer_size			= 4096;
+    Config.task_stack			= 4096;//8192;//8192;
+	Config.buffer_size			= 3072;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size
-	Config.task_stack			= 0;
 	Config.task_prio			= 6;
 
 	Config.protocol_ver 		= MQTT_PROTOCOL_V_3_1;

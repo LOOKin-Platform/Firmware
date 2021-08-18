@@ -33,7 +33,7 @@ WebServer_t::WebServer_t() {
 }
 
 esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
-	PowerManagement::AddLock("GETHandler");
+	//PowerManagement::AddLock("GETHandler");
 
 	WebServer_t::Response Response;
 
@@ -44,14 +44,13 @@ esp_err_t WebServer_t::GETHandler(httpd_req_t *Request) {
 
 	Query.Cleanup();
 
-
-	PowerManagement::ReleaseLock("GETHandler");
+	//PowerManagement::ReleaseLock("GETHandler");
 
 	return ESP_OK;
 }
 
 esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
-	PowerManagement::AddLock("POSTHandler");
+	//PowerManagement::AddLock("POSTHandler");
 
 	WebServer_t::Response Response;
 
@@ -60,7 +59,7 @@ esp_err_t WebServer_t::POSTHandler(httpd_req_t *Request) {
 	SendHTTPData(Response, Request);
 	Query.Cleanup();
 
-	PowerManagement::ReleaseLock("POSTHandler");
+	//PowerManagement::ReleaseLock("POSTHandler");
 
     return ESP_OK;
 }

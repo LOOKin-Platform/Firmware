@@ -10,6 +10,7 @@
 #include <mdns.h>
 
 #include "HomeKit.h"
+#include "API.h"
 
 static char HandlerTag[] = "WiFiHandler";
 
@@ -18,15 +19,16 @@ static FreeRTOS::Semaphore	IsCorrectIPData 	= FreeRTOS::Semaphore("CorrectTCPIPD
 static bool 				IsIPCheckSuccess 	= false;
 static bool					IsEventDrivenStart	= false;
 static bool					IsConnectedBefore 	= false;
+static uint32_t				LastAPQueryTime 	= 0;
 
 static esp_timer_handle_t 	RemoteControlStartTimer = NULL;
-
 
 class WiFiUptimeHandler {
 	public:
 		static void Start();
 		static void Pool();
 		static void SetClientModeNextTime(uint32_t);
+		static void SetLastAPQueryTime();
 
 		static bool GetIsIPCheckSuccess();
 
@@ -43,6 +45,10 @@ uint32_t WiFiUptimeHandler::ClientModeNextTime	= 0;
 
 void WiFiUptimeHandler::SetClientModeNextTime(uint32_t Value) {
 	ClientModeNextTime = Time::Unixtime() + Value;
+}
+
+void WiFiUptimeHandler::SetLastAPQueryTime() {
+	LastAPQueryTime = Time::Unixtime();
 }
 
 void WiFiUptimeHandler::Start() {
@@ -70,15 +76,22 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
 
+
 		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_AP_STR && ClientModeNextTime > 0)
 		{
 			IsConnectedBefore = false;
 			ClientModeNextTime = 0;
 
-			if (WiFi_t::GetAPClientsCount() == 0 && Network.WiFiSettings.size() > 0) {
-				//WiFi.DeInit();
-				::esp_wifi_stop();
-				//FreeRTOS::Sleep(1000);
+
+			bool APClientsFound = false;
+			if (API::LastAPQueryTime > 0 && ((Time::Unixtime() - API::LastAPQueryTime) < 300))
+				APClientsFound = true;
+
+			ESP_LOGE("Should reconnect", "to wifi, Clients: %s", (APClientsFound) ? "exists" : "not exists");
+
+			if (!APClientsFound && Network.WiFiSettings.size() > 0) {
+				WiFi.Stop();
+				FreeRTOS::Sleep(1000);
 
 				Network.WiFiScannedList = WiFi.Scan();
 				Wireless.StartInterfaces();

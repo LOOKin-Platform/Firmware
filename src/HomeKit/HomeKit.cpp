@@ -480,8 +480,6 @@ bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t
             StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 2, false);
         }
 
-
-
         StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, (Value) ? 0 : 2);
 
         return true;

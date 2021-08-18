@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 36, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 37, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -122,6 +122,7 @@ class Settings_t {
 
 		struct RemoteControl_t {
 			const string 					Server					= "mqtts://mqtt.look-in.club:8883";
+			const string 					ServerUnsecure			= "mqtt://mqtt.look-in.club:1883";
 			const uint8_t					MaxConnectionTries		= 3;
 
 			const uint8_t					DefaultQOS				= 2;

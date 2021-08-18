@@ -70,14 +70,16 @@ class ACOperand {
 				CodesetInHEX == 0x0136 || CodesetInHEX == 0x0137 || CodesetInHEX == 0x0297 || CodesetInHEX == 0x0298 ||
 				CodesetInHEX == 0x0464 || CodesetInHEX == 0x1834 || CodesetInHEX == 0x2000 || CodesetInHEX == 0x3712 ||
 				CodesetInHEX == 0x9003 || CodesetInHEX == 0x9015 || CodesetInHEX == 0x9016 || CodesetInHEX == 0x9017 ||
-				CodesetInHEX == 0x9019 || CodesetInHEX == 0x9020 || CodesetInHEX == 0x9035 || CodesetInHEX == 0x9036)
+				CodesetInHEX == 0x9019 || CodesetInHEX == 0x9020 || CodesetInHEX == 0x9035 || CodesetInHEX == 0x9036 ||
+				CodesetInHEX == 0x9043)
 				return true;
 
 			return false;
 		}
 
 		static bool IsOnSeparateForCodeset(uint16_t CodesetInHEX) {
-			if (CodesetInHEX == 0x9000 || CodesetInHEX == 0x9003 || CodesetInHEX == 0x9013 || CodesetInHEX == 0x9017  || CodesetInHEX == 0x9022  || CodesetInHEX == 0x9030 || CodesetInHEX == 9037)
+			if (CodesetInHEX == 0x9000 || CodesetInHEX == 0x9003 || CodesetInHEX == 0x9013 || CodesetInHEX == 0x9017  ||
+				CodesetInHEX == 0x9022 || CodesetInHEX == 0x9030 || CodesetInHEX == 0x9037 || CodesetInHEX == 0x9042 )
 				return true;
 
 			return false;

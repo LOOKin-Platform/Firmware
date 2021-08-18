@@ -71,7 +71,9 @@ class HTTPClient {
 	private:
 		static string			UserAgent;
 		static QueueHandle_t  	Queue;
+
 		static QueueHandle_t  	SystemQueue;
+		static esp_http_client_handle_t SystemQueueHandler;
 
 		static uint8_t        	ThreadsCounter;
 

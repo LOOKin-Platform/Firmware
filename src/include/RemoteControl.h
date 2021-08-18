@@ -57,8 +57,6 @@ class RemoteControl_t {
 		static string		Username;
 		static string		Password;
 
-		static uint8_t		ErrorCounter;
-
 		static esp_mqtt_client_handle_t ClientHandle;
 
 		static Status_t		Status;

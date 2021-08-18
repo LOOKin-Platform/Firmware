@@ -182,6 +182,7 @@ void WiFi_t::DeInit() {
 
 void WiFi_t::Stop() {
 	::esp_wifi_stop();
+	::esp_wifi_restore();
 	m_WiFiRunning = false;
 }
 
@@ -251,7 +252,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	m_scanFinished.Wait();
 
-	uint16_t apCount;  // Number of access points available.
+	uint16_t apCount = 0;  // Number of access points available.
 	rc = ::esp_wifi_scan_get_ap_num(&apCount);
 	ESP_LOGD(tag, "Count of found access points: %d", apCount);
 
