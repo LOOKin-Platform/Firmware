@@ -465,6 +465,8 @@ void Storage_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			map<string, string> 		Params 	= JSON(Query.GetBody()).GetItems();
 			vector<map<string,string>> 	Items 	= vector<map<string,string>>();
 
+			ESP_LOGE("QUERY.GETBODY()","%s", Query.GetBody());
+
 			if (Params.empty()) {
 				JSON JSONObject(Query.GetBody());
 				if (JSONObject.GetType() == JSON::RootType::Array)

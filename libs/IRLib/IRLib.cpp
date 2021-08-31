@@ -334,14 +334,16 @@ void IRLib::FillFromProntoHex(string &SrcString) {
 	uint8_t ProntoRepeatBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(12,4));
 	uint8_t USec					= (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
 
-	SrcString = SrcString.substr(16);
+	SrcString.erase(0,16);
 
 	RawData.clear();
 	while (SrcString.size() >= 8) {
 		RawData.push_back(+USec * Converter::UintFromHexString<uint16_t>(SrcString.substr(0,4)));
 		RawData.push_back(-USec * Converter::UintFromHexString<uint16_t>(SrcString.substr(4,4)));
-		SrcString = SrcString.substr(8);
+		SrcString.erase(0,8);
 	}
+
+	SrcString.erase();
 }
 
 void IRLib::FillFromProntoHex(const char *SrcString) {

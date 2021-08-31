@@ -109,12 +109,14 @@ class NEC1 : public IRProto {
 			}
 
 			Raw.push_back(+560);
+			Raw.push_back(-45000);
+			/*
 			Raw.push_back(-1650);
 			Raw.push_back(-1650);
 			Raw.push_back(+8900);
 			Raw.push_back(-2250);
 			Raw.push_back(+560);
-
+			*/
 			return Raw;
 		}
 

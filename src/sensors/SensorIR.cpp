@@ -306,7 +306,7 @@ class SensorIR_t : public Sensor_t {
 
 				if (Codeset == 0) return;
 
-				ESP_LOGE("RECEIVED DATA", "%04X %04X", Codeset, Status);
+				//ESP_LOGE("RECEIVED DATA", "%04X %04X", Codeset, Status);
 
 				if (Settings.eFuse.Type == Settings.Devices.Remote)
 					((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Status);
