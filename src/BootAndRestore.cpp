@@ -26,7 +26,7 @@ void BootAndRestore::OnDeviceStart() {
 	if (Log::VerifyLastBoot()) {
 		Memory.SetInt8Bit(NVSBootAndRestoreAreaOnAttempts, 0);
 	}
-	else
+	else if (!(Device.PowerMode == DevicePowerMode::BATTERY && Settings.eFuse.Type == Settings.Devices.Remote))
 	{
 		uint8_t InvalidStartAttempts = Memory.GetInt8Bit(NVSBootAndRestoreAreaOnAttempts);
 		ESP_LOGI("InvalidStartAttempts", "%d / %d", InvalidStartAttempts, Settings.BootAndRestore.AttemptsToReset);

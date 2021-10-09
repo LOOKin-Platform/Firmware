@@ -13,6 +13,10 @@
 
 class Pooling_t {
 	public:
+		static void BARCheck() {
+			EnergyPeriodicHandler::Pool(true);
+		}
+
 		static void Pool () {
 
 			WiFiUptimeHandler::Start();

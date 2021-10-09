@@ -4,6 +4,9 @@
 *
 */
 
+#ifndef BOOT_AND_RESTORE
+#define BOOT_AND_RESTORE
+
 #include "FreeRTOSWrapper.h"
 #include "string.h"
 
@@ -46,3 +49,5 @@ class BootAndRestore {
 		static 	TaskHandle_t	MarkDeviceStartedTaskHandler;
 
 };
+
+#endif

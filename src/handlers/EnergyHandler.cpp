@@ -4,9 +4,10 @@
 class EnergyPeriodicHandler {
 	public:
 		static void Init();
-		static void Pool();
+		static void Pool(bool SkipTimeCheck = false);
 	private:
 		static bool IsInited;
+		static bool IsPowerTypeSet;
 };
 
 
@@ -20,14 +21,14 @@ void EnergyPeriodicHandler::Init() {
     IsInited = true;
 }
 
-void EnergyPeriodicHandler::Pool() {
+void EnergyPeriodicHandler::Pool(bool SkipTimeCheck) {
 	if (!IsInited)
 		Init();
 
-	if (Device.Type.Hex != Settings.Devices.Remote)
+	if (Device.Type.Hex != Settings.Devices.Remote && Settings.eFuse.Type != Settings.Devices.Remote)
 		return;
 
-	if (Time::Uptime() %5 == 0) {
+	if (Time::Uptime() %5 == 0 || SkipTimeCheck) {
 	    uint16_t ConstValueSrc		= 0;
 	    uint16_t BatteryValueSrc	= 0;
 
@@ -40,24 +41,23 @@ void EnergyPeriodicHandler::Pool() {
 		uint16_t ConstValue 		= Converter::VoltageFromADC(ConstValueSrc, 51, 100 );
 		uint16_t BatteryValue 		= Converter::VoltageFromADC(BatteryValueSrc, 100, 51 );
 
-		if (ConstValue > 5000) {
-			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::BATTERY) {
+		if (ConstValue > 5000)
+		{
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::BATTERY)
 				PowerManagement::SetPMType(Device.GetEcoFromNVS(), true);
-			}
 
 			Device.PowerMode = DevicePowerMode::CONST;
 		}
-		else {
-			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::CONST) {
+		else
+		{
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::CONST)
 				PowerManagement::SetPMType(Device.GetEcoFromNVS(), false);
-			}
 
 			Device.PowerMode = DevicePowerMode::BATTERY;
 		}
 
 		Device.CurrentVoltage = (Device.PowerMode == DevicePowerMode::CONST) ? ConstValue : BatteryValue;
 	}
-
 }
 
 #endif

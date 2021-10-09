@@ -59,6 +59,7 @@ void app_main(void) {
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 	Settings.eFuse.ReadDataOrInit();
 
+	Pooling_t::BARCheck();
 	BootAndRestore::OnDeviceStart();
 
 	Network.WiFiScannedList = WiFi.Scan();
