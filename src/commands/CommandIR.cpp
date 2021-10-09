@@ -314,8 +314,6 @@ class CommandIR_t : public Command_t {
 				if (SignalID != 0xFF) {
 					pair<bool,IRLib> SignalToAdd = ((DataRemote_t*)Data)->LoadFunctionByIndex(UUID, Function, SignalID);
 
-					ESP_LOGE("SignalToAdd", "%s", (SignalToAdd.first == true) ? "true" : "false");
-
 					if (SignalToAdd.first)
 						SignalsToSend.push_back(SignalToAdd.second);
 				}

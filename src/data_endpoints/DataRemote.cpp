@@ -971,7 +971,6 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		map<string,string> LoadDeviceFunctions(string UUID) {
-			ESP_LOGE("LoadDeviceFunctions", "!");
 			IRDevice Result(GetItem(UUID), UUID);
 
 			if (Result.IsCorrect())

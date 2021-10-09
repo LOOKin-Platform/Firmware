@@ -197,6 +197,7 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("power"),2);
         	Operand += (Functions["power"] == "toggle") ? ((Value) ? "00" : "01" ) : "FF";
         	IRCommand->Execute(0xFE, Operand.c_str());
+
         	return HAP_STATUS_SUCCESS;
         }
         else
@@ -206,7 +207,6 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
             	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweron"), 2) + "FF";
         		IRCommand->Execute(0xFE, Operand.c_str());
             	return HAP_STATUS_SUCCESS;
-
         	}
 
         	if (Functions.count("poweroff") > 0 && !Value)
@@ -216,8 +216,6 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
             	return HAP_STATUS_SUCCESS;
         	}
         }
-
-
     }
 
     return HAP_STATUS_VAL_INVALID;
@@ -605,10 +603,20 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
         	if (Settings.eFuse.Type == Settings.Devices.Remote) {
                 DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
 
-            	if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
+            	if (*(write->status) == HAP_STATUS_SUCCESS) {
         			static hap_val_t HAPValue;
-        			HAPValue.u = (uint8_t)write->val.b;
-        			HomeKitUpdateCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
+
+            		if (IRDeviceItem.DeviceType == 0x01) {
+            			HAPValue.u = (uint8_t)write->val.b;
+            			HomeKitUpdateCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
+            		}
+
+                   	if (IRDeviceItem.DeviceType == 0x05) {
+              //              CurrentPurifierActive.u = (Value > 0) ? 1 : 0;
+                //    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_AIR_PURIFIER, HAP_CHAR_UUID_ACTIVE, CurrentPurifierActive);
+                   		HAPValue.u = ((uint8_t)write->val.b == 1) ? 2 : 0;
+                   		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_AIR_PURIFIER, HAP_CHAR_UUID_CURRENT_AIR_PURIFIER_STATE, HAPValue);
+                    }
             	}
         	}
         }
@@ -653,6 +661,9 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
             *(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_IS_CONFIGURED)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_AIR_PURIFIER_STATE)) {
         	*(write->status) = HAP_STATUS_SUCCESS;
         }
         else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_MUTE_UUID)) {
@@ -931,6 +942,20 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 				hap_acc_add_serv(Accessory, ServiceLight);
 
 				break;
+			case 0x05: { // Purifier
+				uint8_t PowerStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
+				if (PowerStatus > 0) PowerStatus = 1;
+
+				hap_serv_t *ServicePurifier;
+				ServicePurifier = hap_serv_air_purifier_create(PowerStatus, (PowerStatus > 0) ? 2 : 0 , 0);
+				hap_serv_add_char(ServicePurifier, hap_char_name_create(accessory_name));
+
+				hap_serv_set_priv(ServicePurifier, (void *)(uint32_t)AID);
+				hap_serv_set_write_cb(ServicePurifier, WriteCallback);
+				hap_acc_add_serv(Accessory, ServicePurifier);
+				break;
+			}
+
 			case 0x06: // Vacuum cleaner
 			{
 				hap_serv_t *ServiceVacuumCleaner;
@@ -958,7 +983,6 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 				hap_acc_add_serv(Accessory, ServiceFan);
 				break;
 			}
-
 			case 0xEF: { // AC
 				ACOperand Operand((uint32_t)IRDevice.Status);
 
