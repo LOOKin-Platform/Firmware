@@ -368,7 +368,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		    mdns_service_add(NULL, "_lookin", "_tcp", Settings.WiFi.MDNSServicePort, NULL, 0);
 
 		    string HTTPServiceName = Settings.Bluetooth.DeviceNamePrefix + Device.IDToString();
-		    //mdns_service_instance_name_set("_http", "_tcp", HTTPServiceName.c_str());
 		    mdns_service_instance_name_set("_lookin", "_tcp", HTTPServiceName.c_str());
 
 		    MDNSSetServiceText();

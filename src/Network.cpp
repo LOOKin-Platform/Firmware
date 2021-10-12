@@ -424,7 +424,6 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 		if (Query.GetURLPartsCount() == 4) {
 			if (Query.CheckURLPart("remotecontrol",1) && Query.CheckURLPart("stop",2)) {
 				if (Converter::ToLower(RemoteControl.GetClientID()) == Converter::ToLower(Query.GetStringURLPartByNumber(3))) {
-					ESP_LOGE("teet","etetet");
 					RemoteControl.SetCredentials("","");
 					RemoteControl.Stop();
 					Result.Body = "{\"success\" : \"true\"}";
