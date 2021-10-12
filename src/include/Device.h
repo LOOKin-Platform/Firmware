@@ -103,6 +103,7 @@ class Device_t {
 		static void			OTAFailedCallback();
 		static	httpd_req_t	*CachedRequest;
 
+		void 				OTAStart(string FirmwareURL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::Undefined);
 
 	private:
 		bool 				POSTName(map<string,string>);
@@ -121,6 +122,11 @@ class Device_t {
 		string				SensorModeToString();
 		string				MRDCToString();
 		string				EcoToString();
+
+		static string 		FirmwareURLForOTA;
+		static TaskHandle_t	OTATaskHandler;
+		static void 		ExecuteOTATask(void*);
+
 };
 
 #endif

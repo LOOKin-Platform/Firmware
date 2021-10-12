@@ -9,16 +9,11 @@ class PingPeriodicHandler {
 		static bool FirmwareCheckReadBody(char Data[], int DataLen, const char *IP);
 		static void FirmwareCheckFinished(const char *IP);
 
-		static void	ExecuteOTATask	(void*);
-		static void OTAStartedCallback();
-		static void OTAFailed();
-
 	private:
 		static FreeRTOS::Semaphore IsRouterPingFinished;
 		static void PerformLocalPing();
 		static void RouterPingFinished(esp_ping_handle_t hdl, void *args);
 
-		static TaskHandle_t	OTATaskHandler;
 		static uint32_t 	RemotePingRestartCounter;
 		static uint32_t 	RouterPingRestartCounter;
 		static string		FirmwareUpdateURL;
@@ -27,7 +22,6 @@ class PingPeriodicHandler {
 uint32_t 			PingPeriodicHandler::RemotePingRestartCounter 	= 0;
 uint32_t 			PingPeriodicHandler::RouterPingRestartCounter 	= 0;
 string 				PingPeriodicHandler::FirmwareUpdateURL 			= "";
-TaskHandle_t		PingPeriodicHandler::OTATaskHandler 			= NULL;
 FreeRTOS::Semaphore	PingPeriodicHandler::IsRouterPingFinished 		= FreeRTOS::Semaphore("IsRouterPingFinished");
 
 
@@ -47,46 +41,7 @@ bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, const 
 }
 
 void PingPeriodicHandler::FirmwareCheckFinished(const char *IP) {
-	ESP_LOGE("URL TO OTA UPDATE", "%s", FirmwareUpdateURL.c_str());
-
-	if (FirmwareUpdateURL.size() == 0)
-		return;
-
-	if (OTATaskHandler == NULL)
-		OTATaskHandler = FreeRTOS::StartTask(PingPeriodicHandler::ExecuteOTATask, "ExecuteOTATask", NULL, 10240, 7);
-}
-
-
-void PingPeriodicHandler::ExecuteOTATask(void*) {
-	ESP_LOGE("OTA UPDATE STARTED", "");
-
-	LocalMQTT.Stop();
-	RemoteControl.Stop();
-	HomeKit::Stop();
-	FreeRTOS::Sleep(5000);
-
-	OTA::Update(FirmwareUpdateURL, OTAStartedCallback, OTAFailed);
-}
-
-void PingPeriodicHandler::OTAStartedCallback() {
-	ESP_LOGE("OTA UPDATE STARTED", "");
-	Device.Status = DeviceStatus::UPDATING;
-}
-
-void PingPeriodicHandler::OTAFailed() {
-	ESP_LOGE("OTA UPDATE FAILED", "");
-
-	RemoteControl.Start();
-	LocalMQTT.Start();
-
-	HomeKit::Start();
-
-	Device.Status = DeviceStatus::RUNNING;
-
-	if (OTATaskHandler != NULL) {
-		FreeRTOS::DeleteTask(OTATaskHandler);
-		OTATaskHandler = NULL;
-	}
+	Device.OTAStart(FirmwareUpdateURL);
 }
 
 void PingPeriodicHandler::Pool() {
@@ -96,8 +51,23 @@ void PingPeriodicHandler::Pool() {
 	if (WiFi.GetMode() != WIFI_MODE_STA_STR)
 		return;
 
+	if (Device.Status != DeviceStatus::RUNNING)
+		return;
+
 	RemotePingRestartCounter += Settings.Pooling.Interval;
 	RouterPingRestartCounter += Settings.Pooling.Interval;
+
+	/*
+	if (RemotePingRestartCounter >= 1.5*60*1000)
+	{
+		RemotePingRestartCounter = 0;
+		RouterPingRestartCounter = 0;
+
+		HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
+	}
+
+	return;
+	*/
 
 	if (RemotePingRestartCounter >= Settings.Pooling.ServerPingInterval) {
 		RemotePingRestartCounter = 0;
@@ -111,7 +81,8 @@ void PingPeriodicHandler::Pool() {
 
 			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000))
 				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
-			else {
+			else
+			{
 				JSON TelemetryData;
 
 				TelemetryData.SetItem("Uptime", Converter::ToString<uint32_t>(Time::Uptime()));

@@ -64,6 +64,7 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
 	Config.user_data 				= NULL;
 	Config.event_handler			= NULL;
+	Config.user_agent 				= "";
 
 	Config.is_async					= false;
 	Config.timeout_ms				= 10000;
@@ -73,6 +74,10 @@ esp_err_t OTA::PerformUpdate(string URL) {
 	Config.query					= NULL;
 	Config.port						= 80;
 	Config.url 						= URL.c_str();
+
+	Config.skip_cert_common_name_check = "";
+
+    Config.keep_alive_enable 		= true,
 
     Log::Add(Log::Events::System::OTAStarted);
 

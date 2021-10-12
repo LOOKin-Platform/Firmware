@@ -8,7 +8,9 @@
 #include "HomeKit.h"
 #include "BootAndRestore.h"
 
-httpd_req_t	*Device_t::CachedRequest 	= NULL;
+httpd_req_t		*Device_t::CachedRequest 	= NULL;
+string 			Device_t::FirmwareURLForOTA = "";
+TaskHandle_t	Device_t::OTATaskHandler 	= NULL;
 
 DeviceType_t::DeviceType_t(string TypeStr) {
 	for(auto const &TypeItem : Settings.Devices.Literaly) {
@@ -303,8 +305,6 @@ bool Device_t::POSTTimezone(map<string,string> Params) {
 }
 
 
-static WebServer_t::QueryTransportType PostFirmwareTransportType = WebServer_t::QueryTransportType::WebServer;
-
 bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType) {
 	if (Params.count("firmware") == 0)
 		return false;
@@ -341,32 +341,53 @@ bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Respo
 
 	CachedRequest = Request;
 
-	Device.Status = DeviceStatus::UPDATING;
-
-	RemoteControl.Stop();
-	LocalMQTT.Stop();
-	HomeKit::Stop();
-
-	FreeRTOS::Sleep(1000);
-
-	PostFirmwareTransportType = TransportType;
-
-	OTA::Update(OTAUrl, &OTAStartedCallback, &OTAFailedCallback);
+	OTAStart(OTAUrl, TransportType);
 
 	return true;
 }
 
-void Device_t::OTAStartedCallback() {
-	Device.Status = DeviceStatus::UPDATING;
+void Device_t::OTAStart(string FirmwareURL, WebServer_t::QueryTransportType TransportType) {
+	FirmwareURLForOTA = FirmwareURL;
 
-	WebServer_t::Response Response;
-	Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update will be started if file exists. Web server temporarily stopped.\"}";
-	Response.ResponseCode = WebServer_t::Response::CODE::OK;
+	if (FirmwareURLForOTA.length() == 0)
+		return;
 
-	if (PostFirmwareTransportType == WebServer_t::QueryTransportType::WebServer)
+	if (TransportType == WebServer_t::QueryTransportType::WebServer) {
+		WebServer_t::Response Response;
+		Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update will be started if file exists. Web server temporarily stopped.\"}";
+		Response.ResponseCode = WebServer_t::Response::CODE::OK;
+
 		WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
+	}
+	else if (TransportType == WebServer_t::QueryTransportType::MQTT) {
+		RemoteControl.SendMessage("{\"success\" : \"true\" , \"Message\": \"Firmware update will be started if file exists. Web server temporarily stopped.\"}");
+	}
+
+	LocalMQTT.Stop();
+	HomeKit::Stop();
+
+	FreeRTOS::Sleep(2000);
+
+	if (OTATaskHandler == NULL)
+		OTATaskHandler = FreeRTOS::StartTask(Device_t::ExecuteOTATask, "ExecuteOTATask", NULL, 10240, 7);
 }
 
+void Device_t::ExecuteOTATask(void*) {
+	ESP_LOGE("OTA UPDATE STARTED", "");
+
+	RemoteControl.Stop();
+
+	ESP_LOGI("Pooling","RAM left %d", esp_get_free_heap_size());
+
+	OTA::Update(FirmwareURLForOTA, OTAStartedCallback, OTAFailedCallback);
+
+    FreeRTOS::DeleteTask();
+	OTATaskHandler = NULL;
+}
+
+void Device_t::OTAStartedCallback() {
+	Device.Status = DeviceStatus::UPDATING;
+}
 
 void Device_t::OTAFailedCallback() {
 	RemoteControl.Start();

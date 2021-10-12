@@ -29,7 +29,7 @@ struct UDPBroacastQueueItem {
 
 class WebServer_t {
 	public:
-		enum QueryTransportType { WebServer = 0x0, MQTT = 0x1 };
+		enum QueryTransportType { WebServer = 0x0, MQTT = 0x1, Undefined = 0xFF };
 
 		class Response {
 			public:
