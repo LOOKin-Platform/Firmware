@@ -294,15 +294,20 @@ esp_mqtt_client_config_t LocalMQTT_t::ConfigDefault() {
 
 	Config.host					= NULL;
 	Config.uri					= NULL;
+    Config.path					= NULL;
 	Config.port					= 0;
 	Config.keepalive			= 60;
+    Config.disable_keepalive    = false;
 	Config.reconnect_timeout_ms	= 15000;
 	Config.disable_auto_reconnect
 								= false;
 	Config.network_timeout_ms	= 5000;
 	Config.use_secure_element	= false;
 	Config.ds_data				= NULL;
-	Config.transport 			= MQTT_TRANSPORT_OVER_TCP;
+	Config.transport 			= MQTT_TRANSPORT_UNKNOWN;
+
+	Config.event_handle 		= NULL;
+	Config.event_loop_handle	= NULL;
 
 	Config.username				= NULL;
 	Config.password				= NULL;
@@ -310,6 +315,8 @@ esp_mqtt_client_config_t LocalMQTT_t::ConfigDefault() {
 	Config.lwt_topic			= NULL;
 	Config.lwt_msg				= NULL;
 	Config.lwt_msg_len 			= 0;
+	Config.lwt_qos				= 0;
+	Config.lwt_retain			= 0;
 
 	Config.cert_pem				= NULL;
 	Config.client_cert_pem 		= NULL;
@@ -337,6 +344,13 @@ esp_mqtt_client_config_t LocalMQTT_t::ConfigDefault() {
 	Config.use_global_ca_store 	= false;
 
 	Config.alpn_protos			= NULL;
+
+	Config.message_retransmit_timeout = 0;
+	Config.transport			= MQTT_TRANSPORT_UNKNOWN;
+	Config.crt_bundle_attach	= NULL;
+
+	Config.skip_cert_common_name_check = true;
+
 
 	return Config;
 }
