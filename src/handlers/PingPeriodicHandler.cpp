@@ -8,6 +8,7 @@ class PingPeriodicHandler {
 		static void FirmwareCheckStarted(const char *IP);
 		static bool FirmwareCheckReadBody(char Data[], int DataLen, const char *IP);
 		static void FirmwareCheckFinished(const char *IP);
+		static void FirmwareCheckFailed(const char *IP);
 
 	private:
 		static FreeRTOS::Semaphore IsRouterPingFinished;
@@ -44,6 +45,11 @@ void PingPeriodicHandler::FirmwareCheckFinished(const char *IP) {
 	Device.OTAStart(FirmwareUpdateURL);
 }
 
+void PingPeriodicHandler::FirmwareCheckFailed(const char *IP) {
+	if (Time::Uptime() > 26*60*60)
+		BootAndRestore::Reboot(false);
+}
+
 void PingPeriodicHandler::Pool() {
 	if (Device.Type.IsBattery() && Device.SensorMode == true)
 		return;
@@ -57,7 +63,7 @@ void PingPeriodicHandler::Pool() {
 	RemotePingRestartCounter += Settings.Pooling.Interval;
 	RouterPingRestartCounter += Settings.Pooling.Interval;
 
-	/*
+/*
 	if (RemotePingRestartCounter >= 1.5*60*1000)
 	{
 		RemotePingRestartCounter = 0;
@@ -67,7 +73,7 @@ void PingPeriodicHandler::Pool() {
 	}
 
 	return;
-	*/
+*/
 
 	if (RemotePingRestartCounter >= Settings.Pooling.ServerPingInterval) {
 		RemotePingRestartCounter = 0;
@@ -80,7 +86,7 @@ void PingPeriodicHandler::Pool() {
 			DateTime_t CurrentTime = Time::DateTime();
 
 			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000))
-				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
+				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, &PingPeriodicHandler::FirmwareCheckFailed);
 			else
 			{
 				JSON TelemetryData;
