@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 38, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 37, 0);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -80,7 +80,6 @@ class Settings_t {
 			const string					UDPPacketPrefix	= "LOOK.in:";
 
 			static constexpr uint16_t		MDNSServicePort	= 63091;
-
 
 			uint32_t						BatteryUptime	= 120* 1000; 	// first time WiFi time to work, ms
 			uint32_t						KeepWiFiTime	= 60 * 1000;	// Keep wifi after /network/KeepWiFi command executing, ms

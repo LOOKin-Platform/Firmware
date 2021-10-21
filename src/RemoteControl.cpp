@@ -32,8 +32,6 @@ void RemoteControl_t::Init() {
 }
 
 void RemoteControl_t::Start() {
-	ESP_LOGE("Start", "Username %s Password %s", Username.c_str(), Password.c_str());
-
 	if (Username != "" && Status != CONNECTED)
 	{
 		ESP_LOGI(Tag, "Started RAM left %d", esp_get_free_heap_size());
@@ -100,8 +98,6 @@ void RemoteControl_t::ChangeOrSetCredentialsBLE(string Username, string Password
 		return;
 	}
 
-	Stop();
-
 	SetCredentials(Username, Password);
 
 	if (!WiFi.IsConnectedSTA())
@@ -115,9 +111,19 @@ void RemoteControl_t::ChangeOrSetCredentialsBLE(string Username, string Password
 		case ERROR		: ESP_LOGE("Status", "Error");  break;
 	}
 
-	FreeRTOS::Sleep(1000);
+	if (Status != UNACTIVE && ClientHandle != NULL) {
+		static esp_mqtt_client_config_t Config = CreateConfig();
+		esp_mqtt_set_config(ClientHandle, &Config);
+		esp_mqtt_client_reconnect(ClientHandle);
+	}
+	else
+	{
+		Stop();
 
-	Start();
+		FreeRTOS::Sleep(1000);
+
+		Start();
+	}
 }
 
 

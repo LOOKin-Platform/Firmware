@@ -268,7 +268,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		abort();
 	}
 
-	for (auto i=0; i<apCount; i++) {
+	for (auto i=0; i < apCount; i++) {
 		WiFiAPRecord wifiAPRecord;
 		memcpy(wifiAPRecord.m_bssid, list[i].bssid, 6);
 
@@ -373,7 +373,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	sta_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
 	sta_config.sta.bssid_set = 0;
 	sta_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
-	sta_config.sta.listen_interval = 5;
+	sta_config.sta.listen_interval = 3;
 
 	sta_config.sta.pmf_cfg.capable 	= true;
 	sta_config.sta.pmf_cfg.required = false;

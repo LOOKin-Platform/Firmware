@@ -98,25 +98,43 @@ class SensorMeteo_t : public Sensor_t {
 
 				Result	+= (uint32_t)abs(Value * 10);
 
-				if (IsHomeKitEnabled()) {
+				if (IsHomeKitEnabled() && Settings.eFuse.Type == Settings.Devices.Remote)
+				{
+					bool IsEmptyAC = true;
+
+					hap_val_t CurrentTempValue;
+					CurrentTempValue.f = Value;
+
 					for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
-						if (IRDevice.DeviceType == 0xEF) {
-							hap_val_t CurrentTempValue;
-							CurrentTempValue.f = Value;
+						if (IRDevice.DeviceType == 0xEF)
+						{
 							HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
+							IsEmptyAC = false;
 						}
+
+					if (IsEmptyAC)
+						HomeKitUpdateCharValue(0, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
 				}
 			}
 			else if (Type == "Humidity") {
 				Result	+= (uint32_t)abs(Value * 10);
 
-				if (IsHomeKitEnabled()) {
+				if (IsHomeKitEnabled() && Settings.eFuse.Type == Settings.Devices.Remote)
+				{
+					bool IsEmptyAC = true;
+
+					hap_val_t CurrentHumidityValue;
+					CurrentHumidityValue.f = Value;
+
 					for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
-						if (IRDevice.DeviceType == 0xEF) {
-							hap_val_t CurrentHumidityValue;
-							CurrentHumidityValue.f = Value;
+						if (IRDevice.DeviceType == 0xEF)
+						{
 							HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
+							IsEmptyAC = false;
 						}
+
+					if (IsEmptyAC)
+						HomeKitUpdateCharValue(0, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
 				}
 			}
 			else

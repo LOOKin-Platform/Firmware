@@ -14,6 +14,7 @@ class PingPeriodicHandler {
 		static FreeRTOS::Semaphore IsRouterPingFinished;
 		static void PerformLocalPing();
 		static void RouterPingFinished(esp_ping_handle_t hdl, void *args);
+		static void CheckForPeriodicalyReboot();
 
 		static uint32_t 	RemotePingRestartCounter;
 		static uint32_t 	RouterPingRestartCounter;
@@ -42,13 +43,28 @@ bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, const 
 }
 
 void PingPeriodicHandler::FirmwareCheckFinished(const char *IP) {
-	Device.OTAStart(FirmwareUpdateURL);
+	bool ShouldCheckForReboot = true;
+
+	if (FirmwareUpdateURL.size() > 10) {
+		if (FirmwareUpdateURL.rfind("http", 0) == 0) {
+			ShouldCheckForReboot = false;
+			Device.OTAStart(FirmwareUpdateURL);
+		}
+	}
+
+	if (ShouldCheckForReboot)
+		CheckForPeriodicalyReboot();
 }
 
 void PingPeriodicHandler::FirmwareCheckFailed(const char *IP) {
+	CheckForPeriodicalyReboot();
+}
+
+void PingPeriodicHandler::CheckForPeriodicalyReboot() {
 	if (Time::Uptime() > 26*60*60)
 		BootAndRestore::Reboot(false);
 }
+
 
 void PingPeriodicHandler::Pool() {
 	if (Device.Type.IsBattery() && Device.SensorMode == true)
@@ -60,20 +76,18 @@ void PingPeriodicHandler::Pool() {
 	if (Device.Status != DeviceStatus::RUNNING)
 		return;
 
+	/*
+	ESP_LOGE("PingPeriodicHandler", "%s", (Time::IsUptime(Time::Unixtime())) ? "Uptime" : "None");
+	if (Time::Uptime() == 40) {
+		ESP_LOGE("UPTIME", "%d", Time::Uptime());
+		Time::TimezoneOffset+=2;
+		RemotePingRestartCounter = Settings.Pooling.ServerPingInterval;
+	}
+	*/
+
 	RemotePingRestartCounter += Settings.Pooling.Interval;
 	RouterPingRestartCounter += Settings.Pooling.Interval;
 
-/*
-	if (RemotePingRestartCounter >= 1.5*60*1000)
-	{
-		RemotePingRestartCounter = 0;
-		RouterPingRestartCounter = 0;
-
-		HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, NULL);
-	}
-
-	return;
-*/
 
 	if (RemotePingRestartCounter >= Settings.Pooling.ServerPingInterval) {
 		RemotePingRestartCounter = 0;
