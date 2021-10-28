@@ -1,249 +1,650 @@
+#include <NimBLEDevice.h>
+#include <NimBLEServer.h>
+#include <NimBLEUtils.h>
+#include <NimBLEHIDDevice.h>
+
+#include "HIDTypes.h"
+#include <driver/adc.h>
+
+#include "BLEServer.h"
+
+#include "Device.h"
+
+extern Device_t Device;
+
+#include "esp_log.h"
+static const char* LOG_TAG = "BLEDevice";
+
+// Report IDs:
+#define KEYBOARD_ID 0x01
+#define MEDIA_KEYS_ID 0x02
+
+static const uint8_t _hidReportDescriptor[] = {
+  USAGE_PAGE(1),		0x01,			// USAGE_PAGE (Generic Desktop Ctrls)
+  USAGE(1),				0x06,			// USAGE (Keyboard)
+  COLLECTION(1),		0x01,			// COLLECTION (Application)
+  // ------------------------------------------------- Keyboard
+  REPORT_ID(1),			KEYBOARD_ID,	//   REPORT_ID (1)
+  USAGE_PAGE(1),		0x07,			//   USAGE_PAGE (Kbrd/Keypad)
+  USAGE_MINIMUM(1),		0xE0,			//   USAGE_MINIMUM (0xE0)
+  USAGE_MAXIMUM(1),		0xE7,			//   USAGE_MAXIMUM (0xE7)
+  LOGICAL_MINIMUM(1),	0x00,			//   LOGICAL_MINIMUM (0)
+  LOGICAL_MAXIMUM(1),	0x01,			//   Logical Maximum (1)
+  REPORT_SIZE(1),		0x01,			//   REPORT_SIZE (1)
+  REPORT_COUNT(1),		0x08,			//   REPORT_COUNT (8)
+  INPUT(1),				0x02,			//   INPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+  REPORT_COUNT(1),		0x01,			//   REPORT_COUNT (1) ; 1 byte (Reserved)
+  REPORT_SIZE(1),		0x08,			//   REPORT_SIZE (8)
+  INPUT(1),				0x01,			//   INPUT (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+  REPORT_COUNT(1),		0x05,			//   REPORT_COUNT (5) ; 5 bits (Num lock, Caps lock, Scroll lock, Compose, Kana)
+  REPORT_SIZE(1),		0x01,			//   REPORT_SIZE (1)
+  USAGE_PAGE(1),		0x08,			//   USAGE_PAGE (LEDs)
+  USAGE_MINIMUM(1),		0x01,			//   USAGE_MINIMUM (0x01) ; Num Lock
+  USAGE_MAXIMUM(1),		0x05,			//   USAGE_MAXIMUM (0x05) ; Kana
+  OUTPUT(1),			0x02,			//   OUTPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+  REPORT_COUNT(1),		0x01,			//   REPORT_COUNT (1) ; 3 bits (Padding)
+  REPORT_SIZE(1),		0x03,			//   REPORT_SIZE (3)
+  OUTPUT(1),			0x01,			//   OUTPUT (Const,Array,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
+  REPORT_COUNT(1),		0x06,			//   REPORT_COUNT (6) ; 6 bytes (Keys)
+  REPORT_SIZE(1),		0x08,			//   REPORT_SIZE(8)
+  LOGICAL_MINIMUM(1),	0x00,			//   LOGICAL_MINIMUM(0)
+  LOGICAL_MAXIMUM(1),	0x65,			//   LOGICAL_MAXIMUM(0x65) ; 101 keys
+  USAGE_PAGE(1),		0x07,			//   USAGE_PAGE (Kbrd/Keypad)
+  USAGE_MINIMUM(1),		0x00,			//   USAGE_MINIMUM (0)
+  USAGE_MAXIMUM(1),		0x65,			//   USAGE_MAXIMUM (0x65)
+  INPUT(1),				0x00,			//   INPUT (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
+  END_COLLECTION(0),                 	// END_COLLECTION
+  // ------------------------------------------------- Media Keys
+  USAGE_PAGE(1),		0x0C,			// USAGE_PAGE (Consumer)
+  USAGE(1),				0x01,			// USAGE (Consumer Control)
+  COLLECTION(1),		0x01,			// COLLECTION (Application)
+  REPORT_ID(1),			MEDIA_KEYS_ID,	//   REPORT_ID (3)
+  USAGE_PAGE(1),		0x0C,			//   USAGE_PAGE (Consumer)
+  LOGICAL_MINIMUM(1),	0x00,			//   LOGICAL_MINIMUM (0)
+  LOGICAL_MAXIMUM(1),	0x01,			//   LOGICAL_MAXIMUM (1)
+  REPORT_SIZE(1),		0x01,			//   REPORT_SIZE (1)
+  REPORT_COUNT(1),		0x10,			//   REPORT_COUNT (16)
+  USAGE(1),				0xB5,			//   USAGE (Scan Next Track)     ; bit 0: 1
+  USAGE(1),				0xB6,			//   USAGE (Scan Previous Track) ; bit 1: 2
+  USAGE(1),				0xB7,			//   USAGE (Stop)                ; bit 2: 4
+  USAGE(1),				0xCD,			//   USAGE (Play/Pause)          ; bit 3: 8
+  USAGE(1),				0xE2,			//   USAGE (Mute)                ; bit 4: 16
+  USAGE(1),				0xE9,			//   USAGE (Volume Increment)    ; bit 5: 32
+  USAGE(1),				0xEA,			//   USAGE (Volume Decrement)    ; bit 6: 64
+  USAGE(2),				0x23, 0x02,		//   Usage (WWW Home)            ; bit 7: 128
+  USAGE(2),				0x94, 0x01,		//   Usage (My Computer) ; bit 0: 1
+  USAGE(2),				0x92, 0x01,		//   Usage (Calculator)  ; bit 1: 2
+  USAGE(2),				0x2A, 0x02,		//   Usage (WWW fav)     ; bit 2: 4
+  USAGE(2),				0x21, 0x02,		//   Usage (WWW search)  ; bit 3: 8
+  USAGE(2),				0x26, 0x02,		//   Usage (WWW stop)    ; bit 4: 16
+  USAGE(2),				0x24, 0x02,		//   Usage (WWW back)    ; bit 5: 32
+  USAGE(2),				0x83, 0x01,		//   Usage (Media sel)   ; bit 6: 64
+  USAGE(2),				0x8A, 0x01,		//   Usage (Mail)        ; bit 7: 128
+  INPUT(1),				0x02,			//   INPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+  END_COLLECTION(0)						// END_COLLECTION
+};
+
+BLEServer_t::BLEServer_t(std::string deviceName, std::string deviceManufacturer, uint8_t batteryLevel)
+    : hid(0)
+    , deviceName(std::string(deviceName).substr(0, 15))
+    , deviceManufacturer(std::string(deviceManufacturer).substr(0,15))
+    , batteryLevel(batteryLevel) {}
+
 /*
-*    BLEServer.cpp
-*    Class for handling Bluetooth connections
-*
+void BLEServer_t::Init() {
+	if (IsInited) return;
+}
 */
 
-#include "Globals.h"
-#include "BLEServer.h"
-#include "Converter.h"
-#include "PowerManagement.h"
+void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode)
+{
+	BLEDevice::init(Settings.Bluetooth.DeviceNamePrefix + Device.IDToString());
 
-static char tag[] = "BLEServer";
+	NimBLEServer* pServer = NimBLEDevice::createServer();
+	pServer->setCallbacks(this);
 
-static const ble_uuid_any_t DeviceServiceUUID 					= GATT::UUIDStruct("180A");
-static const ble_uuid_any_t DeviceServiceManufacturerUUID 		= GATT::UUIDStruct("2A29");
-static const ble_uuid_any_t DeviceServiceModelUUID 				= GATT::UUIDStruct("2A24");
-static const ble_uuid_any_t DeviceServiceIDUUID 				= GATT::UUIDStruct("2A25");
-static const ble_uuid_any_t DeviceServiceFirmwareUUID 			= GATT::UUIDStruct("2A26");
-static const ble_uuid_any_t DeviceServiceDeviceHarwareModelUUID	= GATT::UUIDStruct("2A27");
-static const ble_uuid_any_t DeviceServiceWiFiUUID 				= GATT::UUIDStruct("4000");
-static const ble_uuid_any_t DeviceServiceMQTTUUID 				= GATT::UUIDStruct("5000");
+	hid 			= new BLEHIDDevice(pServer);
+	inputKeyboard 	= hid->inputReport(KEYBOARD_ID);  // <-- input REPORTID from report map
+	outputKeyboard 	= hid->outputReport(KEYBOARD_ID);
+	inputMediaKeys 	= hid->inputReport(MEDIA_KEYS_ID);
 
-static struct ble_gatt_svc_def Services[2] = {};
-static struct ble_gatt_chr_def DeviceServiceCharacteristics[9] = {};
+	outputKeyboard->setCallbacks(this);
 
-struct ble_gatt_chr_def DeviceManufactorer;
-struct ble_gatt_chr_def DeviceModel;
-struct ble_gatt_chr_def DeviceID;
-struct ble_gatt_chr_def DeviceFirmware;
-struct ble_gatt_chr_def DeviceHarwareModel;
-struct ble_gatt_chr_def DeviceWiFi;
-struct ble_gatt_chr_def DeviceMQTT;
+	hid->manufacturer()->setValue("LOOKin");
+	hid->pnp(0x02, vid, pid, version);
+	hid->hidInfo(0x00, 0x01);
 
-BLEServer_t::BLEServer_t() {
-	DeviceManufactorer.uuid 		= &DeviceServiceManufacturerUUID.u;
-	DeviceManufactorer.access_cb 	= GATTDeviceManufactorerCallback;
-	DeviceManufactorer.flags 		= BLE_GATT_CHR_F_READ;
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A24, NIMBLE_PROPERTY::READ)->setValue(Device.Type.ToHexString());
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A25, NIMBLE_PROPERTY::READ);
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A26, NIMBLE_PROPERTY::READ);
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A27, NIMBLE_PROPERTY::READ);
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x4000, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE)->setCallbacks(NULL);
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x5000, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
 
-	DeviceModel.uuid 				= &DeviceServiceModelUUID.u;
-	DeviceModel.access_cb 			= GATTDeviceModelCallback;
-	DeviceModel.flags 				= BLE_GATT_CHR_F_READ;
+	BLEDevice::setSecurityAuth(false, true, false);
 
-	DeviceID.uuid 					= &DeviceServiceIDUUID.u;
-	DeviceID.access_cb 				= GATTDeviceIDCallback;
-	DeviceID.flags 					= BLE_GATT_CHR_F_READ;
+	hid->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
+	hid->startServices();
 
-	DeviceFirmware.uuid 			= &DeviceServiceFirmwareUUID.u;
-	DeviceFirmware.access_cb 		= GATTDeviceFirmwareCallback;
-	DeviceFirmware.flags 			= BLE_GATT_CHR_F_READ;
+	onStarted(pServer);
 
-	DeviceHarwareModel.uuid 		= &DeviceServiceDeviceHarwareModelUUID.u;
-	DeviceHarwareModel.access_cb 	= GATTDeviceHardwareModelCallback;
-	DeviceHarwareModel.flags 		= BLE_GATT_CHR_F_READ;
+	advertising = pServer->getAdvertising();
+	advertising->setAppearance(HID_KEYBOARD);
+	advertising->addServiceUUID(hid->hidService()->getUUID());
+	advertising->setScanResponse(false);
+	advertising->start();
+	hid->setBatteryLevel(batteryLevel);
 
-	DeviceWiFi.uuid 				= &DeviceServiceWiFiUUID.u;
-	DeviceWiFi.access_cb 			= GATTDeviceWiFiCallback;
-	DeviceWiFi.flags 				= BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE;
-
-	DeviceMQTT.uuid 				= &DeviceServiceMQTTUUID.u;
-	DeviceMQTT.access_cb 			= GATTDeviceMQTTCallback;
-	DeviceMQTT.flags 				= BLE_GATT_CHR_F_READ | BLE_GATT_CHR_F_WRITE;
+	ESP_LOGD(LOG_TAG, "Advertising started!");
 }
 
-void BLEServer_t::GATTSetup() {
-	// Setting up Services and characteristics
-	DeviceServiceCharacteristics[0] = DeviceManufactorer;
-	DeviceServiceCharacteristics[1] = DeviceModel;
-	DeviceServiceCharacteristics[2] = DeviceID;
-	DeviceServiceCharacteristics[3] = DeviceFirmware;
-	DeviceServiceCharacteristics[4] = DeviceHarwareModel;
-	DeviceServiceCharacteristics[5] = DeviceWiFi;
-	DeviceServiceCharacteristics[6] = DeviceMQTT;
-	DeviceServiceCharacteristics[7] = {0};
-
-	ble_gatt_svc_def DeviceService;
-	DeviceService.type = BLE_GATT_SVC_TYPE_PRIMARY;
-	DeviceService.uuid = &DeviceServiceUUID.u;
-	DeviceService.characteristics = DeviceServiceCharacteristics;
-
-	Services[0] = DeviceService;
-	Services[1] = { 0 };
-
-	GATT::SetServices(Services);
+void BLEServer_t::StopAdvertising()
+{
 }
 
-static char GATTBuffer[128] = "";
+bool BLEServer_t::isConnected() {
+  return this->connected;
+}
 
-void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode) {
-	ESP_LOGI(tag, ">> StartAdvertising");
-	GATTSetup();
+void BLEServer_t::setBatteryLevel(uint8_t level) {
+  this->batteryLevel = level;
+  if (hid != 0)
+    this->hid->setBatteryLevel(this->batteryLevel);
+}
 
-	if (!IsInited) {
-		BLE::SetDeviceName(Settings.Bluetooth.DeviceNamePrefix + Device.IDToString());
-		IsInited = true;
+//must be called before begin in order to set the name
+void BLEServer_t::SetName(std::string deviceName) {
+  this->deviceName = deviceName;
+}
+
+/**
+ * @brief Sets the waiting time (in milliseconds) between multiple keystrokes in NimBLE mode.
+ *
+ * @param ms Time in milliseconds
+ */
+void BLEServer_t::SetDelay(uint32_t ms) {
+  this->_delay_ms = ms;
+}
+
+void BLEServer_t::set_vendor_id(uint16_t vid) {
+	this->vid = vid;
+}
+
+void BLEServer_t::set_product_id(uint16_t pid) {
+	this->pid = pid;
+}
+
+void BLEServer_t::set_version(uint16_t version) {
+	this->version = version;
+}
+
+void BLEServer_t::SendReport(KeyReport* keys)
+{
+  if (this->isConnected())
+  {
+    this->inputKeyboard->setValue((uint8_t*)keys, sizeof(KeyReport));
+    this->inputKeyboard->notify();
+
+    // vTaskDelay(delayTicks);
+    this->delay_ms(_delay_ms);
+  }
+}
+
+void BLEServer_t::SendReport(MediaKeyReport* keys)
+{
+  if (this->isConnected())
+  {
+    this->inputMediaKeys->setValue((uint8_t*)keys, sizeof(MediaKeyReport));
+    this->inputMediaKeys->notify();
+
+    //vTaskDelay(delayTicks);
+    this->delay_ms(_delay_ms);
+  }
+}
+
+#define SHIFT 0x80
+
+/*
+static const vector<pair<const uint8_t, const string>> ASCIIMap =
+{
+	{0x00		, "NUL"	},
+	{0x00		, "SOH"	},
+	{0x00		, "STX"	},
+	{0x00		, "ETX"	},
+	{0x00		, "EOT"	},
+	{0x00		, "ENQ"	},
+	{0x00		, "ACK"	},
+	{0x00		, "BEL"	},
+	{0x2a		, "BS"	},	// BS	Backspace
+	{0x2b		, "TAB"	},	// TAB	Tab
+	{0x28		, "LF"	},	// LF	Enter
+	{0x00		, "VT"	},
+	{0x00		, "FF"	},
+	{0x00		, "CR"	},
+	{0x00		, "SO"	},
+	{0x00		, "SI"	},
+	{0x00		, "DEL"	},
+	{0x00		, "DC1"	},
+	{0x00		, "DC2"	},
+	{0x00		, "DC3"	},
+	{0x00		, "DC4"	},
+	{0x00		, "NAK"	},
+	{0x00		, "SYN"	},
+	{0x00		, "ETB"	},
+	{0x00		, "CAN"	},
+	{0x00		, "EM"	},
+	{0x00		, "SUB"	},
+	{0x00		, "ESC"	},
+	{0x00		, "FS"	},
+	{0x00		, "GS"	},
+	{0x00		, "RS"	},
+	{0x00		, "US"	},
+	{0x2c		, " "	},
+	{0x1e|SHIFT	, "!"	},
+	{0x34|SHIFT	, "\""	},
+	{0x20|SHIFT	, "#"	},
+	{0x21|SHIFT	, "$"	},
+	{0x22|SHIFT	, "%"	},
+	{0x24|SHIFT	, "&"	},
+	{0x34	   	, "'"	},
+	{0x26|SHIFT	, "("	},
+	{0x27|SHIFT	, ")"	},
+	{0x25|SHIFT	, "*"	},
+	{0x2e|SHIFT	, "+"	},
+	{0x36		, ","	},
+	{0x2d		, "-"	},
+	{0x37		, "."	},
+	{0x38		, "/"	},
+	{0x27		, "0"	},
+	{0x1e		, "1"	},
+	{0x1f		, "2"	},
+	{0x20		, "3"	},
+	{0x21		, "4"	},
+	{0x22		, "5"	},
+	{0x23		, "6"	},
+	{0x24		, "7"	},
+	{0x25		, "8"	},
+	{0x26		, "9"	},
+	{0x33|SHIFT	, ":"	},
+	{0x33		, ";"	},
+	{0x36|SHIFT	, "<"	},
+	{0x2e		, "="	},
+	{0x37|SHIFT	, ">"	},
+	{0x38|SHIFT	, "?"	},
+	{0x1f|SHIFT	, "@"	},
+	{0x04|SHIFT	, "A"	},
+	{0x05|SHIFT	, "B"	},
+	{0x06|SHIFT	, "C"	},
+	{0x07|SHIFT	, "D"	},
+	{0x08|SHIFT	, "E"	},
+	{0x09|SHIFT	, "F"	},
+	{0x0a|SHIFT	, "G"	},
+	{0x0b|SHIFT	, "H"	},
+	{0x0c|SHIFT	, "I"	},
+	{0x0d|SHIFT	, "J"	},
+	{0x0e|SHIFT	, "K"	},
+	{0x0f|SHIFT	, "L"	},
+	{0x10|SHIFT	, "M"	},
+	{0x11|SHIFT	, "N"	},
+	{0x12|SHIFT	, "O"	},
+	{0x13|SHIFT	, "P"	},
+	{0x14|SHIFT	, "Q"	},
+	{0x15|SHIFT	, "R"	},
+	{0x16|SHIFT	, "S"	},
+	{0x17|SHIFT	, "T"	},
+	{0x18|SHIFT	, "U"	},
+	{0x19|SHIFT	, "V"	},
+	{0x1a|SHIFT	, "W"	},
+	{0x1b|SHIFT	, "X"	},
+	{0x1c|SHIFT	, "Y"	},
+	{0x1d|SHIFT	, "Z"	},
+	{0x2f		, "["	},
+	{0x31		, "BSH"	}, // Backslash
+	{0x30		, "]"	},
+	{0x23|SHIFT	, "^"	},
+	{0x2d|SHIFT	, "_"	},
+	{0x35		, "`"	},
+	{0x04		, "a"	},
+	{0x05		, "b"	},
+	{0x06		, "c"	},
+	{0x07		, "d"	},
+	{0x08		, "e"	},
+	{0x09		, "f"	},
+	{0x0a		, "g"	},
+	{0x0b		, "h"	},
+	{0x0c		, "i"	},
+	{0x0d		, "j"	},
+	{0x0e		, "k"	},
+	{0x0f		, "l"	},
+	{0x10		, "m"	},
+	{0x11		, "n"	},
+	{0x12		, "o"	},
+	{0x13		, "p"	},
+	{0x14		, "q"	},
+	{0x15		, "r"	},
+	{0x16		, "s"	},
+	{0x17		, "t"	},
+	{0x18		, "u"	},
+	{0x19		, "v"	},
+	{0x1a		, "w"	},
+	{0x1b		, "x"	},
+	{0x1c		, "y"	},
+	{0x1d		, "z"	},
+	{0x2f|SHIFT	, "{"	},
+	{0x31|SHIFT	, "|"	},
+	{0x30|SHIFT	, "},"	},
+	{0x35|SHIFT	, "~"	},
+	{0			, "DEL"	}
+};
+*/
+
+const uint8_t _asciimap[128] =
+{
+	0x00,             // NUL
+	0x00,             // SOH
+	0x00,             // STX
+	0x00,             // ETX
+	0x00,             // EOT
+	0x00,             // ENQ
+	0x00,             // ACK
+	0x00,             // BEL
+	0x2a,			// BS	Backspace
+	0x2b,			// TAB	Tab
+	0x28,			// LF	Enter
+	0x00,             // VT
+	0x00,             // FF
+	0x00,             // CR
+	0x00,             // SO
+	0x00,             // SI
+	0x00,             // DEL
+	0x00,             // DC1
+	0x00,             // DC2
+	0x00,             // DC3
+	0x00,             // DC4
+	0x00,             // NAK
+	0x00,             // SYN
+	0x00,             // ETB
+	0x00,             // CAN
+	0x00,             // EM
+	0x00,             // SUB
+	0x00,             // ESC
+	0x00,             // FS
+	0x00,             // GS
+	0x00,             // RS
+	0x00,             // US
+	0x2c,		   //  ' '
+	0x1e|SHIFT,	   // !
+	0x34|SHIFT,	   // "
+	0x20|SHIFT,    // #
+	0x21|SHIFT,    // $
+	0x22|SHIFT,    // %
+	0x24|SHIFT,    // &
+	0x34,          // '
+	0x26|SHIFT,    // (
+	0x27|SHIFT,    // )
+	0x25|SHIFT,    // *
+	0x2e|SHIFT,    // +
+	0x36,          // ,
+	0x2d,          // -
+	0x37,          // .
+	0x38,          // /
+	0x27,          // 0
+	0x1e,          // 1
+	0x1f,          // 2
+	0x20,          // 3
+	0x21,          // 4
+	0x22,          // 5
+	0x23,          // 6
+	0x24,          // 7
+	0x25,          // 8
+	0x26,          // 9
+	0x33|SHIFT,      // :
+	0x33,          // ;
+	0x36|SHIFT,      // <
+	0x2e,          // =
+	0x37|SHIFT,      // >
+	0x38|SHIFT,      // ?
+	0x1f|SHIFT,      // @
+	0x04|SHIFT,      // A
+	0x05|SHIFT,      // B
+	0x06|SHIFT,      // C
+	0x07|SHIFT,      // D
+	0x08|SHIFT,      // E
+	0x09|SHIFT,      // F
+	0x0a|SHIFT,      // G
+	0x0b|SHIFT,      // H
+	0x0c|SHIFT,      // I
+	0x0d|SHIFT,      // J
+	0x0e|SHIFT,      // K
+	0x0f|SHIFT,      // L
+	0x10|SHIFT,      // M
+	0x11|SHIFT,      // N
+	0x12|SHIFT,      // O
+	0x13|SHIFT,      // P
+	0x14|SHIFT,      // Q
+	0x15|SHIFT,      // R
+	0x16|SHIFT,      // S
+	0x17|SHIFT,      // T
+	0x18|SHIFT,      // U
+	0x19|SHIFT,      // V
+	0x1a|SHIFT,      // W
+	0x1b|SHIFT,      // X
+	0x1c|SHIFT,      // Y
+	0x1d|SHIFT,      // Z
+	0x2f,          // [
+	0x31,          // bslash
+	0x30,          // ]
+	0x23|SHIFT,    // ^
+	0x2d|SHIFT,    // _
+	0x35,          // `
+	0x04,          // a
+	0x05,          // b
+	0x06,          // c
+	0x07,          // d
+	0x08,          // e
+	0x09,          // f
+	0x0a,          // g
+	0x0b,          // h
+	0x0c,          // i
+	0x0d,          // j
+	0x0e,          // k
+	0x0f,          // l
+	0x10,          // m
+	0x11,          // n
+	0x12,          // o
+	0x13,          // p
+	0x14,          // q
+	0x15,          // r
+	0x16,          // s
+	0x17,          // t
+	0x18,          // u
+	0x19,          // v
+	0x1a,          // w
+	0x1b,          // x
+	0x1c,          // y
+	0x1d,          // z
+	0x2f|SHIFT,    // {
+	0x31|SHIFT,    // |
+	0x30|SHIFT,    // }
+	0x35|SHIFT,    // ~
+	0				// DEL
+};
+
+uint8_t USBPutChar(uint8_t c);
+
+// press() adds the specified key (printing, non-printing, or modifier)
+// to the persistent key report and sends the report.  Because of the way
+// USB HID works, the host acts like the key remains pressed until we
+// call release(), releaseAll(), or otherwise clear the report and resend.
+size_t BLEServer_t::Press(uint8_t k)
+{
+	uint8_t i;
+	if (k >= 136) {			// it's a non-printing key (not a modifier)
+		k = k - 136;
+	} else if (k >= 128) {	// it's a modifier key
+		_keyReport.modifiers |= (1<<(k-128));
+		k = 0;
+	} else {				// it's a printing key
+		k = _asciimap[k];
+		if (!k) {
+			ESP_LOGE(LOG_TAG, "!k");
+			return 0;
+		}
+		if (k & 0x80) {						// it's a capital letter or other character reached with shift
+			_keyReport.modifiers |= 0x02;	// the left shift modifier
+			k &= 0x7F;
+		}
 	}
 
-	BLE::Start();
+	// Add k to the key report only if it's not already present
+	// and if there is an empty slot.
+	if (_keyReport.keys[0] != k && _keyReport.keys[1] != k &&
+		_keyReport.keys[2] != k && _keyReport.keys[3] != k &&
+		_keyReport.keys[4] != k && _keyReport.keys[5] != k) {
 
-	ESP_LOGI(tag, "<< StartAdvertising");
-}
-
-void BLEServer_t::StopAdvertising() {
-	if (BLE::IsRunning())
-		BLE::AdvertiseStop();
-
-	ESP_LOGI(tag, "BLE Server stopped advertising");
-}
-
-
-int BLEServer_t::GATTDeviceManufactorerCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
-	    return BLE_ATT_ERR_UNLIKELY;
-
-    string Result = "LOOK.in";
-    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-}
-
-int BLEServer_t::GATTDeviceModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
-	    return BLE_ATT_ERR_UNLIKELY;
-
-    string Result = Converter::ToHexString(Settings.eFuse.Type,2);
-    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-}
-
-int BLEServer_t::GATTDeviceIDCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
-	    return BLE_ATT_ERR_UNLIKELY;
-
-    string Result = Converter::ToHexString(Settings.eFuse.DeviceID,8);
-    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-}
-
-int BLEServer_t::GATTDeviceFirmwareCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
-	    return BLE_ATT_ERR_UNLIKELY;
-
-    return os_mbuf_append(ctxt->om, strdup(Settings.Firmware.ToString().c_str()), Settings.Firmware.ToString().size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-}
-
-int BLEServer_t::GATTDeviceHardwareModelCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (ctxt->op != BLE_GATT_ACCESS_OP_READ_CHR)
-	    return BLE_ATT_ERR_UNLIKELY;
-
-    string Result = Converter::ToHexString(Settings.eFuse.Model,2);
-    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-}
-
-int BLEServer_t::GATTDeviceWiFiCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (BLE::GetRSSIForConnection(conn_handle) < Settings.Bluetooth.RSSILimit)
-	{
-		ESP_LOGE("RSSI so small:", "%d", BLE::GetRSSIForConnection(conn_handle));
-		return BLE_ATT_ERR_WRITE_NOT_PERMITTED;
-	}
-
-	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
-	    string Result = Converter::VectorToString(Network.GetSavedWiFiList(), ",");
-	    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-	}
-	else if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
-	    uint16_t om_len = OS_MBUF_PKTLEN(ctxt->om);
-
-	    /* read sent data */
-	    int rc = ble_hs_mbuf_to_flat(ctxt->om, &GATTBuffer, sizeof GATTBuffer, &om_len);
-	    string WiFiData(GATTBuffer, om_len);
-
-		if (WiFiData.length() > 0) {
-			JSON JSONItem(WiFiData);
-
-			map<string,string> Params;
-
-			ESP_LOGE(tag, "Value %s", WiFiData.c_str());
-
-			if (JSONItem.GetType() == JSON::RootType::Object)
-				Params = JSONItem.GetItems();
-
-			if (!(Params.count("s") && Params.count("p")))
-			{
-				vector<string> Parts = Converter::StringToVector(WiFiData," ");
-				Params["s"] = Parts[0].c_str();
-				Params["p"] = Parts[1].c_str();
+		for (i=0; i<6; i++) {
+			if (_keyReport.keys[i] == 0x00) {
+				_keyReport.keys[i] = k;
+				break;
 			}
+		}
+		if (i == 6) {
+			ESP_LOGE(LOG_TAG, "i==6");
+			return 0;
+		}
+	}
+	SendReport(&_keyReport);
+	return 1;
+}
 
-			if (!(Params.count("s") && Params.count("p")))
+size_t BLEServer_t::Press(const MediaKeyReport k)
+{
+    uint16_t k_16 = k[1] | (k[0] << 8);
+    uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
+
+    mediaKeyReport_16 |= k_16;
+    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_16 & 0xFF00) >> 8);
+    _mediaKeyReport[1] = (uint8_t)(mediaKeyReport_16 & 0x00FF);
+
+	SendReport(&_mediaKeyReport);
+	return 1;
+}
+
+// release() takes the specified key out of the persistent key report and
+// sends the report.  This tells the OS the key is no longer pressed and that
+// it shouldn't be repeated any more.
+size_t BLEServer_t::Release(uint8_t k)
+{
+	uint8_t i;
+	if (k >= 136) {			// it's a non-printing key (not a modifier)
+		k = k - 136;
+	} else if (k >= 128) {	// it's a modifier key
+		_keyReport.modifiers &= ~(1<<(k-128));
+		k = 0;
+	} else {				// it's a printing key
+		k = _asciimap[k];
+		if (!k) {
+			return 0;
+		}
+		if (k & 0x80) {							// it's a capital letter or other character reached with shift
+			_keyReport.modifiers &= ~(0x02);	// the left shift modifier
+			k &= 0x7F;
+		}
+	}
+
+	// Test the key report to see if k is present.  Clear it if it exists.
+	// Check all positions in case the key is present more than once (which it shouldn't be)
+	for (i=0; i<6; i++) {
+		if (0 != k && _keyReport.keys[i] == k) {
+			_keyReport.keys[i] = 0x00;
+		}
+	}
+
+	SendReport(&_keyReport);
+	return 1;
+}
+
+size_t BLEServer_t::Release(const MediaKeyReport k)
+{
+    uint16_t k_16 = k[1] | (k[0] << 8);
+    uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
+    mediaKeyReport_16 &= ~k_16;
+    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_16 & 0xFF00) >> 8);
+    _mediaKeyReport[1] = (uint8_t)(mediaKeyReport_16 & 0x00FF);
+
+	SendReport(&_mediaKeyReport);
+	return 1;
+}
+
+void BLEServer_t::ReleaseAll(void)
+{
+	_keyReport.keys[0] = 0;
+	_keyReport.keys[1] = 0;
+	_keyReport.keys[2] = 0;
+	_keyReport.keys[3] = 0;
+	_keyReport.keys[4] = 0;
+	_keyReport.keys[5] = 0;
+	_keyReport.modifiers = 0;
+    _mediaKeyReport[0] = 0;
+    _mediaKeyReport[1] = 0;
+	SendReport(&_keyReport);
+}
+
+size_t BLEServer_t::Write(uint8_t c)
+{
+	uint8_t p = Press(c);  // Keydown
+	Release(c);            // Keyup
+	return p;              // just return the result of press() since release() almost always returns 1
+}
+
+size_t BLEServer_t::Write(const MediaKeyReport c)
+{
+	uint16_t p = Press(c);  // Keydown
+	Release(c);            // Keyup
+	return p;              // just return the result of press() since release() almost always returns 1
+}
+
+size_t BLEServer_t::Write(const uint8_t *buffer, size_t size) {
+	size_t n = 0;
+	while (size--)
+	{
+		if (*buffer != '\r')
+		{
+			if (Write(*buffer))
 			{
-				ESP_LOGE(tag, "WiFi characteristics error input format");
+			  n++;
 			}
 			else
 			{
-				ESP_LOGD(tag, "WiFi Data received. SSID: %s, Password: %s", Params["s"].c_str(), Params["p"].c_str());
-				Network.AddWiFiNetwork(Params["s"], Params["p"]);
-
-				//If device in AP mode or can't connect as Station - try to connect with new data
-				if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() == WIFI_MODE_AP_STR))
-					Network.WiFiConnect(Params["s"], true);
+			  break;
 			}
 		}
-
-	    return (rc == 0) ? 0 : BLE_ATT_ERR_UNLIKELY;
+		buffer++;
 	}
-
-    return BLE_ATT_ERR_UNLIKELY;
+	return n;
 }
 
-int BLEServer_t::GATTDeviceMQTTCallback(uint16_t conn_handle, uint16_t attr_handle, struct ble_gatt_access_ctxt *ctxt, void *arg)
-{
-	if (BLE::GetRSSIForConnection(conn_handle) < Settings.Bluetooth.RSSILimit)
-	{
-		ESP_LOGE("RSSI so small:", "%d", BLE::GetRSSIForConnection(conn_handle));
-		return BLE_ATT_ERR_WRITE_NOT_PERMITTED;
-	}
-
-	if (ctxt->op == BLE_GATT_ACCESS_OP_READ_CHR) {
-	    string Result = RemoteControl.GetClientID();
-	    return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
-	}
-	else if (ctxt->op == BLE_GATT_ACCESS_OP_WRITE_CHR) {
-	    uint16_t om_len = OS_MBUF_PKTLEN(ctxt->om);
-
-	    int rc = ble_hs_mbuf_to_flat(ctxt->om, &GATTBuffer, sizeof GATTBuffer, &om_len);
-	    string MQTTData(GATTBuffer, om_len);
-
-		ESP_LOGE(tag,"%s", MQTTData.c_str());
-		if (MQTTData.length() > 0) {
-			vector<string> Parts = Converter::StringToVector(MQTTData," ");
-
-			if (Parts.size() != 2) {
-				ESP_LOGE(tag, "MQTT credentials error input format");
-			}
-			else
-			{
-				ESP_LOGD(tag, "MQTT credentials data received. ClientID: %s, ClientSecret: %s", Parts[0].c_str(), Parts[1].c_str());
-				RemoteControl.ChangeOrSetCredentialsBLE(Parts[0], Parts[1]);
-			}
-		}
-
-	    return (rc == 0) ? 0 : BLE_ATT_ERR_UNLIKELY;
-	}
-
-    return BLE_ATT_ERR_UNLIKELY;
+void BLEServer_t::onConnect(NimBLEServer* pServer) {
+  this->connected = true;
 }
 
+void BLEServer_t::onDisconnect(NimBLEServer* pServer) {
+  this->connected = false;
+}
 
+void BLEServer_t::onWrite(BLECharacteristic* me) {
+  uint8_t* value = (uint8_t*)(me->getValue().c_str());
+  (void)value;
+  ESP_LOGI(LOG_TAG, "special keys: %d", *value);
+}
+
+void BLEServer_t::delay_ms(uint64_t ms) {
+  uint64_t m = esp_timer_get_time();
+  if(ms){
+    uint64_t e = (m + (ms * 1000));
+    if(m > e){ //overflow
+        while(esp_timer_get_time() > e) { }
+    }
+    while(esp_timer_get_time() < e) {}
+  }
+}

@@ -60,5 +60,6 @@ extern Storage_t Storage;
 #include "../commands/CommandMultiSwitch.cpp"
 //#include "../commands/CommandRGBW.cpp"
 #include "../commands/CommandIR.cpp"
+#include "../commands/CommandBLE.cpp"
 
 #endif
