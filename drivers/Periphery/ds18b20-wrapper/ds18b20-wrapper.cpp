@@ -1,67 +1,34 @@
-#ifndef EXTERNALTEMP_HANDLER
-#define EXTERNALTEMP_HANDLER
+#include "ds18b20-wrapper.h"
 
-#include <inttypes.h>
+const char Tag[] 				= "ds18b20-wrapper";
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_system.h"
-#include "esp_log.h"
-
-#include "owb.h"
-#include "owb_rmt.h"
-#include "ds18b20.h"
-
-#define GPIO_DS18B20_0       (GPIO_NUM_15)
-#define MAX_DEVICES          (8)
-#define DS18B20_RESOLUTION   (DS18B20_RESOLUTION_12_BIT)
-
-class ExternalTempHandler {
-	public:
-		static void Init();
-		static void Pool();
-	private:
-		static bool IsInited;
-};
-
-void ExternalTempHandler::Pool() {
-	if (Time::Uptime() %5 != 0)
-		return;
-
-	//if (Time::Uptime() % 10 != 5 && Time::Uptime() % 10 != 0)
-	//	return;
-
+vector<float> DS18B20::ReadData(gpio_num_t GPIO) {
     // Create a 1-Wire bus, using the RMT timeslot driver
     OneWireBus * owb;
 
-    //gpio_set_pull_mode(GPIO_NUM_17, GPIO_PULLDOWN_ONLY);
-
     owb_rmt_driver_info rmt_driver_info;
-    owb = owb_rmt_initialize(&rmt_driver_info, GPIO_NUM_15, RMT_CHANNEL_1, RMT_CHANNEL_0);
+    owb = owb_rmt_initialize(&rmt_driver_info, GPIO, RMT_CHANNEL_0, RMT_CHANNEL_1);
 
     owb_use_crc(owb, true);  // enable CRC check for ROM code
 
     // Find all connected devices
-    printf("Find devices:\n");
+    ESP_LOGI(Tag, "Find devices:");
     OneWireBus_ROMCode device_rom_codes[MAX_DEVICES] = {0};
     int num_devices = 0;
     OneWireBus_SearchState search_state = {0};
     bool found = false;
     owb_search_first(owb, &search_state, &found);
 
-    if (found)
-    	Log::Add(Log::Events::Sensors ::IRReceived);
-
     while (found)
     {
         char rom_code_s[17];
         owb_string_from_rom_code(search_state.rom_code, rom_code_s, sizeof(rom_code_s));
-        printf("  %d : %s\n", num_devices, rom_code_s);
+        ESP_LOGI(Tag, "  %d : %s\n", num_devices, rom_code_s);
         device_rom_codes[num_devices] = search_state.rom_code;
         ++num_devices;
         owb_search_next(owb, &search_state, &found);
     }
-    printf("Found %d device%s\n", num_devices, num_devices == 1 ? "" : "s");
+    ESP_LOGI(Tag, "Found %d device%s", num_devices, num_devices == 1 ? "" : "s");
 
     // In this example, if a single device is present, then the ROM code is probably
     // not very interesting, so just print it out. If there are multiple devices,
@@ -76,10 +43,10 @@ void ExternalTempHandler::Pool() {
         {
             char rom_code_s[OWB_ROM_CODE_STRING_LENGTH];
             owb_string_from_rom_code(rom_code, rom_code_s, sizeof(rom_code_s));
-            printf("Single device %s present\n", rom_code_s);
+            ESP_LOGI(Tag, "Single device %s present", rom_code_s);
         }
         else
-            printf("An error occurred reading ROM code: %d", status);
+        	ESP_LOGE(Tag, "An error occurred reading ROM code: %d", status);
     }
 
     // Create DS18B20 devices on the 1-Wire bus
@@ -91,7 +58,7 @@ void ExternalTempHandler::Pool() {
 
         if (num_devices == 1)
         {
-            printf("Single device optimisations enabled\n");
+        	ESP_LOGI(Tag, "Single device optimisations enabled");
             ds18b20_init_solo(ds18b20_info, owb);          // only one device on bus
         }
         else
@@ -106,7 +73,7 @@ void ExternalTempHandler::Pool() {
     bool parasitic_power = false;
     ds18b20_check_for_parasite_power(owb, &parasitic_power);
     if (parasitic_power) {
-        printf("Parasitic-powered devices detected");
+    	ESP_LOGI(Tag, "Parasitic-powered devices detected");
     }
 
     // In parasitic-power mode, devices cannot indicate when conversions are complete,
@@ -121,6 +88,9 @@ void ExternalTempHandler::Pool() {
     // Read temperatures more efficiently by starting conversions on all devices at the same time
     int errors_count[MAX_DEVICES] = {0};
     int sample_count = 0;
+
+    vector<float> TempData = vector<float>();
+
     if (num_devices > 0)
     {
         TickType_t last_wake_time = xTaskGetTickCount();
@@ -144,22 +114,23 @@ void ExternalTempHandler::Pool() {
         }
 
         // Print results in a separate loop, after all have been read
-        ESP_LOGE("DS18B20", "Temperature readings (degrees C): sample %d", ++sample_count);
+        ESP_LOGI("DS18B20", "Temperature readings (degrees C): sample %d", ++sample_count);
         for (int i = 0; i < num_devices; ++i)
         {
         	if (errors[i] != DS18B20_OK)
         		++errors_count[i];
 
-        	ESP_LOGE("DS18B20", "  %d: %.1f    %d errors\n", i, readings[i], errors_count[i]);
+        	TempData.push_back(readings[i]);
+
+        	ESP_LOGI("DS18B20", "  %d: %.1f    %d errors\n", i, readings[i], errors_count[i]);
         }
     }
 
     // clean up dynamically allocated data
     for (int i = 0; i < num_devices; ++i)
-    {
         ds18b20_free(&devices[i]);
-    }
-    owb_uninitialize(owb);
-}
 
-#endif
+    owb_uninitialize(owb);
+
+    return TempData;
+}

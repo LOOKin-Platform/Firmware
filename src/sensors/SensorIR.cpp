@@ -41,8 +41,8 @@ class SensorIR_t : public Sensor_t {
 			EventCodes  = { 0x00, 0x01, 0xEE, 0xFF };
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
-				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
-				RMT::ReceiveStart(RMT_CHANNEL_0);
+				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
+				RMT::ReceiveStart(RMT_CHANNEL_2);
 			}
 
 			const esp_timer_create_args_t TimerArgs = {

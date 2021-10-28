@@ -16,7 +16,7 @@
 
 extern DataEndpoint_t *Data;
 
-static rmt_channel_t TXChannel = RMT_CHANNEL_0;
+static rmt_channel_t TXChannel = RMT_CHANNEL_2;
 
 static uint16_t					IRACFrequency			= 38000;
 static string 					ACReadPart				= "";
@@ -452,7 +452,7 @@ class CommandIR_t : public Command_t {
 					PowerManagement::AddLock("CommandIRTXTask");
 
 					if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
-						RMT::UnsetRXChannel(RMT_CHANNEL_0);
+						RMT::UnsetRXChannel(RMT_CHANNEL_2);
 
 					vector<gpio_num_t> GPIO = Settings.GPIOData.GetCurrent().IR.SenderGPIOs;
 
@@ -509,8 +509,8 @@ class CommandIR_t : public Command_t {
 					}
 
 					if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
-						RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_0, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
-						RMT::ReceiveStart(RMT_CHANNEL_0);
+						RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
+						RMT::ReceiveStart(RMT_CHANNEL_2);
 					}
 
 					ESP_LOGD("CommandIRTXTask", "RMT TX Task queue loop finished");

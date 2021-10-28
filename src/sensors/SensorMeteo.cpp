@@ -7,6 +7,7 @@
 #ifndef SENSORS_TEMPERATURE_REMOTE
 #define SENSORS_TEMPERATURE_REMOTE
 
+#include "ds18b20-wrapper.h"
 #include "BME280.h"
 #include "hdc1080.h"
 
@@ -18,9 +19,9 @@ class SensorMeteo_t : public Sensor_t {
 		BME280 				bme280			= 0;
 		hdc1080_sensor_t* 	HDC1080			= NULL;
 
-		bool		IsSensorHWInited= false;
+		bool		IsSensorHWInited		= false;
 
-		uint32_t	Value			= 0x0000;
+		uint32_t	Value					= 0x0000;
 
 		uint32_t	PreviousTempTime		= 0;
 		uint32_t 	PreviousTempValue 		= numeric_limits<uint32_t>::max();
@@ -57,6 +58,7 @@ class SensorMeteo_t : public Sensor_t {
 			SetValue(0, "Temperature");
 			SetValue(0, "Humidity");
 			SetValue(0, "Pressure");
+			SetValue(0, "IsExternalSensorConnected");
 
 			SetIsInited(true);
 		}
@@ -66,6 +68,9 @@ class SensorMeteo_t : public Sensor_t {
 				return (Values[Key] >= 0x1000)
 						? "-" + Converter::ToString(((float)(Values[Key]-0x1000) / 10))
 						: Converter::ToString(((float)Values[Key] / 10));
+
+			if (Key == "IsExternalSensorConnected")
+				return (Values[Key] > 0) ? "1" : "0";
 
 			return Converter::ToString(((float)Values[Key])/10);
 		}
@@ -242,41 +247,56 @@ class SensorMeteo_t : public Sensor_t {
 			Result.Humidity = 0;
 			Result.Pressure = 0;
 
-			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision == 1) {
-				bme280_reading_data sensor_data = bme280.readSensorData();
-
-				Result.Temperature 	= sensor_data.temperature;
-				Result.Humidity		= sensor_data.humidity;
-				Result.Pressure		= sensor_data.pressure;
-
-				// корректировка значения BME280 (без учета времени старта, нахолодную)
-				float TempCorrection = 3.3;
-				if (Time::Uptime() < 1800)
-                    TempCorrection = 1.015 * log10(Time::Uptime());
-
-				Result.Temperature -= TempCorrection;
-
-			}
-			else if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision > 1)
+			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
 			{
-		        hdc1080_read(HDC1080, &Result.Temperature, &Result.Humidity);
+				vector<float> ExternalTemp = DS18B20::ReadData(GPIO_NUM_15);
 
-				float TempCorrection = 2.76;
-				if (Time::Uptime() < 1800)
-                    TempCorrection = 0.85 * log10(Time::Uptime());
+				if (ExternalTemp.size() > 0) {
+					SetValue(1, "IsExternalSensorConnected");
+					Result.Temperature = ExternalTemp.at(0);
+				}
+				else
+				{
+					SetValue(0, "IsExternalSensorConnected");
 
-				Result.Temperature -= TempCorrection;
+					if (Settings.eFuse.Revision == 1) {
+						bme280_reading_data sensor_data = bme280.readSensorData();
+
+						Result.Temperature 	= sensor_data.temperature;
+						Result.Humidity		= sensor_data.humidity;
+						Result.Pressure		= sensor_data.pressure;
+
+						// корректировка значения BME280 (без учета времени старта, нахолодную)
+						float TempCorrection = 3.3;
+						if (Time::Uptime() < 1800)
+							TempCorrection = 1.015 * log10(Time::Uptime());
+
+						Result.Temperature -= TempCorrection;
+
+					}
+					else if (Settings.eFuse.Revision > 1)
+					{
+						hdc1080_read(HDC1080, &Result.Temperature, &Result.Humidity);
+
+						float TempCorrection = 2.76;
+						if (Time::Uptime() < 1800)
+							TempCorrection = 0.85 * log10(Time::Uptime());
+
+						Result.Temperature -= TempCorrection;
+					}
+
+					Result.Humidity += 15.2;
+					if (Result.Humidity > 100)
+						Result.Humidity = 100;
+				}
 			}
-
-			Result.Humidity += 15.2;
-			if (Result.Humidity > 100)
-				Result.Humidity = 100;
 
 			return Result;
 		}
 
 		uint32_t ReceiveValue(string Key = "Primary") override {
-			if (!IsSensorHWInited) {
+			if (!IsSensorHWInited)
+			{
 				SensorData Value = GetValueFromSensor();
 
 				if (Key == "Temperature")

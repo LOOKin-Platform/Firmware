@@ -42,10 +42,6 @@ class Pooling_t {
 				PingPeriodicHandler			::Pool();
 				NetworkMapHandler			::Pool();
 
-				if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1) {
-					//ExternalTempHandler	::Pool();
-				}
-
 				FreeRTOS::Sleep(Settings.Pooling.Interval);
 			}
 		}
