@@ -63,6 +63,9 @@ void Sensor_t::LocalMQTTSend(string Payload, string Topic) {
 }
 
 void Sensor_t::UpdateSensors() {
+	if (Device.Status != RUNNING)
+		return;
+
 	for (auto& Sensor : Sensors)
 		if (Sensor->ShouldUpdateInMainLoop())
 			Sensor->Update();
