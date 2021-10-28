@@ -11,8 +11,6 @@
 #include <esp_wifi.h>
 #include <esp_log.h>
 
-#include "BLE.h"
-
 #include "Log.h"
 
 struct PowerManagementLock {

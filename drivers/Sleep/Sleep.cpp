@@ -7,6 +7,8 @@
 #include "Sleep.h"
 #include "DateTime.h"
 
+#include "NimBLEDevice.h"
+
 static char tag[] = "Sleep";
 
 static uint32_t WakeUpTime = Time::Uptime();
@@ -54,8 +56,8 @@ void Sleep::SetGPIOWakeupSource(gpio_num_t gpio_num, int level) {
 
 void Sleep::LightSleep(uint16_t Interval) {
 	// switch off Bluetooth
+	BLEDevice::stopAdvertising();
 
-	BLE::Stop();
 	::esp_wifi_stop();
 
 	::esp_deep_sleep_start();

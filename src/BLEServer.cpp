@@ -9,11 +9,18 @@
 #include "BLEServer.h"
 
 #include "Device.h"
+#include "WiFi.h"
+#include "Network.h"
+#include "RemoteControl.h"
 
-extern Device_t Device;
+extern Device_t 		Device;
+extern WiFi_t			WiFi;
+extern Network_t		Network;
+extern RemoteControl_t	RemoteControl;
+
 
 #include "esp_log.h"
-static const char* LOG_TAG = "BLEDevice";
+static const char* Tag = "BLEDevice";
 
 // Report IDs:
 #define KEYBOARD_ID 0x01
@@ -96,6 +103,16 @@ void BLEServer_t::Init() {
 }
 */
 
+int8_t BLEServer_t::GetRSSIForConnection(uint16_t ConnectionHandle) {
+	int8_t RSSI = 0;
+
+	if (::ble_gap_conn_rssi(ConnectionHandle, &RSSI) == 0)
+		return RSSI;
+	else
+		return -128;
+}
+
+
 void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode)
 {
 	BLEDevice::init(Settings.Bluetooth.DeviceNamePrefix + Device.IDToString());
@@ -115,10 +132,10 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode)
 	hid->hidInfo(0x00, 0x01);
 
 	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A24, NIMBLE_PROPERTY::READ)->setValue(Device.Type.ToHexString());
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A25, NIMBLE_PROPERTY::READ);
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A26, NIMBLE_PROPERTY::READ);
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A27, NIMBLE_PROPERTY::READ);
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x4000, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE)->setCallbacks(NULL);
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A25, NIMBLE_PROPERTY::READ)->setValue(Converter::ToHexString(Settings.eFuse.DeviceID,8));
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A26, NIMBLE_PROPERTY::READ)->setValue(Settings.Firmware.ToString());
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A27, NIMBLE_PROPERTY::READ)->setValue(Converter::ToHexString(Settings.eFuse.Model,2));
+	hid->deviceInfo()->createCharacteristic((uint16_t)0x4000, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE)->setCallbacks(this);
 	hid->deviceInfo()->createCharacteristic((uint16_t)0x5000, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
 
 	BLEDevice::setSecurityAuth(false, true, false);
@@ -135,15 +152,22 @@ void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode)
 	advertising->start();
 	hid->setBatteryLevel(batteryLevel);
 
-	ESP_LOGD(LOG_TAG, "Advertising started!");
+	ESP_LOGD(Tag, "Advertising started!");
+
+	isRunning = true;
 }
 
 void BLEServer_t::StopAdvertising()
 {
+	isRunning = false;
 }
 
 bool BLEServer_t::isConnected() {
   return this->connected;
+}
+
+bool BLEServer_t::IsRunning() {
+	return isRunning;
 }
 
 void BLEServer_t::setBatteryLevel(uint8_t level) {
@@ -487,7 +511,7 @@ size_t BLEServer_t::Press(uint8_t k)
 	} else {				// it's a printing key
 		k = _asciimap[k];
 		if (!k) {
-			ESP_LOGE(LOG_TAG, "!k");
+			ESP_LOGE(Tag, "!k");
 			return 0;
 		}
 		if (k & 0x80) {						// it's a capital letter or other character reached with shift
@@ -509,7 +533,7 @@ size_t BLEServer_t::Press(uint8_t k)
 			}
 		}
 		if (i == 6) {
-			ESP_LOGE(LOG_TAG, "i==6");
+			ESP_LOGE(Tag, "i==6");
 			return 0;
 		}
 	}
@@ -625,17 +649,94 @@ size_t BLEServer_t::Write(const uint8_t *buffer, size_t size) {
 }
 
 void BLEServer_t::onConnect(NimBLEServer* pServer) {
-  this->connected = true;
+	this->connected = true;
 }
 
 void BLEServer_t::onDisconnect(NimBLEServer* pServer) {
-  this->connected = false;
+	this->connected = false;
 }
 
-void BLEServer_t::onWrite(BLECharacteristic* me) {
-  uint8_t* value = (uint8_t*)(me->getValue().c_str());
-  (void)value;
-  ESP_LOGI(LOG_TAG, "special keys: %d", *value);
+void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
+	if (((me->getUUID().toString() == "0x4000") || (me->getUUID().toString() == "0x5000")) && GetRSSIForConnection(desc->conn_handle) < Settings.Bluetooth.RSSILimit)
+	{
+		ESP_LOGE(Tag ,"RSSI so small: %d", GetRSSIForConnection(desc->conn_handle));
+	}
+
+	if (me->getUUID().toString() == "0x4000") // GATTDeviceWiFiCallback
+	{
+		string WiFiData = me->getValue();
+
+		if (WiFiData.length() > 0)
+		{
+			JSON JSONItem(WiFiData);
+
+			map<string,string> Params;
+
+			ESP_LOGE(Tag, "Value %s", WiFiData.c_str());
+
+			if (JSONItem.GetType() == JSON::RootType::Object)
+				Params = JSONItem.GetItems();
+
+			if (!(Params.count("s") && Params.count("p")))
+			{
+				vector<string> Parts = Converter::StringToVector(WiFiData," ");
+
+				if (Parts.size() > 0) Params["s"] = Parts[0].c_str();
+				if (Parts.size() > 1) Params["p"] = Parts[1].c_str();
+			}
+
+			if (!(Params.count("s") && Params.count("p")))
+			{
+				ESP_LOGE(Tag, "WiFi characteristics error input format");
+			}
+			else
+			{
+				ESP_LOGD(Tag, "WiFi Data received. SSID: %s, Password: %s", Params["s"].c_str(), Params["p"].c_str());
+				Network.AddWiFiNetwork(Params["s"], Params["p"]);
+
+				//If device in AP mode or can't connect as Station - try to connect with new data
+				if ((WiFi.GetMode() == WIFI_MODE_STA_STR && WiFi.GetConnectionStatus() == UINT8_MAX) || (WiFi.GetMode() == WIFI_MODE_AP_STR))
+					Network.WiFiConnect(Params["s"], true);
+			}
+		}
+	}
+
+	if (me->getUUID().toString() == "0x5000") // GATTDeviceMQTTCallback
+	{
+
+		//return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
+
+		string MQTTData = me->getValue();
+
+		ESP_LOGE(Tag, "%s", MQTTData.c_str());
+		if (MQTTData.length() > 0)
+		{
+			vector<string> Parts = Converter::StringToVector(MQTTData," ");
+
+			if (Parts.size() != 2) {
+				ESP_LOGE(Tag, "MQTT credentials error input format");
+			}
+			else
+			{
+				ESP_LOGD(Tag, "MQTT credentials data received. ClientID: %s, ClientSecret: %s", Parts[0].c_str(), Parts[1].c_str());
+				RemoteControl.ChangeOrSetCredentialsBLE(Parts[0], Parts[1]);
+			}
+		}
+
+	    return;
+	}
+
+	/*
+	 *
+	 *
+	//me->getValue()
+
+	uint8_t* value = (uint8_t*)(me->getValue().c_str());
+	(void)value;
+
+	ESP_LOGI(Tag, "special keys: %d", *value);
+	 *
+	 */
 }
 
 void BLEServer_t::delay_ms(uint64_t ms) {
@@ -648,3 +749,4 @@ void BLEServer_t::delay_ms(uint64_t ms) {
     while(esp_timer_get_time() < e) {}
   }
 }
+

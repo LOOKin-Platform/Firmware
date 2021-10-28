@@ -4,6 +4,7 @@
 */
 
 #include "PowerManagement.h"
+#include "NimBLEDevice.h"
 
 static char tag[] = "PowerManagement";
 
@@ -57,8 +58,13 @@ void PowerManagement::SetWiFiOptions() {
 }
 
 void PowerManagement::SetBLEOptions() {
-	if (BLE::IsRunning())
-		BLE::SetSleep((ActivePMType == NONE) ? false : true);
+	if (!BLEDevice::getInitialized())
+		return;
+
+	if (ActivePMType == NONE)
+		::esp_bt_sleep_disable();
+	else
+		::esp_bt_sleep_enable();
 }
 
 void PowerManagement::AddLock(string LockName) {

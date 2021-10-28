@@ -87,12 +87,15 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		uint8_t				batteryLevel;
 		bool				connected = false;
 		uint32_t			_delay_ms = 7;
+		bool				isRunning	= false;
 
 		void 				delay_ms(uint64_t ms);
 
 		uint16_t vid       = 0x05ac;
 		uint16_t pid       = 0x820a;
 		uint16_t version   = 0x0210;
+
+		int8_t 				GetRSSIForConnection(uint16_t ConnectionHandle);
 
 	public:
 		BLEServer_t(std::string deviceName = "ESP32 Keyboard", std::string deviceManufacturer = "Espressif", uint8_t batteryLevel = 100);
@@ -122,6 +125,7 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		void 		set_product_id(uint16_t pid);
 		void 		set_version(uint16_t version);
 
+		bool		IsRunning();
 
 		const MediaKeyReport KEY_MEDIA_NEXT_TRACK 			= {1	, 0};
 		const MediaKeyReport KEY_MEDIA_PREVIOUS_TRACK 		= {2	, 0};
@@ -144,7 +148,10 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		virtual void onStarted(NimBLEServer *pServer) { };
 		virtual void onConnect(NimBLEServer* pServer) override;
 		virtual void onDisconnect(NimBLEServer* pServer) override;
-		virtual void onWrite(BLECharacteristic* me) override;
+
+		virtual void onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) override;
 };
+
+
 
 #endif // BLE_SERVER_H

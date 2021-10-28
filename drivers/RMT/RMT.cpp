@@ -49,7 +49,7 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 	config.rmt_mode                  	= RMT_MODE_RX;
 	config.channel                   	= Channel;
 	config.gpio_num                  	= Pin;
-	config.mem_block_num             	= 8;
+	config.mem_block_num             	= 6;
 	config.clk_div                   	= RMT_CLK_DIV;
 	config.rx_config.filter_en 			= true;
 	config.rx_config.filter_ticks_thresh= 80;
@@ -131,7 +131,7 @@ void IRAM_ATTR RMT::RXCompleteCallback() {
 void RMT::RXTask(void *TaskData) {
 	uint32_t ChannelNum = (uint32_t)TaskData;
 
-    if (ChannelNum != RMT_CHANNEL_0) {
+    if (ChannelNum != RMT_CHANNEL_2) {
     	ESP_LOGE(tag, "Channel number out of range");
     	return;
     }
@@ -194,7 +194,7 @@ void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t 
 	config.rmt_mode                  = RMT_MODE_TX;
 	config.channel                   = Channel;
 	config.gpio_num                  = GPIO[0]; //GPIO_NUM_4
-	config.mem_block_num             = 8;
+	config.mem_block_num             = 6;
 	config.clk_div                   = 80;
 	config.tx_config.loop_en         = false;
 	config.tx_config.carrier_en      = true;

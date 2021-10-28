@@ -36,7 +36,7 @@ void Wireless_t::StopInterfaces(bool ShouldBlockForever) {
 	if (WiFi.IsRunning())
 		Wireless.StopWiFi();
 
-	if (BLE::IsRunning())
+	if (BLEServer.IsRunning())
 		Wireless.StopBluetooth();
 }
 

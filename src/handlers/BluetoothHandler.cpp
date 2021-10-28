@@ -47,7 +47,7 @@ void BluetoothPeriodicHandler::Pool() {
 	BluetoothCountdown -= Settings.Pooling.Interval;
 
 	if (BluetoothCountdown <=0) {
-		if (!BLE::IsRunning()) {
+		if (!BLEServer.isConnected()) {
 			ESP_LOGI("BLEHandler", "fired");
 
 			BluetoothStartedTime = Time::UptimeU();
@@ -64,7 +64,7 @@ void BluetoothPeriodicHandler::Pool() {
 		}
 	}
 
-	if (BLE::IsRunning()) {
+	if (BLEServer.isConnected()) {
 		if (BluetoothStartedTime == 0)
 			BluetoothStartedTime = Time::UptimeU();
 

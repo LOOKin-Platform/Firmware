@@ -9,8 +9,6 @@
 
 #include <esp_log.h>
 
-#include <BLE.h>
-
 #include <driver/rtc_io.h>
 #include <esp_wifi.h>
 #include <esp_sleep.h>

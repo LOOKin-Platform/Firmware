@@ -334,6 +334,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Network.IP = event_sta_got_ip.ip_info;
 
+			ESP_LOGI(HandlerTag, "GOT IP %s", Network.IPToString().c_str());
+
 			WebServer.UDPSendBroacastFromQueue();
 
 			if (!Wireless.IsEventDrivenStart) {

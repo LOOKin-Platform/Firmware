@@ -220,7 +220,6 @@ class SensorMeteo_t : public Sensor_t {
 
 		SensorData GetValueFromSensor() {
 			//Settings.eFuse.Revision = 2;
-
 			if (!IsSensorHWInited) // Init sensors
 			{
 				if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision == 1)
