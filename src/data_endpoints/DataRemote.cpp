@@ -136,6 +136,35 @@ class DataDeviceMedia_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceMedia_t() { DeviceTypeID = 0x02; }
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x05, 0x06, 0x07}; }
+
+		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
+			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
+			// On/off toggle functions
+			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
+				uint8_t CurrentPower = (uint8_t)(Status >> 12);
+
+				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
+
+				if (Result.first)
+					return make_pair(SetStatusByte(Status, 0, Result.second), Result.second);
+			}
+			else if (FunctionID == 0x04) { // mode
+				Status = SetStatusByte(Status, 1, Value);
+			}
+			else if (FunctionID == 0x05) { // mute
+				Status = SetStatusByte(Status, 2, (GetStatusByte(Status,2) > 0) ? 0 : 1);
+				Value = (GetStatusByte(Status,2) == 0) ? 1 : 0;
+			}
+			else if (FunctionID == 0x06) { // volume up
+				Status = SetStatusByte(Status, 2, 0xF);
+			}
+			else if (FunctionID == 0x07) { // volume down
+				Status = SetStatusByte(Status, 2, 1);
+			}
+
+			return make_pair(Status, Value);
+		}
+
 		virtual ~DataDeviceMedia_t() {};
 };
 
@@ -143,6 +172,22 @@ class DataDeviceLight_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceLight_t() { DeviceTypeID = 0x03; }
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03}; }
+
+		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
+			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
+			// On/off toggle functions
+			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
+				uint8_t CurrentPower = (uint8_t)(Status >> 12);
+
+				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
+
+				if (Result.first)
+					return make_pair(SetStatusByte(Status, 0, Result.second), Result.second);
+			}
+
+			return make_pair(Status, Value);
+		}
+
 		virtual ~DataDeviceLight_t() {};
 };
 
@@ -150,6 +195,25 @@ class DataDeviceHumidifier_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceHumidifier_t() { DeviceTypeID = 0x04; }
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04 }; }
+
+		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
+			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
+			// On/off toggle functions
+			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
+				uint8_t CurrentPower = (uint8_t)(Status >> 12);
+
+				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
+
+				if (Result.first)
+					return make_pair(SetStatusByte(Status, 0, Result.second), Result.second);
+			}
+			else if (FunctionID == 0x04) { // mode
+				Status = SetStatusByte(Status, 1, Value);
+			}
+
+			return make_pair(Status, Value);
+		}
+
 		virtual ~DataDeviceHumidifier_t() {};
 };
 
@@ -157,6 +221,25 @@ class DataDeviceAirPurifier_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceAirPurifier_t() { DeviceTypeID = 0x05; }
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x0B}; }
+
+		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
+			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
+			// On/off toggle functions
+			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
+				uint8_t CurrentPower = (uint8_t)(Status >> 12);
+
+				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
+
+				if (Result.first)
+					return make_pair(SetStatusByte(Status, 0, Result.second), Result.second);
+			}
+			else if (FunctionID == 0x04) { // mode
+				Status = SetStatusByte(Status, 1, Value);
+			}
+
+			return make_pair(Status, Value);
+		}
+
 		virtual ~DataDeviceAirPurifier_t() {};
 };
 
@@ -164,6 +247,22 @@ class DataDeviceRoboCleaner_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceRoboCleaner_t() { DeviceTypeID = 0x06; }
 		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03 }; }
+
+		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
+			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
+			// On/off toggle functions
+			if (FunctionID == 0x1 || FunctionID == 0x2 || FunctionID == 0x3) {
+				uint8_t CurrentPower = (uint8_t)(Status >> 12);
+
+				pair<bool, uint8_t> Result = CheckPowerUpdated(FunctionID, Value, CurrentPower, FunctionType);
+
+				if (Result.first)
+					return make_pair(SetStatusByte(Status, 0, Result.second), Result.second);
+			}
+
+			return make_pair(Status, Value);
+		}
+
 		virtual ~DataDeviceRoboCleaner_t() {};
 };
 
@@ -397,17 +496,16 @@ class DataRemote_t : public DataEndpoint_t {
 					if (Extra > 0)
 						JSONObject.SetItem((IsShortened) ? "e" : "Extra", Converter::ToHexString(Extra,4));
 
-					if (Status > 0)
-						JSONObject.SetItem((IsShortened) ? "s" : "Status", Converter::ToHexString(Status,4));
+					JSONObject.SetItem((IsShortened) ? "s" 	: "Status", Converter::ToHexString(Status,4));
+					JSONObject.SetItem((IsShortened) ? "ls" : "LastStatus", Converter::ToHexString(LastStatus,4));
 
-					if (LastStatus > 0)
-						JSONObject.SetItem((IsShortened) ? "ls" : "LastStatus", Converter::ToHexString(LastStatus,4));
-
-					if (IsShortened) {
+					if (IsShortened)
+					{
 						for (auto& FunctionItem : Functions)
 							JSONObject.SetItem(FunctionItem.first, FunctionItem.second);
 					}
-					else {
+					else
+					{
 						vector<map<string,string>> OutputItems = vector<map<string,string>>();
 
 						for (auto& FunctionItem : Functions)
@@ -628,11 +726,13 @@ class DataRemote_t : public DataEndpoint_t {
 
 					DataRemote_t::IRDevice DeviceItem = LoadDevice(UUID);
 
-					if (DeviceItem.IsCorrect()) {
+					if (DeviceItem.IsCorrect())
+					{
 						Result.SetSuccess();
 						Result.Body = DeviceItem.ToString(false);
 					}
-					else {
+					else
+					{
 						Result.SetInvalid();
 					}
 
@@ -1372,8 +1472,10 @@ class DataRemote_t : public DataEndpoint_t {
 				for (int i = 0; i< IRDevicesCache.size(); i++)
 					if (IRDevicesCache[i].DeviceID == UUID)
 					{
-						if (IRDevicesCache[i].StatusSaved == false)
-							Result.Status = IRDevicesCache[i].Status;
+						if (IRDevicesCache[i].StatusSaved == false) {
+							Result.Status 		= IRDevicesCache[i].Status;
+							Result.LastStatus 	= IRDevicesCache[i].LastStatus;
+						}
 
 						break;
 					}
