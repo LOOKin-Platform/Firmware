@@ -17,12 +17,18 @@
 using namespace std;
 
 #define GPIO_DS18B20_0       (GPIO_NUM_15)
-#define MAX_DEVICES          (8)
-#define DS18B20_RESOLUTION   (DS18B20_RESOLUTION_12_BIT)
+#define MAX_DEVICES          (1) // 8
+#define DS18B20_RESOLUTION   (DS18B20_RESOLUTION_9_BIT) // DS18B20_RESOLUTION_12_BIT
 
 class DS18B20 {
+	private:
+		static bool IsInited;
+
 	public:
-		static vector<float> ReadData(gpio_num_t GPIO);
+		static void Init(gpio_num_t GPIO);
+		static void Deinit();
+
+		static vector<float> ReadData();
 };
 
 #endif

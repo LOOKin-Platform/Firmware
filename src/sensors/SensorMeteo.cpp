@@ -35,9 +35,10 @@ class SensorMeteo_t : public Sensor_t {
 		string 		LastSendedStatus		= "";
 	public:
 		struct SensorData {
-			float Temperature;
-			float Humidity;
-			float Pressure;
+			float 	Temperature;
+			float 	Humidity;
+			float 	Pressure;
+			bool	IsReceived = true;
 		};
 
 		bool HasPrimaryValue() override {
@@ -75,6 +76,7 @@ class SensorMeteo_t : public Sensor_t {
 			return Converter::ToString(((float)Values[Key])/10);
 		}
 
+
 		void Pool() override {
 			if (Time::Uptime() %3 != 0) // read temp only in 3 seconds interval
 				return;
@@ -86,6 +88,9 @@ class SensorMeteo_t : public Sensor_t {
 				return;
 
 			SensorData CurrentData = GetValueFromSensor();
+
+			if (!CurrentData.IsReceived)
+				return;
 
 			bool IsTempChanged 		= UpdateTempValue(CurrentData.Temperature);
 			bool IsHumidityChanged	= UpdateHumidityValue(CurrentData.Humidity);
@@ -217,11 +222,13 @@ class SensorMeteo_t : public Sensor_t {
 			}
 		}
 
-
 		SensorData GetValueFromSensor() {
 			//Settings.eFuse.Revision = 2;
 			if (!IsSensorHWInited) // Init sensors
 			{
+				if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
+					DS18B20::Init(GPIO_NUM_15);
+
 				if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1 && Settings.eFuse.Revision == 1)
 				{
 				    bme280.setDebug(false);
@@ -245,10 +252,11 @@ class SensorMeteo_t : public Sensor_t {
 			Result.Temperature = 0;
 			Result.Humidity = 0;
 			Result.Pressure = 0;
+			Result.IsReceived = true;
 
 			if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
 			{
-				vector<float> ExternalTemp = DS18B20::ReadData(GPIO_NUM_15);
+				vector<float> ExternalTemp = DS18B20::ReadData();
 
 				if (ExternalTemp.size() > 0) {
 					SetValue(1, "IsExternalSensorConnected");
@@ -258,12 +266,18 @@ class SensorMeteo_t : public Sensor_t {
 				{
 					SetValue(0, "IsExternalSensorConnected");
 
-					if (Settings.eFuse.Revision == 1) {
+					if (Settings.eFuse.Revision == 1)
+					{
 						bme280_reading_data sensor_data = bme280.readSensorData();
 
 						Result.Temperature 	= sensor_data.temperature;
 						Result.Humidity		= sensor_data.humidity;
 						Result.Pressure		= sensor_data.pressure;
+
+						if (Result.Temperature == 0 && Result.Humidity == 0) {
+							Result.IsReceived = false;
+							return Result;
+						}
 
 						// корректировка значения BME280 (без учета времени старта, нахолодную)
 						float TempCorrection = 3.3;
@@ -276,6 +290,11 @@ class SensorMeteo_t : public Sensor_t {
 					else if (Settings.eFuse.Revision > 1)
 					{
 						hdc1080_read(HDC1080, &Result.Temperature, &Result.Humidity);
+
+						if (Result.Temperature == 0 && Result.Humidity == 0) {
+							Result.IsReceived = false;
+							return Result;
+						}
 
 						float TempCorrection = 2.76;
 						if (Time::Uptime() < 1800)
@@ -297,6 +316,9 @@ class SensorMeteo_t : public Sensor_t {
 			if (!IsSensorHWInited)
 			{
 				SensorData Value = GetValueFromSensor();
+
+				if (!Value.IsReceived)
+					return 0;
 
 				if (Key == "Temperature")
 					return ValueToUint32(Value.Temperature, "Temperature");
