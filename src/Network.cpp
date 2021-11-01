@@ -419,6 +419,17 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 					return;
 				}
 			}
+
+
+			if (Query.CheckURLPart("blehid_mode",1)) {
+
+				if (Query.CheckURLPart("basic", 2) || Query.CheckURLPart("hid", 2))
+				{
+					Result.SetSuccess();
+					BLEServer.ForceHIDMode(Query.CheckURLPart("basic", 2) ? BLEServerModeEnum::BASIC : BLEServerModeEnum::HID);
+					return;
+				}
+			}
 		}
 
 		if (Query.GetURLPartsCount() == 4) {

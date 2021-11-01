@@ -20,6 +20,8 @@ uint32_t 	BluetoothPeriodicHandler::BatteryUptime 		= 0;
 
 
 void BluetoothPeriodicHandler::Pool() {
+	return;
+
 	#if defined(CONFIG_BT_ENABLED)
 
 	if (!Device.Type.IsBattery())
@@ -54,6 +56,8 @@ void BluetoothPeriodicHandler::Pool() {
 			BluetoothCountdown = Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].first
 							+ Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second;
 
+			BLEServer.StartAdvertisingAsGenericDevice();
+			/*
 			BLEServer.StartAdvertising("0" +
 					Converter::ToHexString(Settings.Wireless.IntervalID,1) +
 					Converter::ToHexString(Automation.CurrentVersion(),4) +
@@ -61,6 +65,7 @@ void BluetoothPeriodicHandler::Pool() {
 					((Time::Offset == 0) ? "0" : "1") +
 					Converter::ToHexString(Settings.eFuse.Type, 2) +
 					(Device.Type.IsBattery() ? "0" : "1"));
+			*/
 		}
 	}
 

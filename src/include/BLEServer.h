@@ -72,10 +72,12 @@ typedef struct
   uint8_t keys[6];
 } KeyReport;
 
+enum BLEServerModeEnum { OFF = 0, BASIC, HID };
+
 class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 {
 	private:
-		BLEHIDDevice* 		hid;
+		BLEHIDDevice* 		HIDDevice;
 		BLECharacteristic*	inputKeyboard;
 		BLECharacteristic*	outputKeyboard;
 		BLECharacteristic*	inputMediaKeys;
@@ -89,6 +91,8 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		uint32_t			_delay_ms = 7;
 		bool				isRunning	= false;
 
+		BLEServerModeEnum	CurrentMode = OFF;
+
 		void 				delay_ms(uint64_t ms);
 
 		uint16_t vid       = 0x05ac;
@@ -97,9 +101,29 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 
 		int8_t 				GetRSSIForConnection(uint16_t ConnectionHandle);
 
+		NimBLEServer* 			pServer						= NULL;
+
+		NimBLECharacteristic*	ManufactorerCharacteristic 	= NULL;
+		NimBLECharacteristic* 	DeviceTypeCharacteristic 	= NULL;
+		NimBLECharacteristic* 	DeviceIDCharacteristic 		= NULL;
+		NimBLECharacteristic* 	FirmwareVersionCharacteristic = NULL;
+		NimBLECharacteristic* 	DeviceModelCharacteristic 	= NULL;
+		NimBLECharacteristic* 	WiFiSetupCharacteristic 	= NULL;
+		NimBLECharacteristic* 	RCSetupCharacteristic 		= NULL;
+
+		bool		IsHIDEnabledForDevice();
+
+		void		Init();
+
 	public:
+		void		CheckHIDMode();
+		void		ForceHIDMode(BLEServerModeEnum Mode);
+
 		BLEServer_t(std::string deviceName = "ESP32 Keyboard", std::string deviceManufacturer = "Espressif", uint8_t batteryLevel = 100);
-		void 		StartAdvertising(string Payload = "", bool ShouldUsePrivateMode = false);
+
+		void 		StartAdvertising();
+		void		StartAdvertisingAsHID();
+		void 		StartAdvertisingAsGenericDevice();
 		void 		StopAdvertising();
 
 		void 		SendReport(KeyReport* keys);

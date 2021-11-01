@@ -90,7 +90,7 @@ void app_main(void) {
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
-	BLEServer.StartAdvertising("", true);
+	BLEServer.StartAdvertising();
 	//BLEClient.Scan(60);
 
 	Pooling_t::Pool();

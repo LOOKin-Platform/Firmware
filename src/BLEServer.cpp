@@ -91,17 +91,51 @@ static const uint8_t _hidReportDescriptor[] = {
   END_COLLECTION(0)						// END_COLLECTION
 };
 
+bool BLEServer_t::IsHIDEnabledForDevice() {
+	if (Settings.eFuse.Type == Settings.Devices.Remote)
+		return true;
+
+	return false;
+}
+
+void BLEServer_t::CheckHIDMode() {
+	if (!IsHIDEnabledForDevice()) return;
+
+	/*
+	if (WiFi.IsConnectedSTA() && CurrentMode == BASIC) {
+		ForceMode(HID);
+		return;
+	}
+
+	if (!WiFi.IsConnectedSTA() && CurrentMode == HID) {
+		ForceMode(BASIC);
+		return;
+	}
+	*/
+}
+
+void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
+	if (!IsHIDEnabledForDevice()) return;
+
+	if (CurrentMode == Mode) return;
+
+	if (Mode == BASIC && pServer->getConnectedCount())
+	{
+		for (auto& Connection : pServer->getPeerDevices())
+			pServer->disconnect(Connection);
+	}
+
+	ble_gatts_svc_set_visibility(HIDDevice->hidService()->getHandle(), (Mode == BASIC) ? 0 : 1);
+	CurrentMode = Mode;
+}
+
+
+
 BLEServer_t::BLEServer_t(std::string deviceName, std::string deviceManufacturer, uint8_t batteryLevel)
-    : hid(0)
+    : HIDDevice(0)
     , deviceName(std::string(deviceName).substr(0, 15))
     , deviceManufacturer(std::string(deviceManufacturer).substr(0,15))
     , batteryLevel(batteryLevel) {}
-
-/*
-void BLEServer_t::Init() {
-	if (IsInited) return;
-}
-*/
 
 int8_t BLEServer_t::GetRSSIForConnection(uint16_t ConnectionHandle) {
 	int8_t RSSI = 0;
@@ -112,45 +146,128 @@ int8_t BLEServer_t::GetRSSIForConnection(uint16_t ConnectionHandle) {
 		return -128;
 }
 
-
-void BLEServer_t::StartAdvertising(string Payload, bool ShouldUsePrivateMode)
-{
+void BLEServer_t::Init() {
 	BLEDevice::init(Settings.Bluetooth.DeviceNamePrefix + Device.IDToString());
 
-	NimBLEServer* pServer = NimBLEDevice::createServer();
-	pServer->setCallbacks(this);
+	if (pServer == NULL) {
+		pServer = NimBLEDevice::createServer();
+		pServer->setCallbacks(this);
+	}
 
-	hid 			= new BLEHIDDevice(pServer);
-	inputKeyboard 	= hid->inputReport(KEYBOARD_ID);  // <-- input REPORTID from report map
-	outputKeyboard 	= hid->outputReport(KEYBOARD_ID);
-	inputMediaKeys 	= hid->inputReport(MEDIA_KEYS_ID);
+	if (ManufactorerCharacteristic == NULL) {
+		ManufactorerCharacteristic = new NimBLECharacteristic((uint16_t)0x2A29, NIMBLE_PROPERTY::READ);
+		ManufactorerCharacteristic->setValue("LOOKin");
+	}
+
+	if (DeviceTypeCharacteristic == NULL) {
+		DeviceTypeCharacteristic = new NimBLECharacteristic((uint16_t)0x2A24, NIMBLE_PROPERTY::READ);
+		DeviceTypeCharacteristic->setValue(Device.Type.ToHexString());
+	}
+
+	if (DeviceIDCharacteristic == NULL) {
+		DeviceIDCharacteristic = new NimBLECharacteristic((uint16_t)0x2A25, NIMBLE_PROPERTY::READ);
+		DeviceIDCharacteristic->setValue(Converter::ToHexString(Settings.eFuse.DeviceID,8));
+	}
+
+	if (FirmwareVersionCharacteristic == NULL) {
+		FirmwareVersionCharacteristic = new NimBLECharacteristic((uint16_t)0x2A26, NIMBLE_PROPERTY::READ);
+		FirmwareVersionCharacteristic->setValue(Settings.Firmware.ToString());
+	}
+
+	if (DeviceModelCharacteristic == NULL) {
+		DeviceModelCharacteristic = new NimBLECharacteristic((uint16_t)0x2A27, NIMBLE_PROPERTY::READ);
+		DeviceModelCharacteristic->setValue(Converter::ToHexString(Settings.eFuse.Model,2));
+	}
+
+	if (WiFiSetupCharacteristic == NULL) {
+		WiFiSetupCharacteristic = new NimBLECharacteristic((uint16_t)0x4000, NIMBLE_PROPERTY::WRITE);
+		WiFiSetupCharacteristic->setCallbacks(this);
+	}
+
+	if (RCSetupCharacteristic == NULL) {
+		RCSetupCharacteristic = new NimBLECharacteristic((uint16_t)0x5000, NIMBLE_PROPERTY::WRITE);
+		RCSetupCharacteristic->setCallbacks(this);
+	}
+}
+
+void BLEServer_t::StartAdvertising() {
+	if (IsHIDEnabledForDevice())
+		StartAdvertisingAsHID();
+	else
+		StartAdvertisingAsGenericDevice();
+}
+
+
+void BLEServer_t::StartAdvertisingAsHID()
+{
+	Init();
+
+	HIDDevice 		= new BLEHIDDevice(pServer);
+	inputKeyboard 	= HIDDevice->inputReport(KEYBOARD_ID);  // <-- input REPORTID from report map
+	outputKeyboard 	= HIDDevice->outputReport(KEYBOARD_ID);
+	inputMediaKeys 	= HIDDevice->inputReport(MEDIA_KEYS_ID);
 
 	outputKeyboard->setCallbacks(this);
 
-	hid->manufacturer()->setValue("LOOKin");
-	hid->pnp(0x02, vid, pid, version);
-	hid->hidInfo(0x00, 0x01);
+	HIDDevice->manufacturer()->setValue("LOOKin");
+	HIDDevice->pnp(0x02, vid, pid, version);
+	HIDDevice->hidInfo(0x00, 0x01);
 
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A24, NIMBLE_PROPERTY::READ)->setValue(Device.Type.ToHexString());
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A25, NIMBLE_PROPERTY::READ)->setValue(Converter::ToHexString(Settings.eFuse.DeviceID,8));
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A26, NIMBLE_PROPERTY::READ)->setValue(Settings.Firmware.ToString());
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x2A27, NIMBLE_PROPERTY::READ)->setValue(Converter::ToHexString(Settings.eFuse.Model,2));
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x4000, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE)->setCallbacks(this);
-	hid->deviceInfo()->createCharacteristic((uint16_t)0x5000, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::WRITE);
+	HIDDevice->deviceInfo()->addCharacteristic(DeviceTypeCharacteristic);
+	HIDDevice->deviceInfo()->addCharacteristic(DeviceIDCharacteristic);
+	HIDDevice->deviceInfo()->addCharacteristic(FirmwareVersionCharacteristic);
+	HIDDevice->deviceInfo()->addCharacteristic(DeviceModelCharacteristic);
+	HIDDevice->deviceInfo()->addCharacteristic(WiFiSetupCharacteristic);
+	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
 	BLEDevice::setSecurityAuth(false, true, false);
 
-	hid->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
-	hid->startServices();
+	HIDDevice->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
+	HIDDevice->startServices();
 
 	onStarted(pServer);
 
 	advertising = pServer->getAdvertising();
 	advertising->setAppearance(HID_KEYBOARD);
-	advertising->addServiceUUID(hid->hidService()->getUUID());
+	advertising->addServiceUUID(HIDDevice->hidService()->getUUID());
 	advertising->setScanResponse(false);
+
 	advertising->start();
-	hid->setBatteryLevel(batteryLevel);
+
+	HIDDevice->setBatteryLevel(batteryLevel);
+
+	CurrentMode = HID;
+
+	ForceHIDMode(BASIC);
+	ESP_LOGD(Tag, "Advertising started!");
+
+
+	isRunning = true;
+}
+
+void BLEServer_t::StartAdvertisingAsGenericDevice()
+{
+	Init();
+
+	BLEService *pService = pServer->createService(NimBLEUUID((uint16_t) 0x180A));
+
+	pService->addCharacteristic(DeviceTypeCharacteristic);
+	pService->addCharacteristic(DeviceIDCharacteristic);
+	pService->addCharacteristic(FirmwareVersionCharacteristic);
+	pService->addCharacteristic(DeviceModelCharacteristic);
+	pService->addCharacteristic(WiFiSetupCharacteristic);
+	pService->addCharacteristic(RCSetupCharacteristic);
+
+	pService->start();
+
+	// BLEAdvertising *pAdvertising = pServer->getAdvertising();  // this still is working for backward compatibility
+	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+	pAdvertising->addServiceUUID((uint16_t)0x180A);
+	pAdvertising->setScanResponse(true);
+
+	BLEDevice::startAdvertising();
+
+	CurrentMode = BASIC;
 
 	ESP_LOGD(Tag, "Advertising started!");
 
@@ -172,8 +289,8 @@ bool BLEServer_t::IsRunning() {
 
 void BLEServer_t::setBatteryLevel(uint8_t level) {
   this->batteryLevel = level;
-  if (hid != 0)
-    this->hid->setBatteryLevel(this->batteryLevel);
+  if (HIDDevice != 0)
+    this->HIDDevice->setBatteryLevel(this->batteryLevel);
 }
 
 //must be called before begin in order to set the name
@@ -649,6 +766,10 @@ size_t BLEServer_t::Write(const uint8_t *buffer, size_t size) {
 }
 
 void BLEServer_t::onConnect(NimBLEServer* pServer) {
+	ESP_LOGE(Tag, "ISconnected");
+
+	BLEDevice::startAdvertising();
+
 	this->connected = true;
 }
 
@@ -720,6 +841,9 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 			{
 				ESP_LOGD(Tag, "MQTT credentials data received. ClientID: %s, ClientSecret: %s", Parts[0].c_str(), Parts[1].c_str());
 				RemoteControl.ChangeOrSetCredentialsBLE(Parts[0], Parts[1]);
+
+				FreeRTOS::Sleep(500);
+				ForceHIDMode(HID);
 			}
 		}
 

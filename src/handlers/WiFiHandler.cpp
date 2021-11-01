@@ -199,6 +199,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.APSuccessDelay);
 
+			BLEServer.ForceHIDMode(BASIC);
+
 			return ESP_OK;
 		}
 
@@ -382,6 +384,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			::esp_timer_start_once(RemoteControlStartTimer, 5000000);
 
 			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
+
+			BLEServer.ForceHIDMode(HID);
 
 			return ESP_OK;
 		}
