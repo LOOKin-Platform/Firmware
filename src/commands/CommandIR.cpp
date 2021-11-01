@@ -13,6 +13,7 @@
 
 #define CommandIRArea 			"RMT"
 #define CommandIRTXQueuePrefix 	"tx_"
+#define	CommandIRTXPause		"pause"
 
 extern DataEndpoint_t *Data;
 
@@ -398,6 +399,28 @@ class CommandIR_t : public Command_t {
 			ProntoHexBlockedBuffer = "";
 		}
 
+		static void TXSendAddPause(uint16_t PauseLength = 500) {
+			uint32_t HashID = esp_random();
+
+			CommandIRTXQueueData TXPause;
+			TXPause.NVSItem		= CommandIRTXPause;
+			TXPause.Frequency 	= PauseLength;
+
+		    bool IsQueueFull = false;
+
+			CommandIRTXDataMap[HashID] = TXPause;
+
+		    if (Settings.DeviceGeneration < 2)
+		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 8) ? false : true;
+		    else
+		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 16) ? false : true;
+
+		    if (!IsQueueFull) {
+				ESP_LOGD("RMT", "Added pause to queue with length %d", PauseLength);
+		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false);
+		    }
+		}
+
 		static void TXSend(vector<int32_t> &TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
 			if (TXItemData.empty())
 				return;
@@ -435,7 +458,6 @@ class CommandIR_t : public Command_t {
 		    else
 		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 16) ? false : true;
 
-
 		    if (!IsQueueFull) {
 				ESP_LOGD("RMT", "Added to queue ID %s", HashIDStr.c_str());
 		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false);
@@ -472,37 +494,45 @@ class CommandIR_t : public Command_t {
 						if (CommandIRTXDataMap.count(HashID) == 0)
 							continue;
 
-						NVS *Memory = new NVS(CommandIRArea);
-
 						ESP_LOGE("RMT TX TASK", "Received from Queue, ItemKey: %s", CommandIRTXDataMap[HashID].NVSItem.c_str());
 
-						pair<void*, size_t> Item = Memory->GetBlob(CommandIRTXDataMap[HashID].NVSItem);
-
-						if (Item.second == 0)
-							continue;
-
-						ESP_LOGE("RMT TX TASK", "BLOB SIZE %d", Item.second);
-
-						RMT::TXClear();
-
-						ItemsToSend = NULL;
-						ItemsToSend = (int32_t *)Item.first;
-
-						for (uint16_t i = 0; i < Item.second / 4; i++) {
-							RMT::TXAddItem(*(ItemsToSend + i));
+						if (CommandIRTXDataMap[HashID].NVSItem == CommandIRTXPause)
+						{
+							ESP_LOGE("RMT TX TASK", "Pause for: %d ms", CommandIRTXDataMap[HashID].Frequency);
+							FreeRTOS::Sleep(CommandIRTXDataMap[HashID].Frequency);
 						}
+						else
+						{
+							NVS *Memory = new NVS(CommandIRArea);
 
-						ESP_LOGE("RMT TX TASK", "Prepare to send with frequency %u", CommandIRTXDataMap[HashID].Frequency);
+							pair<void*, size_t> Item = Memory->GetBlob(CommandIRTXDataMap[HashID].NVSItem);
 
-						RMT::TXSend(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
+							if (Item.second == 0)
+								continue;
 
-						free(Item.first);
+							ESP_LOGE("RMT TX TASK", "BLOB SIZE %d", Item.second);
 
-						Log::Add(Log::Events::Commands::IRExecuted);
+							RMT::TXClear();
 
-						Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
-						Memory->Commit();
-			    		delete (Memory);
+							ItemsToSend = NULL;
+							ItemsToSend = (int32_t *)Item.first;
+
+							for (uint16_t i = 0; i < Item.second / 4; i++) {
+								RMT::TXAddItem(*(ItemsToSend + i));
+							}
+
+							ESP_LOGE("RMT TX TASK", "Prepare to send with frequency %u", CommandIRTXDataMap[HashID].Frequency);
+
+							RMT::TXSend(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
+
+							free(Item.first);
+
+							Log::Add(Log::Events::Commands::IRExecuted);
+
+							Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
+							Memory->Commit();
+							delete (Memory);
+						}
 
 			    		CommandIRTXDataMap.erase(HashID);
 			    		HashID = 0;
@@ -613,9 +643,13 @@ class CommandIR_t : public Command_t {
 
 			if (Params.count("operand") > 0 && Settings.eFuse.Type == Settings.Devices.Remote)
 				if (Params["operand"].size() == 8) {
-					((DataRemote_t*)Data)->SetExternalStatusForAC(
-							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(0, 4)),
-							Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4)));
+					uint16_t Codeset = Converter::UintFromHexString<uint16_t>(Params["operand"].substr(0, 4));
+					uint16_t Operand = Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4));
+
+					((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Operand);
+
+					if (ACOperand::IsOnSeparateForCodeset(Codeset) && Operand == 0xFFF0)
+						CommandIR->TXSendAddPause(500);
 
 					Command_t::SendLocalMQTT(Params["operand"], "/ir/ac/sent");
 				}
