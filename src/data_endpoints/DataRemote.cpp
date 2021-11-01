@@ -20,12 +20,14 @@
 
 #include "WebServer.h"
 #include "WiFi.h"
+#include "Wireless.h"
 
 #include <IRLib.h>
 
 #include "Custom.h"
 
 extern DataEndpoint_t *Data;
+extern Wireless_t Wireless;
 
 using namespace std;
 
@@ -805,6 +807,7 @@ class DataRemote_t : public DataEndpoint_t {
 					string Function	= Query.GetStringURLPartByNumber(2);
 
 					PUTorPOSTDeviceFunction(Query, UUID, Function, Result);
+
 					return;
 				}
 			}
@@ -953,8 +956,10 @@ class DataRemote_t : public DataEndpoint_t {
 
 			DeviceItem.ParseJSONItems(JSON(Query.GetBody()).GetItems());
 
-			if (SaveDevice(DeviceItem))
+			if (SaveDevice(DeviceItem)) {
 				Result.SetSuccess();
+				Wireless.SendBroadcastUpdated("data", UUID);
+			}
 			else
 			{
 				Result.SetFail();
@@ -1054,6 +1059,8 @@ class DataRemote_t : public DataEndpoint_t {
 
 					FunctionCache.push_back(IRDetails);
 
+					Wireless.SendBroadcastUpdated("data", UUID, Converter::ToHexString(DevicesHelper.FunctionIDByName(Function),2));
+
 					Child = Child->next;
 				}
 
@@ -1067,6 +1074,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 
 			Result.SetSuccess();
+
 			return;
 		}
 
