@@ -279,13 +279,16 @@ class SensorMeteo_t : public Sensor_t {
 							return Result;
 						}
 
+
 						// корректировка значения BME280 (без учета времени старта, нахолодную)
-						float TempCorrection = 3.3;
-						if (Time::Uptime() < 1800)
-							TempCorrection = 1.015 * log10(Time::Uptime());
+						if (PowerManagement::GetPMType() != PowerManagement::PowerManagementType::MAX)
+						{
+							float TempCorrection = 3.3;
+							if (Time::Uptime() < 1800)
+								TempCorrection = 1.015 * log10(Time::Uptime());
 
-						Result.Temperature -= TempCorrection;
-
+							Result.Temperature -= TempCorrection;
+						}
 					}
 					else if (Settings.eFuse.Revision > 1)
 					{
@@ -296,11 +299,14 @@ class SensorMeteo_t : public Sensor_t {
 							return Result;
 						}
 
-						float TempCorrection = 2.76;
-						if (Time::Uptime() < 1800)
-							TempCorrection = 0.85 * log10(Time::Uptime());
+						if (PowerManagement::GetPMType() != PowerManagement::PowerManagementType::MAX)
+						{
+							float TempCorrection = 2.76;
+							if (Time::Uptime() < 1800)
+								TempCorrection = 0.85 * log10(Time::Uptime());
 
-						Result.Temperature -= TempCorrection;
+							Result.Temperature -= TempCorrection;
+						}
 					}
 
 					Result.Humidity += 15.2;
