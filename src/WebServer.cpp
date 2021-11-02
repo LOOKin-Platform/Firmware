@@ -433,7 +433,6 @@ void WebServer_t::UDPListenerTask(void *data) {
 
     	inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 
-
     	int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
     	if (sock < 0) {
     		ESP_LOGE(tag, "Unable to create socket: errno %d", errno);
@@ -484,6 +483,10 @@ void WebServer_t::UDPListenerTask(void *data) {
     			//	WebServer->UDPSendBroadcast(Datagram);
 
     			// answer to the Discover query
+
+    			if (Datagram.find("LOOK.in") == 0)
+    				Datagram = Settings.WiFi.UDPPacketPrefix + Datagram.substr(7);
+
     			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device.IDToString())) {
     				string Answer = WebServer_t::UDPAliveBody();
 

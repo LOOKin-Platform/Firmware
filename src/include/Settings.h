@@ -30,7 +30,7 @@ typedef struct FirmwareVersionStruct {
 
 	FirmwareVersionStruct(uint32_t sVersion) { Version.Uint32Data = sVersion; }
 	FirmwareVersionStruct(uint8_t sMajor, uint8_t sMinor, uint16_t sRevision) { Version.Major = sMajor; Version.Minor = sMinor; Version.Revision = sRevision;}
-	string 	ToString() { return (Version.Uint32Data == 0) ? "" : Converter::ToString<uint8_t>(Version.Major) + "." + Converter::ToString<uint8_t>(Version.Minor,2);}
+	string 	ToString() { return (Version.Uint32Data == 0) ? "" : Converter::ToString<uint8_t>(Version.Major) + "." + Converter::ToString<uint8_t>(Version.Minor,2)+ "." + Converter::ToString<uint8_t>(Version.Revision,4);}
 	bool 	operator== (const FirmwareVersionStruct &fw2) { return (Version.Uint32Data == fw2.Version.Uint32Data); }
 	bool 	operator!= (const FirmwareVersionStruct &fw2) { return !(Version.Uint32Data == fw2.Version.Uint32Data); }
 } FirmwareVersion;
@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 39, 0);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 40, 1);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -77,7 +77,8 @@ class Settings_t {
 
 			static constexpr uint16_t		UPDPort			= 61201;
 			static constexpr uint8_t		UDPHoldPortsMax	= 8;
-			const string					UDPPacketPrefix	= "LOOK.in:";
+			const string					UDPPacketPrefix	= "LOOKin:";
+
 
 			static constexpr uint16_t		MDNSServicePort	= 63091;
 
