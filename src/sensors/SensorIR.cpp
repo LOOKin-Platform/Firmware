@@ -311,7 +311,7 @@ class SensorIR_t : public Sensor_t {
 				if (Settings.eFuse.Type == Settings.Devices.Remote)
 					((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Status);
 
-				LocalMQTTSend(StatusString, "/sensors/ir/ac/" + CodesetString);
+				LocalMQTTSend(StatusString, "/ir/ac/" + CodesetString);
 			}
 		}
 

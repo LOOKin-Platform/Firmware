@@ -651,7 +651,7 @@ class CommandIR_t : public Command_t {
 					if (ACOperand::IsOnSeparateForCodeset(Codeset) && Operand == 0xFFF0)
 						CommandIR->TXSendAddPause(500);
 
-					Command_t::SendLocalMQTT(Params["operand"], "/ir/ac/sent");
+					Sensor_t::LocalMQTTSend(Params["operand"], "/ir/ac/sent");
 				}
 		}
 
