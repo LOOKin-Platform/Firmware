@@ -279,7 +279,6 @@ class SensorMeteo_t : public Sensor_t {
 							return Result;
 						}
 
-
 						// корректировка значения BME280 (без учета времени старта, нахолодную)
 						if (PowerManagement::GetPMType() != PowerManagement::PowerManagementType::MAX)
 						{

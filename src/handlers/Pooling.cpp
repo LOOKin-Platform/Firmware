@@ -26,7 +26,7 @@ class Pooling_t {
 
 				OverheatHandler				::Pool();
 				WiFiUptimeHandler			::Pool();
-				BluetoothPeriodicHandler	::Pool();
+				//BluetoothPeriodicHandler	::Pool();
 				EnergyPeriodicHandler		::Pool();
 				SensorPeriodicHandler		::Pool();
 				RemoteControlPeriodicHandler::Pool();

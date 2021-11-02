@@ -20,8 +20,6 @@ uint32_t 	BluetoothPeriodicHandler::BatteryUptime 		= 0;
 
 
 void BluetoothPeriodicHandler::Pool() {
-	return;
-
 	#if defined(CONFIG_BT_ENABLED)
 
 	if (!Device.Type.IsBattery())
