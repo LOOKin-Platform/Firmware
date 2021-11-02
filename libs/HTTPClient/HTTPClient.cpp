@@ -241,5 +241,5 @@ void HTTPClient::Failed(HTTPClientData_t &ClientData) {
 
 void HTTPClient::CheckUserAgent() {
 	if (UserAgent == "" && Settings.eFuse.DeviceID > 0)
-		UserAgent = "LOOK.in\\" + Settings.Firmware.ToString() + " " + Converter::ToHexString(Settings.eFuse.DeviceID,8);
+		UserAgent = "LOOKin\\" + Settings.Firmware.ToString() + " " + Converter::ToHexString(Settings.eFuse.DeviceID,8);
 }
