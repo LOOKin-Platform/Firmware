@@ -174,7 +174,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		Config.buffer_size 				= ClientData.BufferSize;
 		Config.buffer_size_tx 			= ClientData.BufferSize;
 
-		Config.disable_auto_redirect	= true;
+		Config.disable_auto_redirect	= false;
 		Config.max_redirection_count 	= 10;
 
 		switch (ClientData.Method) {

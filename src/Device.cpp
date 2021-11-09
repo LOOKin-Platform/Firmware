@@ -7,6 +7,7 @@
 #include "Device.h"
 #include "HomeKit.h"
 #include "BootAndRestore.h"
+#include "NimBLEDevice.h"
 
 httpd_req_t		*Device_t::CachedRequest 	= NULL;
 string 			Device_t::FirmwareURLForOTA = "";
@@ -365,6 +366,7 @@ void Device_t::OTAStart(string FirmwareURL, WebServer_t::QueryTransportType Tran
 
 	LocalMQTT.Stop();
 	HomeKit::Stop();
+	NimBLEDevice::deinit(false);
 
 	FreeRTOS::Sleep(2000);
 
@@ -387,9 +389,14 @@ void Device_t::ExecuteOTATask(void*) {
 
 void Device_t::OTAStartedCallback() {
 	Device.Status = DeviceStatus::UPDATING;
+	Log::Add(Log::Events::OTAStarted);
 }
 
 void Device_t::OTAFailedCallback() {
+	Log::Add(Log::Events::OTAFailed);
+
+	Device.Status = DeviceStatus::RUNNING;
+
 	RemoteControl.Start();
 	LocalMQTT.Start();
 	HomeKit::Start();

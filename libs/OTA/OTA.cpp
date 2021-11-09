@@ -79,8 +79,6 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
     Config.keep_alive_enable 		= true,
 
-    Log::Add(Log::Events::System::OTAStarted);
-
 	PowerManagement::AddLock("OTA");
 
 	esp_err_t ret = esp_https_ota(&Config);
