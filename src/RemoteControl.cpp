@@ -53,18 +53,16 @@ void RemoteControl_t::Start() {
 }
 
 void RemoteControl_t::Stop() {
-	if (ClientHandle && Status != UNACTIVE) {
-		Status = UNACTIVE;
+	Status = UNACTIVE;
 
-		if (ClientHandle != NULL) {
-			::esp_mqtt_client_stop(ClientHandle);
-			::esp_mqtt_client_destroy(ClientHandle);
-		}
-
-		ClientHandle	= NULL;
-
-	    ESP_LOGI(Tag, "Stopped");
+	if (ClientHandle != NULL) {
+		::esp_mqtt_client_stop(ClientHandle);
+		::esp_mqtt_client_destroy(ClientHandle);
 	}
+
+	ClientHandle = NULL;
+
+	ESP_LOGI(Tag, "Stopped");
 }
 
 void RemoteControl_t::Reconnect(uint16_t Delay) {
