@@ -15,8 +15,6 @@ void DS18B20::Init(gpio_num_t GPIO) {
 
     owb_use_crc(owb, true);  // enable CRC check for ROM code
 
-    ESP_LOGE("DS18B20::Init", "!");
-
     IsInited = true;
 }
 

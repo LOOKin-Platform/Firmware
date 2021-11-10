@@ -190,8 +190,13 @@ void Settings_t::eFuse_t::ReadDataOrInit() {
 	if (DeviceID == 0x00000002)
 		Revision = 0x1;
 
+
 	// workaround for Remote2 test batch
-	// Model = 2;
+
+	/*
+	Model = 2;
+	Revision = 2;
+	*/
 
 	// Setup device generation
 	if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model < 2)
