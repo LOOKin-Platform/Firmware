@@ -270,6 +270,10 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
 		case Events::Commands	::IRExecuted		:
 		case Events::Sensors 	::IRReceived		: Execute(60, 0, 0, STROBE, 2);	break;
 
+
+		case Events::Commands	::BLEFailed			:
+		case Events::Commands	::BLEExecuted		: Execute(0, 0,255, STROBE, 2); break;
+
 		case Events::Misc		::HomeKitIdentify	: Execute(255	, 255	, 0		, BLINKING	, 5);	break;
 
 		default: break;

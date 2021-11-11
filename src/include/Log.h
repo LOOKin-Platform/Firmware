@@ -127,7 +127,10 @@ class Log {
 				enum Commands {
 					// События команд 0xX500...0xX5FF
 					IRFailed 		= 0x0507,
-					IRExecuted		= 0x1507
+					IRExecuted		= 0x1507,
+
+					BLEFailed		= 0x0508,
+					BLEExecuted		= 0x1508
 				};
 
 				enum Misc {

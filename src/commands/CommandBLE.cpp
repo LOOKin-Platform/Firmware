@@ -32,42 +32,46 @@ class CommandBLE_t : public Command_t {
 				if (Operand.size() == 0)
 					return false;
 
-				if 		(Operand == "MEDIA_NEXT_TRACK") 	{ BLEServer.Write(BLEServer.KEY_MEDIA_NEXT_TRACK) 			; return true;}
-				else if (Operand == "MEDIA_PREV_TRACK") 	{ BLEServer.Write(BLEServer.KEY_MEDIA_PREVIOUS_TRACK)		; return true;}
-				else if (Operand == "MEDIA_STOP") 			{ BLEServer.Write(BLEServer.KEY_MEDIA_STOP)					; return true;}
-				else if (Operand == "MEDIA_PLAY_PAUSE") 	{ BLEServer.Write(BLEServer.KEY_MEDIA_PLAY_PAUSE)			; return true;}
-				else if (Operand == "MEDIA_MUTE") 			{ BLEServer.Write(BLEServer.KEY_MEDIA_MUTE)					; return true;}
-				else if (Operand == "MEDIA_VOLUME_UP") 		{ BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_UP)			; return true;}
-				else if (Operand == "MEDIA_VOLUME_DOWN") 	{ BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_DOWN)			; return true;}
-				else if (Operand == "MEDIA_WWW_HOME") 		{ BLEServer.Write(BLEServer.KEY_MEDIA_WWW_HOME)				; return true;}
-				else if (Operand == "MEDIA_BROWSER") 		{ BLEServer.Write(BLEServer.KEY_MEDIA_LOCAL_MACHINE_BROWSER); return true;}
-				else if (Operand == "MEDIA_CALCULATOR")		{ BLEServer.Write(BLEServer.KEY_MEDIA_CALCULATOR)			; return true;}
-				else if (Operand == "MEDIA_WWW_BOOKMARKS")	{ BLEServer.Write(BLEServer.KEY_MEDIA_WWW_BOOKMARKS)		; return true;}
-				else if (Operand == "MEDIA_WWW_SEARCH")		{ BLEServer.Write(BLEServer.KEY_MEDIA_WWW_SEARCH)			; return true;}
-				else if (Operand == "MEDIA_WWW_STOP") 		{ BLEServer.Write(BLEServer.KEY_MEDIA_WWW_STOP)				; return true;}
-				else if (Operand == "MEDIA_WWW_BACK")		{ BLEServer.Write(BLEServer.KEY_MEDIA_WWW_BACK)				; return true;}
-				else if (Operand == "MEDIA_CONFIGURATION")	{ BLEServer.Write(BLEServer.KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION); return true;}
-				else if (Operand == "MEDIA_EMAIL_READER")	{ BLEServer.Write(BLEServer.KEY_MEDIA_EMAIL_READER)			; return true;}
-				else if (Operand == "KEY_ARROW_UP")			{ BLEServer.Write(0xDA)										; return true;}
-				else if (Operand == "KEY_ARROW_DOWN")		{ BLEServer.Write(0xD9)										; return true;}
-				else if (Operand == "KEY_ARROW_LEFT")		{ BLEServer.Write(0xD8)										; return true;}
-				else if (Operand == "KEY_ARROW_RIGHT")		{ BLEServer.Write(0xD7)										; return true;}
-				else if (Operand == "KEY_BACKSPACE")		{ BLEServer.Write(0xB2)										; return true;}
-				else if (Operand == "KEY_TAB")				{ BLEServer.Write(0xB3)										; return true;}
-				else if (Operand == "KEY_RETURN")			{ BLEServer.Write(0xB0)										; return true;}
-				else if (Operand == "KEY_ESCAPE")			{ BLEServer.Write(0xB1)										; return true;}
-				else if (Operand == "KEY_INSERT")			{ BLEServer.Write(0xD1)										; return true;}
-				else if (Operand == "KEY_DELETE")			{ BLEServer.Write(0xD4)										; return true;}
-				else if (Operand == "KEY_PAGE_UP")			{ BLEServer.Write(0xD3)										; return true;}
-				else if (Operand == "KEY_PAGE_DOWN")		{ BLEServer.Write(0xD6)										; return true;}
-				else if (Operand == "KEY_HOME")				{ BLEServer.Write(0xD2)										; return true;}
-				else if (Operand == "KEY_END")				{ BLEServer.Write(0xD5)										; return true;}
-				else if (Operand == "KEY_CAPS_LOCK")		{ BLEServer.Write(0xC1)										; return true;}
-				else if (Operand == "KEY_ENTER")			{ BLEServer.Write(0x28)										; return true;}
+				size_t Result = 0;
 
-				ESP_LOGE("StringOperand", "%s %d", StringOperand, int(StringOperand[0]));
+				if 		(Operand == "MEDIA_NEXT_TRACK") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_NEXT_TRACK) 			;}
+				else if (Operand == "MEDIA_PREV_TRACK") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_PREVIOUS_TRACK)		;}
+				else if (Operand == "MEDIA_STOP") 			{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_STOP)				;}
+				else if (Operand == "MEDIA_PLAY_PAUSE") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_PLAY_PAUSE)			;}
+				else if (Operand == "MEDIA_MUTE") 			{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_MUTE)				;}
+				else if (Operand == "MEDIA_VOLUME_UP") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_UP)			;}
+				else if (Operand == "MEDIA_VOLUME_DOWN") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_DOWN)			;}
+				else if (Operand == "MEDIA_WWW_HOME") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_HOME)			;}
+				else if (Operand == "MEDIA_BROWSER") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_LOCAL_MACHINE_BROWSER);}
+				else if (Operand == "MEDIA_CALCULATOR")		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CALCULATOR)			;}
+				else if (Operand == "MEDIA_WWW_BOOKMARKS")	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_BOOKMARKS)		;}
+				else if (Operand == "MEDIA_WWW_SEARCH")		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_SEARCH)			;}
+				else if (Operand == "MEDIA_WWW_STOP") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_STOP)			;}
+				else if (Operand == "MEDIA_WWW_BACK")		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_BACK)			;}
+				else if (Operand == "MEDIA_CONFIGURATION")	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CC_CONFIGURATION)	;}
+				else if (Operand == "MEDIA_EMAIL_READER")	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_EMAIL_READER)		;}
+				else if (Operand == "KEY_ARROW_UP")			{ Result = BLEServer.Write(0xDA)									;}
+				else if (Operand == "KEY_ARROW_DOWN")		{ Result = BLEServer.Write(0xD9)									;}
+				else if (Operand == "KEY_ARROW_LEFT")		{ Result = BLEServer.Write(0xD8)									;}
+				else if (Operand == "KEY_ARROW_RIGHT")		{ Result = BLEServer.Write(0xD7)									;}
+				else if (Operand == "KEY_BACKSPACE")		{ Result = BLEServer.Write(0xB2)									;}
+				else if (Operand == "KEY_TAB")				{ Result = BLEServer.Write(0xB3)									;}
+				else if (Operand == "KEY_RETURN")			{ Result = BLEServer.Write(0xB0)									;}
+				else if (Operand == "KEY_ESCAPE")			{ Result = BLEServer.Write(0xB1)									;}
+				else if (Operand == "KEY_INSERT")			{ Result = BLEServer.Write(0xD1)									;}
+				else if (Operand == "KEY_DELETE")			{ Result = BLEServer.Write(0xD4)									;}
+				else if (Operand == "KEY_PAGE_UP")			{ Result = BLEServer.Write(0xD3)									;}
+				else if (Operand == "KEY_PAGE_DOWN")		{ Result = BLEServer.Write(0xD6)									;}
+				else if (Operand == "KEY_HOME")				{ Result = BLEServer.Write(0xD2)									;}
+				else if (Operand == "KEY_END")				{ Result = BLEServer.Write(0xD5)									;}
+				else if (Operand == "KEY_CAPS_LOCK")		{ Result = BLEServer.Write(0xC1)									;}
+				else if (Operand == "KEY_ENTER")			{ Result = BLEServer.Write(0x28)									;}
+				else {
+					Result = BLEServer.Write(int(StringOperand[0]));
+				}
 
-				BLEServer.Write(int(StringOperand[0]));
+				Log::Add((Result > 0) ? Log::Events::Commands::BLEExecuted : Log::Events::Commands::BLEFailed);
+
 				return true;
 			}
 
