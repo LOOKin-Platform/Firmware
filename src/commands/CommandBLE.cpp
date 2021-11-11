@@ -82,14 +82,6 @@ class CommandBLE_t : public Command_t {
 		*/
 
 		// AC Codeset callbacks
-
-		static void ACReadStarted(const char *IP) {
-			RMT::TXClear();
-
-			IRACFrequency = 38000;
-			ACCode.clear();
-			ACReadPart = "";
-		}
 };
 
 #endif

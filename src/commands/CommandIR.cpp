@@ -8,6 +8,7 @@
 
 #include <RMT.h>
 #include "Sensors.h"
+#include "CommandBLE.cpp"
 
 #include "Data.h"
 
@@ -534,8 +535,8 @@ class CommandIR_t : public Command_t {
 						else if (CommandIRTXDataMap[HashID].NVSItem.size() > 4 && (CommandIRTXDataMap[HashID].NVSItem.rfind(Settings.CommandsConfig.BLE.DataPrefix, 0) == 0)) {
 					        CommandBLE_t* BLECommand = (CommandBLE_t *)Command_t::GetCommandByName("BLE");
 
-					        if (BLECommand != null) {
-					        	BLECommand->Execute(0x01, CommandIRTXDataMap[HashID].NVSItem.substr(4));
+					        if (BLECommand != nullptr) {
+					        	BLECommand->Execute(0x01, CommandIRTXDataMap[HashID].NVSItem.substr(4).c_str());
 					        }
 						}
 						else
