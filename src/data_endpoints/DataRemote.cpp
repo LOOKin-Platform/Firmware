@@ -405,6 +405,19 @@ class DataRemote_t : public DataEndpoint_t {
 			NoFreeSpace 		= 0x91
 		};
 
+		enum SignalType {
+			IR					= 0x00,
+			BLE					= 0x01,
+			Empty				= 0xFF
+		};
+
+		struct DataSignal {
+			SignalType	Type 			{ Empty };
+			IRLib		IRSignal		{ };
+			string		BLESignal		{ };
+		};
+
+
 		const string ResponseItemDidntExist 	= "{\"success\" : \"false\", \"Message\" : \"Item didn't exists\" }";
 		const string ResponseItemAlreadyExist 	= "{\"success\" : \"false\", \"Message\" : \"Item already exists\" }";
 
@@ -590,8 +603,9 @@ class DataRemote_t : public DataEndpoint_t {
 
 					vector<pair<uint8_t,uint32_t>> FunctionsCache = vector<pair<uint8_t,uint32_t>>();
 
-					for (IRLib &Signal : LoadAllFunctionSignals(DeviceItem.UUID, FunctionItem.first, DeviceItem))
-						FunctionsCache.push_back(make_pair(Signal.Protocol, Signal.Uint32Data));
+					for (DataSignal &Signal : LoadAllFunctionSignals(DeviceItem.UUID, FunctionItem.first, DeviceItem))
+						if (Signal.Type == IR)
+							FunctionsCache.push_back(make_pair(Signal.IRSignal.Protocol, Signal.IRSignal.Uint32Data));
 
 					CacheItem.Functions[FunctionID] = make_pair(FunctionType, FunctionsCache);
 				}
@@ -766,16 +780,25 @@ class DataRemote_t : public DataEndpoint_t {
 
 					vector<map<string,string>> OutputItems = vector<map<string,string>>();
 
-					for (IRLib Signal : LoadAllFunctionSignals(UUID, Function, DeviceItem)) {
-						if (Signal.Protocol != 0xFF)
+					for (DataSignal Signal : LoadAllFunctionSignals(UUID, Function, DeviceItem)) {
+						if (Signal.Type == IR) {
+							if (Signal.IRSignal.Protocol != 0xFF)
+								OutputItems.push_back({
+									{ "Protocol"	, Converter::ToHexString(Signal.IRSignal.Protocol,2) 	},
+									{ "Operand"		, Converter::ToHexString(Signal.IRSignal.Uint32Data,8)	}
+								});
+							else
+								OutputItems.push_back({
+									{ "ProntoHEX"	, Signal.IRSignal.GetProntoHex(false) 	}
+								});
+						}
+						else if (Signal.Type == BLE)
+						{
 							OutputItems.push_back({
-								{ "Protocol"	, Converter::ToHexString(Signal.Protocol,2) 	},
-								{ "Operand"		, Converter::ToHexString(Signal.Uint32Data,8)	}
+								{ "ble_kbd"	, Signal.BLESignal 	}
 							});
-						else
-							OutputItems.push_back({
-								{ "ProntoHEX"	, Signal.GetProntoHex(false) 	}
-							});
+						}
+
 					}
 
 					JSONObject.SetObjectsArray("Signals", OutputItems);
@@ -1051,7 +1074,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 					pair<uint8_t, uint32_t> IRDetails = make_pair(0,0);
 
-					if (!SaveFunction(UUID, Function, SerializeIRSignal(ChildObject, IRDetails), Index++, DeviceItem.Type))
+					if (!SaveFunction(UUID, Function, SerializeSignal(ChildObject, IRDetails), Index++, DeviceItem.Type))
 					{
 						Result.SetFail();
 						return;
@@ -1087,11 +1110,9 @@ class DataRemote_t : public DataEndpoint_t {
 			return map<string,string>();
 		}
 
-		pair<bool,IRLib> LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
+		DataSignal LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice()) {
 			UUID 	= Converter::ToUpper(UUID);
 			Function= Converter::ToLower(Function);
-
-			IRLib Result;
 
 			if (!DeviceItem.IsCorrect())
 				DeviceItem = LoadDevice(UUID);
@@ -1100,37 +1121,37 @@ class DataRemote_t : public DataEndpoint_t {
 				string KeyString = UUID + "_" + Function;
 
 				if (DeviceItem.Functions[Function] == "single")
-					return DeserializeIRSignal(GetItem(KeyString));
+					return DeserializeSignal(GetItem(KeyString));
 				else {
 					if (Index > 0)
 						KeyString += "_" + Converter::ToString(Index);
 
-					return DeserializeIRSignal(GetItem(KeyString));
+					return DeserializeSignal(GetItem(KeyString));
 				}
 			}
 
-			return make_pair(false, Result);
+			return DataSignal();
 		}
 
-		vector<IRLib> LoadAllFunctionSignals(string UUID, string Function, IRDevice DeviceItem = IRDevice()) {
+		vector<DataSignal> LoadAllFunctionSignals(string UUID, string Function, IRDevice DeviceItem = IRDevice()) {
 			UUID 		= Converter::ToUpper(UUID);
 			Function	= Converter::ToLower(Function);
 
 			if (!DeviceItem.IsCorrect())
 				DeviceItem = LoadDevice(UUID);
 
-			vector<IRLib> Result = vector<IRLib>();
+			vector<DataSignal> Result = vector<DataSignal>();
 
 			if (DeviceItem.Functions.count(Function) > 0) {
 				if (DeviceItem.Functions[Function] == "single")
-					Result.push_back(LoadFunctionByIndex(UUID, Function, 0, DeviceItem).second);
+					Result.push_back(LoadFunctionByIndex(UUID, Function, 0, DeviceItem));
 				else {
 					string KeyString = UUID + "_" + Function;
 
 					for (int i = 0; i < Settings.Data.MaxIRItemSignals; i++) {
-						pair<bool, IRLib> CurrentSignal = LoadFunctionByIndex(UUID, Function, i, DeviceItem);
+						DataSignal CurrentSignal = LoadFunctionByIndex(UUID, Function, i, DeviceItem);
 
-						if (CurrentSignal.first) Result.push_back(CurrentSignal.second);
+						if (CurrentSignal.Type != Empty) Result.push_back(CurrentSignal);
 					}
 				}
 			}
@@ -1206,7 +1227,8 @@ class DataRemote_t : public DataEndpoint_t {
 
 						if (Signal.Protocol == FunctionSignal.first) { // protocol identical
 							if (Signal.Protocol == 0xFF) { // raw signal
-								if (LoadFunctionByIndex(CacheItem.DeviceID, DevicesHelper.FunctionNameByID(FunctionID), i).second.CompareIsIdenticalWith(Signal))
+								DataSignal FunctionSignal = LoadFunctionByIndex(CacheItem.DeviceID, DevicesHelper.FunctionNameByID(FunctionID), i);
+								if (FunctionSignal.Type == IR && FunctionSignal.IRSignal.CompareIsIdenticalWith(Signal))
 								{
 									StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
 									break;
@@ -1512,7 +1534,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return SaveItem(ValueName, Item);
 			}
 
-			string SerializeIRSignal(JSON &JSONObject, pair<uint8_t,uint32_t> &IRDetails) {
+			string SerializeSignal(JSON &JSONObject, pair<uint8_t,uint32_t> &IRDetails) {
 				IRLib Signal;
 
 				if (JSONObject.IsItemExists("raw")) { // сигнал передан в виде Raw
@@ -1532,6 +1554,9 @@ class DataRemote_t : public DataEndpoint_t {
 					if (JSONObject.IsItemExists("operand"))
 						Signal.Uint32Data = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("operand"));
 				}
+				else if (JSONObject.IsItemExists("ble_kbd")){ // сигнал передан в виде BLE клавиши
+					return Settings.CommandsConfig.BLE.DataPrefix + JSONObject.GetItem("ble_kbd");
+				}
 
 				if (Signal.Protocol != 0xFF) {
 					IRDetails 	= make_pair(Signal.Protocol, Signal.Uint32Data);
@@ -1547,21 +1572,36 @@ class DataRemote_t : public DataEndpoint_t {
 				}
 			}
 
-			pair<bool, IRLib> DeserializeIRSignal(string Item) {
+			DataSignal DeserializeSignal(string Item) {
+				DataSignal Result;
+
+				if (Item.size() > 4) {
+					std::size_t Pos = Item.find(Settings.CommandsConfig.BLE.DataPrefix);
+
+					if (Pos == 0)
+					{
+						Result.Type = BLE;
+						Result.BLESignal = Item.substr(4);
+						return Result;
+					}
+				}
+
 				if (Item.size() < 10)
-					return make_pair(false, IRLib());
+					return Result;
 
 				if (Item.size() == 10)
 				{
-					IRLib Result;
+					Result.Type = IR;
+					Result.IRSignal.Protocol 	= Converter::ToUint8(Item.substr(0, 2));
+					Result.IRSignal.Uint32Data	= Converter::UintFromHexString<uint32_t>(Item.substr(2));
 
-					Result.Protocol 	= Converter::ToUint8(Item.substr(0, 2));
-					Result.Uint32Data	= Converter::UintFromHexString<uint32_t>(Item.substr(2));
-
-					return make_pair(true, Result);
+					return Result;
 				}
 
-				return make_pair(true, IRLib(Item));
+				Result.Type = IR;
+				Result.IRSignal = IRLib(Item);
+
+				return Result;
 			}
 
 			void DebugIRDevicesCache() {

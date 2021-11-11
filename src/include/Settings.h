@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 40, 121);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 40, 142);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -340,6 +340,10 @@ class Settings_t {
 			struct {
 				const uint64_t				ProntoHexBlockedDelayU = 3*1000000;
 			} IR;
+
+			struct {
+				const string				DataPrefix		= "BLE:";
+			} BLE;
 
 			struct {
 				const uint8_t				QueueSize		= 50; 		// Размер очереди сенсора

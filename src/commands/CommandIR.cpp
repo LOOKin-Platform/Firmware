@@ -100,7 +100,7 @@ class CommandIR_t : public Command_t {
 			Memory.Commit();
 
 			if (CommandIRTXHandle == NULL)
-				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, 6);
+				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, 7);
 		}
 
 		LastSignal_t LastSignal;
@@ -295,8 +295,6 @@ class CommandIR_t : public Command_t {
 				if (Settings.eFuse.Type != Settings.Devices.Remote)
 					return false;
 
-				vector<IRLib> SignalsToSend = vector<IRLib>();
-
 				string  SavedRemoteOperand(StringOperand,8);
 
 				string  UUID 		= SavedRemoteOperand.substr(0, 4);
@@ -312,29 +310,31 @@ class CommandIR_t : public Command_t {
 				if (FunctionType == "sequence")
 					SignalID = 0xFF;
 
-				if (SignalID != 0xFF) {
-					pair<bool,IRLib> SignalToAdd = ((DataRemote_t*)Data)->LoadFunctionByIndex(UUID, Function, SignalID);
+				if (SignalID != 0xFF)
+				{
+					DataRemote_t::DataSignal SignalToAdd = ((DataRemote_t*)Data)->LoadFunctionByIndex(UUID, Function, SignalID);
 
-					if (SignalToAdd.first)
-						SignalsToSend.push_back(SignalToAdd.second);
+					if (SignalToAdd.Type == DataRemote_t::SignalType::IR) {
+						bool Result = TXSendHelper(SignalToAdd.IRSignal, Operand, Misc);
+						if (!Result) return false;
+					}
+					else if (SignalToAdd.Type == DataRemote_t::SignalType::BLE)
+					{
+						BLESendToQueue(SignalToAdd.BLESignal);
+					}
 				}
 				else
-					SignalsToSend = ((DataRemote_t*)Data)->LoadAllFunctionSignals(UUID, Function);
-
-			    for(auto it = SignalsToSend.begin(); it != SignalsToSend.end();) {
-					LastSignal.Protocol = it->Protocol;
-					LastSignal.Data		= it->Uint32Data;
-					LastSignal.Misc		= it->MiscData;
-
-					if (Operand == 0x0 && Misc == 0x0)
-						return false;
-
-					vector<int32_t> DataToSend = it->GetRawDataForSending();
-
-					TXSend(DataToSend, it->GetProtocolFrequency());
-
-			    	it = SignalsToSend.erase(it);
-			    }
+				{
+					for (DataRemote_t::DataSignal SignalIterator : ((DataRemote_t*)Data)->LoadAllFunctionSignals(UUID, Function))
+						if (SignalIterator.Type == DataRemote_t::SignalType::IR) {
+							bool Result = TXSendHelper(SignalIterator.IRSignal, Operand, Misc);
+							if (!Result) return false;
+						}
+						else if (SignalIterator.Type == DataRemote_t::SignalType::BLE)
+						{
+							BLESendToQueue(SignalIterator.BLESignal);
+						}
+				}
 
 				((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, SignalID);
 
@@ -399,6 +399,34 @@ class CommandIR_t : public Command_t {
 			ProntoHexBlockedBuffer = "";
 		}
 
+		bool TXSendHelper(IRLib &Signal,uint32_t Operand, uint16_t Misc)
+		{
+			LastSignal.Protocol = Signal.Protocol;
+			LastSignal.Data		= Signal.Uint32Data;
+			LastSignal.Misc		= Signal.MiscData;
+
+			if (Operand == 0x0 && Misc == 0x0)
+				return false;
+
+			vector<int32_t> SignalVector = Signal.GetRawDataForSending();
+
+			TXSend(SignalVector, Signal.GetProtocolFrequency());
+			return true;
+		}
+
+		static void BLESendToQueue(string Signal) {
+			uint32_t HashID = esp_random();
+
+			CommandIRTXQueueData BLESignal;
+			BLESignal.NVSItem		= Settings.CommandsConfig.BLE.DataPrefix + Signal;
+			BLESignal.Frequency 	= 0;
+
+			CommandIRTXDataMap[HashID] = BLESignal;
+
+			if (SendToCommandIRQueue(HashID))
+				ESP_LOGD("RMT", "Added to queue BLE Signal: %s", Signal.c_str());
+		}
+
 		static void TXSendAddPause(uint16_t PauseLength = 500) {
 			uint32_t HashID = esp_random();
 
@@ -406,19 +434,10 @@ class CommandIR_t : public Command_t {
 			TXPause.NVSItem		= CommandIRTXPause;
 			TXPause.Frequency 	= PauseLength;
 
-		    bool IsQueueFull = false;
-
 			CommandIRTXDataMap[HashID] = TXPause;
 
-		    if (Settings.DeviceGeneration < 2)
-		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 8) ? false : true;
-		    else
-		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 16) ? false : true;
-
-		    if (!IsQueueFull) {
-				ESP_LOGD("RMT", "Added pause to queue with length %d", PauseLength);
-		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false);
-		    }
+			if (SendToCommandIRQueue(HashID))
+				ESP_LOGD("RMT", "Added to queue PAUSE with length: %d", PauseLength);
 		}
 
 		static void TXSend(vector<int32_t> &TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
@@ -451,17 +470,26 @@ class CommandIR_t : public Command_t {
 
 			CommandIRTXDataMap[HashID] = TXData;
 
+			if (SendToCommandIRQueue(HashID))
+				ESP_LOGD("RMT", "Added to queue ID %s", HashIDStr.c_str());
+		}
+
+		static bool SendToCommandIRQueue(uint32_t &HashID) {
 		    bool IsQueueFull = false;
 
 		    if (Settings.DeviceGeneration < 2)
 		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 8) ? false : true;
 		    else
-		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 16) ? false : true;
+		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 32) ? false : true;
+
+		    //vTaskPrioritySet(xPriorityTaskHandle, tskIDLE_PRIORITY + 1);
 
 		    if (!IsQueueFull) {
-				ESP_LOGD("RMT", "Added to queue ID %s", HashIDStr.c_str());
 		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false);
+		    	return true;
 		    }
+
+		    return false;
 		}
 
 		static void CommandIRTXTask(void *TaskData) {
@@ -490,7 +518,9 @@ class CommandIR_t : public Command_t {
 
 					static int32_t *ItemsToSend;
 
-					while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 500)) {
+					NVS *Memory = new NVS(CommandIRArea);
+
+					while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 0)) {
 						if (CommandIRTXDataMap.count(HashID) == 0)
 							continue;
 
@@ -501,10 +531,15 @@ class CommandIR_t : public Command_t {
 							ESP_LOGE("RMT TX TASK", "Pause for: %d ms", CommandIRTXDataMap[HashID].Frequency);
 							FreeRTOS::Sleep(CommandIRTXDataMap[HashID].Frequency);
 						}
+						else if (CommandIRTXDataMap[HashID].NVSItem.size() > 4 && (CommandIRTXDataMap[HashID].NVSItem.rfind(Settings.CommandsConfig.BLE.DataPrefix, 0) == 0)) {
+					        CommandBLE_t* BLECommand = (CommandBLE_t *)Command_t::GetCommandByName("BLE");
+
+					        if (BLECommand != null) {
+					        	BLECommand->Execute(0x01, CommandIRTXDataMap[HashID].NVSItem.substr(4));
+					        }
+						}
 						else
 						{
-							NVS *Memory = new NVS(CommandIRArea);
-
 							pair<void*, size_t> Item = Memory->GetBlob(CommandIRTXDataMap[HashID].NVSItem);
 
 							if (Item.second == 0)
@@ -530,13 +565,15 @@ class CommandIR_t : public Command_t {
 							Log::Add(Log::Events::Commands::IRExecuted);
 
 							Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
-							Memory->Commit();
-							delete (Memory);
 						}
 
+						ESP_LOGD("RMT", "Removed from queue ID %s", CommandIRTXDataMap[HashID].NVSItem.c_str());
 			    		CommandIRTXDataMap.erase(HashID);
 			    		HashID = 0;
 					}
+
+					Memory->Commit();
+					delete (Memory);
 
 					if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
 						RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
