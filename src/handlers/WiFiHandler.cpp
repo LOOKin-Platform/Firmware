@@ -62,7 +62,8 @@ void WiFiUptimeHandler::Start() {
 
 	::esp_timer_create(&TimerArgs, &RemoteControlStartTimer);
 
-	if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
+	if (!WiFi.IsRunning()) {
+	//if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
 		WiFiStartedTime = 0;
 		Network.KeepWiFiTimer = 0;
 		BatteryUptime = Settings.WiFi.BatteryUptime;
@@ -76,12 +77,10 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
 
-
 		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_AP_STR && ClientModeNextTime > 0)
 		{
 			IsConnectedBefore = false;
 			ClientModeNextTime = 0;
-
 
 			bool APClientsFound = false;
 			if (API::LastAPQueryTime > 0 && ((Time::Unixtime() - API::LastAPQueryTime) < 300))
