@@ -100,7 +100,7 @@ class DataDeviceItem_t {
 class DataDeviceTV_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceTV_t() { DeviceTypeID = 0x01; }
-		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0C, 0x0D}; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0C, 0x0D, 0x0E, 0x0F }; }
 
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
 			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
@@ -137,7 +137,7 @@ class DataDeviceTV_t  : public DataDeviceItem_t {
 class DataDeviceMedia_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceMedia_t() { DeviceTypeID = 0x02; }
-		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x05, 0x06, 0x07}; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x05, 0x06, 0x07, 0x0E, 0x0F }; }
 
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
 			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);
@@ -377,13 +377,15 @@ class DataDevice_t {
 
 		map<string, uint8_t> GlobalFunctions =
 		{
-			{ "power"	, 0x01 }, { "poweron"	, 0x02 }, { "poweroff"	, 0x03 	},
-			{ "mode"	, 0x04 },
-			{ "mute"	, 0x05 }, { "volup"		, 0x06 }, { "voldown"	, 0x07 	},
-			{ "chup"	, 0x08 }, { "chdown"	, 0x09 },
-			{ "swing"	, 0x0A }, { "speed"		, 0x0B },
-			{ "cursor"	, 0x0C },
-			{ "menu"	, 0x0D },
+			{ "power"		, 0x01 }, { "poweron"	, 0x02 }, { "poweroff"	, 0x03 	},
+			{ "mode"		, 0x04 },
+			{ "mute"		, 0x05 }, { "volup"		, 0x06 }, { "voldown"	, 0x07 	},
+			{ "chup"		, 0x08 }, { "chdown"	, 0x09 },
+			{ "swing"		, 0x0A }, { "speed"		, 0x0B },
+			{ "cursor"		, 0x0C },
+			{ "menu"		, 0x0D },
+			{ "back"		, 0x0E },
+			{ "play"		, 0x0F },
 			// virtual AC functions
 			{ "acmode"	, 0xE0 }, { "actemp", 0xE1 }, { "acfan", 0xE2 }, { "acswing", 0xE3 }
 		};

@@ -223,7 +223,7 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
 
 bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
 	string UUID = Converter::ToHexString(AccessoryID, 4);
-	ESP_LOGE("Cursor for UUID", "%s", UUID.c_str());
+	ESP_LOGE("Cursor for UUID", "%s Value: %d", UUID.c_str(), Value);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
@@ -260,6 +260,26 @@ bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
         		return true;
         	}
         }
+
+        if (Value == 11) {
+        	if (Functions.count("play") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("play"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+
+        if (Value == 9) {
+        	if (Functions.count("back") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("back"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+
+
     }
 
     return false;
