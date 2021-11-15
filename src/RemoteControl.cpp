@@ -175,6 +175,10 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
 			string Topic(event->topic, event->topic_len);
 
+			if (event->topic_len > 8)
+				if (Topic.find("LOOK.in") == 0)
+					Topic = "LOOKin" + Topic.substr(8);
+
 			if (Topic == DeviceTopic + "/UDP")
 			{
 				if (string(event->data, event->data_len) == WebServer_t::UDPDiscoverBody())

@@ -484,8 +484,9 @@ void WebServer_t::UDPListenerTask(void *data) {
 
     			// answer to the Discover query
 
-    			if (Datagram.find("LOOK.in") == 0 && Datagram.size() > 8)
-    				Datagram = Settings.WiFi.UDPPacketPrefix + Datagram.substr(8);
+    			if (Datagram.size() > 8)
+    				if (Datagram.find("LOOK.in") == 0)
+    					Datagram = Settings.WiFi.UDPPacketPrefix + Datagram.substr(8);
 
     			if (Datagram == WebServer_t::UDPDiscoverBody() || Datagram == WebServer_t::UDPDiscoverBody(Device.IDToString())) {
     				string Answer = WebServer_t::UDPAliveBody();
