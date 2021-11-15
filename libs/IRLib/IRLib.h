@@ -30,6 +30,7 @@ class IRLib {
 
 		IRLib(const char *);
 		IRLib(string &ProntoHex);
+		IRLib(int32_t *);
 		IRLib(vector<string> 	Raw);
 		IRLib(vector<int32_t> 	Raw	= vector<int32_t>());
 		void 			LoadFromRawString(string &);
@@ -40,7 +41,7 @@ class IRLib {
 		string			GetRawSignal();
 		string			GetSignalCRC();
 
-		vector<int32_t>	GetRawDataForSending();
+		vector<int32_t> GetRawDataForSending();
 		vector<int32_t>	GetRawRepeatSignalForSending();
 		uint16_t 		GetProtocolFrequency();
 

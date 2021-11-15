@@ -36,8 +36,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 
 	if (Query.GetURLPartsCount() == 1 && Query.CheckURLPart("summary", 0))
 	{
-		ESP_LOGE("SUMMARY", ">>");
-
 		Response.Body = "{\"Device\":" + Device.RootInfo().ToString() +  ",";
 		Response.Body += "\"Network\":" + Network.RootInfo().ToString() + ",";
 		Response.Body += "\"Automation\":" + Automation.RootInfo().ToString() + ",";
@@ -76,8 +74,6 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 
 		Response.ResponseCode	= WebServer_t::Response::CODE::OK;
 		//Response.ContentType	= WebServer_t::Response::TYPE::JSON;
-
-		ESP_LOGE("SUMMARY", "<<");
 
 		return;
 	}

@@ -45,7 +45,7 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 							IRChannelCallbackBody CallbackBody, IRChannelCallbackEnd CallbackEnd) {
 	Init();
 
-	rmt_config_t config;
+	rmt_config_t config					= RMT_DEFAULT_CONFIG_RX(Pin, Channel);
 	config.rmt_mode                  	= RMT_MODE_RX;
 	config.channel                   	= Channel;
 	config.gpio_num                  	= Pin;
@@ -85,6 +85,9 @@ void RMT::ReceiveStart(rmt_channel_t Channel) {
 		}
 
 	RMT::ChannelsMap[Channel].Handle = FreeRTOS::StartTask(RXTask, "RXReadTask" + static_cast<int>(Channel), (void *)(uint32_t)static_cast<int>(Channel), 4096);
+
+	if (RMT::ChannelsMap[Channel].Handle == NULL)
+		ESP_LOGE("RMT::ReceiveStart", "NULL HANDLE");
 }
 
 
@@ -98,7 +101,7 @@ void RMT::ReceiveStop(rmt_channel_t Channel) {
 	ESP_ERROR_CHECK(::rmt_rx_stop(Channel));
 
 	if (RMT::ChannelsMap.count(Channel) > 0)
-		if (RMT::ChannelsMap[Channel].Handle == 0) {
+		if (RMT::ChannelsMap[Channel].Handle == 0 || RMT::ChannelsMap[Channel].Handle == NULL) {
 			ESP_LOGE(tag,"Channel task doesn't exist");
 			return;
 		}
@@ -190,18 +193,33 @@ void RMT::RXTask(void *TaskData) {
 void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency) {
 	Init();
 
-	rmt_config_t config;
-	config.rmt_mode                  = RMT_MODE_TX;
-	config.channel                   = Channel;
-	config.gpio_num                  = GPIO[0]; //GPIO_NUM_4
-	config.mem_block_num             = 6;
-	config.clk_div                   = 80;
-	config.tx_config.loop_en         = false;
-	config.tx_config.carrier_en      = true;
-	config.tx_config.idle_output_en  = true;
-	config.tx_config.idle_level      = (rmt_idle_level_t)0;
-	config.tx_config.carrier_freq_hz = Frequency;
-	config.tx_config.carrier_level   = (rmt_carrier_level_t)1;
+	if (GPIO.size() == 0)
+		return;
+
+	bool IsAllEmpty = true;
+
+	for(auto& GPIOItem : GPIO)
+		if (GPIOItem != GPIO_NUM_0)
+		{
+			IsAllEmpty = false;
+			break;
+		}
+
+	if (IsAllEmpty)
+		return;
+
+	rmt_config_t config					= RMT_DEFAULT_CONFIG_TX(GPIO[0], Channel);
+	config.rmt_mode                  	= RMT_MODE_TX;
+	config.channel                   	= Channel;
+	config.gpio_num                  	= GPIO[0]; //GPIO_NUM_4
+	config.mem_block_num             	= 6;
+	config.clk_div                   	= 80;
+	config.tx_config.loop_en         	= false;
+	config.tx_config.carrier_en      	= true;
+	config.tx_config.idle_output_en  	= true;
+	config.tx_config.idle_level      	= (rmt_idle_level_t)0;
+	config.tx_config.carrier_freq_hz 	= Frequency;
+	config.tx_config.carrier_level   	= (rmt_carrier_level_t)1;
 	config.tx_config.carrier_duty_percent = 50;
 
 	ESP_ERROR_CHECK(rmt_config(&config));
@@ -330,24 +348,9 @@ int16_t RMT::TXItemsCount() {
  *
  */
 
-void IRAM_ATTR RMT::TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency) {
-	if (GPIO.size() == 0)
-		return;
 
-	bool IsAllEmpty = true;
 
-	for(auto& GPIOItem : GPIO)
-		if (GPIOItem != GPIO_NUM_0)
-		{
-			IsAllEmpty = false;
-			break;
-		}
-
-	if (IsAllEmpty)
-		return;
-
-	SetTXChannel(GPIO, Channel, Frequency);
-
+void IRAM_ATTR RMT::TXSend(rmt_channel_t Channel) {
 	if (OutputItems == 0) return;
 
 	if (OutputItems[OutputItemsSize - 1].duration0 < 30000 || OutputItems[OutputItemsSize - 1].duration1 < 30000)
@@ -371,7 +374,6 @@ void IRAM_ATTR RMT::TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint1
 	//::rmt_tx_start(Channel, true);
 	//::rmt_wait_tx_done(Channel, portMAX_DELAY);
 
-	UnsetTXChannel(Channel);
 	TXClear();
 }
 

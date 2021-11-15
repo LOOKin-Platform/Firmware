@@ -27,8 +27,10 @@ static string 					ACReadPart				= "";
 static string 					ProntoHexBlockedBuffer 	= "";
 static esp_timer_handle_t 		ProntoHexBlockedTimer 	= NULL;
 
-static QueueHandle_t 			CommandIRTXQueue		= FreeRTOS::Queue::Create(16, sizeof( uint32_t ));
+static QueueHandle_t 			CommandIRTXQueue;
 static TaskHandle_t 			CommandIRTXHandle		= NULL;
+
+static uint64_t					CommandsIRLastSignalTime= 0;
 
 struct CommandIRTXQueueData {
 	string      		NVSItem;
@@ -40,12 +42,9 @@ struct CommandIRTXQueueData {
 static map<uint32_t, CommandIRTXQueueData>
 								CommandIRTXDataMap		= map<uint32_t, CommandIRTXQueueData>();
 
+static string			CommandIRLastSignalCRC = "";
 
-static vector<int32_t> ACCode = vector<int32_t>();
-
-
-//static FreeRTOS::Semaphore 	IsIRSignalReadyToSend 	= FreeRTOS::Semaphore("IsIRSignalReadyToSend");
-
+static vector<int32_t> 	ACCode = vector<int32_t>();
 
 class CommandIR_t : public Command_t {
 	public:
@@ -100,8 +99,12 @@ class CommandIR_t : public Command_t {
 			Memory.EraseStartedWith(CommandIRTXQueuePrefix);
 			Memory.Commit();
 
-			if (CommandIRTXHandle == NULL)
-				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, 7);
+			CommandIRTXQueue = FreeRTOS::Queue::Create((uint16_t)Settings.CommandsConfig.IR.SendTaskQueueCount2Gen, sizeof( uint32_t ));
+
+			if (CommandIRTXHandle == NULL) {
+				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, Settings.CommandsConfig.IR.SendTaskPriority);
+				//vTaskStartScheduler();
+			}
 		}
 
 		LastSignal_t LastSignal;
@@ -262,19 +265,18 @@ class CommandIR_t : public Command_t {
 				if (::strcmp(StringOperand, "0") == 0 || InOperation)
 					return false;
 
-				IRLib *IRSignal = new IRLib(StringOperand);
+				IRLib IRSignal(StringOperand);
 
-				LastSignal.Protocol	= IRSignal->Protocol;
-				LastSignal.Data 	= IRSignal->Uint32Data;
-				LastSignal.Misc		= IRSignal->MiscData;
+				LastSignal.Protocol	= IRSignal.Protocol;
+				LastSignal.Data 	= IRSignal.Uint32Data;
+				LastSignal.Misc		= IRSignal.MiscData;
 
+				vector<int32_t> DataToSend = IRSignal.GetRawDataForSending();
 
-				vector<int32_t> DataToSend = IRSignal->GetRawDataForSending();
-				TXSend(DataToSend, IRSignal->Frequency, false);
-				TriggerStateChange(*IRSignal);
+				bool TXSendResult = TXSend(DataToSend, IRSignal.Frequency, false);
+				TriggerStateChange(IRSignal);
 
-				delete IRSignal;
-				return true;
+				return TXSendResult;
 			}
 
 			if (EventCode == 0xF1) { // Blocked ProntoHEX
@@ -348,6 +350,8 @@ class CommandIR_t : public Command_t {
 
 				uint16_t Frequency = 38000;
 
+				ACCode.clear();
+
 				char *FrequencyDelimeterPointer = strstr(StringOperand, ";");
 				if (FrequencyDelimeterPointer != NULL) {
 					size_t FrequencyDelimeterPos =  FrequencyDelimeterPointer - StringOperand;
@@ -357,8 +361,6 @@ class CommandIR_t : public Command_t {
 
 				if (::strstr(StringOperand," ") == NULL && ::strstr(StringOperand,"%20") == NULL)
 					return false;
-
-				IRLib *IRSignal = new IRLib();
 
 				string 		SignalItem 	= "";
 				char		SignalChar[1];
@@ -371,25 +373,29 @@ class CommandIR_t : public Command_t {
 					{
 						if (SignalCharStr == string("%")) i+=2;
 
-						IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
+						ACCode.push_back(Converter::ToInt32(SignalItem));
 						SignalItem = "";
 					}
 					else
 						SignalItem += SignalCharStr;
 				}
-				IRSignal->RawData.push_back(Converter::ToInt32(SignalItem));
-				IRSignal->ExternFillPostOperations();
 
-				LastSignal.Protocol = IRSignal->Protocol;
-				LastSignal.Data 	= IRSignal->Uint32Data;
-				LastSignal.Misc		= IRSignal->MiscData;
+				ACCode.push_back(Converter::ToInt32(SignalItem));
 
-				vector<int32_t> DataToSend = IRSignal->GetRawDataForSending();
+				IRLib IRSignal(ACCode);
 
-				TXSend(DataToSend, Frequency);
-				TriggerStateChange(*IRSignal);
+//				IRSignal.RawData.push_back(Converter::ToInt32(SignalItem));
+//				IRSignal.ExternFillPostOperations();
 
-				delete IRSignal;
+				LastSignal.Protocol = IRSignal.Protocol;
+				LastSignal.Data 	= IRSignal.Uint32Data;
+				LastSignal.Misc		= IRSignal.MiscData;
+
+				vector<int32_t> SignalToSend = IRSignal.GetRawDataForSending();
+
+				TXSend(SignalToSend, Frequency);
+				TriggerStateChange(IRSignal);
+
 				return true;
 			}
 
@@ -441,9 +447,9 @@ class CommandIR_t : public Command_t {
 				ESP_LOGD("RMT", "Added to queue PAUSE with length: %d", PauseLength);
 		}
 
-		static void TXSend(vector<int32_t> &TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
+		static bool TXSend(vector<int32_t> &TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
 			if (TXItemData.empty())
-				return;
+				return false;
 
 			uint32_t HashID = esp_random();
 			string HashIDStr = CommandIRTXQueuePrefix + Converter::ToLower(Converter::ToHexString(HashID,8));
@@ -456,14 +462,14 @@ class CommandIR_t : public Command_t {
 			*/
 
 			if (HashIDStr.size() > 15)
-				return;
+				return false;
 
 			NVS *Memory = new NVS(CommandIRArea);
 			Memory->SetBlob(HashIDStr, (void*)TXItemData.data(), TXItemData.size()*4);// static_cast<void*>(QueueTXItem.data()), 0);
 			Memory->Commit();
 			delete Memory;
 
-			TXItemData.clear();
+			//TXItemData.clear();
 
 			CommandIRTXQueueData TXData;
 			TXData.NVSItem		= HashIDStr;
@@ -471,22 +477,31 @@ class CommandIR_t : public Command_t {
 
 			CommandIRTXDataMap[HashID] = TXData;
 
-			if (SendToCommandIRQueue(HashID))
+			bool SendToResult = SendToCommandIRQueue(HashID);
+
+			if (SendToResult)
 				ESP_LOGD("RMT", "Added to queue ID %s", HashIDStr.c_str());
+
+			return SendToResult;
 		}
 
 		static bool SendToCommandIRQueue(uint32_t &HashID) {
 		    bool IsQueueFull = false;
 
-		    if (Settings.DeviceGeneration < 2)
-		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 8) ? false : true;
-		    else
-		    	IsQueueFull = (FreeRTOS::Queue::Count(CommandIRTXQueue) < 32) ? false : true;
+		    uint8_t QueueSize = (Settings.DeviceGeneration < 2) ? Settings.CommandsConfig.IR.SendTaskQueueCount1Gen : Settings.CommandsConfig.IR.SendTaskQueueCount2Gen;
+		    IsQueueFull = (QueueSize == FreeRTOS::Queue::Count(CommandIRTXQueue)) ? true : false;
 
-		    //vTaskPrioritySet(xPriorityTaskHandle, tskIDLE_PRIORITY + 1);
+			ESP_LOGE("Count from root", "%d IsFull? %s", FreeRTOS::Queue::Count(CommandIRTXQueue), (IsQueueFull) ? "Yes" : "No");
+
+			//if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 5)
+			//	FreeRTOS::SetTaskPriority(CommandIRTXHandle, Settings.CommandsConfig.IR.SendTaskPeakPriority);
 
 		    if (!IsQueueFull) {
 		    	FreeRTOS::Queue::Send(CommandIRTXQueue, &HashID, false);
+
+		    	if (CommandIRTXHandle != NULL)
+		    		xTaskNotify(CommandIRTXHandle, (uint32_t)1, eSetValueWithOverwrite);
+
 		    	return true;
 		    }
 
@@ -495,98 +510,166 @@ class CommandIR_t : public Command_t {
 
 		static void CommandIRTXTask(void *TaskData) {
 			static uint32_t HashID = 0;
+			static uint32_t	LastFrequency = 0;
+
+			const uint16_t 	TicksToWaitFromCommandQueue = 200/portTICK_PERIOD_MS;
+			const uint16_t 	TicksToWaitFromSensorQueue 	= 100/portTICK_PERIOD_MS;
+
+        	if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
+    			RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
+	        	ESP_ERROR_CHECK(::rmt_rx_start(RMT_CHANNEL_2 , 1));
+        	}
+
+        	RingbufHandle_t rb = NULL;
+            rmt_get_ringbuf_handle(RMT_CHANNEL_2, &rb);
 
 			while (1)
 			{
-				if (FreeRTOS::Queue::Count(CommandIRTXQueue) > 0)
-				{
-					PowerManagement::AddLock("CommandIRTXTask");
+				uint32_t ulNotifiedValue = 0;
+		        xTaskNotifyWait(0x00, ULONG_MAX, &ulNotifiedValue, TicksToWaitFromCommandQueue );
 
-					if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0)
-						RMT::UnsetRXChannel(RMT_CHANNEL_2);
+		        if (FreeRTOS::Queue::Count(CommandIRTXQueue) == 0 && ulNotifiedValue == 0)
+		        {
+		        	if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 == GPIO_NUM_0)
+		        		continue;
 
-					vector<gpio_num_t> GPIO = Settings.GPIOData.GetCurrent().IR.SenderGPIOs;
+		            if (rb == NULL) { continue; }
 
-					if (Settings.GPIOData.GetCurrent().IR.SenderGPIOExt != GPIO_NUM_0)
-						GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
+		        	size_t SignalSize = 0;
+		        	rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &SignalSize, TicksToWaitFromSensorQueue);
 
-					if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1) {
-						for (auto& PinItem : GPIO)
-							gpio_matrix_out(PinItem, 0x100, 0, 0);
+	        		int offset = 0;
 
-						((DataRemote_t *)Data)->ClearChannels(GPIO);
-					}
+	        		if (SignalSize)
+		        	{
+						SensorIR_t::MessageStart();
 
-					static int32_t *ItemsToSend;
+		        		while (offset < (int)SignalSize)
+		        		{
+		        			if (!SensorIR_t::MessageBody(RMT::PrepareBit((bool)(item+offset)->level0, (item+offset)->duration0)))
+		        				break;
 
-					NVS *Memory = new NVS(CommandIRArea);
+		        			if (!SensorIR_t::MessageBody(RMT::PrepareBit((bool)(item+offset)->level1, (item+offset)->duration1)))
+		        				break;
 
-					while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 0)) {
-						if (CommandIRTXDataMap.count(HashID) == 0)
-							continue;
+		        			offset++;
+		        		}
 
-						ESP_LOGE("RMT TX TASK", "Received from Queue, ItemKey: %s", CommandIRTXDataMap[HashID].NVSItem.c_str());
+		        		//after parsing the data, return spaces to ringbuffer.
+		        		vRingbufferReturnItem(rb, (void*) item);
 
-						if (CommandIRTXDataMap[HashID].NVSItem == CommandIRTXPause)
-						{
-							ESP_LOGE("RMT TX TASK", "Pause for: %d ms", CommandIRTXDataMap[HashID].Frequency);
-							FreeRTOS::Sleep(CommandIRTXDataMap[HashID].Frequency);
-						}
-						else if (CommandIRTXDataMap[HashID].NVSItem.size() > 4 && (CommandIRTXDataMap[HashID].NVSItem.rfind(Settings.CommandsConfig.BLE.DataPrefix, 0) == 0)) {
-					        CommandBLE_t* BLECommand = (CommandBLE_t *)Command_t::GetCommandByName("BLE");
+						SensorIR_t::MessageEnd();
+		        	}
 
-					        if (BLECommand != nullptr) {
-					        	BLECommand->Execute(0x01, CommandIRTXDataMap[HashID].NVSItem.substr(4).c_str());
-					        }
-						}
-						else
-						{
-							pair<void*, size_t> Item = Memory->GetBlob(CommandIRTXDataMap[HashID].NVSItem);
+	        		continue;
+		        }
+		        else
+		        {
 
-							if (Item.second == 0)
-								continue;
+		        	PowerManagement::AddLock("CommandIRTXTask");
+		        	FreeRTOS::SetTaskPriority(CommandIRTXHandle, Settings.CommandsConfig.IR.SendTaskPeakPriority);
 
-							ESP_LOGE("RMT TX TASK", "BLOB SIZE %d", Item.second);
+		        	vector<gpio_num_t> GPIO = Settings.GPIOData.GetCurrent().IR.SenderGPIOs;
 
-							RMT::TXClear();
+		        	if (Settings.GPIOData.GetCurrent().IR.SenderGPIOExt != GPIO_NUM_0)
+		        		GPIO.push_back(Settings.GPIOData.GetCurrent().IR.SenderGPIOExt);
 
-							ItemsToSend = NULL;
-							ItemsToSend = (int32_t *)Item.first;
+		        	if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1) {
+		        		for (auto& PinItem : GPIO)
+		        			gpio_matrix_out(PinItem, 0x100, 0, 0);
 
-							for (uint16_t i = 0; i < Item.second / 4; i++) {
-								RMT::TXAddItem(*(ItemsToSend + i));
-							}
+		        		((DataRemote_t *)Data)->ClearChannels(GPIO);
+		        	}
 
-							ESP_LOGE("RMT TX TASK", "Prepare to send with frequency %u", CommandIRTXDataMap[HashID].Frequency);
+		        	bool IsRMTTXInited = false;
 
-							RMT::TXSend(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
+		        	static int32_t *ItemsToSend;
 
-							free(Item.first);
+		        	NVS *Memory = new NVS(CommandIRArea);
 
-							Log::Add(Log::Events::Commands::IRExecuted);
+		        	if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
+		        		ESP_ERROR_CHECK(::rmt_rx_stop(RMT_CHANNEL_2));
+		        		RMT::UnsetRXChannel(RMT_CHANNEL_2);
+		        	}
 
-							Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
-						}
+		        	while (FreeRTOS::Queue::Receive(CommandIRTXQueue, &HashID, 1000/portTICK_PERIOD_MS)) {
+		        		if (CommandIRTXDataMap.count(HashID) == 0)
+		        			continue;
 
-						ESP_LOGD("RMT", "Removed from queue ID %s", CommandIRTXDataMap[HashID].NVSItem.c_str());
-			    		CommandIRTXDataMap.erase(HashID);
-			    		HashID = 0;
-					}
+		        		if (CommandIRTXDataMap[HashID].NVSItem == CommandIRTXPause)
+		        		{
+		        			ESP_LOGD("RMT TX TASK", "Pause for: %d ms", CommandIRTXDataMap[HashID].Frequency);
+		        			FreeRTOS::Sleep(CommandIRTXDataMap[HashID].Frequency);
+		        		}
+		        		else if (CommandIRTXDataMap[HashID].NVSItem.size() > 4 && (CommandIRTXDataMap[HashID].NVSItem.rfind(Settings.CommandsConfig.BLE.DataPrefix, 0) == 0)) {
+		        			CommandBLE_t* BLECommand = (CommandBLE_t *)Command_t::GetCommandByName("BLE");
 
-					Memory->Commit();
-					delete (Memory);
+		        			if (BLECommand != nullptr)
+		        				BLECommand->Execute(0x01, CommandIRTXDataMap[HashID].NVSItem.substr(4).c_str());
+		        		}
+		        		else
+		        		{
+		        			pair<void*, size_t> Item = Memory->GetBlob(CommandIRTXDataMap[HashID].NVSItem);
 
-					if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
-						RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
-						RMT::ReceiveStart(RMT_CHANNEL_2);
-					}
+		        			if (Item.second == 0)
+		        				continue;
 
-					ESP_LOGD("CommandIRTXTask", "RMT TX Task queue loop finished");
+		        			RMT::TXClear();
 
-					PowerManagement::ReleaseLock("CommandIRTXTask");
-				}
+		        			ItemsToSend = NULL;
+		        			ItemsToSend = (int32_t *)Item.first;
 
-				FreeRTOS::Sleep(100);
+		        			for (uint16_t i = 0; i < Item.second / 4; i++) {
+		        				RMT::TXAddItem(*(ItemsToSend + i));
+		        			}
+
+		        			if (!IsRMTTXInited) { // Первая отправка
+		        				RMT::SetTXChannel(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
+		        				IsRMTTXInited = true;
+		        			}
+		        			else if (LastFrequency != CommandIRTXDataMap[HashID].Frequency)
+		        			{
+		        				ESP_LOGE("RMT TX TASK", "FREQ CHANGE");
+		        				RMT::UnsetTXChannel(TXChannel);
+		        				RMT::SetTXChannel(GPIO, TXChannel, CommandIRTXDataMap[HashID].Frequency);
+		        			}
+
+		        			RMT::TXSend(TXChannel);
+
+		        			ESP_LOGI("RMT TX TASK", "Sended signal with frequency %u", CommandIRTXDataMap[HashID].Frequency);
+
+		        			LastFrequency = CommandIRTXDataMap[HashID].Frequency;
+
+		        			free(Item.first);
+
+		        			Log::Add(Log::Events::Commands::IRExecuted);
+
+		        			Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
+		        		}
+
+		        		CommandIRTXDataMap.erase(HashID);
+		        		HashID = 0;
+
+		        		CommandsIRLastSignalTime = Time::UptimeU();
+		        	}
+
+		        	Memory->Commit();
+		        	delete (Memory);
+
+		        	RMT::UnsetTXChannel(TXChannel);
+
+		        	if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0) {
+		        		ESP_LOGE("TASK", "SetRXChannel");
+		        		RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
+		        		ESP_ERROR_CHECK(::rmt_rx_start(RMT_CHANNEL_2 , 1));
+		                rmt_get_ringbuf_handle(RMT_CHANNEL_2, &rb);
+		        	}
+
+		        	ESP_LOGD("CommandIRTXTask", "RMT TX Task queue loop finished");
+
+		        	PowerManagement::ReleaseLock("CommandIRTXTask");
+		        	FreeRTOS::SetTaskPriority(CommandIRTXHandle, Settings.CommandsConfig.IR.SendTaskPriority);
+		        }
 			}
 
 			ESP_LOGE("CommandIRTXTask", "Ended");
@@ -595,6 +678,12 @@ class CommandIR_t : public Command_t {
 		}
 
 		void TriggerStateChange(IRLib &Signal) {
+			if (CommandIRLastSignalCRC != "")
+				if (Signal.GetSignalCRC() == CommandIRLastSignalCRC)
+					return;
+
+			CommandIRLastSignalCRC = Signal.GetSignalCRC();
+
 			if (Settings.eFuse.Type == Settings.Devices.Remote)
 				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(Signal);
 		}

@@ -69,7 +69,7 @@ class RMT {
 
 		static int16_t	TXItemsCount();
 
-		static void		TXSend(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency = 0);
+		static void		TXSend(rmt_channel_t Channel);
 
 		static int32_t	PrepareBit(bool, uint32_t);
 

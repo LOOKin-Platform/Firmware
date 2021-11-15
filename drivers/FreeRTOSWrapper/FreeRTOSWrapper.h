@@ -42,6 +42,8 @@ class FreeRTOS {
 
 		static void					CleanUpMemory();
 
+		static void					SetTaskPriority(TaskHandle_t pTask, uint8_t Priority);
+
 		class Semaphore {
 			public:
 				Semaphore(string owner = "<Unknown>");

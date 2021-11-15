@@ -181,7 +181,7 @@ string IRLib::GetSignalCRC() {
 }
 
 
-vector<int32_t> IRLib::GetRawDataForSending() {
+vector<int32_t>IRLib::GetRawDataForSending() {
 	IRProto *Proto = GetProtocolByID(this->Protocol);
 
 	vector<int32_t> Result = vector<int32_t>();

@@ -57,7 +57,7 @@ void HomeKit::Init() {
 
 void HomeKit::Start() {
 	if (TaskHandle == NULL)
-		TaskHandle = FreeRTOS::StartTask(Task, "hap_bridge", NULL, 4096, 1);
+		TaskHandle = FreeRTOS::StartTask(Task, "hap_bridge", NULL, 4096, 6);
 }
 
 

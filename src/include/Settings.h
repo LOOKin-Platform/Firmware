@@ -339,6 +339,12 @@ class Settings_t {
 		struct {
 			struct {
 				const uint64_t				ProntoHexBlockedDelayU = 3*1000000;
+
+				const uint8_t				SendTaskQueueCount1Gen	= 8;
+				const uint8_t				SendTaskQueueCount2Gen	= 16;
+
+				const uint16_t				SendTaskPriority		= 2;
+				const uint16_t				SendTaskPeakPriority	= 6;
 			} IR;
 
 			struct {

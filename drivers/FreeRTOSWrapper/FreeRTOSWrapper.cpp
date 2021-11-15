@@ -67,6 +67,11 @@ uint8_t FreeRTOS::GetCurrentCoreID() {
 	return xPortGetCoreID();
 }
 
+void FreeRTOS::SetTaskPriority(TaskHandle_t pTask, uint8_t Priority) {
+	vTaskPrioritySet(pTask, tskIDLE_PRIORITY +  Priority);
+}
+
+
 /*
  * 	public:
 		Semaphore(string = "<Unknown>");
@@ -88,12 +93,10 @@ uint8_t FreeRTOS::GetCurrentCoreID() {
 FreeRTOS::Semaphore::Semaphore(string name) {
 	m_usePthreads = false;   	// Are we using pThreads or FreeRTOS?
 
-	if (m_usePthreads) {
+	if (m_usePthreads)
 		pthread_mutex_init(&m_pthread_mutex, nullptr);
-	}
-	else {
+	else
 		m_semaphore = xSemaphoreCreateMutex();
-	}
 
 	m_name      = name;
 	m_owner     = string("<N/A>");
