@@ -583,9 +583,6 @@ uint16_t Storage_t::FindFreeID() {
 	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
 	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
-	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
-	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
-
 	uint16_t Result = 0xFFF;
 
 	// Use max avaliable bitset size
