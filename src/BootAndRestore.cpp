@@ -91,6 +91,12 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		Memory.SetInt8Bit(NVSDeviceEco, 1);
 		Memory.Commit();
 	}
+
+	// Set sensor mode on for all updated and new devices
+	if (OldFirmware < "2.40" && Settings.DeviceGeneration > 1)
+	{
+		SPIFlash::EraseRange(0x8A0000, 0x450000);
+	}
 }
 
 void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
@@ -112,12 +118,16 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 				SPIFlash::EraseRange(0x32000, 0xEE000);
 			else
 			{
+				SPIFlash::EraseRange(0x670000, 0x990000);
+				/*
+				 * idfupdate - replace for this after ESP_PARTITION_TYPE_ANY will be avaliable
 				PartitionAPI::ErasePartition("coredump");
 				PartitionAPI::ErasePartition("misc");
 				PartitionAPI::ErasePartition("dataitems");
 				PartitionAPI::ErasePartition("scenarios");
 				PartitionAPI::ErasePartition("scache");
 				PartitionAPI::ErasePartition("storage");
+				*/
 			}
 			//PartitionAPI::ErasePartition("constants");
 

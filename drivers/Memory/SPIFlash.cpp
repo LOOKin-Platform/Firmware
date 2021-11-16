@@ -39,7 +39,7 @@ void IRAM_ATTR SPIFlash::EraseRange(uint32_t Start, uint32_t Length) {
     }
 
     uint32_t	BlockStart 		= (Start / Settings.Memory.BlockSize) * Settings.Memory.BlockSize; // block starts every 4kb
-    uint8_t		BlocksToErase 	= ceil((Start + Length) / (float)Settings.Memory.BlockSize) - BlockStart / Settings.Memory.BlockSize + 1;
+    uint16_t	BlocksToErase 	= ceil((Start + Length) / (float)Settings.Memory.BlockSize) - BlockStart / Settings.Memory.BlockSize + 1;
 
     uint32_t 	*HeadBuffer 	= (uint32_t *) malloc((Start - BlockStart));
     uint32_t 	*TailBuffer 	= (uint32_t *) malloc((BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
