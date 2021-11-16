@@ -50,17 +50,21 @@ class IRLib {
 		void			ExternFillPostOperations();
 
 		void			AppendRawSignal(IRLib &);
+		void			AppendRawSignal(vector<int32_t> &);
 		int32_t			RawPopItem();
 
 		bool			CompareIsIdenticalWith(IRLib &Signal);
-		bool			CompareIsIdenticalWith(vector <int32_t>);
+		bool			CompareIsIdenticalWith(vector<int32_t> &);
+
 		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);
+		static bool		CompareIsIdentical(vector<int32_t> &, vector<int32_t> &);
+		static uint8_t 	GetProtocolExternal(vector<int32_t> &);
 
 	private:
 		uint8_t		 	ProntoOneTimeBurst 	= 0;
 		uint8_t 		ProntoRepeatBurst 	= 0;
 
-		void 			FillProtocols();
+		static void		FillProtocols();
 
 		IRProto*		GetProtocol();
 		IRProto*		GetProtocolByID(uint8_t);

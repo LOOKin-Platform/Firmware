@@ -16,7 +16,6 @@ static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
 
 static IRLib 				LastSignal;
-static IRLib				FollowingSignal;
 static string				RepeatCode;
 
 static uint64_t 			LastSignalEnd 	= 0;
@@ -196,14 +195,13 @@ class SensorIR_t : public Sensor_t {
 
 			uint64_t Pause = (LastSignalEnd > 0) ? NewSignalStart - LastSignalEnd : 0;
 
-			FollowingSignal = IRLib(SensorIRCurrentMessage);
-
 			bool IsFollowingRepeatSignal = false;
-			if (LastSignal.Protocol != 0xFF && FollowingSignal.CompareIsIdenticalWith(LastSignal.GetRawRepeatSignalForSending()))
+			vector<int32_t> RepeatSignal = LastSignal.GetRawRepeatSignalForSending();
+			if (LastSignal.Protocol != 0xFF && IRLib::CompareIsIdentical(SensorIRCurrentMessage, RepeatSignal))
 				IsFollowingRepeatSignal = true;
 
 			if (!IsFollowingRepeatSignal)
-				if (IRLib::CompareIsIdentical(LastSignal,FollowingSignal))
+				if (IRLib::CompareIsIdentical(LastSignal.RawData,SensorIRCurrentMessage))
 					IsFollowingRepeatSignal = true;
 
 			if (!IsFollowingRepeatSignal) {
@@ -212,18 +210,19 @@ class SensorIR_t : public Sensor_t {
 					if (LastSignal.RawData.size() > 0)
 						LastSignal.RawData.back() = -(uint32_t)Pause;
 
-					LastSignal.AppendRawSignal(FollowingSignal);
+					LastSignal.AppendRawSignal(SensorIRCurrentMessage);
 				}
-				else
-					LastSignal = FollowingSignal;
+				else {
+					LastSignal.RawData.clear();
+					LastSignal.RawData = SensorIRCurrentMessage;
+					LastSignal.ExternFillPostOperations();
+				}
 			}
 			else if (Pause <= Settings.SensorsConfig.IR.SignalPauseMax) {
 				LastSignal.IsRepeated = true;
 
 				RepeatPause = (Pause > numeric_limits<uint16_t>::max()) ? numeric_limits<uint16_t>::max() :  Pause;
 			}
-
-			FollowingSignal = IRLib();
 
 			SensorIRCurrentMessage.empty();
 

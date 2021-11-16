@@ -245,7 +245,8 @@ class CommandIR_t : public Command_t {
 										&ACReadStarted,
 										&ACReadBody,
 										&ACReadFinished,
-										&ACReadAborted);
+										&ACReadAborted,
+										Settings.ServerUrls.ACtoken);
 
 				if (OnType > 0 && OnStatus > 0) {
 					ACData.SetStatus(OnStatus);
@@ -255,7 +256,8 @@ class CommandIR_t : public Command_t {
 										&ACReadStarted,
 										&ACReadBody,
 										&ACReadFinished,
-										&ACReadAborted);
+										&ACReadAborted,
+										Settings.ServerUrls.ACtoken);
 				}
 
 				return true;
@@ -555,11 +557,12 @@ class CommandIR_t : public Command_t {
 		        			offset++;
 		        		}
 
-		        		//after parsing the data, return spaces to ringbuffer.
-		        		vRingbufferReturnItem(rb, (void*) item);
-
 						SensorIR_t::MessageEnd();
 		        	}
+
+	        		//after parsing the data, return spaces to ringbuffer.
+	        		if (item != NULL)
+	        			vRingbufferReturnItem(rb, (void*) item);
 
 	        		continue;
 		        }
@@ -701,7 +704,7 @@ class CommandIR_t : public Command_t {
 		static bool ACReadBody(char* Data, int DataLen, const char *IP) {
 			char *FreqDelimeterPos = (char*)memchr(Data, ':', DataLen);
 
-			//;ESP_LOGE("ACReadBody", "%u %s", DataLen, Data);
+			//ESP_LOGE("ACReadBody", "%u %s", DataLen, Data);
 
 			if (FreqDelimeterPos != NULL && (FreqDelimeterPos - Data) < 10) {
 				string Frequency(Data, (Data - FreqDelimeterPos - 1));

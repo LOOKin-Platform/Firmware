@@ -49,6 +49,9 @@ void Converter::rTrim(std::string &s) {
 
 // trim from both ends (in place)
 void Converter::Trim(std::string &s) {
+	if (s.size() == 0)
+		return;
+
     lTrim(s);
     rTrim(s);
 }

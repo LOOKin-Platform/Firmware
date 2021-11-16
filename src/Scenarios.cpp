@@ -135,6 +135,8 @@ void Scenario_t::LoadScenarios() {
 
 			LoadScenarioByAddress(Scenario, Address);
 
+			//ESP_LOGE("ScenarioID", "%08X, Type %02X", ScenarioFindedID, Scenario.Type);
+
 			if (!Scenario.IsEmpty())
 				Automation.AddScenarioCacheItem(Scenario);
 		}

@@ -103,6 +103,17 @@ void IRLib::LoadDataFromRaw() {
 		this->Protocol = 0xFF;
 }
 
+uint8_t IRLib::GetProtocolExternal(vector<int32_t> &SignalVector){
+	FillProtocols();
+
+	for (auto& Protocol : IRLib::Protocols)
+		if (Protocol->IsProtocol(SignalVector))
+			return Protocol->ID;
+
+	return 0xFF;
+
+}
+
 void IRLib::FillRawData() {
 	IRProto *Proto = GetProtocolByID(this->Protocol);
 
@@ -234,7 +245,10 @@ void IRLib::SetFrequency(uint16_t Freq) {
 }
 
 void IRLib::AppendRawSignal(IRLib &DataToAppend) {
+	AppendRawSignal(DataToAppend.RawData);
+}
 
+void IRLib::AppendRawSignal(vector<int32_t> &DataToAppend) {
 	if (RawData.size() > 0) {
 		IRProto *Proto = GetProtocolByID(this->Protocol);
 
@@ -242,11 +256,11 @@ void IRLib::AppendRawSignal(IRLib &DataToAppend) {
 			RawData.back() = Proto->GetBlocksDelimeter();
 	}
 
-	RawData.insert(RawData.end(), DataToAppend.RawData.begin(), DataToAppend.RawData.end());
+	RawData.insert(RawData.end(), DataToAppend.begin(), DataToAppend.end());
 
 	ExternFillPostOperations();
-}
 
+}
 
 int32_t IRLib::RawPopItem() {
 	if (RawData.size() == 0)
@@ -262,7 +276,7 @@ bool IRLib::CompareIsIdenticalWith(IRLib &Signal) {
 	return CompareIsIdentical(*this, Signal);
 }
 
-bool IRLib::CompareIsIdenticalWith(vector<int32_t> SignalInVector) {
+bool IRLib::CompareIsIdenticalWith(vector<int32_t> &SignalInVector) {
 	uint16_t SizeDiff		= abs((uint16_t)(RawData.size() - SignalInVector.size()));
 	uint16_t MinimalSize	= min(RawData.size(), SignalInVector.size());
 
@@ -281,25 +295,29 @@ bool IRLib::CompareIsIdenticalWith(vector<int32_t> SignalInVector) {
 
 
 bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
-	if (Signal1.Protocol == Signal2.Protocol) {
-		uint16_t SizeDiff		= abs((uint16_t)(Signal1.RawData.size() - Signal2.RawData.size()));
-		uint16_t MinimalSize	= min(Signal1.RawData.size(), Signal2.RawData.size());
-
-		if (SizeDiff >= 5) // too big difference between signals length
-			return false;
-
-		for (uint16_t i=0; i< MinimalSize; i++) {
-			uint16_t PartDif = abs(Signal1.RawData[i] - Signal2.RawData[i]);
-
-			if (PartDif > 0.20 * max(abs(Signal1.RawData[i]), abs(Signal2.RawData[i])))
-				return false;
-		}
-
-		return true;
-	}
+	if (Signal1.Protocol == Signal2.Protocol)
+		return CompareIsIdentical(Signal1.RawData, Signal2.RawData);
 
 	return false;
 }
+
+bool IRLib::CompareIsIdentical(vector<int32_t> &Signal1, vector<int32_t> &Signal2) {
+	uint16_t SizeDiff		= abs((uint16_t)(Signal1.size() - Signal2.size()));
+	uint16_t MinimalSize	= min(Signal1.size(), Signal2.size());
+
+	if (SizeDiff >= 5) // too big difference between signals length
+		return false;
+
+	for (uint16_t i=0; i< MinimalSize; i++) {
+		uint16_t PartDif = abs(Signal1[i] - Signal2[i]);
+
+		if (PartDif > 0.20 * max(abs(Signal1[i]), abs(Signal2[i])))
+			return false;
+	}
+
+	return true;
+}
+
 
 IRProto* IRLib::GetProtocol() {
 	for (auto& Protocol : IRLib::Protocols)

@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 40, 142);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 40, 411);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -68,6 +68,7 @@ class Settings_t {
 			const string					FirmwareCheck	= BaseURL + "/firmwares/check";
 			const string					GetACCode		= BaseURL + "/ac/codesets";
 
+			const string					ACtoken			= "2058707b-6fc2-4ff2-b40d-12bcf93c58c7";
 		} ServerUrls;
 
 		struct WiFi_t {
