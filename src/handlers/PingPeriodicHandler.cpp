@@ -112,6 +112,12 @@ void PingPeriodicHandler::Pool() {
 				TelemetryData.SetItem("RCStatus", RemoteControl.GetStatusString());
 				TelemetryData.SetItem("Memory", Converter::ToString(::esp_get_free_heap_size()));
 
+				CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
+				if (CommandIR != nullptr) {
+					TelemetryData.SetItem("NS", Converter::ToString(CommandIRSendCounter));
+					CommandIRSendCounter = 0;
+				}
+
 				HTTPClient::HTTPClientData_t QueryData;
 				QueryData.URL 		=  Settings.ServerUrls.Telemetry;
 				QueryData.Method 	= QueryType::POST;

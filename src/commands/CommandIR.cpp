@@ -32,6 +32,8 @@ static TaskHandle_t 			CommandIRTXHandle		= NULL;
 
 static uint64_t					CommandsIRLastSignalTime= 0;
 
+static uint32_t					CommandIRSendCounter 	= 0;
+
 struct CommandIRTXQueueData {
 	string      		NVSItem;
 	uint16_t			Frequency;
@@ -646,6 +648,7 @@ class CommandIR_t : public Command_t {
 		        			free(Item.first);
 
 		        			Log::Add(Log::Events::Commands::IRExecuted);
+		        			CommandIRSendCounter++;
 
 		        			Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
 		        		}
