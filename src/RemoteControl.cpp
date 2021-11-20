@@ -182,7 +182,9 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 				// LOOK.in -> LOOKin
 				if (UDPDatagram.size() > 8)
 					if (UDPDatagram.find("LOOK.in") == 0)
-						UDPDatagram = "LOOKin" + UDPDatagram.substr(8);
+						UDPDatagram = "LOOKin" + UDPDatagram.substr(7);
+
+				ESP_LOGI("UDPDatagram from /UDP", "%s", UDPDatagram.c_str());
 
 				if (UDPDatagram == WebServer_t::UDPDiscoverBody())
 					SendMessage(WebServer.UDPAliveBody(), DeviceTopic + "/UDP");

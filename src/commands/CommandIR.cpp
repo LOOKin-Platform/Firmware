@@ -104,7 +104,7 @@ class CommandIR_t : public Command_t {
 			CommandIRTXQueue = FreeRTOS::Queue::Create((uint16_t)Settings.CommandsConfig.IR.SendTaskQueueCount2Gen, sizeof( uint32_t ));
 
 			if (CommandIRTXHandle == NULL) {
-				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 4096, Settings.CommandsConfig.IR.SendTaskPriority);
+				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 6144, Settings.CommandsConfig.IR.SendTaskPriority);
 				//vTaskStartScheduler();
 			}
 		}
@@ -687,6 +687,9 @@ class CommandIR_t : public Command_t {
 			if (CommandIRLastSignalCRC != "")
 				if (Signal.GetSignalCRC() == CommandIRLastSignalCRC)
 					return;
+
+			if (Signal.RawData.size() == 0)
+				return;
 
 			CommandIRLastSignalCRC = Signal.GetSignalCRC();
 

@@ -969,7 +969,7 @@ vector<Storage_t::Item> IRAM_ATTR Storage_t::GetUpgradeItems(uint16_t From, uint
 	uint8_t		TotalCount 	= 0;
 	uint8_t		PartCount 	= 0;
 
-	uint16_t	SavedTo 	= ToCurrent;
+	//uint16_t	SavedTo 	= ToCurrent; unused now
 
 	while (TotalCount + PartCount < Settings.Storage.Versions.VersionMaxSize && From <= LastVersion)
 	{

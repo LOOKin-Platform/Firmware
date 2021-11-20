@@ -196,6 +196,8 @@ void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t 
 	if (GPIO.size() == 0)
 		return;
 
+	ESP_LOGI("SetTXChannel", "Frequency: %d", Frequency);
+
 	bool IsAllEmpty = true;
 
 	for(auto& GPIOItem : GPIO)
