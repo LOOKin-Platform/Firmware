@@ -70,8 +70,8 @@ class IRLib {
 		IRProto*		GetProtocolByID(uint8_t);
 
 		bool 			IsProntoHex();
-		void 			FillFromProntoHex(string &);
-		void 			FillFromProntoHex(const char *);
+		bool 			FillFromProntoHex(string &);
+		bool 			FillFromProntoHex(const char *);
 
 		string 			ProntoHexConstruct(bool SpaceDelimeter = true);
 
