@@ -483,8 +483,10 @@ class CommandIR_t : public Command_t {
 
 			bool SendToResult = SendToCommandIRQueue(HashID);
 
-			if (SendToResult)
+			if (SendToResult) {
+    			CommandIRSendCounter++;
 				ESP_LOGD("RMT", "Added to queue ID %s", HashIDStr.c_str());
+			}
 
 			return SendToResult;
 		}
@@ -648,7 +650,6 @@ class CommandIR_t : public Command_t {
 		        			free(Item.first);
 
 		        			Log::Add(Log::Events::Commands::IRExecuted);
-		        			CommandIRSendCounter++;
 
 		        			Memory->Erase(CommandIRTXDataMap[HashID].NVSItem);
 		        		}

@@ -114,8 +114,14 @@ void PingPeriodicHandler::Pool() {
 
 				CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
 				if (CommandIR != nullptr) {
-					TelemetryData.SetItem("NS", Converter::ToString(CommandIRSendCounter));
+					TelemetryData.SetItem("IRSended", Converter::ToString(CommandIRSendCounter));
 					CommandIRSendCounter = 0;
+				}
+
+				CommandBLE_t* CommandBLE= (CommandBLE_t*)Command_t::GetCommandByName("BLE");
+				if (CommandBLE != nullptr) {
+					TelemetryData.SetItem("BLESended", Converter::ToString(CommandBLESendCounter));
+					CommandBLESendCounter = 0;
 				}
 
 				HTTPClient::HTTPClientData_t QueryData;

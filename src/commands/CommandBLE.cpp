@@ -14,7 +14,9 @@
 extern DataEndpoint_t 	*Data;
 extern BLEServer_t		BLEServer;
 
-static string CommandBLELastKBDSignalSended = "";
+static string 	CommandBLELastKBDSignalSended 	= "";
+static uint32_t	CommandBLESendCounter 			= 0;
+
 
 class CommandBLE_t : public Command_t {
 	public:
@@ -71,6 +73,7 @@ class CommandBLE_t : public Command_t {
 				else if (Operand == "KEY_CAPS_LOCK")		{ Result = BLEServer.Write(0xC1)									;}
 				else if (Operand == "KEY_ENTER")			{ Result = BLEServer.Write(0x28)									;}
 				else {
+					CommandBLESendCounter++;
 					Result = BLEServer.Write(int(StringOperand[0]));
 				}
 
