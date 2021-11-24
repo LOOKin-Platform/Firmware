@@ -51,9 +51,9 @@ static vector<int32_t> 	ACCode = vector<int32_t>();
 class CommandIR_t : public Command_t {
 	public:
 		struct LastSignal_t {
-			uint8_t 	Protocol 	= 0;
-			uint32_t 	Data		= 0;
-			uint16_t 	Misc		= 0;
+			uint8_t 	Protocol 		= 0;
+			uint32_t 	Data			= 0;
+			uint16_t 	Misc			= 0;
 		};
 
 		CommandIR_t() {
@@ -241,6 +241,7 @@ class CommandIR_t : public Command_t {
 						OnStatus = ((DataRemote_t*)Data)->GetLastStatus(0xEF, ACData.GetCodesetHEX());
 				}
 
+
 				if (OnType < 2)
 					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
 										QueryType::POST, false, true,
@@ -249,6 +250,10 @@ class CommandIR_t : public Command_t {
 										&ACReadFinished,
 										&ACReadAborted,
 										Settings.ServerUrls.ACtoken);
+
+				// switch on if first switch on action ever
+				if (OnType > 0 && OnStatus == 0)
+					OnStatus = 0x2700;
 
 				if (OnType > 0 && OnStatus > 0) {
 					ACData.SetStatus(OnStatus);

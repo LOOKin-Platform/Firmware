@@ -28,7 +28,6 @@ class CommandBLE_t : public Command_t {
 			Events["kbd_keydown"]		= 0x02;
 			Events["kbd_keyup"]			= 0x03;
 			Events["kbd_key_repeat"]	= 0x04;
-
 		}
 
 		bool Execute(uint8_t EventCode, const char* StringOperand) override {

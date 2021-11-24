@@ -897,7 +897,15 @@ class DataRemote_t : public DataEndpoint_t {
 						return;
 					}
 
-					vector<string> FunctionsToDelete = Converter::StringToVector(Function, ",");
+					vector<string> FunctionsToDelete = vector<string>();
+
+					if (Function == "functions")
+					{
+						for (auto& FunctionToDelete: DeviceItem.Functions)
+							FunctionsToDelete.push_back(FunctionToDelete.first);
+					}
+					else
+						FunctionsToDelete = Converter::StringToVector(Function, ",");
 
 					if (!FunctionsToDelete.size()) {
 						Result.SetFail();
@@ -1511,6 +1519,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 						break;
 					}
+
 				return Result;
 			}
 
