@@ -20,6 +20,7 @@ void BootAndRestore::OnDeviceStart() {
 
 	if (OldFirmware != Settings.Firmware) {
 		Memory.SetUInt32Bit(NVSBootAndRestoreAreaFirmware, Settings.Firmware.Version.Uint32Data);
+		Memory.Commit();
 		Migration(OldFirmware.ToString(), Settings.Firmware.ToString());
 	}
 
@@ -84,7 +85,7 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		Memory.EraseStartedWith(NVSLogArray);
 	}
 
-	// Set sensor mode on for all updated and new devices
+	// Set eco mode on for all updated and new devices
 	if (OldFirmware < "2.14" || OldFirmware == "")
 	{
 		NVS Memory(NVSDeviceArea);
@@ -92,9 +93,8 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		Memory.Commit();
 	}
 
-	// Set sensor mode on for all updated and new devices
-	if (OldFirmware < "2.40" && Settings.DeviceGeneration > 1)
-	{
+	// Erase firmware while update to 2.40
+	if (OldFirmware < "2.40" && Settings.DeviceGeneration > 1) {
 		SPIFlash::EraseRange(0x8A0000, 0x450000);
 	}
 }

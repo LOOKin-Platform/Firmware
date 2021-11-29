@@ -47,9 +47,11 @@ void IRAM_ATTR SPIFlash::EraseRange(uint32_t Start, uint32_t Length) {
 	::spi_flash_read(BlockStart		, HeadBuffer, (Start - BlockStart));
     ::spi_flash_read(Start + Length	, TailBuffer, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 
+    /*
     ESP_LOGE("SPI FLASH", "BlockStart: %d, BlocksToErase: %d", BlockStart, BlocksToErase);
     ESP_LOGE("SPI FLASH", "Start address: %d, Size: %d", BlockStart, (Start - BlockStart));
     ESP_LOGE("SPI FLASH", "End address: %d, Size: %d", Start + Length, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
+	*/
 
     for (int i=0; i < BlocksToErase; i++)
     		EraseSector((BlockStart + i*Settings.Memory.BlockSize) / Settings.Memory.BlockSize);

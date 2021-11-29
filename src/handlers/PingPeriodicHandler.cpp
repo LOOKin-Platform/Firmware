@@ -125,7 +125,7 @@ void PingPeriodicHandler::Pool() {
 				}
 
 				HTTPClient::HTTPClientData_t QueryData;
-				QueryData.URL 		=  Settings.ServerUrls.Telemetry;
+				QueryData.URL 		= Settings.ServerUrls.Telemetry;
 				QueryData.Method 	= QueryType::POST;
 				QueryData.POSTData 	= TelemetryData.ToString();
 

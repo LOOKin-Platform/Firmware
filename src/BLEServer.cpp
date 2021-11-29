@@ -232,6 +232,9 @@ void BLEServer_t::StartAdvertisingAsHID()
 	advertising->addServiceUUID(HIDDevice->hidService()->getUUID());
 	advertising->setScanResponse(false);
 
+	advertising->setMaxInterval(0);
+	advertising->setMinInterval(0);
+
 	advertising->start();
 
 	HIDDevice->setBatteryLevel(batteryLevel);
@@ -264,6 +267,10 @@ void BLEServer_t::StartAdvertisingAsGenericDevice()
 	BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
 	pAdvertising->addServiceUUID((uint16_t)0x180A);
 	pAdvertising->setScanResponse(true);
+
+	pAdvertising->setMaxInterval(0);
+	pAdvertising->setMinInterval(0);
+
 
 	BLEDevice::startAdvertising();
 

@@ -537,7 +537,7 @@ class CommandIR_t : public Command_t {
 			while (1)
 			{
 				uint32_t ulNotifiedValue = 0;
-		        xTaskNotifyWait(0x00, ULONG_MAX, &ulNotifiedValue, TicksToWaitFromCommandQueue );
+		        xTaskNotifyWait(0x00, ULONG_MAX, &ulNotifiedValue, TicksToWaitFromCommandQueue);
 
 		        if (FreeRTOS::Queue::Count(CommandIRTXQueue) == 0 && ulNotifiedValue == 0)
 		        {

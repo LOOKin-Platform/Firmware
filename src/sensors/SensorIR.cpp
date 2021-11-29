@@ -88,7 +88,6 @@ class SensorIR_t : public Sensor_t {
 			SetValue(0								, "RepeatPause");
 
 			Updated = SignalDetectionTime;
-
 		}
 
 		string FormatValue(string Key = "Primary") override {
