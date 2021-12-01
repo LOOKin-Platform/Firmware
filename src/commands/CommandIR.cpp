@@ -32,8 +32,6 @@ static TaskHandle_t 			CommandIRTXHandle		= NULL;
 
 static uint64_t					CommandsIRLastSignalTime= 0;
 
-static uint32_t					CommandIRSendCounter 	= 0;
-
 struct CommandIRTXQueueData {
 	string      		NVSItem;
 	uint16_t			Frequency;
@@ -55,6 +53,8 @@ class CommandIR_t : public Command_t {
 			uint32_t 	Data			= 0;
 			uint16_t 	Misc			= 0;
 		};
+
+		uint32_t 		SendCounter 	= 0;
 
 		CommandIR_t() {
 			ID          				= 0x07;
@@ -489,11 +489,18 @@ class CommandIR_t : public Command_t {
 			bool SendToResult = SendToCommandIRQueue(HashID);
 
 			if (SendToResult) {
-    			CommandIRSendCounter++;
+				IncrementCounter();
 				ESP_LOGD("RMT", "Added to queue ID %s", HashIDStr.c_str());
 			}
 
 			return SendToResult;
+		}
+
+		static void IncrementCounter() {
+			CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
+			if (CommandIR == nullptr) return;
+
+			CommandIR->SendCounter++;
 		}
 
 		static bool SendToCommandIRQueue(uint32_t &HashID) {
