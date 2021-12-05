@@ -706,8 +706,10 @@ class CommandIR_t : public Command_t {
 
 			CommandIRLastSignalCRC = Signal.GetSignalCRC();
 
-			if (Settings.eFuse.Type == Settings.Devices.Remote)
-				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(Signal);
+			if (Settings.eFuse.Type == Settings.Devices.Remote) {
+				if (((DataRemote_t*)Data)->SetExternalStatusByIRCommand(Signal))
+					CommandIRLastSignalCRC = "";
+			}
 		}
 
 		// AC Codeset callbacks

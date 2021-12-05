@@ -1240,14 +1240,14 @@ class DataRemote_t : public DataEndpoint_t {
 								DataSignal FunctionSignal = LoadFunctionByIndex(CacheItem.DeviceID, DevicesHelper.FunctionNameByID(FunctionID), i);
 								if (FunctionSignal.Type == IR && FunctionSignal.IRSignal.CompareIsIdenticalWith(Signal))
 								{
-									StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
-									break;
+									pair<bool,uint16_t> Result = StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
+									return Result.first;
 								}
 							}
 							else if (Signal.Uint32Data == FunctionSignal.second && Signal.Uint32Data != 0x0)
 							{
-								StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
-								break;
+								pair<bool,uint16_t> Result = StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
+								return Result.first;
 							}
 						}
 					}
