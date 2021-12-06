@@ -220,7 +220,7 @@ void BLEServer_t::StartAdvertisingAsHID()
 	HIDDevice->deviceInfo()->addCharacteristic(WiFiSetupCharacteristic);
 	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
-	BLEDevice::setSecurityAuth(false, true, false);
+	BLEDevice::setSecurityAuth(true, true, true);
 
 	HIDDevice->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
 	HIDDevice->startServices();
@@ -243,7 +243,6 @@ void BLEServer_t::StartAdvertisingAsHID()
 
 	ForceHIDMode(BASIC);
 	ESP_LOGD(Tag, "Advertising started!");
-
 
 	isRunning = true;
 }
@@ -648,6 +647,8 @@ void BLEServer_t::onConnect(NimBLEServer* pServer) {
 
 void BLEServer_t::onDisconnect(NimBLEServer* pServer) {
 	this->connected = false;
+
+	//BLEDevice::startAdvertising();
 }
 
 void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
