@@ -92,11 +92,15 @@ class ACOperand {
 			return Converter::UintFromHexString<uint16_t>(HEXStr);
 		}
 
-		string GetQuery() {
+		string GetCodesetString() {
 			string Result = Converter::ToString<uint16_t>(Codeset);
 			while (Result.size() < 4) Result = "0" + Result;
-			Result = "operand=" + Result + Converter::ToHexString(Mode, 1) + Converter::ToHexString(Temperature - 16, 1) +  Converter::ToHexString(FanMode, 1) +  Converter::ToHexString(SwingMode,1);
+
 			return Result;
+		}
+
+		string GetQuery() {
+			return ("operand=" + GetCodesetString() + Converter::ToHexString(Mode, 1) + Converter::ToHexString(Temperature - 16, 1) +  Converter::ToHexString(FanMode, 1) +  Converter::ToHexString(SwingMode,1));
 		}
 
 		uint8_t ModeToHomeKitTarget() {

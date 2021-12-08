@@ -230,20 +230,28 @@ class CommandIR_t : public Command_t {
 				/// FFF1	- swing
 				/// FFF2	- swing
 
-				int 		OnType 		= 0;
-				uint16_t 	OnStatus	= 0;
+				pair<uint16_t, uint16_t>  Statuses = make_pair(0xFFFF, 0xFFFF);
 
+				if (Settings.eFuse.Type == Settings.Devices.Remote)
+					Statuses = ((DataRemote_t*)Data)->GetStatusPair(0xEF, ACData.GetCodesetHEX());
 
-				if (ACData.ToUint16() == 0xFFF0) {
-					OnType = (ACOperand::IsOnSeparateForCodeset(ACData.GetCodesetHEX())) ? 1 : 2;
+				uint16_t CurrentStatus	= Statuses.first;
+				uint16_t LastStatus		= Statuses.second;
 
-					if (Settings.eFuse.Type == Settings.Devices.Remote)
-						OnStatus = ((DataRemote_t*)Data)->GetLastStatus(0xEF, ACData.GetCodesetHEX());
-				}
+				bool  IsOnSeparate= ACOperand::IsOnSeparateForCodeset(ACData.GetCodesetHEX());
 
+				bool ShouldOn = false;
 
-				if (OnType < 2)
-					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
+				if (ACData.ToUint16() == 0xFFF0 || (IsOnSeparate && CurrentStatus < 0x1000 && LastStatus > 0x0FFF)) // if switch on signal received
+					ShouldOn = true;
+
+				if (ShouldOn > 0 && LastStatus == 0)
+					LastStatus = 0x2700;
+
+				ESP_LOGI("ShouldON", "%s", (ShouldOn) ? "true" : "false");
+
+				if (ShouldOn && (CurrentStatus < 0x1000 || CurrentStatus == 0xFFFF)) {
+					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?operand=" + ACData.GetCodesetString() + "FFF0",
 										QueryType::POST, false, true,
 										&ACReadStarted,
 										&ACReadBody,
@@ -251,21 +259,23 @@ class CommandIR_t : public Command_t {
 										&ACReadAborted,
 										Settings.ServerUrls.ACtoken);
 
-				// switch on if first switch on action ever
-				if (OnType > 0 && OnStatus == 0)
-					OnStatus = 0x2700;
+					if (LastStatus == 0xFFFF)
+						return true;
 
-				if (OnType > 0 && OnStatus > 0) {
-					ACData.SetStatus(OnStatus);
+					if (LastStatus != 0xFFFF && CurrentStatus > 0x0FFF)
+						return true;
 
-					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
-										QueryType::POST, false, true,
-										&ACReadStarted,
-										&ACReadBody,
-										&ACReadFinished,
-										&ACReadAborted,
-										Settings.ServerUrls.ACtoken);
+					if (ACData.ToUint16() == 0xFFF0 && LastStatus != 0xFFFF)
+						ACData.SetStatus(LastStatus);
 				}
+
+				HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?" + ACData.GetQuery(),
+									QueryType::POST, false, true,
+									&ACReadStarted,
+									&ACReadBody,
+									&ACReadFinished,
+									&ACReadAborted,
+									Settings.ServerUrls.ACtoken);
 
 				return true;
 			}

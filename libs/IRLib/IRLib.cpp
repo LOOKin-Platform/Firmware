@@ -347,13 +347,13 @@ bool IRLib::FillFromProntoHex(string &SrcString) {
 		return false;
 	}
 
-	bool 		IsSkipProtoFlag	= false;
+	bool 		IsSkipProntoFlag	= false;
 
 	//uint8_t	Learned = Converter::UintFromHexString<uint8_t>(SrcString.substr(0,4));
 	Frequency = (uint16_t)(1000000/((Converter::UintFromHexString<uint16_t>(SrcString.substr(4,4)))* 0.241246));
 
 	if (SrcString.substr(0,4) == "000F")
-		IsSkipProtoFlag = true;
+		IsSkipProntoFlag = true;
 
 	uint8_t ProntoOneTimeBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(8,4));
 	uint8_t ProntoRepeatBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(12,4));
@@ -370,7 +370,7 @@ bool IRLib::FillFromProntoHex(string &SrcString) {
 
 	SrcString.erase();
 
-	return (!IsSkipProtoFlag);
+	return (!IsSkipProntoFlag);
 }
 
 bool IRLib::FillFromProntoHex(const char *SrcString) {

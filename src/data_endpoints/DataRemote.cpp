@@ -575,16 +575,20 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 		}
 
-		uint16_t GetLastStatus(uint8_t Type, uint16_t Extra) {
-			for (auto& CacheItem : IRDevicesCache) {
-				ESP_LOGE("GetLastStatus", "Item: %02X %04X, Input: %02X %04X", CacheItem.DeviceType, CacheItem.Extra, Type, Extra);
+		// first - current status, second - last status
+		// 0xFFFF - status didn't exist. For example ac remote didnt saved
+		// 0 - first start
+		// other values - status from device
 
+		pair<uint16_t,uint16_t> GetStatusPair(uint8_t Type, uint16_t Extra) {
+			for (auto& CacheItem : IRDevicesCache) {
 				if (CacheItem.DeviceType == Type && CacheItem.Extra == Extra)
-					return CacheItem.LastStatus;
+					return make_pair(CacheItem.Status, CacheItem.LastStatus);
 
 			}
 
-			return 0;
+			// if device didn't exist
+			return make_pair(0xFFFF, 0xFFFF);
 		}
 
 		void AddOrUpdateDeviceToCache(DataRemote_t::IRDevice DeviceItem) {
@@ -1204,7 +1208,10 @@ class DataRemote_t : public DataEndpoint_t {
 				ACOperandNext = ACOperandPrev;
 
 				switch (NewStatus) {
-					case 0xFFF0:/*    on    */ 	ACOperandNext.Mode = (ACOperandNext.Mode == 0) ? 2 : 0; break; // on
+					case 0xFFF0:/*    on    */
+						if (ACOperandPrev.Mode == 0)
+							ACOperandNext.Mode = 2;
+						break; // on
 					case 0xFFF1:/*Swing move*/	ACOperandNext.SwingMode = 1; break;
 					case 0xFFF2:/*Swing stop*/	ACOperandNext.SwingMode = 0; break;
 				}
