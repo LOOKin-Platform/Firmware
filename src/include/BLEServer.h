@@ -126,6 +126,7 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		void 		StartAdvertisingAsGenericDevice();
 		void 		StopAdvertising();
 
+		void		SendReport(uint8_t Key);
 		void 		SendReport(KeyReport* keys);
 		void 		SendReport(MediaKeyReport* keys);
 
@@ -151,22 +152,22 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 
 		bool		IsRunning();
 
-		const MediaKeyReport KEY_MEDIA_NEXT_TRACK 			= {1	, 0};
-		const MediaKeyReport KEY_MEDIA_PREVIOUS_TRACK 		= {2	, 0};
-		const MediaKeyReport KEY_MEDIA_STOP 				= {4	, 0};
-		const MediaKeyReport KEY_MEDIA_PLAY_PAUSE 			= {8	, 0};
-		const MediaKeyReport KEY_MEDIA_MUTE 				= {16	, 0};
-		const MediaKeyReport KEY_MEDIA_VOLUME_UP 			= {32	, 0};
-		const MediaKeyReport KEY_MEDIA_VOLUME_DOWN 			= {64	, 0};
-		const MediaKeyReport KEY_MEDIA_WWW_HOME 			= {128	, 0};
-		const MediaKeyReport KEY_MEDIA_LOCAL_MACHINE_BROWSER= {0	, 1}; // Opens "My Computer" on Windows
-		const MediaKeyReport KEY_MEDIA_CALCULATOR 			= {0	, 2};
-		const MediaKeyReport KEY_MEDIA_WWW_BOOKMARKS 		= {0	, 4};
-		const MediaKeyReport KEY_MEDIA_WWW_SEARCH 			= {0	, 8};
-		const MediaKeyReport KEY_MEDIA_WWW_STOP 			= {0	, 16};
-		const MediaKeyReport KEY_MEDIA_WWW_BACK 			= {0	, 32};
-		const MediaKeyReport KEY_MEDIA_CC_CONFIGURATION 	= {0	, 64}; // Media Selection, KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION
-		const MediaKeyReport KEY_MEDIA_EMAIL_READER 		= {0	, 128};
+		const MediaKeyReport KEY_MEDIA_NEXT_TRACK 			= {0x01	, 0x00};
+		const MediaKeyReport KEY_MEDIA_PREVIOUS_TRACK 		= {0x02	, 0x00};
+		const MediaKeyReport KEY_MEDIA_STOP 				= {0x04	, 0x00};
+		const MediaKeyReport KEY_MEDIA_PLAY_PAUSE 			= {0x08	, 0x00};
+		const MediaKeyReport KEY_MEDIA_MUTE 				= {0x10	, 0x00};
+		const MediaKeyReport KEY_MEDIA_VOLUME_UP 			= {0x20	, 0x00};
+		const MediaKeyReport KEY_MEDIA_VOLUME_DOWN 			= {0x40	, 0x00};
+		const MediaKeyReport KEY_MEDIA_WWW_HOME 			= {0x80	, 0x00};
+		const MediaKeyReport KEY_MEDIA_LOCAL_MACHINE_BROWSER= {0	, 0x01}; // Opens "My Computer" on Windows
+		const MediaKeyReport KEY_MEDIA_CALCULATOR 			= {0	, 0x02};
+		const MediaKeyReport KEY_MEDIA_WWW_BOOKMARKS 		= {0	, 0x04};
+		const MediaKeyReport KEY_MEDIA_WWW_SEARCH 			= {0	, 0x08};
+		const MediaKeyReport KEY_MEDIA_WWW_STOP 			= {0	, 0x10};
+		const MediaKeyReport KEY_MEDIA_WWW_BACK 			= {0	, 0x20};
+		const MediaKeyReport KEY_MEDIA_CC_CONFIGURATION 	= {0	, 0x40}; // Media Selection, KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION
+		const MediaKeyReport KEY_MEDIA_EMAIL_READER 		= {0	, 0x80};
 
 	protected:
 		virtual void onStarted(NimBLEServer *pServer) { };

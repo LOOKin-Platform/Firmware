@@ -349,6 +349,18 @@ void BLEServer_t::SendReport(MediaKeyReport* keys)
   }
 }
 
+void BLEServer_t::SendReport(uint8_t Key)
+{
+	if (this->isConnected())
+	{
+		this->inputMediaKeys->setValue<uint8_t>(Key);
+		this->inputMediaKeys->notify();
+
+		//vTaskDelay(delayTicks);
+		this->delay_ms(_delay_ms);
+	}
+}
+
 #define SHIFT 0x80
 
 const uint8_t _asciimap[128] =

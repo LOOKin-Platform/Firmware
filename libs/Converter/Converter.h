@@ -102,5 +102,7 @@ class Converter {
 
 		static string			GenerateRandomString(uint8_t Size);
 
+		static bool				IsStringContainsOnlyDigits(string &Str);
+
 };
 #endif

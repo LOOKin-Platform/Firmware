@@ -39,6 +39,23 @@ class CommandBLE_t : public Command_t {
 				if (Operand.size() == 0)
 					return false;
 
+				if (Operand.size() == 2 && Converter::IsStringContainsOnlyDigits(Operand))
+				{
+					BLEServer.SendReport(Converter::UintFromHexString<uint8_t>(Operand));
+					return true;
+				}
+
+				if (Operand.size() == 4 && Converter::IsStringContainsOnlyDigits(Operand))
+				{
+					static MediaKeyReport CurrentMediaKeyReport;
+					CurrentMediaKeyReport[0] = Converter::UintFromHexString<uint8_t>(Operand.substr(0, 2));
+					CurrentMediaKeyReport[1] = Converter::UintFromHexString<uint8_t>(Operand.substr(2, 2));
+
+					BLEServer.SendReport(&CurrentMediaKeyReport);
+
+					return true;
+				}
+
 				size_t Result = 0;
 
 				if 		(Operand == "MEDIA_NEXT_TRACK") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_NEXT_TRACK) 			;}

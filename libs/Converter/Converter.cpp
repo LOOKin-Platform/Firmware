@@ -447,7 +447,10 @@ string Converter::GenerateRandomString(uint8_t Size) {
 
 
     return tmp_s;
+}
 
+bool Converter::IsStringContainsOnlyDigits(string &Str) {
+    return std::all_of(Str.begin(), Str.end(), ::isdigit);
 }
 
 
