@@ -59,7 +59,7 @@ const uint8_t KEY_F22 = 0xF9;
 const uint8_t KEY_F23 = 0xFA;
 const uint8_t KEY_F24 = 0xFB;
 
-typedef uint8_t MediaKeyReport[2];
+typedef uint8_t MediaKeyReport[3];
 
 #include <string>
 using namespace std;
@@ -126,7 +126,6 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		void 		StartAdvertisingAsGenericDevice();
 		void 		StopAdvertising();
 
-		void		SendReport(uint8_t Key);
 		void 		SendReport(KeyReport* keys);
 		void 		SendReport(MediaKeyReport* keys);
 
@@ -152,15 +151,27 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 
 		bool		IsRunning();
 
-		const MediaKeyReport KEY_MEDIA_NEXT_TRACK 			= {0x01	, 0x00};
-		const MediaKeyReport KEY_MEDIA_PREVIOUS_TRACK 		= {0x02	, 0x00};
-		const MediaKeyReport KEY_MEDIA_STOP 				= {0x04	, 0x00};
-		const MediaKeyReport KEY_MEDIA_PLAY_PAUSE 			= {0x08	, 0x00};
-		const MediaKeyReport KEY_MEDIA_MUTE 				= {0x10	, 0x00};
-		const MediaKeyReport KEY_MEDIA_VOLUME_UP 			= {0x20	, 0x00};
-		const MediaKeyReport KEY_MEDIA_VOLUME_DOWN 			= {0x40	, 0x00};
-		const MediaKeyReport KEY_MEDIA_WWW_HOME 			= {0x80	, 0x00};
-		const MediaKeyReport KEY_MEDIA_LOCAL_MACHINE_BROWSER= {0	, 0x01}; // Opens "My Computer" on Windows
+		const MediaKeyReport KEY_MEDIA_NEXT_TRACK 			= {0x01	, 0x00, 0x00};
+		const MediaKeyReport KEY_MEDIA_PREVIOUS_TRACK 		= {0x02	, 0x00, 0x00};
+		const MediaKeyReport KEY_MEDIA_STOP 				= {0x04	, 0x00, 0x00};
+		const MediaKeyReport KEY_MEDIA_PLAY_PAUSE 			= {0x08	, 0x00, 0x00};
+		const MediaKeyReport KEY_MEDIA_MUTE 				= {0x10	, 0x00, 0x00};
+		const MediaKeyReport KEY_MEDIA_VOLUME_UP 			= {0x20	, 0x00, 0x00};
+		const MediaKeyReport KEY_MEDIA_VOLUME_DOWN 			= {0x40	, 0x00, 0x00};
+		const MediaKeyReport KEY_CC_POWER 					= {0x80	, 0x00, 0x00};
+		const MediaKeyReport KEY_CC_SLEEP					= {0x00	, 0x01, 0x00};
+		const MediaKeyReport KEY_CC_MENU					= {0x00	, 0x02, 0x00};
+		const MediaKeyReport KEY_CC_MENU_PICK				= {0x00	, 0x04, 0x00};
+		const MediaKeyReport KEY_CC_BACK					= {0x00	, 0x08, 0x00};
+		const MediaKeyReport KEY_CC_MENU_UP					= {0x00	, 0x10, 0x00};
+		const MediaKeyReport KEY_CC_MENU_DOWN				= {0x00	, 0x20, 0x00};
+		const MediaKeyReport KEY_CC_MENU_LEFT				= {0x00	, 0x40, 0x00};
+		const MediaKeyReport KEY_CC_MENU_RIGHT				= {0x00	, 0x80, 0x00};
+		const MediaKeyReport KEY_MEDIA_CHANNEL_UP			= {0x00	, 0x00, 0x01};
+		const MediaKeyReport KEY_MEDIA_CHANNEL_DOWN			= {0x00	, 0x00, 0x02};
+		const MediaKeyReport KEY_CC_HOME					= {0x00	, 0x00, 0x04};
+
+		/*
 		const MediaKeyReport KEY_MEDIA_CALCULATOR 			= {0	, 0x02};
 		const MediaKeyReport KEY_MEDIA_WWW_BOOKMARKS 		= {0	, 0x04};
 		const MediaKeyReport KEY_MEDIA_WWW_SEARCH 			= {0	, 0x08};
@@ -168,7 +179,7 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		const MediaKeyReport KEY_MEDIA_WWW_BACK 			= {0	, 0x20};
 		const MediaKeyReport KEY_MEDIA_CC_CONFIGURATION 	= {0	, 0x40}; // Media Selection, KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION
 		const MediaKeyReport KEY_MEDIA_EMAIL_READER 		= {0	, 0x80};
-
+		 */
 	protected:
 		virtual void onStarted(NimBLEServer *pServer) { };
 		virtual void onConnect(NimBLEServer* pServer) override;

@@ -62,24 +62,42 @@ static const uint8_t _hidReportDescriptor[] = {
   INPUT(1),				0x00,			//   INPUT (Data,Array,Abs,No Wrap,Linear,Preferred State,No Null Position)
   END_COLLECTION(0),                 	// END_COLLECTION
   // ------------------------------------------------- Media Keys
-  USAGE_PAGE(1),		0x0C,			// USAGE_PAGE (Consumer)
-  USAGE(1),				0x01,			// USAGE (Consumer Control)
-  COLLECTION(1),		0x01,			// COLLECTION (Application)
-  REPORT_ID(1),			MEDIA_KEYS_ID,	//   REPORT_ID (3)
-  USAGE_PAGE(1),		0x0C,			//   USAGE_PAGE (Consumer)
-  LOGICAL_MINIMUM(1),	0x00,			//   LOGICAL_MINIMUM (0)
-  LOGICAL_MAXIMUM(1),	0x01,			//   LOGICAL_MAXIMUM (1)
-  REPORT_SIZE(1),		0x01,			//   REPORT_SIZE (1)
-  REPORT_COUNT(1),		0x10,			//   REPORT_COUNT (16)
-  USAGE(1),				0xB5,			//   USAGE (Scan Next Track)     ; bit 0: 1
-  USAGE(1),				0xB6,			//   USAGE (Scan Previous Track) ; bit 1: 2
-  USAGE(1),				0xB7,			//   USAGE (Stop)                ; bit 2: 4
-  USAGE(1),				0xCD,			//   USAGE (Play/Pause)          ; bit 3: 8
-  USAGE(1),				0xE2,			//   USAGE (Mute)                ; bit 4: 16
-  USAGE(1),				0xE9,			//   USAGE (Volume Increment)    ; bit 5: 32
-  USAGE(1),				0xEA,			//   USAGE (Volume Decrement)    ; bit 6: 64
-  USAGE(2),				0x23, 0x02,		//   Usage (WWW Home)            ; bit 7: 128
-  USAGE(2),				0x94, 0x01,		//   Usage (My Computer) ; bit 0: 1
+  USAGE_PAGE(1),		0x0C,			// 		USAGE_PAGE (Consumer)
+  USAGE(1),				0x01,			// 		USAGE (Consumer Control)
+  COLLECTION(1),		0x01,			// 		COLLECTION (Application)
+  REPORT_ID(1),			MEDIA_KEYS_ID,	//   	REPORT_ID (3)
+  USAGE_PAGE(1),		0x0C,			//   	USAGE_PAGE (Consumer)
+  LOGICAL_MINIMUM(1),	0x00,			//   	LOGICAL_MINIMUM (0)
+  LOGICAL_MAXIMUM(1),	0x01,			//   	LOGICAL_MAXIMUM (1)
+  REPORT_SIZE(1),		0x01,			//   	REPORT_SIZE (1)
+  REPORT_COUNT(1),		0x13,			//   	REPORT_COUNT (19)
+  USAGE(1),				0xB5,			//   	USAGE (Scan Next Track)     	; bit 0: 1
+  USAGE(1),				0xB6,			//   	USAGE (Scan Previous Track) 	; bit 1: 2
+  USAGE(1),				0xB7,			//   	USAGE (Stop)            		; bit 2: 4
+  USAGE(1),				0xCD,			//   	USAGE (Play/Pause)          	; bit 3: 8
+  USAGE(1),				0xE2,			//   	USAGE (Mute)                	; bit 4: 16
+  USAGE(1),				0xE9,			//   	USAGE (Volume Increment)    	; bit 5: 32
+  USAGE(1),				0xEA,			//   	USAGE (Volume Decrement)    	; bit 6: 64
+  USAGE(1),				0x30, 			//   	Usage (Power)            		; bit 7: 128
+  USAGE(1),				0x32,			//		Usage (Sleep) 					; bit 0: 1
+  USAGE(1),				0x40,			// 		MENU							; bit 1: 2
+  USAGE(1),				0x41,			// 		MENU_PICK						; bit 2: 4
+  USAGE(2),				0x24, 0x02,		// 		CC_BACK							; bit 3: 8
+  USAGE(1),				0x42,			// 		HID_CONSUMER_MENU_UP			; bit 4: 16
+  USAGE(1),				0x43,			// 		HID_CONSUMER_MENU_DOWN			; bit 5: 32
+  USAGE(1),				0x44,			// 		HID_CONSUMER_MENU_LEFT			; bit 6: 64
+  USAGE(1),				0x45,			// 		HID_CONSUMER_MENU_RIGHT			; bit 7: 12;
+  USAGE(1),				0x9C,			// 		HID_CONSUMER_CHANNEL_INCREMENT	; bit 0  1
+  USAGE(1),				0x9D,			// 		HID_CONSUMER_CHANNEL_DECREMENT	; bit 1  2
+  USAGE(2),				0x23, 0x02,		// 		CC_HOME							; bit 2: 4;
+
+  // Не работает СС_MENU и CC_HOME!
+
+  /*
+  USAGE(2),				0x83, 0x01,		//   	Usage (Media sel)   			; bit 6: 64
+  USAGE(2),				0x8A, 0x01,		//   	Usage (Mail)        			; bit 7: 128
+  */
+/*
   USAGE(2),				0x92, 0x01,		//   Usage (Calculator)  ; bit 1: 2
   USAGE(2),				0x2A, 0x02,		//   Usage (WWW fav)     ; bit 2: 4
   USAGE(2),				0x21, 0x02,		//   Usage (WWW search)  ; bit 3: 8
@@ -87,6 +105,7 @@ static const uint8_t _hidReportDescriptor[] = {
   USAGE(2),				0x24, 0x02,		//   Usage (WWW back)    ; bit 5: 32
   USAGE(2),				0x83, 0x01,		//   Usage (Media sel)   ; bit 6: 64
   USAGE(2),				0x8A, 0x01,		//   Usage (Mail)        ; bit 7: 128
+*/
   INPUT(1),				0x02,			//   INPUT (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
   END_COLLECTION(0)						// END_COLLECTION
 };
@@ -339,21 +358,11 @@ void BLEServer_t::SendReport(KeyReport* keys)
 
 void BLEServer_t::SendReport(MediaKeyReport* keys)
 {
-  if (this->isConnected())
-  {
-    this->inputMediaKeys->setValue((uint8_t*)keys, sizeof(MediaKeyReport));
-    this->inputMediaKeys->notify();
-
-    //vTaskDelay(delayTicks);
-    this->delay_ms(_delay_ms);
-  }
-}
-
-void BLEServer_t::SendReport(uint8_t Key)
-{
 	if (this->isConnected())
 	{
-		this->inputMediaKeys->setValue<uint8_t>(Key);
+	    //ESP_LOGE("SendReport","%02X%02X", &keys[0][0], &keys[0][1]);
+
+		this->inputMediaKeys->setValue((uint8_t*)keys, sizeof(MediaKeyReport));
 		this->inputMediaKeys->notify();
 
 		//vTaskDelay(delayTicks);
@@ -361,18 +370,19 @@ void BLEServer_t::SendReport(uint8_t Key)
 	}
 }
 
+
 #define SHIFT 0x80
 
 const uint8_t _asciimap[128] =
 {
-	0x00,             // NUL
-	0x00,             // SOH
-	0x00,             // STX
-	0x00,             // ETX
-	0x00,             // EOT
-	0x00,             // ENQ
-	0x00,             // ACK
-	0x00,             // BEL
+	0x00,			// NUL
+	0x00,			// SOH
+	0x00,			// STX
+	0x00,			// ETX
+	0x00,			// EOT
+	0x00,			// ENQ
+	0x00,			// ACK
+	0x00,			// BEL
 	0x2a,			// BS	Backspace
 	0x2b,			// TAB	Tab
 	0x28,			// LF	Enter
@@ -544,12 +554,13 @@ size_t BLEServer_t::Press(uint8_t k)
 
 size_t BLEServer_t::Press(const MediaKeyReport k)
 {
-    uint16_t k_16 = k[1] | (k[0] << 8);
-    uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
+    uint32_t k_32 = k[2] | (k[1] << 8) | (k[0] << 16);
+    uint32_t mediaKeyReport_32 = _mediaKeyReport[2] | (_mediaKeyReport[1] << 8) | (_mediaKeyReport[0] << 16);
 
-    mediaKeyReport_16 |= k_16;
-    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_16 & 0xFF00) >> 8);
-    _mediaKeyReport[1] = (uint8_t)(mediaKeyReport_16 & 0x00FF);
+    mediaKeyReport_32 |= k_32;
+    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_32 & 0xFF0000) >> 16);
+    _mediaKeyReport[1] = (uint8_t)((mediaKeyReport_32 & 0x00FF00) >> 8);
+    _mediaKeyReport[2] = (uint8_t)(mediaKeyReport_32 & 0x0000FF);
 
 	SendReport(&_mediaKeyReport);
 	return 1;
@@ -591,11 +602,14 @@ size_t BLEServer_t::Release(uint8_t k)
 
 size_t BLEServer_t::Release(const MediaKeyReport k)
 {
-    uint16_t k_16 = k[1] | (k[0] << 8);
-    uint16_t mediaKeyReport_16 = _mediaKeyReport[1] | (_mediaKeyReport[0] << 8);
-    mediaKeyReport_16 &= ~k_16;
-    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_16 & 0xFF00) >> 8);
-    _mediaKeyReport[1] = (uint8_t)(mediaKeyReport_16 & 0x00FF);
+    uint32_t k_32 = k[2] | (k[1] << 8) | (k[0] << 16);
+    uint32_t mediaKeyReport_32 = _mediaKeyReport[2] | (_mediaKeyReport[1] << 8) | (_mediaKeyReport[0] << 16);
+
+    mediaKeyReport_32 &= ~k_32;
+
+    _mediaKeyReport[0] = (uint8_t)((mediaKeyReport_32 & 0xFF0000) >> 16);
+    _mediaKeyReport[1] = (uint8_t)((mediaKeyReport_32 & 0x00FF00) >> 8);
+    _mediaKeyReport[2] = (uint8_t)(mediaKeyReport_32 & 0x0000FF);
 
 	SendReport(&_mediaKeyReport);
 	return 1;
@@ -612,6 +626,7 @@ void BLEServer_t::ReleaseAll(void)
 	_keyReport.modifiers = 0;
     _mediaKeyReport[0] = 0;
     _mediaKeyReport[1] = 0;
+    _mediaKeyReport[2] = 0;
 	SendReport(&_keyReport);
 }
 

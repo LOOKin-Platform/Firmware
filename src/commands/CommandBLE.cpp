@@ -39,19 +39,13 @@ class CommandBLE_t : public Command_t {
 				if (Operand.size() == 0)
 					return false;
 
-				if (Operand.size() == 2 && Converter::IsStringContainsOnlyDigits(Operand))
-				{
-					BLEServer.SendReport(Converter::UintFromHexString<uint8_t>(Operand));
-					return true;
-				}
-
 				if (Operand.size() == 4 && Converter::IsStringContainsOnlyDigits(Operand))
 				{
 					static MediaKeyReport CurrentMediaKeyReport;
 					CurrentMediaKeyReport[0] = Converter::UintFromHexString<uint8_t>(Operand.substr(0, 2));
 					CurrentMediaKeyReport[1] = Converter::UintFromHexString<uint8_t>(Operand.substr(2, 2));
 
-					BLEServer.SendReport(&CurrentMediaKeyReport);
+					BLEServer.Write(CurrentMediaKeyReport);
 
 					return true;
 				}
@@ -65,15 +59,18 @@ class CommandBLE_t : public Command_t {
 				else if (Operand == "MEDIA_MUTE") 			{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_MUTE)				;}
 				else if (Operand == "MEDIA_VOLUME_UP") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_UP)			;}
 				else if (Operand == "MEDIA_VOLUME_DOWN") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_DOWN)			;}
-				else if (Operand == "MEDIA_WWW_HOME") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_HOME)			;}
-				else if (Operand == "MEDIA_BROWSER") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_LOCAL_MACHINE_BROWSER);}
-				else if (Operand == "MEDIA_CALCULATOR")		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CALCULATOR)			;}
-				else if (Operand == "MEDIA_WWW_BOOKMARKS")	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_BOOKMARKS)		;}
-				else if (Operand == "MEDIA_WWW_SEARCH")		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_SEARCH)			;}
-				else if (Operand == "MEDIA_WWW_STOP") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_STOP)			;}
-				else if (Operand == "MEDIA_WWW_BACK")		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_WWW_BACK)			;}
-				else if (Operand == "MEDIA_CONFIGURATION")	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CC_CONFIGURATION)	;}
-				else if (Operand == "MEDIA_EMAIL_READER")	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_EMAIL_READER)		;}
+				else if (Operand == "MEDIA_CHANNEL_UP") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CHANNEL_UP)			;}
+				else if (Operand == "MEDIA_CHANNEL_DOWN") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CHANNEL_DOWN)		;}
+				else if (Operand == "CC_POWER") 			{ Result = BLEServer.Write(BLEServer.KEY_CC_POWER)					;}
+				else if (Operand == "CC_SLEEP") 			{ Result = BLEServer.Write(BLEServer.KEY_CC_SLEEP)					;}
+				else if (Operand == "CC_MENU") 				{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU)					;}
+				else if (Operand == "CC_MENU_PICK") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_PICK)				;}
+				else if (Operand == "CC_BACK") 				{ Result = BLEServer.Write(BLEServer.KEY_CC_BACK)					;}
+				else if (Operand == "CC_HOME") 				{ Result = BLEServer.Write(BLEServer.KEY_CC_HOME)					;}
+				else if (Operand == "CC_MENU_UP") 			{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_UP)				;}
+				else if (Operand == "CC_MENU_DOWN") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_DOWN)				;}
+				else if (Operand == "CC_MENU_LEFT") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_LEFT)				;}
+				else if (Operand == "CC_MENU_RIGHT") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_RIGHT)				;}
 				else if (Operand == "KEY_ARROW_UP")			{ Result = BLEServer.Write(0xDA)									;}
 				else if (Operand == "KEY_ARROW_DOWN")		{ Result = BLEServer.Write(0xD9)									;}
 				else if (Operand == "KEY_ARROW_LEFT")		{ Result = BLEServer.Write(0xD8)									;}
