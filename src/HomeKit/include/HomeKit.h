@@ -79,7 +79,7 @@ class HomeKit {
 		static bool				IsAP;
 		static ModeEnum			Mode;
 
-		static uint64_t			VolumeLastUpdated;
+		static uint64_t			TVHIDLastUpdated;
 
 		static vector<hap_acc_t*> BridgedAccessories;
 };

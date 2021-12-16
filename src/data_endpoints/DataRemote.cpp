@@ -945,6 +945,12 @@ class DataRemote_t : public DataEndpoint_t {
 
 					SaveDevice(DeviceItem);
 
+					if (Function == "functions")
+					{
+						Result.SetSuccess();
+						return;
+					}
+
 					if (!IsOK && FunctionsToDelete.size() == 1)
 					{
 						Result.SetFail();

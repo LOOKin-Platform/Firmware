@@ -8,7 +8,7 @@ bool 				HomeKit::IsRunning 		= false;
 bool 				HomeKit::IsAP 			= false;
 HomeKit::ModeEnum	HomeKit::Mode			= HomeKit::ModeEnum::NONE;
 
-uint64_t			HomeKit::VolumeLastUpdated = 0;
+uint64_t			HomeKit::TVHIDLastUpdated = 0;
 
 vector<hap_acc_t*> 	HomeKit::BridgedAccessories = vector<hap_acc_t*>();
 
@@ -121,7 +121,7 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
 
         DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
 
-        if (IRDeviceItem.DeviceType == 0x01 && (Time::UptimeU() - VolumeLastUpdated) < 1000000)
+        if (IRDeviceItem.DeviceType == 0x01 && (uint32_t)(Time::UptimeU() - TVHIDLastUpdated) < 500000)
         	return HAP_STATUS_SUCCESS;
 
         if (IRDeviceItem.IsEmpty())
@@ -226,6 +226,8 @@ bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
 	ESP_LOGE("Cursor for UUID", "%s Value: %d", UUID.c_str(), Value);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	TVHIDLastUpdated = Time::UptimeU();
+
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
         CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
@@ -278,8 +280,6 @@ bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
         		return true;
         	}
         }
-
-
     }
 
     return false;
@@ -313,7 +313,7 @@ bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
 	ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
 
     if (Settings.eFuse.Type == Settings.Devices.Remote) {
-    	VolumeLastUpdated = Time::UptimeU();
+    	TVHIDLastUpdated = Time::UptimeU();
 
         map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
