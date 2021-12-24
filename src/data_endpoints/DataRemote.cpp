@@ -137,7 +137,7 @@ class DataDeviceTV_t  : public DataDeviceItem_t {
 class DataDeviceMedia_t  : public DataDeviceItem_t {
 	public:
 		DataDeviceMedia_t() { DeviceTypeID = 0x02; }
-		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x05, 0x06, 0x07, 0x0E, 0x0F }; }
+		vector<uint8_t> GetAvaliableFunctions() override  { return { 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x0E, 0x0F }; }
 
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override {
 			ESP_LOGE("UpdateStatusForFunction", "Status %04X, FunctionID %02X, Value %02X", Status, FunctionID, Value);

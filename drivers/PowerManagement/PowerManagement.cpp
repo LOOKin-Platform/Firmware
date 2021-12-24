@@ -5,6 +5,7 @@
 
 #include "PowerManagement.h"
 #include "NimBLEDevice.h"
+#include "esp_coexist.h"
 
 static char tag[] = "PowerManagement";
 
@@ -23,6 +24,8 @@ void PowerManagement::SetPMType(PowerManagementType PMType) {
 	SetWiFiOptions();
 	SetBLEOptions();
 	SetPMOptions();
+
+	::esp_coex_preference_set(ESP_COEX_PREFER_WIFI);
 }
 
 void PowerManagement::SetPMType(bool IsActive, bool IsConstPower) {
