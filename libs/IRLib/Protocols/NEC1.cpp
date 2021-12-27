@@ -31,8 +31,7 @@ class NEC1 : public IRProto {
 		}
 
 		pair<uint32_t,uint16_t> GetData(vector<int32_t> RawData) override {
-			uint16_t 	Address = 0x0;
-			uint8_t		Command = 0x0;
+			uint32_t 	Uint32Data = 0x0;
 
 			vector<int32_t> Data = RawData;
 
@@ -44,10 +43,10 @@ class NEC1 : public IRProto {
 		    }
 
 		    for (uint8_t BlockId = 0; BlockId < 4; BlockId++) {
-		    		bitset<8> Block;
+		    	bitset<8> Block;
 
-				for (int i=0; i<8; i++) {
-					if (Data[0] > 500 && Data[0] < 720) {
+				for (int i=7; i>=0; i--) {
+					if (Data[0] > 450 && Data[0] < 720) {
 						if (Data[1] > -700)
 							Block[i] = 0;
 						if (Data[1] < -1200)
@@ -59,53 +58,24 @@ class NEC1 : public IRProto {
 
 				uint8_t BlockInt = (uint8_t)Block.to_ulong();
 
-				switch (BlockId) {
-					case 0: Address = BlockInt; break;
-					case 1:
-						if ((uint8_t)Address != (uint8_t)~BlockInt) {
-							uint16_t tmpAddress = BlockInt;
-							tmpAddress = tmpAddress << 8;
-							Address += tmpAddress;
-						}
-						break;
-					case 2: Command = BlockInt; break;
-					case 3:
-						if (Command != (uint8_t)~BlockInt) Command = 0;
-						break;
-				}
+				Uint32Data = (Uint32Data << 8) + BlockInt;
 		    }
 
-		    return make_pair((Address << 8) + Command, 0x0);
+		    return make_pair(Uint32Data, 0x0);
 		}
 
 		vector<int32_t> ConstructRaw(uint32_t Data, uint16_t Misc) override {
-			uint16_t	 NECAddress = (uint16_t)((Data >> 8));
-			uint8_t 	 NECCommand = (uint8_t) ((Data << 24) >> 24);
-
 			vector<int32_t> Raw = vector<int32_t>();
 
 			/* raw NEC header */
 			Raw.push_back(+9000);
 			Raw.push_back(-4500);
 
-			if (NECAddress <= 0xFF)
-				NECAddress += (((uint8_t)~NECAddress) << 8);
+			bitset<32> AddressItem(Data);
 
-			bitset<16> AddressItem(NECAddress);
-			for (int i=0;i<16;i++) {
+			for (int i=31;i>=0;i--) {
 				Raw.push_back(+560);
 				Raw.push_back((AddressItem[i] == true) ? -1650 : -560);
-			}
-
-			bitset<8> CommandItem(NECCommand);
-			for (int i=0;i<8;i++) {
-				Raw.push_back(+560);
-				Raw.push_back((CommandItem[i] == true) ? -1650 : -560);
-			}
-
-			for (int i=0;i<8;i++) {
-				Raw.push_back(+560);
-				Raw.push_back((CommandItem[i] == false) ? -1650 : -560);
 			}
 
 			Raw.push_back(+560);
