@@ -14,16 +14,16 @@ class NEC1 : public IRProto {
 
 		bool IsProtocol(vector<int32_t> &RawData) override {
 			if (RawData.size() == 68) {
-				if (RawData.at(0) 	> 8700 	&& RawData.at(0) 	< 9300 &&
-					RawData.at(1) 	< -4200 && RawData.at(1) 	> -4800 &&
-					RawData.at(66) 	> 500 	&& RawData.at(66)	< 700)
+				if (RawData.at(0) 	> 7650 	&& RawData.at(0) 	< 10350 &&
+					RawData.at(1) 	< -3825 && RawData.at(1) 	> -5200 &&
+					RawData.at(66) 	> 450 	&& RawData.at(66)	< 700)
 					return true;
 			}
 
 			if (RawData.size() == 16) {
-				if (RawData.at(0) > 8700 && RawData.at(0) < 9300 &&
+				if (RawData.at(0) > 7650 && RawData.at(0) < 10350 &&
 					RawData.at(1) < -1900 && RawData.at(1) > -2500 &&
-					RawData.at(2) > 470 && RawData.at(2) < 700)
+					RawData.at(2) > 450 && RawData.at(2) < 700)
 				return true;
 			}
 
@@ -80,6 +80,7 @@ class NEC1 : public IRProto {
 
 			Raw.push_back(+560);
 			Raw.push_back(-45000);
+
 			/*
 			Raw.push_back(-1650);
 			Raw.push_back(-1650);
