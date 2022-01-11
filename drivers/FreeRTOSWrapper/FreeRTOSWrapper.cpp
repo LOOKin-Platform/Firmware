@@ -386,6 +386,10 @@ BaseType_t FreeRTOS::Queue::SendToFront(QueueHandle_t QueueHandle, void *Item, T
 	return ::xQueueSendToFront(QueueHandle, Item, xTicksToWait);
 }
 
+BaseType_t FreeRTOS::Queue::Peek(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait) {
+	return ::xQueuePeek(QueueHandle, Item, xTicksToWait);
+}
+
 BaseType_t FreeRTOS::Queue::Receive(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait) {
 	return ::xQueueReceive(QueueHandle, Item, xTicksToWait);
 }

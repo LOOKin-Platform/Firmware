@@ -97,6 +97,7 @@ class FreeRTOS {
 				static BaseType_t			SendToBack			(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
 				static BaseType_t			SendToFront			(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
 				static BaseType_t			Receive				(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
+				static BaseType_t			Peek				(QueueHandle_t QueueHandle, void *Item, TickType_t xTicksToWait = 50);
 				static uint8_t				Count				(QueueHandle_t QueueHandle);
 				static uint8_t				SpaceAvaliable		(QueueHandle_t QueueHandle);
 				static void					Reset				(QueueHandle_t QueueHandle);
