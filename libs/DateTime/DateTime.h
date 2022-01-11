@@ -34,7 +34,7 @@ struct DateTime_t {
 class Time {
   public:
     static uint32_t		Offset;
-    static int8_t		TimezoneOffset;
+    static float		TimezoneOffset;
 
     static uint32_t		Uptime();
     static uint64_t		UptimeU();
@@ -45,7 +45,7 @@ class Time {
 
     static void			SetTimezone();
     static void			SetTimezone(string TimezoneOffset);
-    static int8_t		Timezone();
+    static float		Timezone();
     static string		TimezoneStr();
     static bool			IsUptime(uint32_t Time);
 

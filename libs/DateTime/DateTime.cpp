@@ -20,7 +20,7 @@ const char tag[] 			= "Time";
 const char NVSTimeArea[] 	= "Time";
 
 uint32_t    Time::Offset = 0;
-int8_t      Time::TimezoneOffset = 0;
+float		Time::TimezoneOffset = 0;
 string      Time::ReadBuffer = "";
 
 uint32_t Time::Uptime() {
@@ -78,26 +78,27 @@ void Time::SetTime(string CurrentTime) {
 
 void Time::SetTimezone() {
 	NVS Memory(NVSTimeArea);
-	uint8_t TimeZoneTemp = Memory.GetInt8Bit(NVSTimeTimezone);
 
-	if (TimeZoneTemp!=0)
-		Time::TimezoneOffset = TimeZoneTemp - 25;
+	string TimeZoneString = Memory.GetString(NVSTimeTimezone);
+
+	Time::TimezoneOffset = Converter::ToFloat(TimeZoneString);
 }
 
 void Time::SetTimezone(string TimezoneOffset) {
-	Time::TimezoneOffset = (uint32_t) atoi (TimezoneOffset.c_str());
+	Time::TimezoneOffset = Converter::ToFloat(TimezoneOffset);
 
 	NVS Memory(NVSTimeArea);
-	Memory.SetInt8Bit(NVSTimeTimezone, Time::TimezoneOffset + 25);
+
+	Memory.SetString(NVSTimeTimezone, TimezoneOffset);
 	Memory.Commit();
 }
 
-int8_t Time::Timezone() {
+float Time::Timezone() {
 	return Time::TimezoneOffset;
 }
 
 string Time::TimezoneStr() {
-	string Result = Converter::ToString(Time::Timezone());
+	string Result = Converter::ToString<float>(Time::Timezone());
 	return (Time::Timezone() > 0) ? "+" + Result : Result;
 }
 
@@ -106,7 +107,7 @@ bool Time::IsUptime(uint32_t Time) {
 }
 
 uint32_t Time::UptimeToUnixTime(uint32_t Uptime) {
-	return Uptime + Offset + TimezoneOffset*3600;
+	return Uptime + Offset + (uint32_t)(TimezoneOffset*3600);
 }
 
 
