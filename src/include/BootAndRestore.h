@@ -37,6 +37,8 @@ class BootAndRestore {
 		static 	bool	IsDeviceFullyStarted;
 		static 	void	RunOperation			(OperationTypeEnum, bool IsDelayed = true);
 	private:
+		static	void 	CheckPartitionTable();
+
 		static	void	Migration				(string OldFirmware, string NewFirmware);
 
 		static 	void 	ExecuteOperationNow		(OperationTypeEnum Operation);
@@ -47,7 +49,6 @@ class BootAndRestore {
 
 		static 	TaskHandle_t	DelayedOperationTaskHandler;
 		static 	TaskHandle_t	MarkDeviceStartedTaskHandler;
-
 };
 
 #endif

@@ -14,9 +14,12 @@ bool BootAndRestore::IsDeviceFullyStarted = false;
 TaskHandle_t	BootAndRestore::DelayedOperationTaskHandler		= NULL;
 TaskHandle_t	BootAndRestore::MarkDeviceStartedTaskHandler	= NULL;
 
+
 void BootAndRestore::OnDeviceStart() {
 	NVS Memory(NVSBootAndRestoreArea);
 	FirmwareVersion OldFirmware = FirmwareVersion(Memory.GetUInt32Bit(NVSBootAndRestoreAreaFirmware));
+
+	CheckPartitionTable();
 
 	if (OldFirmware != Settings.Firmware) {
 		Memory.SetUInt32Bit(NVSBootAndRestoreAreaFirmware, Settings.Firmware.Version.Uint32Data);
@@ -48,6 +51,39 @@ void BootAndRestore::OnDeviceStart() {
 		ESP_LOGE(tag, "Failed start, device rollback started");
 		OTA::Rollback();
 	 */
+}
+
+void BootAndRestore::CheckPartitionTable() {
+	const esp_partition_t *Partition = ::esp_partition_find_first((esp_partition_type_t)0x82, ESP_PARTITION_SUBTYPE_ANY, "scenarios");
+    if (Partition != NULL) {
+    	if (Partition->subtype != 0x06)
+    	{
+        	ESP_LOGI("BootAndRestore", "Old partition found");
+
+        	extern const uint8_t partitions_4mb_v2_start[] asm("_binary_partitions_4mb_v2_start");
+        	extern const uint8_t partitions_4mb_v2_end[]   asm("_binary_partitions_4mb_v2_end");
+        	extern const uint8_t partitions_16mb_v2_start[] asm("_binary_partitions_16mb_v2_start");
+        	extern const uint8_t partitions_16mb_v2_end[]   asm("_binary_partitions_16mb_v2_end");
+
+            const uint32_t PartitionSize4mb 	= (partitions_4mb_v2_end - partitions_4mb_v2_start);
+            const uint32_t PartitionSize16mb 	= (partitions_16mb_v2_end - partitions_16mb_v2_start);
+
+            SPIFlash::EraseRange(0x8000, 0xC00);
+
+            esp_err_t err;
+
+            if (Settings.DeviceGeneration < 2)
+            	{ err = spi_flash_write(0x8000, partitions_4mb_v2_start, PartitionSize4mb);}
+            else
+            	{ err = spi_flash_write(0x8000, partitions_16mb_v2_start, PartitionSize16mb); }
+
+        	if (err == ESP_OK)
+            	Reboot(false);
+        	else
+        		ESP_LOGE("Partition write failed", "%s", Converter::ErrorToString(err));
+    	}
+    }
+
 }
 
 void BootAndRestore::MarkDeviceStartedWithDelay(uint16_t Delay) {
@@ -92,6 +128,11 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		Memory.SetInt8Bit(NVSDeviceEco, 1);
 		Memory.Commit();
 	}
+
+//	if (OldFirmware < "2.41") {
+//		if (Settings.DeviceGeneration > 1)
+
+//	}
 
 	// Erase firmware while update to 2.40
 	if (OldFirmware < "2.40" && Settings.DeviceGeneration > 1) {
