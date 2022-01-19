@@ -249,7 +249,19 @@ vector<int32_t>IRLib::GetRawDataForSending() {
 		if (Uint32Data > 0)
 			Result = Proto->ConstructRawForSending(this->Uint32Data, this->MiscData);
 
-	return (Result.size() > 0) ? Result : this->RawData;
+	if (!IsRepeated)
+		return (Result.size() > 0) ? Result : this->RawData;
+	else
+	{
+		Result = (Result.size() > 0) ? Result : this->RawData;
+		Result.pop_back();
+		Result.push_back((RepeatPause > 0) ? -RepeatPause : -25000);
+		Result.insert(Result.end(), Result.begin(), Result.end());
+		Result.pop_back();
+		Result.push_back(-Settings.SensorsConfig.IR.SignalEndingLen);
+
+		return Result;
+	}
 }
 
 vector<int32_t> IRLib::GetRawRepeatSignalForSending() {
@@ -489,8 +501,10 @@ string IRLib::ProntoHexConstruct(bool SpaceDelimeter) {
 
 	Result += Delimeter + Converter::ToHexString((uint8_t)floor(1000000/(Frequency*0.241246)), 4);
 
-	if (	ProntoOneTimeBurst == 0 && ProntoRepeatBurst == 0) {
-		Result += Delimeter + Converter::ToHexString(ceil(RawData.size() / 2), 4);
+	uint16_t RawDataSize = (IsRepeated) ? RawData.size() : ceil(RawData.size() / 2) ;
+
+	if (ProntoOneTimeBurst == 0 && ProntoRepeatBurst == 0) {
+		Result += Delimeter + Converter::ToHexString(RawDataSize, 4);
 		Result += Delimeter + Converter::ToHexString(0, 4);
 	}
 	else {
@@ -500,6 +514,14 @@ string IRLib::ProntoHexConstruct(bool SpaceDelimeter) {
 
 	for (auto &Bit : RawData)
 		Result += Delimeter + Converter::ToHexString(round(abs(Bit) / USec) , 4);
+
+	if (IsRepeated) {
+		Result.erase(Result.size()-4, 4);
+		Result += Delimeter + Converter::ToHexString(round(RepeatPause / USec) , 4);
+
+		for (auto &Bit : RawData)
+			Result += Delimeter + Converter::ToHexString(round(abs(Bit) / USec) , 4);
+	}
 
 	return Result;
 }
