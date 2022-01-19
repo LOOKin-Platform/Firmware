@@ -51,7 +51,6 @@ class SensorIR_t : public Sensor_t {
 			SetValue(0, "Signal");
 			SetValue(0, "Raw");
 			SetValue(0, "IsRepeated");
-			SetValue(0, "RepeatSignal");
 			SetValue(0, "RepeatPause");
 
 			SetIsInited(true);
@@ -77,7 +76,6 @@ class SensorIR_t : public Sensor_t {
 			SetValue(LastSignal.Uint32Data			, "Signal");
 			SetValue(0								, "Raw");
 			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated");
-			SetValue(0								, "RepeatSignal");
 			SetValue(0								, "RepeatPause");
 
 			Updated = SignalDetectionTime;
