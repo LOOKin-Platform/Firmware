@@ -87,6 +87,52 @@ void IRLib::FillProtocols() {
 }
 
 void IRLib::LoadDataFromRaw() {
+
+	if (RawData.size() > 0) {
+		vector <pair<uint32_t,uint16_t>> Pauses = vector<pair<uint32_t,uint16_t>>();
+
+		for (int i=0; i < RawData.size() - 1; i++)
+			if (RawData[i] < -10000)
+				Pauses.push_back(make_pair(abs(RawData[i]), i));
+
+		if (Pauses.size() > 0) { // long pauses exist
+			// first: check if this signal is exact repeated one
+			uint32_t FirstItemLength = Pauses[0].second + 1;
+
+			bool IsAllIdentical = true;
+			for (int i=0; i < Pauses.size(); i++) {
+				uint32_t PartLength = (i != Pauses.size()-1) ? Pauses[i+1].second - Pauses[i].second : RawData.size() - Pauses[i].second - 1;
+
+				if (!CompareIsIdentical(RawData, RawData, 0, Pauses[i].second+1, FirstItemLength - 1, PartLength - 1)) {
+					IsAllIdentical = false;
+					break;
+				}
+			}
+
+			if (IsAllIdentical) {
+				RawData = std::vector<int32_t>(RawData.begin(), RawData.begin() + FirstItemLength);
+				IsRepeated = true;
+				RepeatPause = Pauses[0].first;
+			}
+			else if (Pauses.size() == 1) {
+				// second: check for main signal and repeat command
+
+				IRProto *FirstPartProtocol = GetProtocol(0, FirstItemLength);
+
+				if (FirstPartProtocol != nullptr) {
+					vector<int32_t> RepeatSignal = FirstPartProtocol->ConstructRawRepeatSignal(0, 0);
+					if (CompareIsIdentical(RawData, RepeatSignal, FirstItemLength, 0, RawData.size() - Pauses[0].second - 1, 0)) {
+						RawData = std::vector<int32_t>(RawData.begin(), RawData.begin() + FirstItemLength);
+					}
+				}
+			}
+		}
+
+		if (RawData.size() > 0 && RawData[RawData.size() - 1] != -Settings.SensorsConfig.IR.SignalEndingLen)
+			RawData[RawData.size() - 1] = -Settings.SensorsConfig.IR.SignalEndingLen;
+	}
+
+
 	IRProto *Protocol = GetProtocol();
 
 	this->Protocol 		= 0xFF;
@@ -109,7 +155,7 @@ uint8_t IRLib::GetProtocolExternal(vector<int32_t> &SignalVector){
 	FillProtocols();
 
 	for (auto& Protocol : IRLib::Protocols)
-		if (Protocol->IsProtocol(SignalVector))
+		if (Protocol->IsProtocol(SignalVector, 0, SignalVector.size()))
 			return Protocol->ID;
 
 	return 0xFF;
@@ -303,17 +349,21 @@ bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 	return false;
 }
 
-bool IRLib::CompareIsIdentical(vector<int32_t> &Signal1, vector<int32_t> &Signal2) {
-	uint16_t SizeDiff		= abs((uint16_t)(Signal1.size() - Signal2.size()));
-	uint16_t MinimalSize	= min(Signal1.size(), Signal2.size());
+bool IRLib::CompareIsIdentical(vector<int32_t> &Signal1, vector<int32_t> &Signal2, uint16_t Signal1Start, uint16_t Signal2Start, uint16_t Signal1Size, uint16_t Signal2Size)
+{
+	if (Signal1Size == 0) Signal1Size = Signal1.size();
+	if (Signal2Size == 0) Signal2Size = Signal2.size();
+
+	uint16_t SizeDiff		= abs((uint16_t)(Signal1Size - Signal2Size));
+	uint16_t MinimalSize	= min(Signal1Size, Signal2Size);
 
 	if (SizeDiff >= 5) // too big difference between signals length
 		return false;
 
 	for (uint16_t i=0; i< MinimalSize; i++) {
-		uint16_t PartDif = abs(Signal1[i] - Signal2[i]);
+		uint16_t PartDif = abs(Signal1[Signal1Start + i] - Signal2[Signal2Start + i]);
 
-		if (PartDif > 0.20 * max(abs(Signal1[i]), abs(Signal2[i])))
+		if (PartDif > 0.20 * max(abs(Signal1[Signal1Start + i]), abs(Signal2[Signal2Start + i])))
 			return false;
 	}
 
@@ -321,9 +371,12 @@ bool IRLib::CompareIsIdentical(vector<int32_t> &Signal1, vector<int32_t> &Signal
 }
 
 
-IRProto* IRLib::GetProtocol() {
+IRProto* IRLib::GetProtocol(uint16_t Start, uint16_t Length) {
+	if (Length == 0)
+		Length = RawData.size();
+
 	for (auto& Protocol : IRLib::Protocols)
-		if (Protocol->IsProtocol(RawData))
+		if (Protocol->IsProtocol(RawData, Start, Length))
 			return Protocol;
 
 	return nullptr;
@@ -355,8 +408,8 @@ bool IRLib::FillFromProntoHex(string &SrcString) {
 	if (SrcString.substr(0,4) == "000F")
 		IsSkipProntoFlag = true;
 
-	uint8_t ProntoOneTimeBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(8,4));
-	uint8_t ProntoRepeatBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(12,4));
+	//uint8_t ProntoOneTimeBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(8,4));
+	//uint8_t ProntoRepeatBurst 		= Converter::UintFromHexString<uint8_t>(SrcString.substr(12,4));
 	uint8_t USec					= (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
 
 	SrcString.erase(0,16);

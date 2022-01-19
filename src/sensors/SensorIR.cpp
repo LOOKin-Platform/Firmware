@@ -16,18 +16,11 @@ static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
 
 static IRLib 				LastSignal;
-static string				RepeatCode;
-
-static uint64_t 			LastSignalEnd 	= 0;
-static uint64_t				NewSignalStart	= 0;
-static uint64_t 			NewSignalEnd	= 0;
-
-static uint16_t				RepeatPause 	= 0;
+static uint32_t             SignalDetectedTime     = 0;
 
 static esp_timer_handle_t 	SignalReceivedTimer = NULL;
 
-static string 				SensorIRACCheckBuffer 	= "";
-
+static string 				SensorIRACCheckBuffer 		= "";
 static char 				SensorIRSignalCRCBuffer[96] = "\0";
 
 class SensorIR_t : public Sensor_t {
@@ -75,7 +68,7 @@ class SensorIR_t : public Sensor_t {
 		void Update() override {
 			Values.clear();
 
-			uint32_t SignalDetectionTime = Time::UptimeToUnixTime((uint32_t)(NewSignalEnd / 1000));
+			uint32_t SignalDetectionTime = Time::UptimeToUnixTime(SignalDetectedTime);
 
 			if (Time::IsUptime(SignalDetectionTime) && Time::Offset > 0)
 				SignalDetectionTime = Time::Unixtime() - (Time::Uptime() - SignalDetectionTime);
@@ -101,13 +94,10 @@ class SensorIR_t : public Sensor_t {
 				return LastSignal.GetRawSignal();
 
 			if (Key == "IsRepeated")
-				return (LastSignal.IsRepeated) ? "1" : "0";
-
-			if (Key == "RepeatSignal")
-				return RepeatCode;
+				return (LastSignal.IsRepeated) ? "1" : "0";;
 
 			if (Key == "RepeatPause")
-				return (LastSignal.IsRepeated) ? Converter::ToString(RepeatPause) : "0";
+				return (LastSignal.IsRepeated) ? Converter::ToString(LastSignal.RepeatPause) : "0";
 
 			return Converter::ToHexString(Values[Key], 8);
 		}
@@ -137,11 +127,8 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageStart() {
-			NewSignalEnd 	= RMT::GetSignalEndU();
-			NewSignalStart	= NewSignalEnd;
-
+			SignalDetectedTime = Time::Uptime();
 			SensorIRCurrentMessage.clear();
-			RepeatCode = "";
 		};
 
 		static bool MessageBody(int16_t Bit) {
@@ -154,7 +141,6 @@ class SensorIR_t : public Sensor_t {
 			}
 
 			SensorIRCurrentMessage.push_back(Bit);
-			NewSignalStart -= abs(Bit);
 
 			return true;
 		};
@@ -166,61 +152,25 @@ class SensorIR_t : public Sensor_t {
 					return;
 				}
 
-			bool IsOdd = false;
 
-			uint64_t Length = NewSignalEnd - NewSignalStart;
+			bool IsRepeatSignal = false;
+			vector<int32_t> PotentialRepeatSignal = LastSignal.GetRawRepeatSignalForSending();
 
-			if (SensorIRCurrentMessage.size() <= Settings.SensorsConfig.IR.MinSignalLen && Length < 1500) {
-				if (RepeatCode == "" && SensorIRCurrentMessage.size() >= 2) {
-					for (int i=0; i < SensorIRCurrentMessage.size(); i++)
-						RepeatCode += Converter::ToString(SensorIRCurrentMessage[i]) + ((i != SensorIRCurrentMessage.size() - 1) ? " " : "");
+			if (LastSignal.Protocol != 0xFF && PotentialRepeatSignal.size() > 0 &&
+				IRLib::CompareIsIdentical(PotentialRepeatSignal, SensorIRCurrentMessage))
+				IsRepeatSignal = true;
 
-					IsOdd = true;
-				}
-
-				if (SensorIRCurrentMessage.size() < 2)
-					IsOdd = true;
-
-				if (IsOdd) {
-					NewSignalEnd = LastSignalEnd;
-					RMT::ClearQueue();
-					return;
-				}
+			if (!IsRepeatSignal) {
+				LastSignal.RawData = SensorIRCurrentMessage;
+				LastSignal.ExternFillPostOperations();
 			}
 
-			LastSignal.IsRepeated = false;
+			if (Settings.eFuse.DeviceID == 0x00000003) {
+				string Output = "";
+				for (auto &Item : SensorIRCurrentMessage)
+					Output = Output + Converter::ToString(Item) + " ";
 
-			RepeatCode = "";
-
-			uint64_t Pause = (LastSignalEnd > 0) ? NewSignalStart - LastSignalEnd : 0;
-
-			bool IsFollowingRepeatSignal = false;
-			vector<int32_t> RepeatSignal = LastSignal.GetRawRepeatSignalForSending();
-			if (LastSignal.Protocol != 0xFF && IRLib::CompareIsIdentical(SensorIRCurrentMessage, RepeatSignal))
-				IsFollowingRepeatSignal = true;
-
-			if (!IsFollowingRepeatSignal)
-				if (IRLib::CompareIsIdentical(LastSignal.RawData,SensorIRCurrentMessage))
-					IsFollowingRepeatSignal = true;
-
-			if (!IsFollowingRepeatSignal) {
-				if (Pause > 0 && Pause < Settings.SensorsConfig.IR.SignalPauseMax)
-				{
-					if (LastSignal.RawData.size() > 0)
-						LastSignal.RawData.back() = -(uint32_t)Pause;
-
-					LastSignal.AppendRawSignal(SensorIRCurrentMessage);
-				}
-				else {
-					LastSignal.RawData.clear();
-					LastSignal.RawData = SensorIRCurrentMessage;
-					LastSignal.ExternFillPostOperations();
-				}
-			}
-			else if (Pause <= Settings.SensorsConfig.IR.SignalPauseMax) {
-				LastSignal.IsRepeated = true;
-
-				RepeatPause = (Pause > numeric_limits<uint16_t>::max()) ? numeric_limits<uint16_t>::max() :  Pause;
+				ESP_LOGI("Received", "%s", Output.c_str());
 			}
 
 			SensorIRCurrentMessage.empty();
@@ -228,16 +178,12 @@ class SensorIR_t : public Sensor_t {
 			if (LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
 				Log::Add(Log::Events::Sensors::IRReceived);
 
-			LastSignalEnd = NewSignalEnd;
-
 			::esp_timer_stop(SignalReceivedTimer);
 			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);
 		};
 
 
 		static void SignalReceivedCallback(void *Param) {
-			RMT::ClearQueue();
-
 			if (LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
 				return;
 

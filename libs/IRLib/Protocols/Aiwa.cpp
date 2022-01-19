@@ -19,11 +19,11 @@ class Aiwa : public IRProto {
 			DefinedFrequency	= 38000;
 		};
 
-		bool IsProtocol(vector<int32_t> &RawData) override {
-			if (RawData.size() == 88) {
-				if (TestValue(RawData.at(0), AIWA_HDR_MARK) &&
-					TestValue(RawData.at(1), -AIWA_HDR_SPACE) &&
-					TestValue(RawData.at(2), AIWA_BIT_MARK))
+		bool IsProtocol(vector<int32_t> &RawData, uint16_t Start, uint16_t Length) override {
+			if (Length == 88) {
+				if (TestValue(RawData.at(Start + 0), AIWA_HDR_MARK) &&
+					TestValue(RawData.at(Start + 1), -AIWA_HDR_SPACE) &&
+					TestValue(RawData.at(Start + 2), AIWA_BIT_MARK))
 					return true;
 			}
 

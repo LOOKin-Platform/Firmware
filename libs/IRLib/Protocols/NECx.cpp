@@ -20,14 +20,14 @@ class NECx : public IRProto {
 			DefinedFrequency	= 38500;
 		};
 
-		bool IsProtocol(vector<int32_t> &RawData) override {
-			if (RawData.size() < 66)
+		bool IsProtocol(vector<int32_t> &RawData, uint16_t Start, uint16_t Length) override {
+			if (Length < 66)
 				return false;
 
-			if (TestValue(RawData.at(0), NECX_HDR_MARK) &&
-				TestValue(RawData.at(1), -NECX_HDR_SPACE) &&
-				TestValue(RawData.at(2), NECX_BIT_MARK) &&
-				RawData.size() == 68)
+			if (TestValue(RawData.at(Start + 0), NECX_HDR_MARK) &&
+				TestValue(RawData.at(Start + 1), -NECX_HDR_SPACE) &&
+				TestValue(RawData.at(Start + 2), NECX_BIT_MARK) &&
+				Length == 68)
 				return true;
 
 			return false;

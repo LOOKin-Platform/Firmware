@@ -19,9 +19,9 @@ class SONY : public IRProto {
 			DefinedFrequency	= 40000;
 		};
 
-		bool IsProtocol(vector<int32_t> &RawData) override {
-			if (RawData.size() == 26 || RawData.size() == 32 || RawData.size() == 42)
-				return (TestValue(RawData.at(0), SONY_HDR_MARK) &&  TestValue(RawData.at(1), -SONY_HDR_SPACE));
+		bool IsProtocol(vector<int32_t> &RawData, uint16_t Start, uint16_t Length) override {
+			if (Length == 26 || Length == 32 || Length == 42)
+				return (TestValue(RawData.at(Start + 0), SONY_HDR_MARK) &&  TestValue(RawData.at(Start + 1), -SONY_HDR_SPACE));
 
 			return false;
 		}

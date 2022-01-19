@@ -25,6 +25,7 @@ class IRLib {
 		uint16_t		MiscData	= 0;
 
 		bool			IsRepeated	= false;
+		uint32_t		RepeatPause = 0;
 
 		vector<int32_t> RawData 	= vector<int32_t>();
 
@@ -57,7 +58,7 @@ class IRLib {
 		bool			CompareIsIdenticalWith(vector<int32_t> &);
 
 		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);
-		static bool		CompareIsIdentical(vector<int32_t> &, vector<int32_t> &);
+		static bool		CompareIsIdentical(vector<int32_t> &, vector<int32_t> &, uint16_t Signal1Start = 0, uint16_t Signal2Start = 0, uint16_t Signal1Size = 0, uint16_t Signal2Size = 0);
 		static uint8_t 	GetProtocolExternal(vector<int32_t> &);
 
 	private:
@@ -66,7 +67,7 @@ class IRLib {
 
 		static void		FillProtocols();
 
-		IRProto*		GetProtocol();
+		IRProto*		GetProtocol(uint16_t Start = 0, uint16_t Length = 0);
 		IRProto*		GetProtocolByID(uint8_t);
 
 		bool 			IsProntoHex();

@@ -36,10 +36,6 @@ typedef void (*IRChannelCallbackEnd)();
  */
 class RMT {
 	public:
-		struct RXTimeStruct {
-			uint64_t Time;
-		};
-
 		struct IRChannelInfo {
 			TaskHandle_t			Handle 			= 0;
 			gpio_num_t				Pin				= GPIO_NUM_0;
@@ -57,8 +53,6 @@ class RMT {
 		static void		ReceiveStop (rmt_channel_t Channel);
 		static void		UnsetRXChannel(rmt_channel_t Channel);
 
-		static void 	RXCompleteCallback();
-
 		static void		SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t Frequency);
 		static void		UnsetTXChannel(rmt_channel_t Channel);
 
@@ -73,17 +67,11 @@ class RMT {
 
 		static int32_t	PrepareBit(bool, uint32_t);
 
-		static uint64_t	GetSignalEndU();
-
-		static void		ClearQueue();
-
 		static map<rmt_channel_t, IRChannelInfo> ChannelsMap;
 
 		static rmt_item32_t 		OutputItems[400];
 		static uint16_t				OutputItemsSize;
 	private:
-		static QueueHandle_t		RXReceivedTimeQueue;
-
 		static bool 				IsInited;
 
 		static IRAM_ATTR void RXTask(void *);

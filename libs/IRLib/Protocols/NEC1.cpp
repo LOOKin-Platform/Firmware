@@ -12,18 +12,18 @@ class NEC1 : public IRProto {
 			DefinedFrequency	= 38500;
 		};
 
-		bool IsProtocol(vector<int32_t> &RawData) override {
-			if (RawData.size() == 68) {
-				if (RawData.at(0) 	> 7650 	&& RawData.at(0) 	< 10350 &&
-					RawData.at(1) 	< -3825 && RawData.at(1) 	> -5200 &&
-					RawData.at(66) 	> 450 	&& RawData.at(66)	< 700)
+		bool IsProtocol(vector<int32_t> &RawData, uint16_t Start, uint16_t Length) override {
+			if (Length == 68) {
+				if (RawData.at(Start + 0) 	> 7650 	&& RawData.at(Start + 0) < 10350 &&
+					RawData.at(Start + 1) 	< -3825 && RawData.at(Start + 1) 	> -5200 &&
+					RawData.at(Start + 66) 	> 450 	&& RawData.at(Start + 66)	< 700)
 					return true;
 			}
 
-			if (RawData.size() == 16) {
-				if (RawData.at(0) > 7650 && RawData.at(0) < 10350 &&
-					RawData.at(1) < -1900 && RawData.at(1) > -2500 &&
-					RawData.at(2) > 450 && RawData.at(2) < 700)
+			if (Length == 16) {
+				if (RawData.at(Start + 0) > 7650 && RawData.at(Start + 0) < 10350 &&
+					RawData.at(Start + 1) < -1900 && RawData.at(Start + 1) > -2500 &&
+					RawData.at(Start + 2) > 450 && RawData.at(Start + 2) < 700)
 				return true;
 			}
 

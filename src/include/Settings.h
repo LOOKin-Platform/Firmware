@@ -323,7 +323,7 @@ class Settings_t {
 
 		struct {
 			struct {
-				const uint16_t				Threshold 		= 9500; 	// Максимальное значени интервала, которое принимается в обработке
+				const uint16_t				Threshold 		= 65000; 	// Максимальное значени интервала, которое принимается в обработке
 				const uint16_t				SignalEndingLen	= 45000;	// Задержка, добавляемая в конец сигнала
 				const uint16_t				SignalPauseMax	= 65000;
 				const uint32_t				DetectionDelay	= 250000; 	// Временной интервал в течении которого считается, что сигнал 1 (в микросекундах)

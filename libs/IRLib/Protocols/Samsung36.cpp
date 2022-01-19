@@ -19,14 +19,14 @@ class Samsung36 : public IRProto {
 			DefinedFrequency	= 38000;
 		};
 
-		bool IsProtocol(vector<int32_t> &RawData) override {
-			if (RawData.size() != 78)
+		bool IsProtocol(vector<int32_t> &RawData, uint16_t Start, uint16_t Length) override {
+			if (Length != 78)
 				return false;
 
-			if (TestValue(RawData.at(0), SAMSUNG36_HDR_MARK) &&
-				TestValue(RawData.at(1), -SAMSUNG36_HDR_SPACE) &&
-				TestValue(RawData.at(2), SAMSUNG36_BIT_MARK) &&
-				TestValue(RawData.at(35), -SAMSUNG36_HDR_SPACE))
+			if (TestValue(RawData.at(Start + 0), SAMSUNG36_HDR_MARK) &&
+				TestValue(RawData.at(Start + 1), -SAMSUNG36_HDR_SPACE) &&
+				TestValue(RawData.at(Start + 2), SAMSUNG36_BIT_MARK) &&
+				TestValue(RawData.at(Start + 35), -SAMSUNG36_HDR_SPACE))
 				return true;
 
 			return false;
