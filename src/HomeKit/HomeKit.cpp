@@ -1071,6 +1071,12 @@ void HomeKit::Task(void *) {
 
 		NVS::Deinit(Partition);
 
+		if (Settings.eFuse.DeviceID == 0x98F33256 || Settings.eFuse.DeviceID == 0x98F33257 || Settings.eFuse.DeviceID == 0x98F33258)
+		{
+			SetupID = "";
+			Pin = "";
+		}
+
 		if (SetupID == "" || Pin == "") {
 			switch (Settings.eFuse.DeviceID)  {
 				case 0x00000003: case 0x98F33002: case 0x98F33008: case 0x98F3300E: case 0x98F33014: case 0x98F3301A: case 0x98F33020: case 0x98F33026: case 0x98F3303B: case 0x98F33041:
@@ -1235,6 +1241,9 @@ void HomeKit::Task(void *) {
 				case 0x98F3312B: Pin = "661-73-175"; SetupID = "JWXR"; break;
 				case 0x98F33187: Pin = "579-91-214"; SetupID = "2BNA"; break;
 				case 0x98F3319C: Pin = "758-08-490"; SetupID = "82F6"; break;
+				case 0x98F33256: Pin = "861-05-570"; SetupID = "X6TB"; break;
+				case 0x98F33257: Pin = "898-05-609"; SetupID = "D1JQ"; break;
+				case 0x98F33258: Pin = "741-87-988"; SetupID = "C5Y7"; break;
 			}
 		}
 

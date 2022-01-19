@@ -175,6 +175,17 @@ void Settings_t::eFuse_t::ReadDataOrInit() {
 	else
 		Device.SetTypeToNVS(Type);
 
+
+	unsigned char mac[6] = {0};
+	esp_efuse_mac_get_default(mac);
+	esp_read_mac(mac, ESP_MAC_WIFI_STA);
+	if (mac[0] == 0x34 && mac[5] == 0x7C && DeviceID == 0x98F331CF)
+		DeviceID = 0x98F33256;
+	else if (mac[0] == 0x34 && mac[5] == 0xB4 && DeviceID == 0x98F3306C)
+		DeviceID = 0x98F33257;
+	else if (mac[0] == 0x34 && mac[5] == 0xA4 && DeviceID == 0x98F33077)
+		DeviceID = 0x98F33258;
+
 	// DeviceID verification
 	if (DeviceID == 0x0 || DeviceID == Settings.Memory.Empty32Bit) {
 		DeviceID = Device.GetIDFromNVS();
