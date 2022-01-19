@@ -85,7 +85,7 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
 
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
 
-		ESP_LOGI(tag, "WIFI_EVENT_STA_DISCONNECTED, Reason: %d", event_id);
+		ESP_LOGI(tag, "WIFI_EVENT_STA_DISCONNECTED");
 
         wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
 		pWiFi->m_apConnectionStatus = disconnected->reason;
