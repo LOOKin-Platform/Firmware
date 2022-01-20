@@ -39,8 +39,15 @@ class JSON {
 
     bool								IsItemExists			(string Key);
 
+    bool								IsItemString			(string Key);
+    bool								IsItemNumber			(string Key);
+
     string								GetItem					(string Key);
+    double								GetDoubleItem			(string Key);
+    int									GetIntItem				(string Key);
+
     void								SetItem					(string Key, string Value);
+    void								SetItem					(string Key, float Value);
 
     vector<string>						GetKeys					();
 

@@ -73,6 +73,28 @@ bool JSON::IsItemExists(string Key) {
 	return (Value != NULL);
 }
 
+bool JSON::IsItemString(string Key) {
+	if (Root == NULL)
+		return false;
+
+	cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+	if (Value != NULL)
+		return cJSON_IsString(Value);
+
+	return false;
+}
+
+bool JSON::IsItemNumber(string Key) {
+	if (Root == NULL)
+		return false;
+
+	cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+	if (Value != NULL)
+		return cJSON_IsNumber(Value);
+
+	return false;
+}
+
 string JSON::GetItem(string Key) {
 	string Result = "";
 
@@ -87,8 +109,40 @@ string JSON::GetItem(string Key) {
 	return Result;
 }
 
+double JSON::GetDoubleItem(string Key) {
+	double Result = 0;
+
+	if (Root != NULL) {
+		cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+
+		if (Value != NULL) {
+			Result = Value->valuedouble;
+		}
+	}
+
+	return Result;
+}
+
+int JSON::GetIntItem(string Key) {
+	int Result = 0;
+
+	if (Root != NULL) {
+		cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+
+		if (Value != NULL) {
+			Result = Value->valueint;
+		}
+	}
+
+	return Result;
+}
+
 void JSON::SetItem(string Key, string Value) {
 	cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());
+}
+
+void JSON::SetItem(string Key, float Value) {
+	cJSON_AddNumberToObject(Root, Key.c_str(), Value);
 }
 
 vector<string> JSON::GetKeys() {

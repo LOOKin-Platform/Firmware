@@ -8,10 +8,11 @@
 
 static char tag[] = "Log";
 
-vector<Log::Item> Log::Items = vector<Log::Item>();
-esp_timer_handle_t Log::Indicator_t::IndicatorTimer = NULL;
+vector<Log::Item> 	Log::Items = vector<Log::Item>();
+esp_timer_handle_t	Log::Indicator_t::IndicatorTimer = NULL;
+float 				Log::Indicator_t::CurrentBrightness = 0.03;
 
-Log::Log() {}
+Log::Log() { }
 
 /**
  * @brief Add log record
@@ -318,12 +319,24 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 
 		::esp_timer_create(&TimerArgs, &IndicatorTimer);
 
+
+		NVS Memory(NVSLogArea);
+		if (Memory.IsKeyExists(NVSBrightness))
+		{
+			uint8_t Value = Memory.GetInt8Bit(NVSBrightness);
+			if (Value > 100) Value = 100;
+			Log::Indicator_t::SetBrightness(Value);
+		}
+
 		IsInited = true;
 	}
 
-	tRed 		= (uint8_t)(Red 	* Brightness);
-	tGreen 		= (uint8_t)(Green 	* Brightness);
-	tBlue 		= (uint8_t)(Blue 	* Brightness);
+	if (CurrentBrightness == 0)
+		return;
+
+	tRed 		= (uint8_t)(Red 	* CurrentBrightness);
+	tGreen 		= (uint8_t)(Green 	* CurrentBrightness);
+	tBlue 		= (uint8_t)(Blue 	* CurrentBrightness);
 
 	tDuration	= Duration * 1000000;
 	tExpired	= 0;
@@ -395,7 +408,6 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 void Log::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 	// обработка GET запроса - получение данных
 	if (Query.Type == QueryType::GET) {
-
 		if (Query.GetURLPartsCount() == 1)
 			Result.Body = "{\"System\" : " + GetSystemLogJSON() + ", \"Events\" : " + GetEventsLogJSON() + "}";
 
@@ -405,8 +417,49 @@ void Log::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 
 			if (Query.CheckURLPart("events", 1))
 				Result.Body = GetEventsLogJSON();
+
+			if (Query.CheckURLPart("settings", 1)) {
+				JSON JSONObject;
+
+				JSONObject.SetItem("IndicatorBrightness", Log::Indicator_t::GetBrightness());
+
+				Result.Body = JSONObject.ToString();
+			}
 		}
 	}
+
+	if (Query.Type == QueryType::PUT) {
+		if (Query.CheckURLPart("settings", 1)) {
+			JSON JSONObject(Query.GetBody());
+
+			if (JSONObject.IsItemNumber("IndicatorBrightness"))
+			{
+				int Value = JSONObject.GetIntItem("IndicatorBrightness");
+				if (Value < 0) Value = 0;
+				if (Value > 100) Value = 100;
+
+				Log::Indicator_t::SetBrightness((uint8_t)Value);
+				Log::Indicator_t::Execute(0, 255, 255, Log::Indicator_t::MODE::CONST, 3);
+
+				Result.SetSuccess();
+			}
+			else
+				Result.SetInvalid();
+		}
+	}
+}
+
+uint8_t Log::Indicator_t::GetBrightness() {
+	return ceil(CurrentBrightness*BrightnessDelimeter);
+}
+
+
+void Log::Indicator_t::SetBrightness(uint8_t Percent) {
+	NVS Memory(NVSLogArea);
+	Memory.SetInt8Bit(NVSBrightness, Percent);
+	Memory.Commit();
+
+	CurrentBrightness = ((float)Percent) / BrightnessDelimeter;
 }
 
 /**

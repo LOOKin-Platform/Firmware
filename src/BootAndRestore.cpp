@@ -129,15 +129,19 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		Memory.Commit();
 	}
 
-//	if (OldFirmware < "2.41") {
-//		if (Settings.DeviceGeneration > 1)
-
-//	}
-
 	// Erase firmware while update to 2.40
 	if (OldFirmware < "2.40" && Settings.DeviceGeneration > 1) {
 		SPIFlash::EraseRange(0x8A0000, 0x450000);
 	}
+
+	if (OldFirmware < "2.41" && OldFirmware != "") {
+		NVS Memory(NVSLogArea);
+		if (!Memory.IsKeyExists(NVSBrightness)) {
+			Memory.SetInt8Bit(NVSBrightness, 30);
+			Memory.Commit();
+		}
+	}
+
 }
 
 void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {

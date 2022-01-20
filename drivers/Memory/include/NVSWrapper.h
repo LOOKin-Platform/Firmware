@@ -24,19 +24,20 @@ class NVS {
 
 		static void Deinit(string Partition);
 
-
 		NVS(string name, nvs_open_mode openMode = NVS_READWRITE);
 		NVS(string Partition, string name, nvs_open_mode openMode = NVS_READWRITE);
 
-
 		virtual 			~NVS();
 		void 				Commit();
+
+		bool 				IsKeyExists(string Key);
 
 		void 				Erase();
 		void 				Erase(string key);
 		void 				EraseStartedWith(string Key);
 		void 				EraseNamespace();
 		static void			ClearAll();
+
 
 		esp_err_t			GetLastError();
 

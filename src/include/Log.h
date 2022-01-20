@@ -23,6 +23,7 @@ using namespace std;
 
 #define  NVSLogArea   "Log"
 #define  NVSLogArray  "SystemLog"
+#define  NVSBrightness "Brightness"
 
 /**
  * @brief Interface to logging functions
@@ -60,9 +61,14 @@ class Log {
 
 				static void 				Display(uint16_t);
 				static void 				Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration = 0);
+
+			    static uint8_t 				GetBrightness();
+			    static void 				SetBrightness(uint8_t);
 			private:
 				static bool					IsInited;
-				static constexpr float 		Brightness = 0.03;
+				static float 				CurrentBrightness;
+				static constexpr float 		BrightnessDelimeter = 1000;
+
 				static uint32_t				tDuration;
 				static uint32_t				tExpired;
 				static MODE					tBlinking;
