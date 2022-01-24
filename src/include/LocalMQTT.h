@@ -48,6 +48,8 @@ class LocalMQTT_t {
 				uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
 
 		static bool 		IsCredentialsSet();
+		static bool 		GetIsActive();
+
 		static void			SetStatus(StatusEnum);
 		static StatusEnum 	GetStatus();
 		static string		GetStatusString();

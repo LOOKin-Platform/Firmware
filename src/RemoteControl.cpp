@@ -282,7 +282,7 @@ esp_mqtt_client_config_t RemoteControl_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
 	//Config.host			= "mqtt.look-in.club";
-	Config.uri 			= (!HomeKit::IsExperimentalMode()) ? Settings.RemoteControl.Server.c_str() : Settings.RemoteControl.ServerUnsecure.c_str();
+	Config.uri 			= (HomeKit::IsExperimentalMode() || LocalMQTT.GetIsActive()) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
 	Config.port			= 8883;
 
 	Config.event_handle = mqtt_event_handler;

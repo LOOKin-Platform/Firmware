@@ -248,6 +248,10 @@ bool LocalMQTT_t::IsCredentialsSet() {
 	return (Username != "" && Password != "");
 }
 
+bool LocalMQTT_t::GetIsActive() {
+	return IsActive;
+}
+
 void LocalMQTT_t::SetStatus(StatusEnum Status) {
 	if (CurrentStatus == Status)
 		return;
