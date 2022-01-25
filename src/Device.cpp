@@ -217,22 +217,6 @@ void Device_t::SetName(string Name) {
 	Memory.Commit();
 }
 
-uint8_t Device_t::GetTypeFromNVS() {
-	NVS Memory(NVSDeviceArea);
-	return Memory.GetInt8Bit(NVSDeviceType);
-}
-
-void Device_t::SetTypeToNVS(uint8_t Type) {
-	NVS Memory(NVSDeviceArea);
-	Memory.SetInt8Bit(NVSDeviceType, Type);
-	Memory.Commit();
-}
-
-uint32_t Device_t::GetIDFromNVS() {
-	NVS Memory(NVSDeviceArea);
-	return Memory.GetUInt32Bit(NVSDeviceID);
-}
-
 bool Device_t::GetEcoFromNVS() {
 	NVS Memory(NVSDeviceArea);
 	return (Memory.GetInt8Bit(NVSDeviceEco) == 1) ? true : false;
@@ -241,12 +225,6 @@ bool Device_t::GetEcoFromNVS() {
 void Device_t::SetEcoToNVS(bool Eco) {
 	NVS Memory(NVSDeviceArea);
 	Memory.SetInt8Bit(NVSDeviceEco, (Eco) ? 1 : 0);
-	Memory.Commit();
-}
-
-void Device_t::SetIDToNVS(uint32_t ID) {
-	NVS Memory(NVSDeviceArea);
-	Memory.SetUInt32Bit(NVSDeviceID, ID);
 	Memory.Commit();
 }
 

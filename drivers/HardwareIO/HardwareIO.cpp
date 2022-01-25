@@ -95,6 +95,9 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
 	if (GPIO == GPIO_NUM_0)
 		return;
 
+	if (PWMChannel == LEDC_CHANNEL_MAX)
+		return;
+
 	if (!PWMIsInited)
 		PWMIsInited = true;
 
@@ -131,6 +134,9 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
   */
 
 uint8_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
+	if (PWMChannel == LEDC_CHANNEL_MAX)
+		return 0;
+
 	if (PWMValuesCache.count(PWMChannel)) {
 		if (PWMValuesCache[PWMChannel].Updated + (uint32_t)floor(PWM_FADING_LENGTH / 1000) < Time::Uptime())
 			PWMValuesCache.erase(PWMChannel);

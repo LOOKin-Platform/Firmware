@@ -14,6 +14,7 @@ bool BootAndRestore::IsDeviceFullyStarted = false;
 TaskHandle_t	BootAndRestore::DelayedOperationTaskHandler		= NULL;
 TaskHandle_t	BootAndRestore::MarkDeviceStartedTaskHandler	= NULL;
 
+static char Tag[] = "BootAndRestore";
 
 void BootAndRestore::OnDeviceStart() {
 	NVS Memory(NVSBootAndRestoreArea);
@@ -137,7 +138,12 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 	if (OldFirmware < "2.41" && OldFirmware != "") {
 		NVS Memory(NVSLogArea);
 		if (!Memory.IsKeyExists(NVSBrightness)) {
-			Memory.SetInt8Bit(NVSBrightness, 30);
+
+			uint8_t LEDBrightness = 30;
+			if (Settings.eFuse.Revision >= 3 && Settings.eFuse.Model > 1 && Settings.eFuse.Type == Settings.Devices.Remote)
+				LEDBrightness = 7;
+
+			Memory.SetInt8Bit(NVSBrightness, LEDBrightness);
 			Memory.Commit();
 		}
 	}
@@ -148,6 +154,8 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 	if (Operation == HARDRESET) {
 		Wireless.StopInterfaces(true);
 		Operation = HARDRESET_ON_START;
+
+		FreeRTOS::Sleep(1000);
 	}
 
 	switch (Operation) {
@@ -159,24 +167,42 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 
 			break;
 		case HARDRESET_ON_START:
-			if (Settings.DeviceGeneration == 1)
-				SPIFlash::EraseRange(0x32000, 0xEE000);
-			else
-			{
-				SPIFlash::EraseRange(0x670000, 0x990000);
-				/*
-				 * idfupdate - replace for this after ESP_PARTITION_TYPE_ANY will be avaliable
-				PartitionAPI::ErasePartition("coredump");
-				PartitionAPI::ErasePartition("misc");
-				PartitionAPI::ErasePartition("dataitems");
-				PartitionAPI::ErasePartition("scenarios");
-				PartitionAPI::ErasePartition("scache");
-				PartitionAPI::ErasePartition("storage");
-				*/
-			}
-			//PartitionAPI::ErasePartition("constants");
+		{
+			Log::Add(Log::Events::System::HardResetIntied);
+
+			ESP_LOGI(Tag, "Hardreset step1: Clear flash memory");
+
+			PartitionAPI::ErasePartition("coredump",0x01);
+			PartitionAPI::ErasePartition("misc", 0x80);
+			PartitionAPI::ErasePartition("dataitems", 0x81);
+			PartitionAPI::ErasePartition("scenarios", 0x82);
+			PartitionAPI::ErasePartition("scache", 0x83);
+			PartitionAPI::ErasePartition("storage", 0x84);
+			//PartitionAPI::ErasePartition("constants", 0x85);
+
+			ESP_LOGI(Tag, "Hardreset step2: Clear NVS memory");
+
+			uint32_t 	DeviceID 		= Settings.eFuse.DeviceID;
+			uint16_t	DeviceType 		= (uint16_t)Settings.eFuse.Type;
+			uint8_t		DeviceModel		= Settings.eFuse.Model;
+			uint16_t	DeviceRevision	= Settings.eFuse.Revision;
 
 			NVS::ClearAll();
+
+			NVS::Init();
+			ESP_LOGI(Tag, "Hardreset step3: Restore efuse NVS values");
+
+			ESP_LOGI("DeviceID"			, "%08X", DeviceID);
+			ESP_LOGI("DeviceModel"		, "%02X", DeviceModel);
+			ESP_LOGI("DeviceType"		, "%04X", DeviceType);
+			ESP_LOGI("DeviceRevision"	, "%04X", DeviceRevision);
+
+			NVS Memory(NVSDeviceArea);
+			Memory.SetUInt32Bit	(NVSDeviceID		, DeviceID);
+			Memory.SetUInt16Bit	(NVSDeviceType		, DeviceType);
+			Memory.SetInt8Bit	(NVSDeviceModel		, DeviceModel);
+			Memory.SetUInt16Bit	(NVSDeviceRevision	, DeviceRevision);
+			Memory.Commit();
 
 			if (HomeKit::IsEnabledForDevice())
 				HomeKit::ResetData();
@@ -184,6 +210,7 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 			ExecuteOperationNow(REBOOT);
 
 			break;
+		}
 		default:
 			break;
 	}
@@ -191,7 +218,7 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 
 void BootAndRestore::ExecuteOperationDelayed(OperationTypeEnum Operation) {
 	if (DelayedOperationTaskHandler == NULL)
-		DelayedOperationTaskHandler = FreeRTOS::StartTask(BootAndRestore::ExecuteOperationDelayedTask, "OperationDelayedTask", (void *)(uint32_t)Operation, 3072, 5);
+		DelayedOperationTaskHandler = FreeRTOS::StartTask(BootAndRestore::ExecuteOperationDelayedTask, "OperationDelayedTask", (void *)(uint32_t)Operation, 3072, 9);
 }
 
 void BootAndRestore::ExecuteOperationDelayedTask(void *Data) {

@@ -38,7 +38,6 @@ class NVS {
 		void 				EraseNamespace();
 		static void			ClearAll();
 
-
 		esp_err_t			GetLastError();
 
 		vector<string>		FindAllStartedWith(string Key);

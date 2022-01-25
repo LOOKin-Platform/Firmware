@@ -22,7 +22,7 @@ using namespace std;
 class PartitionAPI {
 	public:
 
-		static esp_err_t 	ErasePartition(string);
+		static esp_err_t 	ErasePartition(string, uint8_t PartitionType = 0x01);
 };
 
 #endif

@@ -30,6 +30,9 @@ void Wireless_t::StopInterfaces(bool ShouldBlockForever) {
 	if (ShouldBlockForever)
 		BlockRestartForever = ShouldBlockForever;
 
+	RemoteControl.Stop();
+	LocalMQTT.Stop();
+
 	if (HomeKit::IsEnabledForDevice())
 		HomeKit::Stop();
 

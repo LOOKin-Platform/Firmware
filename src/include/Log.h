@@ -97,9 +97,9 @@ class Log {
 					PowerManageOn	= 0x0003,
 					PowerManageOff	= 0x0004,
 					DeviceRollback	= 0x00f0,
+					HardResetIntied	= 0x00f2,
 					OTASucceed		= 0x0040,
 					OTAVerifyFailed	= 0x0041,
-					OTAFailed		= 0x1142,
 
 					FirstDeviceInit	= 0x00f1,
 
@@ -107,7 +107,8 @@ class Log {
 					DeviceOverheat	= 0x1105,
 					DeviceCooled	= 0x1106,
 					TimeSynced		= 0x1130,
-					OTAStarted		= 0x1140
+					OTAStarted		= 0x1140,
+					OTAFailed		= 0x1142
 				};
 
 				enum WiFi {

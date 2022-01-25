@@ -35,12 +35,16 @@ using namespace std;
 
 #define	NVSDeviceArea				"Device"
 #define NVSDeviceType				"Type"
-#define NVSDeviceID					"ID"
 #define NVSDeviceName				"Name"
 #define NVSDevicePowerMode			"PowerMode"
 #define	NVSDevicePowerModeVoltage	"PowerModeVoltage"
 #define	NVSDeviceSensorMode			"SensorMode"
 #define	NVSDeviceEco				"Eco"
+
+#define NVSDeviceID					"ID"
+#define NVSDeviceType				"Type"
+#define NVSDeviceModel				"Model"
+#define NVSDeviceRevision			"Revision"
 
 class DeviceType_t {
 	public:
@@ -79,12 +83,6 @@ class Device_t {
 
 		string				GetName();
 		void				SetName(string);
-
-		static uint8_t		GetTypeFromNVS();
-		static void			SetTypeToNVS(uint8_t);
-
-		static uint32_t		GetIDFromNVS();
-		static void			SetIDToNVS(uint32_t);
 
 		static bool 		GetEcoFromNVS();
 		static void 		SetEcoToNVS(bool);

@@ -42,8 +42,6 @@ void NVS::Deinit(string Partition) {
 	::nvs_flash_deinit_partition(Partition.c_str());
 }
 
-
-
 NVS::NVS(string name, nvs_open_mode openMode) {
 	m_name = name;
 	nvs_open(name.c_str(), openMode, &m_handle);
@@ -120,6 +118,8 @@ void NVS::EraseNamespace() {
 
 void NVS::ClearAll() {
 	nvs_flash_erase();
+
+	isInited = false;
 } // erase all items in NVS
 
 

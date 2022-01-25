@@ -1109,6 +1109,7 @@ void HomeKit::Task(void *) {
 					SetupID = "FF11";
 					break;
 
+				case 0x00000004: Pin = "123-45-678"; SetupID = "ABCD"; break;
 				case 0x98F3302A: Pin = "488-85-380"; SetupID = "VXAE"; break;
 				case 0x98F3302B: Pin = "918-21-683"; SetupID = "06WA"; break;
 				case 0x98F3302C: Pin = "311-01-079"; SetupID = "E049"; break;
