@@ -68,6 +68,9 @@ class Sensor_t {
 		string						EchoSummaryJSON();
 		virtual string				SummaryJSON()						{ return ""; };
 
+		virtual string				GetSensorSettings() 				{ return ""; };
+		virtual void				SetSensorSettings(WebServer_t::Response &Result, Query_t &Query) { Result.SetInvalid(); }
+
 		static void					UpdateSensors();
 		static vector<Sensor_t*>	GetSensorsForDevice();
 		static Sensor_t*			GetSensorByName(string);

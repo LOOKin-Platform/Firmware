@@ -217,6 +217,29 @@ void NVS::SetInt8Bit(string key, uint8_t data) {
 } // set
 
 /**
+ * @brief Retrieve a int 16 bit value by key.
+ *
+ * @param [in] key The key to read from the namespace.
+ * @param [out] result The uint read from the %NVS storage.
+ */
+int16_t NVS::GetInt16Bit(string key) {
+	int16_t data;
+	esp_err_t nvs_err = nvs_get_i16(m_handle, key.c_str(), &data);
+
+	return (nvs_err == ESP_OK) ? data : +0;
+} // get
+
+/**
+ * @brief Set the int 16 bit value by key.
+ *
+ * @param [in] key The key to set from the namespace.
+ * @param [in] data The value to set for the key.
+ */
+void NVS::SetInt16Bit(string key, int16_t data) {
+	nvs_set_i16(m_handle, key.c_str(), data);
+} // set
+
+/**
  * @brief Retrieve a uint 16 bit value by key.
  *
  * @param [in] key The key to read from the namespace.

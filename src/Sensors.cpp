@@ -72,10 +72,11 @@ void Sensor_t::UpdateSensors() {
 }
 
 void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
-	Sensor_t::UpdateSensors();
+	if (Query.Type == QueryType::GET)
+		Sensor_t::UpdateSensors();
 
 	// Echo list of all sensors
-	if (Query.GetURLPartsCount() == 1) {
+	if (Query.GetURLPartsCount() == 1 && Query.Type == QueryType::GET) {
 		vector<string> Vector = vector<string>();
 		for (auto& Sensor : Sensors)
 			Vector.push_back(Sensor->Name);
@@ -84,6 +85,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 	}
 
 	// Запрос значений конкретного сенсора
+	// Или обновление настроек сенсора
 	if (Query.GetURLPartsCount() == 2) {
 		Sensor_t* Sensor = Sensor_t::GetSensorByName(Query.GetStringURLPartByNumber(1));
 
@@ -92,28 +94,60 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			return;
 		}
 
-		Result.Body = Sensor->RootSensorJSON();
+		if (Query.Type == QueryType::GET)
+			Result.Body = Sensor->RootSensorJSON();
+
 		return;
 	}
 
 	// Запрос строковых значений состояния конкретного сенсора
-	// Или - получение JSON дополнительных значений
+	// Или получение JSON дополнительных значений
 	if (Query.GetURLPartsCount() == 3) {
-		for (Sensor_t* Sensor : Sensors)
-			if (Query.CheckURLPart(Converter::ToLower(Sensor->Name),1)) {
-				if (Converter::ToLower(Query.GetStringURLPartByNumber(2)) == "updated") {
-					Result.Body = Converter::ToString(Sensor->Updated);
-					return;
-				}
-
-				if (Sensor->Values.size() > 0)
-					for (const auto &Value : Sensor->Values) {
-						if (Query.CheckURLPart(Converter::ToLower(Value.first), 2)) {
-							Result.Body = Sensor->FormatValue(Value.first);
-							break;
-						}
+		if (Query.Type == QueryType::GET && !Query.CheckURLPart("settings", 2)) {
+			for (Sensor_t* Sensor : Sensors)
+				if (Query.CheckURLPart(Converter::ToLower(Sensor->Name),1)) {
+					if (Converter::ToLower(Query.GetStringURLPartByNumber(2)) == "updated") {
+						Result.Body = Converter::ToString(Sensor->Updated);
+						return;
 					}
+
+					if (Sensor->Values.size() > 0)
+						for (const auto &Value : Sensor->Values) {
+							if (Query.CheckURLPart(Converter::ToLower(Value.first), 2)) {
+								Result.Body = Sensor->FormatValue(Value.first);
+								break;
+							}
+						}
+				}
+		}
+		else if (Query.Type == QueryType::GET && Query.CheckURLPart("settings", 2)) {
+			Sensor_t* Sensor = Sensor_t::GetSensorByName(Query.GetStringURLPartByNumber(1));
+
+			if (Sensor == nullptr) {
+				Result.SetInvalid();
+				return;
 			}
+
+			Result.Body = Sensor->GetSensorSettings();
+
+			if (Result.Body == "")
+				Result.SetInvalid();
+
+			return;
+		}
+		else if (Query.Type == QueryType::PUT && Query.CheckURLPart("settings", 2)) {
+			Sensor_t* Sensor = Sensor_t::GetSensorByName(Query.GetStringURLPartByNumber(1));
+
+			if (Sensor == nullptr) {
+				Result.SetInvalid();
+				return;
+			}
+
+			Sensor->SetSensorSettings(Result, Query);
+
+			return;
+		}
+
 	}
 }
 

@@ -48,6 +48,9 @@ class NVS {
 		uint8_t 			GetInt8Bit(string key);
 		void 				SetInt8Bit(string key, uint8_t data);
 
+		int16_t 			GetInt16Bit(string key);
+		void 				SetInt16Bit(string key, int16_t data);
+
 		uint16_t 			GetUInt16Bit(string key);
 		void 				SetUInt16Bit(string key, uint16_t data);
 

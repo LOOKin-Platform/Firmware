@@ -85,6 +85,16 @@ template string Converter::ToString<uint16_t>	(uint16_t	, uint8_t);
 template string Converter::ToString<uint32_t>	(uint32_t	, uint8_t);
 template string Converter::ToString<uint64_t>	(uint64_t	, uint8_t);
 
+string Converter::FloatToString(float Number, uint8_t Precision) {
+
+	Number = (ceil)(Number * pow(10,Precision)) / pow(10,Precision);
+
+	std::stringstream stream;
+	stream << std::defaultfloat << Number;
+	return stream.str();
+}
+
+
 string Converter::ToHexString(uint64_t Number, size_t Length) {
 	stringstream sstream;
 	sstream << std::uppercase << std::setfill('0') << std::setw(Length) << std::hex << (uint64_t)Number;

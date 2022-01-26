@@ -50,6 +50,8 @@ class Converter {
 		template <typename T>
 		static string			ToString(T, uint8_t);
 
+		static string			FloatToString(float Number, uint8_t Precision = 2);
+
 		static string			ToHexString(uint64_t, size_t);
 		static string			ToASCII(string HexString);
 
