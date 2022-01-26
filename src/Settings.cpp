@@ -163,58 +163,54 @@ void Settings_t::eFuse_t::ReadDataOrInit() {
 		Revision = 2;
 	}
 
-	unsigned char mac[6] = {0};
-	esp_efuse_mac_get_default(mac);
-	esp_read_mac(mac, ESP_MAC_WIFI_STA);
-	if (mac[0] == 0x34 && mac[5] == 0x7C && DeviceID == 0x98F331CF)
-		DeviceID = 0x98F33256;
-	else if (mac[0] == 0x34 && mac[5] == 0xB4 && DeviceID == 0x98F3306C)
-		DeviceID = 0x98F33257;
-	else if (mac[0] == 0x34 && mac[5] == 0xA4 && DeviceID == 0x98F33077)
-		DeviceID = 0x98F33258;
 
 	NVS Memory(NVSDeviceArea);
 
-	if (DeviceID == 0x00000002)
-		Revision = 0x1;
+	unsigned char mac[6] = {0};
+	esp_efuse_mac_get_default(mac);
+	esp_read_mac(mac, ESP_MAC_WIFI_STA);
+	if (mac[0] == 0x34 && mac[5] == 0x7C && DeviceID == 0x98F331CF) {
+		DeviceID = 0x98F33256;
+		Memory.SetUInt32Bit(NVSDeviceID, 0x98F33256);
+		Memory.Commit();
+	}
+	else if (mac[0] == 0x34 && mac[5] == 0xB4 && DeviceID == 0x98F3306C) {
+		DeviceID = 0x98F33257;
+		Memory.SetUInt32Bit(NVSDeviceID, 0x98F33257);
+		Memory.Commit();
+	}
+	else if (mac[0] == 0x34 && mac[5] == 0xA4 && DeviceID == 0x98F33077) {
+		DeviceID = 0x98F33258;
+		Memory.SetUInt32Bit(NVSDeviceID, 0x98F33258);
+		Memory.Commit();
+	}
 
-	// DeviceID verification and checks
-	bool IsDeviceIDExists = Memory.IsKeyExists(NVSDeviceID);
-	if (IsDeviceIDExists)
+	if (DeviceID == 0x00000002) {
+		Revision = 0x1;
+		Memory.SetUInt16Bit(NVSDeviceRevision, Revision);
+	}
+
+	if (Memory.IsKeyExists(NVSDeviceID))
 		DeviceID = Memory.GetUInt32Bit(NVSDeviceID);
 
 	if (DeviceID == 0x0 || DeviceID == Settings.Memory.Empty32Bit) {
 		DeviceID = Device.GenerateID();
 		Memory.SetUInt32Bit(NVSDeviceID, DeviceID);
 	}
-	else if (!IsDeviceIDExists)
-		Memory.SetUInt32Bit(NVSDeviceID, DeviceID);
 
 	// DeviceType verification and checks
-	bool IsDeviceTypeExists = Memory.IsKeyExists(NVSDeviceType);
-	if (IsDeviceTypeExists)
+	if (Memory.IsKeyExists(NVSDeviceType))
 		Type = Memory.GetUInt16Bit(NVSDeviceType);
 
 	if (Type == 0x0 || Type == Settings.Memory.Empty8Bit) {
 		Type = 0x81;
 		Memory.SetUInt16Bit(NVSDeviceType, Type);
 	}
-	else if (!IsDeviceTypeExists)
-		Memory.SetUInt16Bit(NVSDeviceType, Type);
-
-	// DeviceModel verification and checks
-	if (Memory.IsKeyExists(NVSDeviceModel))
-		Model = Memory.GetInt8Bit(NVSDeviceModel);
-	else
-		Memory.SetInt8Bit(NVSDeviceModel, Model);
-
-	// DeviceRevision verification and checks
-	if (Memory.IsKeyExists(NVSDeviceRevision))
-		Revision = Memory.GetUInt16Bit(NVSDeviceRevision);
-	else
-		Memory.SetUInt16Bit(NVSDeviceRevision, Revision);
 
 	Memory.Commit();
+
+	if (Memory.IsKeyExists(NVSDeviceModel)) 	Model 		= Memory.GetInt8Bit(NVSDeviceModel);
+	if (Memory.IsKeyExists(NVSDeviceRevision))	Revision 	= Memory.GetUInt16Bit(NVSDeviceRevision);
 
 	// Setup device generation
 	if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model < 2)

@@ -182,14 +182,19 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 
 			ESP_LOGI(Tag, "Hardreset step2: Clear NVS memory");
 
-			uint32_t 	DeviceID 		= Settings.eFuse.DeviceID;
-			uint16_t	DeviceType 		= (uint16_t)Settings.eFuse.Type;
-			uint8_t		DeviceModel		= Settings.eFuse.Model;
-			uint16_t	DeviceRevision	= Settings.eFuse.Revision;
+			NVS MemoryBefore(NVSDeviceArea);
+
+			uint32_t 	DeviceID 		= (MemoryBefore.IsKeyExists(NVSDeviceID)) 		? MemoryBefore.GetUInt32Bit(NVSDeviceID) 		: Settings.Memory.Empty32Bit;
+			uint16_t	DeviceType 		= (MemoryBefore.IsKeyExists(NVSDeviceType)) 	? MemoryBefore.GetUInt16Bit(NVSDeviceType) 		: Settings.Memory.Empty16Bit;
+			uint8_t		DeviceModel		= (MemoryBefore.IsKeyExists(NVSDeviceModel)) 	? MemoryBefore.GetInt8Bit(NVSDeviceModel) 		: Settings.Memory.Empty8Bit;
+			uint16_t	DeviceRevision	= (MemoryBefore.IsKeyExists(NVSDeviceRevision)) ? MemoryBefore.GetUInt16Bit(NVSDeviceRevision) 	: Settings.Memory.Empty16Bit;
 
 			NVS::ClearAll();
 
 			NVS::Init();
+
+			NVS MemoryAfter(NVSDeviceArea);
+
 			ESP_LOGI(Tag, "Hardreset step3: Restore efuse NVS values");
 
 			ESP_LOGI("DeviceID"			, "%08X", DeviceID);
@@ -197,12 +202,12 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 			ESP_LOGI("DeviceType"		, "%04X", DeviceType);
 			ESP_LOGI("DeviceRevision"	, "%04X", DeviceRevision);
 
-			NVS Memory(NVSDeviceArea);
-			Memory.SetUInt32Bit	(NVSDeviceID		, DeviceID);
-			Memory.SetUInt16Bit	(NVSDeviceType		, DeviceType);
-			Memory.SetInt8Bit	(NVSDeviceModel		, DeviceModel);
-			Memory.SetUInt16Bit	(NVSDeviceRevision	, DeviceRevision);
-			Memory.Commit();
+			if (DeviceID 			!= Settings.Memory.Empty32Bit) 		MemoryAfter.SetUInt32Bit	(NVSDeviceID, DeviceID);
+			if (DeviceType 			!= Settings.Memory.Empty16Bit) 		MemoryAfter.SetUInt16Bit	(NVSDeviceType, DeviceType);
+			if (DeviceModel 		!= Settings.Memory.Empty8Bit) 		MemoryAfter.SetInt8Bit	(NVSDeviceModel, DeviceModel);
+			if (DeviceRevision 		!= Settings.Memory.Empty16Bit) 		MemoryAfter.SetUInt16Bit	(NVSDeviceRevision, DeviceRevision);
+
+			MemoryAfter.Commit();
 
 			if (HomeKit::IsEnabledForDevice())
 				HomeKit::ResetData();

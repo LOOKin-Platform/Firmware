@@ -209,6 +209,7 @@ T Converter::InterpretHexAsDec(T Hex) {
 }
 template uint8_t  	Converter::InterpretHexAsDec<uint8_t> (uint8_t 	Hex);
 template uint16_t  	Converter::InterpretHexAsDec<uint16_t>(uint16_t Hex);
+template uint32_t  	Converter::InterpretHexAsDec<uint32_t>(uint32_t Hex);
 
 vector<string> Converter::StringToVector(string SourceStr, string Delimeter) {
 	vector<string> Result = vector<string>();

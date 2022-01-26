@@ -179,6 +179,32 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			}
 		}
 	}
+
+	if (Query.CheckURLMask("POST /device/efuse")) {
+		JSON JSONItem(Query.GetBody());
+
+		if (!JSONItem.IsItemExists("token")) 						{ Result.SetInvalid(); return; }
+		if (JSONItem.GetItem("token") != "APGqjT3KPNeSHdY2ufCI") 	{ Result.SetInvalid(); return; }
+		if (JSONItem.GetKeys().size() == 1) 						{ Result.SetInvalid(); return; }
+
+		NVS Memory(NVSDeviceArea);
+		if (JSONItem.IsItemExists("ID") && JSONItem.IsItemNumber("ID"))
+			Memory.SetUInt32Bit(NVSDeviceID, Converter::InterpretHexAsDec((uint32_t)JSONItem.GetIntItem("ID")));
+
+		if (JSONItem.IsItemExists("Type") && JSONItem.IsItemNumber("Type"))
+			Memory.SetUInt16Bit(NVSDeviceType, JSONItem.GetIntItem("Type"));
+
+		if (JSONItem.IsItemExists("Model") && JSONItem.IsItemNumber("Model"))
+			Memory.SetInt8Bit(NVSDeviceModel, JSONItem.GetIntItem("Model"));
+
+		if (JSONItem.IsItemExists("Revision") && JSONItem.IsItemNumber("Revision"))
+			Memory.SetUInt16Bit(NVSDeviceRevision, JSONItem.GetIntItem("Revision"));
+
+		Memory.Commit();
+
+		Result.SetSuccess();
+		return;
+	}
 }
 
 JSON Device_t::RootInfo() {
