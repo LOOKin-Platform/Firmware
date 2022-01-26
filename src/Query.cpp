@@ -169,6 +169,47 @@ httpd_req_t* Query_t::GetRequest()
 	return Request;
 }
 
+bool Query_t::CheckURLMask(string URLMask) {
+	uint8_t QueryTypeLength = 0;
+
+	if 		(Converter::StartsWith(URLMask, "GET") 		&& Type == QueryType::GET)
+		QueryTypeLength = 3;
+	else if (Converter::StartsWith(URLMask, "POST") 	&& Type == QueryType::POST)
+		QueryTypeLength = 4;
+	else if (Converter::StartsWith(URLMask, "PUT") 		&& Type == QueryType::PUT)
+		QueryTypeLength = 3;
+	else if (Converter::StartsWith(URLMask, "PATCH") 	&& Type == QueryType::PATCH)
+		QueryTypeLength = 5;
+	else if (Converter::StartsWith(URLMask, "DELETE") 	&& Type == QueryType::DELETE)
+		QueryTypeLength = 6;
+
+	if (QueryTypeLength == 0 || URLMask.size() <= (QueryTypeLength + 1))
+		return false;
+
+	URLMask = URLMask.substr(QueryTypeLength +1);
+
+	vector<string> MaskParts = Converter::StringToVector(URLMask, "/");
+
+	if (MaskParts.size() == 0)
+		return false;
+
+	bool IsWildCardMask = (MaskParts.back() == "*");
+	if (IsWildCardMask) MaskParts.pop_back();
+
+	if (!IsWildCardMask && MaskParts.size() != PartsData.size())
+		return false;
+
+	if (IsWildCardMask && MaskParts.size() > PartsData.size())
+		return false;
+
+	for (int i = 0; i < MaskParts.size(); i++)
+		if (!CheckURLPart(MaskParts[i], i))
+			return false;
+
+	return true;
+}
+
+
 bool Query_t::CheckURLPart(string Needle, uint8_t Number) {
 	if (Number >= PartsData.size()) return false;
 
