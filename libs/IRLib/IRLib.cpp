@@ -92,7 +92,7 @@ void IRLib::LoadDataFromRaw() {
 		vector <pair<uint32_t,uint16_t>> Pauses = vector<pair<uint32_t,uint16_t>>();
 
 		for (int i=0; i < RawData.size() - 1; i++)
-			if (RawData[i] < -10000)
+			if (RawData[i] < -5000)
 				Pauses.push_back(make_pair(abs(RawData[i]), i));
 
 		if (Pauses.size() > 0) { // long pauses exist
