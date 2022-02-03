@@ -766,6 +766,9 @@ hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 		if (NameString == "")
 			NameString = Device.TypeToString() + " " + Device.IDToString();
 
+		if (NameString.size() > 16)
+			NameString = NameString.substr(0, 16);
+
 		static AccessoryData_t AccessoryData(NameString, Device.ModelToString(), Device.IDToString());
 
 		hap_acc_cfg_t cfg = {
@@ -871,12 +874,12 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 	{
 		DataRemote_t::IRDevice IRDevice = ((DataRemote_t *)Data)->GetDevice(IRCachedDevice.DeviceID);
 
-		char accessory_name[32] = {0};
+		char accessory_name[16] = {0};
 
 		string Name = IRDevice.Name;
 
-		if (Name.size() > 32)
-			Name = Name.substr(0, 32);
+		if (Name.size() > 16)
+			Name = Name.substr(0, 16);
 
 		sprintf(accessory_name, "%s", (Name != "") ? Name.c_str() : "Accessory\0");
 
