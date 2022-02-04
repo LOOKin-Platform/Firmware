@@ -123,10 +123,10 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 	}
 
 	// Set eco mode on for all updated and new devices
-	if (OldFirmware < "2.14" && OldFirmware != "")
+	if (OldFirmware < "2.41" && OldFirmware != "")
 	{
 		NVS Memory(NVSDeviceArea);
-		Memory.SetInt8Bit(NVSDeviceEco, 1);
+		Memory.SetInt8Bit(NVSDeviceEco, 0);
 		Memory.Commit();
 	}
 
@@ -196,11 +196,6 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 			NVS MemoryAfter(NVSDeviceArea);
 
 			ESP_LOGI(Tag, "Hardreset step3: Restore efuse NVS values");
-
-			ESP_LOGI("DeviceID"			, "%08X", DeviceID);
-			ESP_LOGI("DeviceModel"		, "%02X", DeviceModel);
-			ESP_LOGI("DeviceType"		, "%04X", DeviceType);
-			ESP_LOGI("DeviceRevision"	, "%04X", DeviceRevision);
 
 			if (DeviceID 			!= Settings.Memory.Empty32Bit) 		MemoryAfter.SetUInt32Bit	(NVSDeviceID, DeviceID);
 			if (DeviceType 			!= Settings.Memory.Empty16Bit) 		MemoryAfter.SetUInt16Bit	(NVSDeviceType, DeviceType);
