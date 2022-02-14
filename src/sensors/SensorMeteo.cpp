@@ -132,6 +132,9 @@ class SensorMeteo_t : public Sensor_t {
 							IsEmptyAC = false;
 						}
 
+					if (IsHomeKitExperimental())
+						HomeKitUpdateCharValue(0xFFFE, HAP_SERV_UUID_TEMPERATURE_SENSOR, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
+
 					if (IsEmptyAC)
 						HomeKitUpdateCharValue(0, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
 				}
@@ -152,6 +155,9 @@ class SensorMeteo_t : public Sensor_t {
 							HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
 							IsEmptyAC = false;
 						}
+
+					if (IsHomeKitExperimental())
+						HomeKitUpdateCharValue(0xFFFF, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
 
 					if (IsEmptyAC)
 						HomeKitUpdateCharValue(0, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);

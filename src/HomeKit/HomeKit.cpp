@@ -860,7 +860,6 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
 
 		hap_add_accessory(Accessory);
-
 	}
 
 	for(auto& BridgeAccessory : BridgedAccessories) {
@@ -1035,6 +1034,48 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 			BridgedAccessories.push_back(Accessory);
 			hap_add_bridged_accessory(Accessory, AID);
 		}
+	}
+
+
+	SensorMeteo_t *Meteo = (SensorMeteo_t *)Sensor_t::GetSensorByID(0xFE);
+
+	if (Meteo != nullptr) {
+		hap_acc_cfg_t hsensor_cfg = {
+			.name 				= "",
+			.model 				= "n/a",
+			.manufacturer 		= "LOOKin",
+			.serial_num 		= "n/a",
+			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
+            .hw_rev 			= NULL,
+			.pv 				= "1.1.0",
+			.cid 				= HAP_CID_BRIDGE,
+			.identify_routine 	= AccessoryIdentify,
+		};
+
+		Accessory = hap_acc_create(&hsensor_cfg);
+
+		hap_serv_t *HumiditySensor = hap_serv_humidity_sensor_create(Meteo->ConvertToFloat(Meteo->ReceiveValue("Humidity")));
+		hap_acc_add_serv(Accessory, HumiditySensor);
+		hap_add_bridged_accessory(Accessory, 0xFFFF);
+
+		hap_acc_cfg_t tsensor_cfg = {
+			.name 				= "",
+			.model 				= "n/a",
+			.manufacturer 		= "LOOKin",
+			.serial_num 		= "n/a",
+			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
+            .hw_rev 			= NULL,
+			.pv 				= "1.1.0",
+			.cid 				= HAP_CID_BRIDGE,
+			.identify_routine 	= AccessoryIdentify,
+		};
+
+		Accessory = hap_acc_create(&tsensor_cfg);
+
+		hap_serv_t *TemperatureSensor = hap_serv_temperature_sensor_create(Meteo->ConvertToFloat(Meteo->ReceiveValue("Temperature")));
+		hap_acc_add_serv(Accessory, TemperatureSensor);
+
+		hap_add_bridged_accessory(Accessory, 0xFFFE);
 	}
 
 	return HAP_CID_BRIDGE;
