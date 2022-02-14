@@ -52,6 +52,7 @@ class SensorIR_t : public Sensor_t {
 			SetValue(0, "Raw");
 			SetValue(0, "IsRepeated");
 			SetValue(0, "RepeatPause");
+			SetValue(0, "Frequency");
 
 			SetIsInited(true);
 		}
@@ -77,6 +78,7 @@ class SensorIR_t : public Sensor_t {
 			SetValue(0								, "Raw");
 			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated");
 			SetValue(0								, "RepeatPause");
+			SetValue(LastSignal.GetProtocolFrequency(), "Frequency");
 
 			Updated = SignalDetectionTime;
 		}
@@ -96,6 +98,9 @@ class SensorIR_t : public Sensor_t {
 
 			if (Key == "RepeatPause")
 				return (LastSignal.IsRepeated) ? Converter::ToString(LastSignal.RepeatPause) : "0";
+
+			if (Key == "Frequency")
+				return Converter::ToString(LastSignal.GetProtocolFrequency());
 
 			return Converter::ToHexString(Values[Key], 8);
 		}
@@ -144,12 +149,17 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageEnd() {
+			if (SensorIRCurrentMessage.size() < 4)
+			{
+				SensorIRCurrentMessage.empty();
+				return;
+			}
+
 			for (auto &Item : SensorIRCurrentMessage)
 				if (abs(Item) <= Settings.SensorsConfig.IR.ValueThreshold) {
 					SensorIRCurrentMessage.empty();
 					return;
 				}
-
 
 			bool IsRepeatSignal = false;
 			vector<int32_t> PotentialRepeatSignal = LastSignal.GetRawRepeatSignalForSending();
