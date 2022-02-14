@@ -65,6 +65,9 @@ class CommandIR_t : public Command_t {
 			Events["necx"]				= 0x04;
 			Events["panasonic"]			= 0x05;
 			Events["samsung36"]			= 0x06;
+			Events["rc5"]				= 0x07;
+
+			//Events["mce"]				= 0x0A;
 
 			/*
 			Events["daikin"]		= 0x08;

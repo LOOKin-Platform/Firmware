@@ -77,7 +77,10 @@ void IRLib::FillProtocols() {
 			new SONY(),
 			new NECx(),
 			new Panasonic(),
-			new Samsung36()
+			new Samsung36(),
+			new RC5(),
+//			new RC6()
+//			new MCE()
 //			new Daikin(),
 //			new MitsubishiAC(),
 //			new Aiwa(),
@@ -154,9 +157,12 @@ void IRLib::LoadDataFromRaw() {
 uint8_t IRLib::GetProtocolExternal(vector<int32_t> &SignalVector){
 	FillProtocols();
 
-	for (auto& Protocol : IRLib::Protocols)
-		if (Protocol->IsProtocol(SignalVector, 0, SignalVector.size()))
-			return Protocol->ID;
+	if (SignalVector.size() > 0)
+	{
+		for (auto& Protocol : IRLib::Protocols)
+			if (Protocol->IsProtocol(SignalVector, 0, SignalVector.size()))
+				return Protocol->ID;
+	}
 
 	return 0xFF;
 
@@ -387,9 +393,13 @@ IRProto* IRLib::GetProtocol(uint16_t Start, uint16_t Length) {
 	if (Length == 0)
 		Length = RawData.size();
 
-	for (auto& Protocol : IRLib::Protocols)
-		if (Protocol->IsProtocol(RawData, Start, Length))
-			return Protocol;
+
+	if (Length > 0) {
+		for (auto& Protocol : IRLib::Protocols)
+			if (Protocol->IsProtocol(RawData, Start, Length))
+				return Protocol;
+	}
+
 
 	return nullptr;
 }

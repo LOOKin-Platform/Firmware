@@ -45,6 +45,8 @@ class IRProto {
 #include "Protocols/NECx.cpp"
 #include "protocols/Panasonic.cpp"
 #include "protocols/Samsung36.cpp"
+#include "protocols/RC5.cpp"
+//#include "Protocols/RC6_draft.cpp"
 //#include "protocols/Daikin.cpp"
 //#include "protocols/MitsubishiAC.cpp"
 //#include "protocols/Aiwa.cpp"
