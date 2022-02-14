@@ -54,7 +54,7 @@ void PowerManagement::SetPMOptions() {
 void PowerManagement::SetWiFiOptions() {
 	switch (ActivePMType)
 	{
-		case NONE	: //esp_wifi_set_ps(WIFI_PS_NONE); break;
+		case NONE	: esp_wifi_set_ps(WIFI_PS_NONE); break;
 		case LIGHT	: esp_wifi_set_ps(WIFI_PS_MIN_MODEM); break;
 		case MAX	: esp_wifi_set_ps(WIFI_PS_MAX_MODEM); break;
 	}
