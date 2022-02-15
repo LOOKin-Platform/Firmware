@@ -52,6 +52,7 @@ class SensorIR_t : public Sensor_t {
 			SetValue(0, "Raw");
 			SetValue(0, "IsRepeated");
 			SetValue(0, "RepeatPause");
+			SetValue(0, "RepeatCount");
 			SetValue(0, "Frequency");
 
 			SetIsInited(true);
@@ -73,12 +74,13 @@ class SensorIR_t : public Sensor_t {
 			if (Time::IsUptime(SignalDetectionTime) && Time::Offset > 0)
 				SignalDetectionTime = Time::Unixtime() - (Time::Uptime() - SignalDetectionTime);
 
-			SetValue(LastSignal.Protocol			, "Protocol");
-			SetValue(LastSignal.Uint32Data			, "Signal");
-			SetValue(0								, "Raw");
-			SetValue((uint8_t)LastSignal.IsRepeated	, "IsRepeated");
-			SetValue(0								, "RepeatPause");
-			SetValue(LastSignal.GetProtocolFrequency(), "Frequency");
+			SetValue(LastSignal.Protocol				, "Protocol");
+			SetValue(LastSignal.Uint32Data				, "Signal");
+			SetValue(0									, "Raw");
+			SetValue((uint8_t)LastSignal.IsRepeated		, "IsRepeated");
+			SetValue(0									, "RepeatPause");
+			SetValue(0									, "RepeatCount");
+			SetValue(LastSignal.GetProtocolFrequency()	, "Frequency");
 
 			Updated = SignalDetectionTime;
 		}
@@ -98,6 +100,9 @@ class SensorIR_t : public Sensor_t {
 
 			if (Key == "RepeatPause")
 				return (LastSignal.IsRepeated) ? Converter::ToString(LastSignal.RepeatPause) : "0";
+
+			if (Key == "RepeatCount")
+				return Converter::ToString(LastSignal.RepeatCount);
 
 			if (Key == "Frequency")
 				return Converter::ToString(LastSignal.GetProtocolFrequency());

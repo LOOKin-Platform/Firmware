@@ -25,6 +25,7 @@ class IRLib {
 		uint16_t		MiscData	= 0;
 
 		bool			IsRepeated	= false;
+		uint8_t			RepeatCount	= 0;
 		uint32_t		RepeatPause = 0;
 
 		vector<int32_t> RawData 	= vector<int32_t>();

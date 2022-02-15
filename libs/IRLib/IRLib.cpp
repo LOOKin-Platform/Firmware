@@ -115,6 +115,7 @@ void IRLib::LoadDataFromRaw() {
 			if (IsAllIdentical) {
 				RawData = std::vector<int32_t>(RawData.begin(), RawData.begin() + FirstItemLength);
 				IsRepeated = true;
+				RepeatCount = Pauses.size();
 				RepeatPause = Pauses[0].first;
 			}
 			else if (Pauses.size() == 1) {
@@ -259,12 +260,15 @@ vector<int32_t>IRLib::GetRawDataForSending() {
 		return (Result.size() > 0) ? Result : this->RawData;
 	else
 	{
-		Result = (Result.size() > 0) ? Result : this->RawData;
-		Result.pop_back();
-		Result.push_back((RepeatPause > 0) ? -RepeatPause : -25000);
-		Result.insert(Result.end(), Result.begin(), Result.end());
-		Result.pop_back();
-		Result.push_back(-Settings.SensorsConfig.IR.SignalEndingLen);
+		vector<int32_t> Part = (Result.size() > 0) ? Result : this->RawData;
+		Result = Part;
+
+		for (int i = 0; i < RepeatCount; i++)
+		{
+			Result.pop_back();
+			Result.push_back((RepeatPause > 0) ? -RepeatPause : -25000);
+			Result.insert(Result.end(), Part.begin(), Part.end());
+		}
 
 		return Result;
 	}
