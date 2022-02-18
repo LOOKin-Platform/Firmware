@@ -311,9 +311,9 @@ class SensorMeteo_t : public Sensor_t {
 						}
 
 						// корректировка значения BME280 (без учета времени старта, нахолодную)
-						if (PowerManagement::GetPMType() != PowerManagement::PowerManagementType::MAX)
+						if (PowerManagement::GetPMType() == PowerManagement::PowerManagementType::NONE)
 						{
-							float TempCorrection = 3.3;
+							float TempCorrection = 4.3;
 							if (Time::Uptime() < 1800)
 								TempCorrection = 1.015 * log10(Time::Uptime());
 
@@ -331,7 +331,7 @@ class SensorMeteo_t : public Sensor_t {
 
 						if (PowerManagement::GetPMType() == PowerManagement::PowerManagementType::NONE)
 						{
-							float TempCorrection = 2.76; // 1.5
+							float TempCorrection = 4.76; // 1.5
 							if (Time::Uptime() < 1800)
 								TempCorrection = 0.85 * log10(Time::Uptime());
 

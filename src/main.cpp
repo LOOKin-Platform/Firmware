@@ -57,6 +57,11 @@ const char tag[] = "Main";
 void app_main(void) {
 	NVS::Init();
 
+	/*
+	IRLib::TestAll();
+	FreeRTOS::Sleep(5000);
+	*/
+
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 	Settings.eFuse.ReadDataOrInit();
 

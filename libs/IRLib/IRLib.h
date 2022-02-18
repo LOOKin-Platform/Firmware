@@ -62,6 +62,9 @@ class IRLib {
 		static bool		CompareIsIdentical(vector<int32_t> &, vector<int32_t> &, uint16_t Signal1Start = 0, uint16_t Signal2Start = 0, uint16_t Signal1Size = 0, uint16_t Signal2Size = 0);
 		static uint8_t 	GetProtocolExternal(vector<int32_t> &);
 
+		static bool		TestSignal(vector<int32_t> Input);
+		static void		TestAll();
+
 	private:
 		uint8_t		 	ProntoOneTimeBurst 	= 0;
 		uint8_t 		ProntoRepeatBurst 	= 0;

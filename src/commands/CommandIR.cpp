@@ -327,7 +327,7 @@ class CommandIR_t : public Command_t {
 				string  Function 	= ((DataRemote_t*)Data)->DevicesHelper.FunctionNameByID(FunctionID);
 				uint8_t SignalID 	= Converter::UintFromHexString<uint8_t>( SavedRemoteOperand.substr(6,2));
 
-				string FunctionType = ((DataRemote_t*)Data)->GetFunctionType(UUID, Function);
+				string 	FunctionType = ((DataRemote_t*)Data)->GetFunctionType(UUID, Function);
 
 				if (FunctionType != "sequence" && SignalID == 0xFF)
 					SignalID = 0x0;
