@@ -1041,7 +1041,7 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 	if (Meteo != nullptr) {
 		hap_acc_cfg_t hsensor_cfg = {
-			.name 				= "",
+			.name 				= "Humidity Sensor",
 			.model 				= "n/a",
 			.manufacturer 		= "LOOKin",
 			.serial_num 		= "n/a",
@@ -1059,7 +1059,7 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 		hap_add_bridged_accessory(Accessory, 0xFFFF);
 
 		hap_acc_cfg_t tsensor_cfg = {
-			.name 				= "",
+			.name 				= "Temp sensor",
 			.model 				= "n/a",
 			.manufacturer 		= "LOOKin",
 			.serial_num 		= "n/a",
