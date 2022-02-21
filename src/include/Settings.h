@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 41, 151);
+		FirmwareVersion 					Firmware = FirmwareVersion(2, 41, 154);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -349,12 +349,13 @@ class Settings_t {
 			} IR;
 
 			struct {
-				const string				DataPrefix		= "BLE:";
+				const string				DataPrefix				= "BLE:";
+				const uint64_t				BLEKbdBlockedDelayU		= 3*1000000;
 			} BLE;
 
 			struct {
-				const uint8_t				QueueSize		= 50; 		// Размер очереди сенсора
-				const uint16_t				TaskDelay		= 50;		// Задержка в запуске процесса проверки значений в мс
+				const uint8_t				QueueSize				= 50; 		// Размер очереди сенсора
+				const uint16_t				TaskDelay				= 50;		// Задержка в запуске процесса проверки значений в мс
 			} TouchSensor;
 		} CommandsConfig;
 

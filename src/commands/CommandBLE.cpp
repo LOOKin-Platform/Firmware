@@ -15,7 +15,7 @@ extern DataEndpoint_t 	*Data;
 extern BLEServer_t		BLEServer;
 
 static string 	CommandBLELastKBDSignalSended 	= "";
-
+static uint64_t	CommandBLELastTimeSended		= 0;
 
 class CommandBLE_t : public Command_t {
 	public:
@@ -30,6 +30,9 @@ class CommandBLE_t : public Command_t {
 			Events["kbd_keydown"]		= 0x02;
 			Events["kbd_keyup"]			= 0x03;
 			Events["kbd_key_repeat"]	= 0x04;
+
+			Events["kbd_key-blocked"]	= 0x90;
+
 		}
 
 		bool Execute(uint8_t EventCode, const char* StringOperand) override {
@@ -96,6 +99,7 @@ class CommandBLE_t : public Command_t {
 				{
 					Log::Add(Log::Events::Commands::BLEExecuted);
 					CommandBLELastKBDSignalSended = StringOperand;
+					CommandBLELastTimeSended = Time::UptimeU();
 				}
 				else
 					Log::Add(Log::Events::Commands::BLEFailed);
@@ -109,6 +113,15 @@ class CommandBLE_t : public Command_t {
 					return Execute(0x01, CommandBLELastKBDSignalSended.c_str());
 
 				return false;
+			}
+
+
+			if (EventCode == 0x90) { // Blocked kbd_key
+				if ((Time::UptimeU() - CommandBLELastTimeSended < Settings.CommandsConfig.BLE.BLEKbdBlockedDelayU)
+					&& (StringOperand == CommandBLELastKBDSignalSended))
+					return false;
+
+				return Execute(0x01, StringOperand);
 			}
 
 			return false;
