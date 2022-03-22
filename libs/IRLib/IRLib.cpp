@@ -494,7 +494,7 @@ bool IRLib::FillFromProntoHex(const char *SrcString) {
 
 		if ((SymbolCounter+1)%4 == 0 ) {
 			if (SymbolCounter > 15) {
-				uint16_t SignalPart = USec * Converter::UintFromHexString<uint16_t>(Group);
+				uint32_t SignalPart = USec * Converter::UintFromHexString<uint16_t>(Group);
 				RawData.push_back((Sign) ? +SignalPart : -SignalPart);
 				Sign = !Sign;
 			}

@@ -34,7 +34,7 @@ static uint64_t					CommandsIRLastSignalTime= 0;
 
 struct CommandIRTXQueueData {
 	string      		NVSItem;
-	uint16_t			Frequency;
+	uint32_t			Frequency;
 	vector<gpio_num_t>	TXGPIO;
 	rmt_channel_t		TXChannel;
 };
@@ -295,7 +295,29 @@ class CommandIR_t : public Command_t {
 
 				vector<int32_t> DataToSend = IRSignal.GetRawDataForSending();
 
-				bool TXSendResult = TXSend(DataToSend, IRSignal.Frequency, false);
+				string Symbol3;
+				Symbol3.push_back(StringOperand[2]);
+				uint8_t AdditionalRepeat = Converter::UintFromHexString<uint8_t>(Symbol3);
+
+				bool TXSendResult = false;
+				TXSendResult = TXSend(DataToSend, IRSignal.Frequency, false);
+
+				if (AdditionalRepeat > 0 && IRSignal.RepeatPause > 0)
+				{
+					int32_t Pause = IRSignal.RepeatPause - abs(DataToSend.back());
+
+					if (Pause < 0)
+						Pause = 0;
+					else
+						Pause = round(Pause / 1000);
+
+					for (int i =0;i < AdditionalRepeat ; i++)
+					{
+						TXSendAddPause(Pause);
+						TXSend(DataToSend, IRSignal.Frequency, false);
+					}
+				}
+
 				TriggerStateChange(IRSignal);
 
 				return TXSendResult;
@@ -456,7 +478,7 @@ class CommandIR_t : public Command_t {
 				ESP_LOGD("RMT", "Added to queue BLE Signal: %s", Signal.c_str());
 		}
 
-		static void TXSendAddPause(uint16_t PauseLength = 500) {
+		static void TXSendAddPause(uint32_t PauseLength = 500) {
 			uint32_t HashID = esp_random();
 
 			CommandIRTXQueueData TXPause;
