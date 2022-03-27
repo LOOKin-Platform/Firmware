@@ -106,5 +106,7 @@ class Converter {
 
 		static bool				IsStringContainsOnlyDigits(string &Str);
 
+		static string 			CutMultibyteString(string &Input, size_t MaxByteSize, string OutputIfInvalid = "");
+
 };
 #endif

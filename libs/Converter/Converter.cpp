@@ -464,4 +464,23 @@ bool Converter::IsStringContainsOnlyDigits(string &Str) {
     return std::all_of(Str.begin(), Str.end(), ::isdigit);
 }
 
+string Converter::CutMultibyteString(string &Input, size_t MaxByteSize, string OutputIfInvalid)
+{
+	if (Input.size() <= MaxByteSize) {
+		return Input;
+	}
 
+	for(size_t pos = MaxByteSize; pos > 0; --pos)
+	{
+		unsigned char byte = static_cast<unsigned char>(Input[pos]); //Perfectly valid
+		if((byte & 0xC0) != 0x80)
+			return Input.substr(0, pos);
+	}
+
+	unsigned char byte = static_cast<unsigned char>(Input[0]); //Perfectly valid
+	if((byte & 0xC0) != 0x80)
+		return Input;
+
+	//If your first byte isn't even a valid UTF-8 starting point, then something terrible has happened.
+	return OutputIfInvalid;
+}

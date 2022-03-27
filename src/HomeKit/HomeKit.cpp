@@ -763,11 +763,10 @@ hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 
 	if (ExistedAccessory == NULL)
 	{
+		NameString = Converter::CutMultibyteString(NameString, 16);
+
 		if (NameString == "")
 			NameString = Device.TypeToString() + " " + Device.IDToString();
-
-		if (NameString.size() > 16)
-			NameString = NameString.substr(0, 16);
 
 		static AccessoryData_t AccessoryData(NameString, Device.ModelToString(), Device.IDToString());
 
@@ -838,6 +837,8 @@ hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 	if (BridgedAccessories.size() == 0) {
 		string BridgeNameString = Device.GetName();
+
+		BridgeNameString = Converter::CutMultibyteString(BridgeNameString, 16);
 		if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
 
 		static AccessoryData_t AccessoryData(BridgeNameString, Device.ModelToString(), Device.IDToString());
@@ -875,10 +876,7 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 		char accessory_name[16] = {0};
 
-		string Name = IRDevice.Name;
-
-		if (Name.size() > 16)
-			Name = Name.substr(0, 16);
+		string Name = Converter::CutMultibyteString(IRDevice.Name, 16);
 
 		sprintf(accessory_name, "%s", (Name != "") ? Name.c_str() : "Accessory\0");
 
@@ -1089,6 +1087,7 @@ void HomeKit::Task(void *) {
     hap_cfg_t hap_cfg;
     hap_get_config(&hap_cfg);
     hap_cfg.unique_param = UNIQUE_NAME;
+
     hap_set_config(&hap_cfg);
 
 	/* Initialize the HAP core */
