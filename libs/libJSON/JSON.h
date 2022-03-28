@@ -41,10 +41,12 @@ class JSON {
 
     bool								IsItemString			(string Key);
     bool								IsItemNumber			(string Key);
+    bool								IsItemBool				(string Key);
 
     string								GetItem					(string Key);
     double								GetDoubleItem			(string Key);
     int									GetIntItem				(string Key);
+    bool								GetBoolItem				(string Key);
 
     void								SetItem					(string Key, string Value);
     void								SetItem					(string Key, float Value);

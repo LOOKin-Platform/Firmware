@@ -16,6 +16,9 @@
 #define CommandIRTXQueuePrefix 	"tx_"
 #define	CommandIRTXPause		"pause"
 
+#define	NVSCommandsIRArea 		"CommandIR"
+#define NVSSeqRepeatCounter 	"IRRepeatCounter"
+
 extern DataEndpoint_t *Data;
 
 static rmt_channel_t TXChannel = RMT_CHANNEL_2;
@@ -47,11 +50,15 @@ static string			CommandIRLastSignalCRC = "";
 static vector<int32_t> 	ACCode = vector<int32_t>();
 
 class CommandIR_t : public Command_t {
+	private:
+		uint8_t 		SequenceRepeatCounter = 5;
+
 	public:
 		struct LastSignal_t {
 			uint8_t 	Protocol 		= 0;
 			uint32_t 	Data			= 0;
 			uint16_t 	Misc			= 0;
+			uint16_t	Frequency		= 0;
 		};
 
 		uint32_t 		SendCounter 	= 0;
@@ -84,6 +91,7 @@ class CommandIR_t : public Command_t {
 			Events["ac"]				= 0xEF;
 			Events["prontohex"]			= 0xF0;
 			Events["prontohex-blocked"]	= 0xF1;
+			Events["prontohex-repeated"]= 0xF2;
 
 			Events["localremote"]		= 0xFE;
 			Events["raw"]				= 0xFF;
@@ -114,6 +122,52 @@ class CommandIR_t : public Command_t {
 
 		LastSignal_t LastSignal;
 
+		void InitSettings() override {
+			NVS Memory(NVSCommandsIRArea);
+
+			if (Memory.IsKeyExists(NVSSeqRepeatCounter))
+			{
+				SequenceRepeatCounter = Memory.GetInt8Bit(NVSSeqRepeatCounter);
+				if (SequenceRepeatCounter < 1)
+					SequenceRepeatCounter = 1;
+			}
+		}
+
+		string GetSettings() override {
+			return "{\"SequenceRepeatCounter\": " +
+					Converter::ToString<uint8_t>(SequenceRepeatCounter)
+					+ "}";
+		}
+
+		void SetSettings(WebServer_t::Response &Result, Query_t &Query) override {
+			JSON JSONItem(Query.GetBody());
+
+			if (JSONItem.GetKeys().size() == 0)
+			{
+				Result.SetInvalid();
+				return;
+			}
+
+			bool IsChanged = false;
+
+			NVS Memory(NVSCommandsIRArea);
+
+			if (JSONItem.IsItemExists("SequenceRepeatCounter") && JSONItem.IsItemNumber("SequenceRepeatCounter"))
+			{
+				SequenceRepeatCounter = JSONItem.GetIntItem("SequenceRepeatCounter");
+				Memory.SetInt8Bit(NVSSeqRepeatCounter, SequenceRepeatCounter);
+				IsChanged = true;
+			}
+
+			if (IsChanged)
+			{
+				Memory.Commit();
+				Result.SetSuccess();
+			}
+			else
+				Result.SetInvalid();
+		}
+
 		bool Execute(uint8_t EventCode, const char* StringOperand) override {
 			uint16_t Misc 		= 0x0;
 			uint32_t Operand 	= 0x0;
@@ -143,6 +197,7 @@ class CommandIR_t : public Command_t {
 				LastSignal.Protocol = EventCode;
 				LastSignal.Data		= Operand;
 				LastSignal.Misc		= Misc;
+				LastSignal.Frequency= IRSignal.Frequency;
 
 				if (Operand == 0x0 && Misc == 0x0)
 					return false;
@@ -292,6 +347,7 @@ class CommandIR_t : public Command_t {
 				LastSignal.Protocol	= IRSignal.Protocol;
 				LastSignal.Data 	= IRSignal.Uint32Data;
 				LastSignal.Misc		= IRSignal.MiscData;
+				LastSignal.Frequency= IRSignal.Frequency;
 
 				vector<int32_t> DataToSend = IRSignal.GetRawDataForSending();
 
@@ -334,6 +390,28 @@ class CommandIR_t : public Command_t {
 
 				return Execute(0xF0, StringOperand);
 			}
+
+			if (EventCode == 0xF2) { // repeated ProntoHEX with defined repeat counter in settings
+				bool IsExecuted = Execute(0xF0, StringOperand);
+
+				for (int i=0; i < SequenceRepeatCounter - 1; i++) {
+					IRLib RepeatSignal;
+					RepeatSignal.Protocol 	= LastSignal.Protocol;
+					RepeatSignal.Uint32Data = LastSignal.Data;
+					RepeatSignal.MiscData 	= LastSignal.Misc;
+					RepeatSignal.Frequency	= (RepeatSignal.Frequency > 0) ? RepeatSignal.Frequency : 38000;
+
+					vector<int32_t> RepeatRawSignal = RepeatSignal.GetRawRepeatSignalForSending();
+
+					if (RepeatRawSignal.size() > 0)
+						TXSend(RepeatRawSignal, RepeatSignal.Frequency);
+					else
+						Execute(0xF0, StringOperand);
+				}
+
+				return IsExecuted;
+			}
+
 
 			if (EventCode == 0xFE) { // local saved remote in /data
 				if (strlen(StringOperand) != 8 || InOperation)
@@ -434,6 +512,7 @@ class CommandIR_t : public Command_t {
 				LastSignal.Protocol = IRSignal.Protocol;
 				LastSignal.Data 	= IRSignal.Uint32Data;
 				LastSignal.Misc		= IRSignal.MiscData;
+				LastSignal.Frequency= IRSignal.Frequency;
 
 				vector<int32_t> SignalToSend = IRSignal.GetRawDataForSending();
 

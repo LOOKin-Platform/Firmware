@@ -95,6 +95,17 @@ bool JSON::IsItemNumber(string Key) {
 	return false;
 }
 
+bool JSON::IsItemBool(string Key) {
+	if (Root == NULL)
+		return false;
+
+	cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+	if (Value != NULL)
+		return cJSON_IsBool(Value);
+
+	return false;
+}
+
 string JSON::GetItem(string Key) {
 	string Result = "";
 
@@ -136,6 +147,21 @@ int JSON::GetIntItem(string Key) {
 
 	return Result;
 }
+
+bool JSON::GetBoolItem(string Key) {
+	bool Result = false;
+
+	if (Root != NULL) {
+		cJSON *Value = cJSON_GetObjectItem(Root, Key.c_str());
+
+		if (Value != NULL) {
+			Result = (Value->type == cJSON_True) ? true : false;
+		}
+	}
+
+	return Result;
+}
+
 
 void JSON::SetItem(string Key, string Value) {
 	cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());

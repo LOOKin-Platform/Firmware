@@ -48,6 +48,10 @@ class Command_t {
 		static Command_t*			GetCommandByID(uint8_t);
 		static uint8_t				GetDeviceTypeHex();
 
+		virtual void				InitSettings()				{ };
+		virtual string				GetSettings() 				{ return ""; };
+		virtual void				SetSettings(WebServer_t::Response &Result, Query_t &Query) { Result.SetInvalid(); }
+
 		static vector<Command_t*>	GetCommandsForDevice();
 		static void					HandleHTTPRequest(WebServer_t::Response &, Query_t &Query);
 

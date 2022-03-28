@@ -55,6 +55,9 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 			break;
 	}
 
+	for (auto& CommandItem : Commands)
+		CommandItem->InitSettings();
+
 	return Commands;
 }
 
@@ -88,6 +91,37 @@ void Command_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 			Result.Body = JSON::CreateStringFromVector(Vector);
 		}
     }
+
+	// Работа с настройками команды
+	if (Query.GetURLPartsCount() == 3) {
+		if (Query.Type == QueryType::GET && Query.CheckURLPart("settings", 2)) {
+			Command_t* Command = Command_t::GetCommandByName(Query.GetStringURLPartByNumber(1));
+
+			if (Command == nullptr) {
+				Result.SetInvalid();
+				return;
+			}
+
+			Result.Body = Command->GetSettings();
+
+			if (Result.Body == "")
+				Result.Body = "{}";
+
+			return;
+		}
+		else if (Query.Type == QueryType::PUT && Query.CheckURLPart("settings", 2)) {
+			Command_t* Command = Command_t::GetCommandByName(Query.GetStringURLPartByNumber(1));
+
+			if (Command == nullptr) {
+				Result.SetInvalid();
+				return;
+			}
+
+			Command->SetSettings(Result, Query);
+
+			return;
+		}
+	}
 
 	/*
 	GET /switch/on

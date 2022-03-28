@@ -153,6 +153,7 @@ httpd_uri_t uri_sensors_put 		= { .uri = "/sensors*"		, .method = HTTP_PUT		, .h
 
 httpd_uri_t uri_commands_get 		= { .uri = "/commands*"		, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
 httpd_uri_t uri_commands_post 		= { .uri = "/commands*"		, .method = HTTP_POST		, .handler  = WebServer_t::POSTHandler	, .user_ctx = NULL};
+httpd_uri_t uri_commands_put 		= { .uri = "/commands*"		, .method = HTTP_PUT		, .handler  = WebServer_t::PUTHandler	, .user_ctx = NULL};
 
 httpd_uri_t uri_log_get 			= { .uri = "/log*"			, .method = HTTP_GET		, .handler  = WebServer_t::GETHandler	, .user_ctx = NULL};
 httpd_uri_t uri_log_put 			= { .uri = "/log*"			, .method = HTTP_PUT		, .handler  = WebServer_t::PUTHandler	, .user_ctx = NULL};
@@ -240,6 +241,7 @@ void WebServer_t::RegisterHandlers(httpd_handle_t ServerHandle) {
 
 	httpd_register_uri_handler(ServerHandle, &uri_commands_get);
 	httpd_register_uri_handler(ServerHandle, &uri_commands_post);
+	httpd_register_uri_handler(ServerHandle, &uri_commands_put);
 
 	httpd_register_uri_handler(ServerHandle, &uri_log_get);
 	httpd_register_uri_handler(ServerHandle, &uri_log_put);
@@ -275,6 +277,7 @@ void WebServer_t::UnregisterHandlers(httpd_handle_t ServerHandle) {
 
 	httpd_unregister_uri_handler(ServerHandle, "/commands*"		, HTTP_GET);
 	httpd_unregister_uri_handler(ServerHandle, "/commands*"		, HTTP_POST);
+	httpd_unregister_uri_handler(ServerHandle, "/commands*"		, HTTP_PUT);
 
 	httpd_unregister_uri_handler(ServerHandle, "/log*"			, HTTP_GET);
 	httpd_unregister_uri_handler(ServerHandle, "/log*"			, HTTP_PUT);
