@@ -35,6 +35,10 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 			break;
 	}
 
+
+	for (auto& SensorItem : Sensors)
+		SensorItem->InitSettings();
+
 	return Sensors;
 }
 
@@ -85,7 +89,6 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 	}
 
 	// Запрос значений конкретного сенсора
-	// Или обновление настроек сенсора
 	if (Query.GetURLPartsCount() == 2) {
 		Sensor_t* Sensor = Sensor_t::GetSensorByName(Query.GetStringURLPartByNumber(1));
 
@@ -128,7 +131,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 				return;
 			}
 
-			Result.Body = Sensor->GetSensorSettings();
+			Result.Body = Sensor->GetSettings();
 
 			if (Result.Body == "")
 				Result.SetInvalid();
@@ -143,7 +146,7 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 				return;
 			}
 
-			Sensor->SetSensorSettings(Result, Query);
+			Sensor->SetSettings(Result, Query);
 
 			return;
 		}

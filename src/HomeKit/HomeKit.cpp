@@ -875,7 +875,6 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 		DataRemote_t::IRDevice IRDevice = ((DataRemote_t *)Data)->GetDevice(IRCachedDevice.DeviceID);
 
 		char accessory_name[16] = {0};
-
 		string Name = Converter::CutMultibyteString(IRDevice.Name, 16);
 
 		sprintf(accessory_name, "%s", (Name != "") ? Name.c_str() : "Accessory\0");
@@ -1034,10 +1033,9 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 		}
 	}
 
-
 	SensorMeteo_t *Meteo = (SensorMeteo_t *)Sensor_t::GetSensorByID(0xFE);
 
-	if (Meteo != nullptr) {
+	if (Meteo != nullptr && Meteo->GetSIEFlag()) {
 		hap_acc_cfg_t hsensor_cfg = {
 			.name 				= "Humidity Sensor",
 			.model 				= "n/a",

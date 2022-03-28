@@ -18,6 +18,7 @@
 #define NVSSensorMeteoInternalTempCorrection	"IntTCorrection"
 #define NVSSensorMeteoExternalTempCorrection	"ExtTCorrection"
 #define NVSSensorMeteoHumidityZeroCorrection	"HumidityCorrect"
+#define NVSSensorMeteoShowInExperimental		"SIEflag"
 
 class SensorMeteo_t : public Sensor_t {
 	private:
@@ -42,6 +43,8 @@ class SensorMeteo_t : public Sensor_t {
 		float 		InternalTempCorrection	= 0;
 		float 		ExternalTempCorrection	= 0;
 		float 		HumidityZeroCorrection	= 0;
+
+		bool		SIEFlag					= true;
 
 	public:
 		struct SensorData {
@@ -261,21 +264,6 @@ class SensorMeteo_t : public Sensor_t {
 			        hdc1080_set_registers(HDC1080, registers);
 				}
 
-				// get correction data from NVS
-				NVS Memory(NVSSensorMeteoArea);
-
-				if (Memory.IsKeyExists(NVSSensorMeteoInternalTempCorrection)) InternalTempCorrection = (float)Memory.GetInt16Bit(NVSSensorMeteoInternalTempCorrection) / 100;
-				if (Memory.IsKeyExists(NVSSensorMeteoExternalTempCorrection)) ExternalTempCorrection = (float)Memory.GetInt16Bit(NVSSensorMeteoExternalTempCorrection) / 100;
-
-				if (Memory.IsKeyExists(NVSSensorMeteoHumidityZeroCorrection))
-					HumidityZeroCorrection = (float)Memory.GetInt16Bit(NVSSensorMeteoHumidityZeroCorrection) / 100;
-				else
-				{
-					HumidityZeroCorrection = 15.2;
-					Memory.SetInt16Bit(NVSSensorMeteoHumidityZeroCorrection, (int16_t)ceil(HumidityZeroCorrection * 100));
-					Memory.Commit();
-				}
-
 			    IsSensorHWInited = true;
 			}
 
@@ -350,17 +338,39 @@ class SensorMeteo_t : public Sensor_t {
 			return Result;
 		}
 
-		string GetSensorSettings() override {
+		void InitSettings() override {
+			NVS Memory(NVSSensorMeteoArea);
+
+			if (Memory.IsKeyExists(NVSSensorMeteoInternalTempCorrection)) 	InternalTempCorrection = (float)Memory.GetInt16Bit(NVSSensorMeteoInternalTempCorrection) / 100;
+			if (Memory.IsKeyExists(NVSSensorMeteoExternalTempCorrection)) 	ExternalTempCorrection = (float)Memory.GetInt16Bit(NVSSensorMeteoExternalTempCorrection) / 100;
+
+			if (Memory.IsKeyExists(NVSSensorMeteoHumidityZeroCorrection))
+				HumidityZeroCorrection = (float)Memory.GetInt16Bit(NVSSensorMeteoHumidityZeroCorrection) / 100;
+			else
+			{
+				HumidityZeroCorrection = 15.2;
+				Memory.SetInt16Bit(NVSSensorMeteoHumidityZeroCorrection, (int16_t)ceil(HumidityZeroCorrection * 100));
+				Memory.Commit();
+			}
+
+			if (Memory.IsKeyExists(NVSSensorMeteoShowInExperimental))		SIEFlag = (Memory.GetInt8Bit(NVSSensorMeteoShowInExperimental) > 0) ? true : false;
+		}
+
+		string GetSettings() override {
 			return "{\"InternalTempCorrection\": " +
 					Converter::FloatToString(InternalTempCorrection, 2) +
 					", \"ExternalTempCorrection\": " +
 					Converter::FloatToString(ExternalTempCorrection, 2) +
 					", \"HumidityZeroCorrection\": " +
-					Converter::FloatToString(HumidityZeroCorrection, 2) + "}";
+					Converter::FloatToString(HumidityZeroCorrection, 2) +
+					", \"SIEFlag\": " + ((SIEFlag) ? "true" : "false") + "}";
 		}
 
+		bool GetSIEFlag() {
+			return SIEFlag;
+		}
 
-		void SetSensorSettings(WebServer_t::Response &Result, Query_t &Query) override {
+		void SetSettings(WebServer_t::Response &Result, Query_t &Query) override {
 			JSON JSONItem(Query.GetBody());
 
 			if (JSONItem.GetKeys().size() == 0)
@@ -369,6 +379,8 @@ class SensorMeteo_t : public Sensor_t {
 				return;
 			}
 
+			bool IsChanged = false;
+
 			NVS Memory(NVSSensorMeteoArea);
 
 			if (JSONItem.IsItemExists("InternalTempCorrection") && JSONItem.IsItemNumber("InternalTempCorrection"))
@@ -376,6 +388,7 @@ class SensorMeteo_t : public Sensor_t {
 				InternalTempCorrection = (float)ceil(JSONItem.GetDoubleItem("InternalTempCorrection") * 100.0) / 100.0;
 				int16_t InternalTempCorrectionToSave = (int16_t)(InternalTempCorrection * 100);
 				Memory.SetInt16Bit(NVSSensorMeteoInternalTempCorrection, InternalTempCorrectionToSave);
+				IsChanged = true;
 			}
 
 			if (JSONItem.IsItemExists("ExternalTempCorrection") && JSONItem.IsItemNumber("ExternalTempCorrection"))
@@ -383,6 +396,7 @@ class SensorMeteo_t : public Sensor_t {
 				ExternalTempCorrection = (float)ceil(JSONItem.GetDoubleItem("ExternalTempCorrection") * 100.0) / 100.0;
 				int16_t ExternalTempCorrectionToSave = (int16_t)(ExternalTempCorrection * 100);
 				Memory.SetInt16Bit(NVSSensorMeteoExternalTempCorrection, ExternalTempCorrectionToSave);
+				IsChanged = true;
 			}
 
 			if (JSONItem.IsItemExists("HumidityZeroCorrection") && JSONItem.IsItemNumber("HumidityZeroCorrection"))
@@ -390,11 +404,23 @@ class SensorMeteo_t : public Sensor_t {
 				HumidityZeroCorrection = (float)ceil(JSONItem.GetDoubleItem("HumidityZeroCorrection") * 100.0) / 100.0;
 				int16_t HumidityZeroCorrectionToSave = (int16_t)(HumidityZeroCorrection * 100);
 				Memory.SetInt16Bit(NVSSensorMeteoHumidityZeroCorrection, HumidityZeroCorrectionToSave);
+				IsChanged = true;
 			}
 
-			Memory.Commit();
+			if (JSONItem.IsItemExists("SIEFlag") && JSONItem.IsItemBool("SIEFlag"))
+			{
+				SIEFlag = JSONItem.GetBoolItem("SIEFlag");
+				Memory.SetInt8Bit(NVSSensorMeteoShowInExperimental, (SIEFlag) ? 1 : 0);
+				IsChanged = true;
+			}
 
-			Result.SetSuccess();
+			if (IsChanged)
+			{
+				Memory.Commit();
+				Result.SetSuccess();
+			}
+			else
+				Result.SetInvalid();
 		}
 
 		uint32_t ReceiveValue(string Key = "Primary") override {
