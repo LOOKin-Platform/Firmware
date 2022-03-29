@@ -62,7 +62,7 @@ void app_main(void) {
 	/*
 	IRLib::TestAll();
 	FreeRTOS::Sleep(5000);
-*/
+	*/
 
 	//esp_log_level_set("*", ESP_LOG_VERBOSE);      // enable WARN logs from WiFi stack
 

@@ -73,6 +73,7 @@ class CommandIR_t : public Command_t {
 			Events["panasonic"]			= 0x05;
 			Events["samsung36"]			= 0x06;
 			Events["rc5"]				= 0x07;
+			Events["rc6"]				= 0x08;
 
 			//Events["mce"]				= 0x0A;
 
@@ -306,7 +307,7 @@ class CommandIR_t : public Command_t {
 				if (ShouldOn > 0 && LastStatus == 0)
 					LastStatus = 0x2700;
 
-				ESP_LOGI("ShouldON", "%s", (ShouldOn) ? "true" : "false");
+				//ESP_LOGI("ShouldON", "%s", (ShouldOn) ? "true" : "false");
 
 				if (ShouldOn && (CurrentStatus < 0x1000 || CurrentStatus == 0xFFFF)) {
 					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?operand=" + ACData.GetCodesetString() + "FFF0",

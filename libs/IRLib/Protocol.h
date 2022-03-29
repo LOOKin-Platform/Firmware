@@ -29,14 +29,14 @@ class IRProto {
 
 		virtual int32_t					GetBlocksDelimeter()											{ return -Settings.SensorsConfig.IR.SignalEndingLen;}
 
-		static bool TestValue(int32_t Value, int32_t Reference) {
+		static bool TestValue(int32_t Value, int32_t Reference, float ComparisonDiff = 0.25) {
 			if (Converter::Sign(Value) != Converter::Sign(Reference))
 				return false;
 
 			if (Value > 0)
-				return (Value > 0.75*Reference && Value < 1.25*Reference) ? true : false;
+				return (Value > (1-ComparisonDiff)*Reference && Value < (1+ComparisonDiff)*Reference) ? true : false;
 			else
-				return (Value > 1.25*Reference && Value < 0.75*Reference) ? true : false;
+				return (Value > (1+ComparisonDiff)*Reference && Value < (1-ComparisonDiff)*Reference) ? true : false;
 		}
 };
 
@@ -46,7 +46,7 @@ class IRProto {
 #include "protocols/Panasonic.cpp"
 #include "protocols/Samsung36.cpp"
 #include "protocols/RC5.cpp"
-//#include "Protocols/RC6_draft.cpp"
+#include "Protocols/RC6.cpp"
 //#include "protocols/Daikin.cpp"
 //#include "protocols/MitsubishiAC.cpp"
 //#include "protocols/Aiwa.cpp"

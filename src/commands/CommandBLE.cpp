@@ -18,7 +18,7 @@ static string 	CommandBLELastKBDSignalSended 	= "";
 static uint64_t	CommandBLELastTimeSended		= 0;
 
 #define	NVSCommandsBLEArea 		"CommandBLE"
-#define NVSSeqRepeatCounter 	"BLERepeatCounter"
+#define NVSBLESeqRepeatCounter 	"BLERepeatCounter"
 
 class CommandBLE_t : public Command_t {
 	private:
@@ -44,9 +44,9 @@ class CommandBLE_t : public Command_t {
 		void InitSettings() override {
 			NVS Memory(NVSCommandsBLEArea);
 
-			if (Memory.IsKeyExists(NVSSeqRepeatCounter))
+			if (Memory.IsKeyExists(NVSBLESeqRepeatCounter))
 			{
-				SequenceRepeatCounter = Memory.GetInt8Bit(NVSSeqRepeatCounter);
+				SequenceRepeatCounter = Memory.GetInt8Bit(NVSBLESeqRepeatCounter);
 				if (SequenceRepeatCounter < 1)
 					SequenceRepeatCounter = 1;
 			}
@@ -74,7 +74,7 @@ class CommandBLE_t : public Command_t {
 			if (JSONItem.IsItemExists("SequenceRepeatCounter") && JSONItem.IsItemNumber("SequenceRepeatCounter"))
 			{
 				SequenceRepeatCounter = JSONItem.GetIntItem("SequenceRepeatCounter");
-				Memory.SetInt8Bit(NVSSeqRepeatCounter, SequenceRepeatCounter);
+				Memory.SetInt8Bit(NVSBLESeqRepeatCounter, SequenceRepeatCounter);
 				IsChanged = true;
 			}
 

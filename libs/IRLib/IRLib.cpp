@@ -79,7 +79,7 @@ void IRLib::FillProtocols() {
 			new Panasonic(),
 			new Samsung36(),
 			new RC5(),
-//			new RC6()
+			new RC6()
 //			new MCE()
 //			new Daikin(),
 //			new MitsubishiAC(),
@@ -342,11 +342,11 @@ int32_t IRLib::RawPopItem() {
 	return Item;
 }
 
-bool IRLib::CompareIsIdenticalWith(IRLib &Signal) {
+bool IRLib::CompareIsIdenticalWith(IRLib &Signal, float ComparisonDiff) {
 	return CompareIsIdentical(*this, Signal);
 }
 
-bool IRLib::CompareIsIdenticalWith(vector<int32_t> &SignalInVector) {
+bool IRLib::CompareIsIdenticalWith(vector<int32_t> &SignalInVector, float ComparisonDiff) {
 	uint16_t SizeDiff		= abs((uint16_t)(RawData.size() - SignalInVector.size()));
 	uint16_t MinimalSize	= min(RawData.size(), SignalInVector.size());
 
@@ -354,9 +354,7 @@ bool IRLib::CompareIsIdenticalWith(vector<int32_t> &SignalInVector) {
 		return false;
 
 	for (uint16_t i=0; i< MinimalSize; i++) {
-		uint16_t PartDif = abs(RawData[i] - SignalInVector[i]);
-
-		if (PartDif > 0.20 * max(abs(RawData[i]), abs(SignalInVector[i])))
+		if (!IRProto::TestValue(RawData[i], SignalInVector[i], ComparisonDiff))
 			return false;
 	}
 
@@ -371,7 +369,7 @@ bool IRLib::CompareIsIdentical(IRLib &Signal1, IRLib &Signal2) {
 	return false;
 }
 
-bool IRLib::CompareIsIdentical(vector<int32_t> &Signal1, vector<int32_t> &Signal2, uint16_t Signal1Start, uint16_t Signal2Start, uint16_t Signal1Size, uint16_t Signal2Size)
+bool IRLib::CompareIsIdentical(vector<int32_t> &Signal1, vector<int32_t> &Signal2, uint16_t Signal1Start, uint16_t Signal2Start, uint16_t Signal1Size, uint16_t Signal2Size, float ComparisonDiff)
 {
 	if (Signal1Size == 0) Signal1Size = Signal1.size();
 	if (Signal2Size == 0) Signal2Size = Signal2.size();
@@ -383,9 +381,7 @@ bool IRLib::CompareIsIdentical(vector<int32_t> &Signal1, vector<int32_t> &Signal
 		return false;
 
 	for (uint16_t i=0; i< MinimalSize; i++) {
-		uint16_t PartDif = abs(Signal1[Signal1Start + i] - Signal2[Signal2Start + i]);
-
-		if (PartDif > 0.20 * max(abs(Signal1[Signal1Start + i]), abs(Signal2[Signal2Start + i])))
+		if (!IRProto::TestValue(Signal1[Signal1Start + i], Signal2[Signal2Start + i], ComparisonDiff))
 			return false;
 	}
 
@@ -550,10 +546,11 @@ bool IRLib::CRCCompareFunction(uint16_t Item1, uint16_t Item2, float Threshold) 
 	return false;
 }
 
-bool IRLib::TestSignal(vector<int32_t> Input) {
+bool IRLib::TestSignal(vector<int32_t> Input, float ComparisonDiff) {
 	IRLib Signal(Input);
 	vector<int32_t> Output = Signal.GetRawDataForSending();
-	return IRLib::CompareIsIdentical(Input, Output);
+
+	return IRLib::CompareIsIdentical(Input, Output, 0, 0, 0, 0, ComparisonDiff);
 }
 
 void IRLib::TestAll() {
@@ -570,4 +567,13 @@ void IRLib::TestAll() {
 
 	bool NECTest1 = TestSignal({8630,-4220,610,-1520,610,-460,610,-1530,610,-460,610,-460,580,-1550,610,-460,590,-1550,610,-460,610,-1530,590,-480,610,-1520,610,-1530,610,-460,610,-1530,610,-460,610,-460,610,-460,610,-1530,590,-480,590,-490,580,-490,610,-1530,610,-1530,610,-1530,610,-1530,610,-460,610,-1530,610,-1520,610,-1530,580,-490,610,-460,610,-45000});
 	ESP_LOGE("NECTest1 (repeat)", "%s", NECTest1 ? "passed" : "not passed");
+
+	bool RC6Test1 = TestSignal({2720,-810,530,-800,540,-350,560,-330,540,-780,950,-380,540,-350,540,-350,530,-360,530,-350,540,-350,540,-350,530,-360,560,-340,530,-360,530,-350,1000,-780,540,-350,530,-360,530,-360,530,-45000}, 0.3);
+	ESP_LOGE("RC6Test1", "%s", RC6Test1 ? "passed" : "not passed");
+
+	bool RC6Test2 = TestSignal({2664,-888,444,-888,444,-444,444,-444,444,-888,1332,-444,444,-888,888,-444,444,-444,444,-888,888,-444,444,-444,444,-444,444,-444,444,-888,888,-888,444,-444,444,-45000}, 0.3);
+	ESP_LOGE("RC6Test2", "%s", RC6Test2 ? "passed" : "not passed");
+
+	bool RC6Test3 = TestSignal({2664,-888,444,-888,444,-444,444,-444,1332,-888,444,-444,444,-888,888,-444,444,-444,444,-888,888,-444,444,-444,444,-444,444,-444,444,-888,888,-888,444,-444,444,-45000}, 0.3);
+	ESP_LOGE("RC6Test3", "%s", RC6Test3 ? "passed" : "not passed");
 }

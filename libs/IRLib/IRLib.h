@@ -55,14 +55,14 @@ class IRLib {
 		void			AppendRawSignal(vector<int32_t> &);
 		int32_t			RawPopItem();
 
-		bool			CompareIsIdenticalWith(IRLib &Signal);
-		bool			CompareIsIdenticalWith(vector<int32_t> &);
+		bool			CompareIsIdenticalWith(IRLib &Signal, float ComparisonDiff = 0.25);
+		bool			CompareIsIdenticalWith(vector<int32_t> &, float ComparisonDiff = 0.25);
 
 		static bool		CompareIsIdentical(IRLib &Signal1, IRLib &Signal2);
-		static bool		CompareIsIdentical(vector<int32_t> &, vector<int32_t> &, uint16_t Signal1Start = 0, uint16_t Signal2Start = 0, uint16_t Signal1Size = 0, uint16_t Signal2Size = 0);
+		static bool		CompareIsIdentical(vector<int32_t> &, vector<int32_t> &, uint16_t Signal1Start = 0, uint16_t Signal2Start = 0, uint16_t Signal1Size = 0, uint16_t Signal2Size = 0, float ComparisonDiff = 0.25);
 		static uint8_t 	GetProtocolExternal(vector<int32_t> &);
 
-		static bool		TestSignal(vector<int32_t> Input);
+		static bool		TestSignal(vector<int32_t> Input, float ComparisonDiff = 0.25);
 		static void		TestAll();
 
 	private:
