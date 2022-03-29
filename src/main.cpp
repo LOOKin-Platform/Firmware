@@ -85,7 +85,6 @@ void app_main(void) {
 	Data = DataEndpoint_t::GetForDevice();
 	Data->Init();
 	Storage.Init();
-	HomeKit::Init();
 
 	// Remote temporary hack
 	if (Settings.eFuse.Type == Settings.Devices.Remote) {
@@ -95,6 +94,8 @@ void app_main(void) {
 
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();
+
+	HomeKit::Init();
 
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
