@@ -17,9 +17,15 @@ extern BLEServer_t		BLEServer;
 static string 	CommandBLELastKBDSignalSended 	= "";
 static uint64_t	CommandBLELastTimeSended		= 0;
 
+#define	NVSCommandsBLEArea 		"CommandBLE"
+#define NVSSeqRepeatCounter 	"BLERepeatCounter"
+
 class CommandBLE_t : public Command_t {
+	private:
+		uint8_t 		SequenceRepeatCounter = 5;
+
 	public:
-		uint32_t	SendCounter 		= 0;
+		uint32_t		SendCounter 		= 0;
 
 
 		CommandBLE_t() {
@@ -32,6 +38,53 @@ class CommandBLE_t : public Command_t {
 			Events["kbd_key_repeat"]	= 0x04;
 
 			Events["kbd_key-blocked"]	= 0x90;
+			Events["kbd_key-repeated"]	= 0x91;
+		}
+
+		void InitSettings() override {
+			NVS Memory(NVSCommandsBLEArea);
+
+			if (Memory.IsKeyExists(NVSSeqRepeatCounter))
+			{
+				SequenceRepeatCounter = Memory.GetInt8Bit(NVSSeqRepeatCounter);
+				if (SequenceRepeatCounter < 1)
+					SequenceRepeatCounter = 1;
+			}
+		}
+
+		string GetSettings() override {
+			return "{\"SequenceRepeatCounter\": " +
+					Converter::ToString<uint8_t>(SequenceRepeatCounter)
+					+ "}";
+		}
+
+		void SetSettings(WebServer_t::Response &Result, Query_t &Query) override {
+			JSON JSONItem(Query.GetBody());
+
+			if (JSONItem.GetKeys().size() == 0)
+			{
+				Result.SetInvalid();
+				return;
+			}
+
+			bool IsChanged = false;
+
+			NVS Memory(NVSCommandsBLEArea);
+
+			if (JSONItem.IsItemExists("SequenceRepeatCounter") && JSONItem.IsItemNumber("SequenceRepeatCounter"))
+			{
+				SequenceRepeatCounter = JSONItem.GetIntItem("SequenceRepeatCounter");
+				Memory.SetInt8Bit(NVSSeqRepeatCounter, SequenceRepeatCounter);
+				IsChanged = true;
+			}
+
+			if (IsChanged)
+			{
+				Memory.Commit();
+				Result.SetSuccess();
+			}
+			else
+				Result.SetInvalid();
 		}
 
 		bool Execute(uint8_t EventCode, const char* StringOperand) override {
@@ -121,6 +174,19 @@ class CommandBLE_t : public Command_t {
 					return false;
 
 				return Execute(0x01, StringOperand);
+			}
+
+			if (EventCode == 0x91) { // Repeated kbd_key
+				bool IsExecuted = false;
+
+				for (int i=0; i < SequenceRepeatCounter; i++) {
+					bool IsOK = Execute(0x01, StringOperand);
+
+					if (IsOK && !IsExecuted)
+						IsExecuted = IsOK;
+				}
+
+				return IsExecuted;
 			}
 
 			return false;
