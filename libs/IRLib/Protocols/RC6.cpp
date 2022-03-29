@@ -171,7 +171,7 @@ class RC6 : public IRProto {
 		}
 
 		vector<int32_t> ConstructRawRepeatSignal(uint32_t Data, uint16_t Misc) override {
-			return ConstructRaw((uint32_t)Bits.to_ulong(), Misc);
+			return ConstructRaw(Data, Misc);
 		}
 
 		vector<int32_t> ConstructRawForSending(uint32_t Data, uint16_t Misc) {
@@ -180,7 +180,10 @@ class RC6 : public IRProto {
 			Bits[17] = !Bits[17];
 
 			ESP_LOGE("Inverted", "Source data %08X, Output data %08X", Data, (uint32_t)Bits.to_ulong());
-			 */
+
+			return ConstructRaw((uint32_t)Bits.to_ulong(), Misc);
+			*/
+
 			return ConstructRaw(Data, Misc);
 		}
 

@@ -104,6 +104,7 @@ void app_main(void) {
 		BLEServer.StartAdvertisingAsGenericDevice();
 	else
 		BLEServer.StartAdvertising();
+
 	//BLEClient.Scan(60);
 
 	Pooling_t::Pool();
