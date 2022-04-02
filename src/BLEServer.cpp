@@ -66,11 +66,10 @@ static const uint8_t _hidReportDescriptor[] = {
   USAGE(1),				0x01,			// 		USAGE (Consumer Control)
   COLLECTION(1),		0x01,			// 		COLLECTION (Application)
   REPORT_ID(1),			MEDIA_KEYS_ID,	//   	REPORT_ID (3)
-  USAGE_PAGE(1),		0x0C,			//   	USAGE_PAGE (Consumer)
   LOGICAL_MINIMUM(1),	0x00,			//   	LOGICAL_MINIMUM (0)
   LOGICAL_MAXIMUM(1),	0x01,			//   	LOGICAL_MAXIMUM (1)
   REPORT_SIZE(1),		0x01,			//   	REPORT_SIZE (1)
-  REPORT_COUNT(1),		0x13,			//   	REPORT_COUNT (19)
+  REPORT_COUNT(1),		0x18,			//   	REPORT_COUNT (24)
   USAGE(1),				0xB5,			//   	USAGE (Scan Next Track)     	; bit 0: 1
   USAGE(1),				0xB6,			//   	USAGE (Scan Previous Track) 	; bit 1: 2
   USAGE(1),				0xB7,			//   	USAGE (Stop)            		; bit 2: 4
@@ -87,11 +86,14 @@ static const uint8_t _hidReportDescriptor[] = {
   USAGE(1),				0x43,			// 		HID_CONSUMER_MENU_DOWN			; bit 5: 32
   USAGE(1),				0x44,			// 		HID_CONSUMER_MENU_LEFT			; bit 6: 64
   USAGE(1),				0x45,			// 		HID_CONSUMER_MENU_RIGHT			; bit 7: 12;
-  USAGE(1),				0x9C,			// 		HID_CONSUMER_CHANNEL_INCREMENT	; bit 0  1
-  USAGE(1),				0x9D,			// 		HID_CONSUMER_CHANNEL_DECREMENT	; bit 1  2
+  USAGE(1),				0x9C,			// 		HID_CONSUMER_CHANNEL_INCREMENT	; bit 0: 1
+  USAGE(1),				0x9D,			// 		HID_CONSUMER_CHANNEL_DECREMENT	; bit 1: 2
   USAGE(2),				0x23, 0x02,		// 		CC_HOME							; bit 2: 4;
-
-  // Не работает СС_MENU и CC_HOME!
+  USAGE(2),				0xA2, 0x01,		//		9 точек Xiaomi					; bit 3: 8;
+  USAGE(2),				0x24, 0x02,		//   	Usage (AC Back)					; bit 3: 16;
+  USAGE(2),				0x25, 0x02,		//   	Usage (AC Forward)				; bit 3: 32;
+  USAGE(2),				0x26, 0x02,		//   	Usage (AC Stop)					; bit 3: 64;
+  USAGE(2),				0x27, 0x02,		//   	Usage (AC Refresh)				; bit 3: 128;
 
   /*
   USAGE(2),				0x83, 0x01,		//   	Usage (Media sel)   			; bit 6: 64
@@ -168,6 +170,17 @@ int8_t BLEServer_t::GetRSSIForConnection(uint16_t ConnectionHandle) {
 void BLEServer_t::Init() {
 	BLEDevice::init(Settings.Bluetooth.DeviceNamePrefix + Device.IDToString());
 
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_DEFAULT);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL0);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL1);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL2);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL3);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL4);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL5);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL6);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_CONN_HDL8);
+	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_ADV);
+
 	if (pServer == NULL) {
 		pServer = NimBLEDevice::createServer();
 		pServer->setCallbacks(this);
@@ -239,6 +252,8 @@ void BLEServer_t::StartAdvertisingAsHID()
 	HIDDevice->deviceInfo()->addCharacteristic(WiFiSetupCharacteristic);
 	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
+	//HIDDevice->deviceInfo()->
+
 	BLEDevice::setSecurityAuth(true, true, true);
 
 	HIDDevice->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
@@ -250,6 +265,24 @@ void BLEServer_t::StartAdvertisingAsHID()
 	advertising->setAppearance(HID_KEYBOARD);
 	advertising->addServiceUUID(HIDDevice->hidService()->getUUID());
 	advertising->setScanResponse(false);
+
+/*
+#define ESP_LE_KEY_NONE                    0          // relate to BTM_LE_KEY_NONE in stack/btm_api.h
+#define ESP_LE_KEY_PENC                    (1 << 0)   // encryption key, encryption information of peer device, relate to BTM_LE_KEY_PENC in stack/btm_api.h
+#define ESP_LE_KEY_PID                     (1 << 1)   // identity key of the peer device, relate to BTM_LE_KEY_PID in stack/btm_api.h
+#define ESP_LE_KEY_PCSRK                   (1 << 2)   // peer SRK, relate to BTM_LE_KEY_PCSRK in stack/btm_api.h
+#define ESP_LE_KEY_PLK                     (1 << 3)   // Link key, relate to BTM_LE_KEY_PLK in stack/btm_api.h
+#define ESP_LE_KEY_LLK                     (ESP_LE_KEY_PLK << 4) //relate to BTM_LE_KEY_LLK in stack/btm_api.h
+#define ESP_LE_KEY_LENC                    (ESP_LE_KEY_PENC << 4)// master role security information:div relate to BTM_LE_KEY_LENC in stack/btm_api.h
+#define ESP_LE_KEY_LID                     (ESP_LE_KEY_PID << 4)  // master device ID key relate to BTM_LE_KEY_LID in stack/btm_api.h
+#define ESP_LE_KEY_LCSRK                   (ESP_LE_KEY_PCSRK << 4)// local CSRK has been deliver to peer relate to BTM_LE_KEY_LCSRK in stack/btm_api.h
+
+	ESP_LE_KEY_PENC
+	ESP_LE_KEY_PID
+	ESP_LE_KEY_LENC
+	ESP_LE_KEY_LID
+*/
+	//advertising->setAdvertisementData(advertisementData);
 
 	advertising->setMaxInterval(0);
 	advertising->setMinInterval(0);
