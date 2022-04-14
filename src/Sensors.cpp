@@ -13,14 +13,19 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 	vector<Sensor_t*> Sensors = {};
 
 	switch (Device.Type.Hex) {
+#ifdef BUILD1GEN
+		case Settings.Devices.Remote:
+			Sensors = { new SensorIR_t() };
+		break;
+#else
 		case Settings.Devices.Plug:
 			//Sensors = { new SensorSwitch_t()};
 			//Sensors = { new SensorSwitch_t(), new SensorColor_t() };
 			break;
 		case Settings.Devices.Duo:
 			Sensors = {
-				//new SensorMultiSwitch_t(),
-				//new SensorTouch_t()
+				new SensorMultiSwitch_t(),
+				new SensorTouch_t()
 			};
 			break;
 
@@ -29,10 +34,10 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 				Sensors = { new SensorIR_t() };
 			else
 				Sensors = { new SensorIR_t(), new SensorMeteo_t() };
-			break;
+		break;
 		//case Settings.Devices.Motion:
 		//	Sensors = { new SensorMotion_t() };
-			break;
+#endif
 	}
 
 
