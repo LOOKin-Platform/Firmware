@@ -1149,6 +1149,27 @@ class DataRemote_t : public DataEndpoint_t {
 					return DeserializeSignal(GetItem(KeyString));
 				}
 			}
+			// alias for poweron/poweroff functions
+			else if (
+				(Function == "poweron" || Function == "poweroff")
+				&& (DeviceItem.Functions.count(Function) == 0)
+				&& (DeviceItem.Functions.count("power")) > 0) {
+
+				string KeyString = UUID + "_power";
+				ESP_LOGE("KeyString", "%s", KeyString.c_str());
+				ESP_LOGE("Type", "%s", DeviceItem.Functions["power"].c_str());
+
+				if (DeviceItem.Functions["power"] == "single")
+					return DeserializeSignal(GetItem(KeyString));
+				else
+				{
+					if (Function == "poweroff")
+						KeyString = KeyString + "_1";
+
+					ESP_LOGE("KeyString", "%s", KeyString.c_str());
+					return DeserializeSignal(GetItem(KeyString));
+				}
+			}
 
 			return DataSignal();
 		}
