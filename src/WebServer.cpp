@@ -288,7 +288,6 @@ void WebServer_t::UDPSendBroadcast(string Message, bool IsScheduled) {
 		if (IsScheduled)
 			UDPSendBroadcastQueueAdd(Message);
 
-		ESP_LOGE(tag, "WiFi switched off - can't send UDP message");
 		return;
 	}
 }
