@@ -17,10 +17,12 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 		case Settings.Devices.Remote:
 			Sensors = { new SensorIR_t() };
 		break;
+		case Settings.Devices.Plug:
+			Sensors = { new SensorSwitch_t() };
+		break;
 #else
 		case Settings.Devices.Plug:
-			//Sensors = { new SensorSwitch_t()};
-			//Sensors = { new SensorSwitch_t(), new SensorColor_t() };
+			Sensors = { new SensorSwitch_t() };
 			break;
 		case Settings.Devices.Duo:
 			Sensors = {

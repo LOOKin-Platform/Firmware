@@ -41,11 +41,19 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 	vector<Command_t*> Commands = {};
 
 	switch (Device.Type.Hex) {
+#ifdef BUILD1GEN
+		case Settings.Devices.Remote:
+			Commands = { new CommandIR_t(), new CommandBLE_t() };
+			break;
 		case Settings.Devices.Plug:
-			Commands = { };//new CommandSwitch_t()		};
+			Commands = { new CommandSwitch_t() };
+		break;
+#else
+		case Settings.Devices.Plug:
+			Commands = { new CommandSwitch_t() };
 			break;
 		case Settings.Devices.Duo:
-			Commands = { };//new CommandMultiSwitch_t()	};
+			Commands = {new CommandMultiSwitch_t() };
 			break;
 		case Settings.Devices.Remote:
 			Commands = { new CommandIR_t(), new CommandBLE_t() };
@@ -53,6 +61,7 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 		case Settings.Devices.Motion:
 			Commands = { };
 			break;
+#endif
 	}
 
 	for (auto& CommandItem : Commands)

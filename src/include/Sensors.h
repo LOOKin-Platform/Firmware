@@ -52,7 +52,7 @@ class Sensor_t {
 		virtual bool				ShouldUpdateInMainLoop()			{ return true; }
 
 		bool						SetValue(uint32_t Value, string Key, uint32_t UpdatedTime);
-		bool						SetValue(uint32_t Value, string Key);
+		bool						SetValue(uint32_t Value, string Key = "Primary");
 
 		uint32_t					GetValue(string Key = "Primary");
 
@@ -96,7 +96,7 @@ extern Automation_t Automation;
 extern Wireless_t	Wireless;
 extern Storage_t	Storage;
 
-//#include "../sensors/SensorSwitch.cpp"
+#include "../sensors/SensorSwitch.cpp"
 #include "../sensors/SensorMultiSwitch.cpp"
 //#include "../sensors/SensorRGBW.cpp"
 #include "../sensors/SensorIR.cpp"

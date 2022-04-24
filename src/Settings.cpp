@@ -12,7 +12,7 @@ map<uint8_t, Settings_t::GPIOData_t::DeviceInfo_t> Settings_t::GPIOData_t::Devic
 
 void FillDevices() {
 	Settings_t::GPIOData_t::DeviceInfo_t Plug;
-	Plug.Switch.GPIO						= GPIO_NUM_23;
+	Plug.Switch.GPIO						= GPIO_NUM_25;
 
 	Plug.Color.Timer						= LEDC_TIMER_0;
 	Plug.Color.Blue.GPIO					= GPIO_NUM_2;

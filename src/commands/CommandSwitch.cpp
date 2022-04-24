@@ -22,7 +22,7 @@ class CommandSwitch_t : public Command_t {
     	  Execute(0x02, 0);
     }
 
-    bool Execute(uint8_t EventCode, string StringOperand) override {
+    bool Execute(uint8_t EventCode, const char* StringOperand) override {
     		bool Executed = false;
 
     		if (EventCode == 0x00)
