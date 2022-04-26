@@ -17,9 +17,11 @@ using namespace std;
 #include "DateTime.h"
 #include "ISR.h"
 #include "HardwareIO.h"
+#include "ws2812.h"
 
 #include "Query.h"
 #include "WebServer.h"
+
 
 #define  NVSLogArea   "Log"
 #define  NVSLogArray  "SystemLog"
@@ -86,6 +88,8 @@ class Log {
 		static vector<Log::Item> Items;
 		static string       Serialize(Log::Item Item);
 		static Log::Item    Deserialize(string JSONString);
+
+		static WS2812		*ws2812;
 	public:
 		 // 1XXX - информация, 0XXX - ошибки
 		class Events {

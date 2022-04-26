@@ -14,9 +14,9 @@ void FillDevices() {
 	Settings_t::GPIOData_t::DeviceInfo_t Plug;
 	Plug.Switch.GPIO						= GPIO_NUM_25;
 
-	Plug.Color.Timer						= LEDC_TIMER_0;
-	Plug.Color.Blue.GPIO					= GPIO_NUM_2;
-	Plug.Color.Blue.Channel					= LEDC_CHANNEL_2;
+	Plug.Indicator.Type						= Settings_t::GPIOData_t::Indicator_t::ws2812;
+	Plug.Indicator.Alternative.GPIO			= GPIO_NUM_26;
+	Plug.Indicator.SwitchLedOn.GPIO			= GPIO_NUM_16;
 
 	Settings_t::GPIOData_t::DeviceInfo_t Duo;
 	Duo.MultiSwitch.GPIO 					= { GPIO_NUM_4, GPIO_NUM_17 };

@@ -11,6 +11,9 @@ static char tag[] = "Log";
 vector<Log::Item> 	Log::Items = vector<Log::Item>();
 esp_timer_handle_t	Log::Indicator_t::IndicatorTimer = NULL;
 float 				Log::Indicator_t::CurrentBrightness = 0.03;
+WS2812*				Log::ws2812 = NULL;
+
+
 
 Log::Log() { }
 
@@ -267,7 +270,6 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
 		case Events::System		::FirstDeviceInit	: Execute(0xEA	, 0x55	, 0x15	, BLINKING	, 300); break;
 		case Events::System		::HardResetIntied	: Execute(0x8B	, 2		, 2		, BLINKING	, 300); break;
 
-
 		case Events::System		::PowerManageOn		: Execute(255	, 239	, 213 	, CONST		, 3);	break;
 
 		case Events::Commands	::IRExecuted		:
@@ -304,23 +306,35 @@ Log::Indicator_t::MODE
 			Log::Indicator_t::tBlinking = CONST;
 
 void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration) {
-	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
+	Settings_t::GPIOData_t::Indicator_t GPIOSettings = Settings.GPIOData.GetCurrent().Indicator;
 
-	if (!IsInited) {
-		if (GPIO.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Red.GPIO	, GPIO.Timer, GPIO.Red.Channel	);
-		if (GPIO.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
-		if (GPIO.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
+	if (!IsInited)
+	{
+		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
+		{
+			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Red.GPIO	, GPIOSettings.Timer, GPIOSettings.Red.Channel	);
+			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Green.GPIO	, GPIOSettings.Timer, GPIOSettings.Green.Channel);
+			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Blue.GPIO	, GPIOSettings.Timer, GPIOSettings.Blue.Channel	);
+		}
+		else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812)
+		{
+			if (ws2812 == NULL)
+				ws2812 = new WS2812(GPIOSettings.Alternative.GPIO, 12);
+		}
 
 		const esp_timer_create_args_t TimerArgs = {
-			.callback 			= &IndicatorCallback,
-			.arg 				= NULL,
-			.dispatch_method 	= ESP_TIMER_TASK,
-			.name				= "IndicatorTimer",
-			.skip_unhandled_events = false
+				.callback 			= &IndicatorCallback,
+				.arg 				= NULL,
+				.dispatch_method 	= ESP_TIMER_TASK,
+				.name				= "IndicatorTimer",
+				.skip_unhandled_events = false
 		};
 
 		::esp_timer_create(&TimerArgs, &IndicatorTimer);
 
+		if (GPIOSettings.SwitchLedOn.GPIO != GPIO_NUM_0) {
+			GPIO::Setup(GPIOSettings.SwitchLedOn.GPIO);
+		}
 
 		NVS Memory(NVSLogArea);
 		if (Memory.IsKeyExists(NVSBrightness))
@@ -336,6 +350,9 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	if (CurrentBrightness == 0)
 		return;
 
+	if (GPIOSettings.SwitchLedOn.GPIO != GPIO_NUM_0)
+		GPIO::Write(GPIOSettings.SwitchLedOn.GPIO, true);
+
 	tRed 		= (uint8_t)(Red 	* CurrentBrightness);
 	tGreen 		= (uint8_t)(Green 	* CurrentBrightness);
 	tBlue 		= (uint8_t)(Blue 	* CurrentBrightness);
@@ -344,9 +361,16 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	tExpired	= 0;
 	tBlinking	= Blinking;
 
-	if (GPIO.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Red	, tRed	, 	0);
-	if (GPIO.Green.GPIO != GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Green	, tGreen, 	0);
-	if (GPIO.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIO.Blue 	, tBlue	, 	0);
+	if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
+	{
+		if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Red	, tRed	, 	0);
+		if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Green	, tGreen, 	0);
+		if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Blue 	, tBlue	, 	0);
+	}
+	else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) {
+		ws2812->setAllPixels(tRed, tGreen, tBlue);
+		ws2812->Show();
+	}
 
 	::esp_timer_start_periodic(IndicatorTimer, TIMER_ALARM);
 }
@@ -355,11 +379,14 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
  * @brief Hardware timer for indicator const light handler
  */
 void Log::Indicator_t::IndicatorCallback(void *Param) {
-	Settings_t::GPIOData_t::Indicator_t GPIO = Settings.GPIOData.GetCurrent().Indicator;
-	ISR::HardwareTimer::CallbackPrefix(GPIO.ISRTimerGroup, GPIO.ISRTimerIndex);
+	Settings_t::GPIOData_t::Indicator_t GPIOSettings = Settings.GPIOData.GetCurrent().Indicator;
+	ISR::HardwareTimer::CallbackPrefix(GPIOSettings.ISRTimerGroup, GPIOSettings.ISRTimerIndex);
 
 	if (tBlinking == NONE) {
 		::esp_timer_stop(IndicatorTimer);
+
+		if (GPIOSettings.SwitchLedOn.GPIO != GPIO_NUM_0)
+			GPIO::Write(GPIOSettings.SwitchLedOn.GPIO, false);
 		return;
 	}
 
@@ -384,8 +411,11 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 			tBlinking = NONE;
 		}
 
-
-		IsLighted =!(GPIO::PWMValue(GPIO.Red.Channel)+GPIO::PWMValue(GPIO.Green.Channel)+GPIO::PWMValue(GPIO.Blue.Channel) == 0);
+		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
+			IsLighted =!(GPIO::PWMValue(GPIOSettings.Red.Channel)+GPIO::PWMValue(GPIOSettings.Green.Channel)+GPIO::PWMValue(GPIOSettings.Blue.Channel) == 0);
+		else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) {
+			IsLighted = ws2812->GetIsLighted();
+		}
 	}
 
 	if ((tDuration > 0 && tExpired > tDuration) || (tBlinking == NONE))
@@ -394,9 +424,21 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 	if (tBlinking == NONE)
 		tRed = tGreen = tBlue = 0;
 
-	GPIO::PWMFadeTo(GPIO.Red	, (IsLighted) ? 0 : tRed, 	0);
-	GPIO::PWMFadeTo(GPIO.Green	, (IsLighted) ? 0 : tGreen, 0);
-	GPIO::PWMFadeTo(GPIO.Blue 	, (IsLighted) ? 0 : tBlue, 	0);
+	if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
+	{
+		GPIO::PWMFadeTo(GPIOSettings.Red	, (IsLighted) ? 0 : tRed, 	0);
+		GPIO::PWMFadeTo(GPIOSettings.Green	, (IsLighted) ? 0 : tGreen, 0);
+		GPIO::PWMFadeTo(GPIOSettings.Blue 	, (IsLighted) ? 0 : tBlue, 	0);
+	}
+	else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) {
+		if (!IsLighted)
+		{
+			ws2812->setAllPixels(tRed, tGreen, tBlue);
+			ws2812->Show();
+		}
+		else
+			ws2812->Clear();
+	}
 }
 
 /**

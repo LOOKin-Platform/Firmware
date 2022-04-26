@@ -141,7 +141,6 @@ class Settings_t {
 			const string					TopicPrefix				= "/LOOKin/";
 		} LocalMQTT;
 
-
 		struct WebServer_t {
 			const uint16_t					MaxQueryBodyLength		= 4096;
 		};
@@ -400,10 +399,15 @@ class Settings_t {
 				adc1_channel_t		ADCChannel		= ADC1_CHANNEL_MAX;
 			};
 
+
 			struct Indicator_t {
+				enum IndicatorType { RGB, ws2812};
+
 				ledc_timer_t		Timer	= LEDC_TIMER_MAX;
 				Settings_t::GPIOData_t::Color_t::Item_t
-									Red, Green, Blue, White;
+									Red, Green, Blue, White, Alternative, SwitchLedOn;
+
+				IndicatorType		Type = IndicatorType::RGB;
 
 				timer_group_t 		ISRTimerGroup = TIMER_GROUP_MAX;
 				timer_idx_t			ISRTimerIndex = TIMER_MAX;
