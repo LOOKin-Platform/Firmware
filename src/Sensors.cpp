@@ -17,9 +17,6 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 		case Settings.Devices.Remote:
 			Sensors = { new SensorIR_t() };
 		break;
-		case Settings.Devices.Plug:
-			Sensors = { new SensorSwitch_t() };
-		break;
 #else
 		case Settings.Devices.Plug:
 			Sensors = { new SensorSwitch_t() };

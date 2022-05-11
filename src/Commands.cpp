@@ -45,9 +45,6 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 		case Settings.Devices.Remote:
 			Commands = { new CommandIR_t(), new CommandBLE_t() };
 			break;
-		case Settings.Devices.Plug:
-			Commands = { new CommandSwitch_t() };
-		break;
 #else
 		case Settings.Devices.Plug:
 			Commands = { new CommandSwitch_t() };
