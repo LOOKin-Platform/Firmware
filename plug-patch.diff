@@ -1,0 +1,42 @@
+diff --git a/sdkconfig b/sdkconfig
+index 4ccf54e..fb17d98 100644
+--- a/sdkconfig
++++ b/sdkconfig
+@@ -96,10 +96,10 @@ CONFIG_ESPTOOLPY_FLASHFREQ_40M=y
+ CONFIG_ESPTOOLPY_FLASHFREQ="40m"
+ # CONFIG_ESPTOOLPY_FLASHSIZE_1MB is not set
+ # CONFIG_ESPTOOLPY_FLASHSIZE_2MB is not set
+-# CONFIG_ESPTOOLPY_FLASHSIZE_4MB is not set
++CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+ # CONFIG_ESPTOOLPY_FLASHSIZE_8MB is not set
+-CONFIG_ESPTOOLPY_FLASHSIZE_16MB=y
+-CONFIG_ESPTOOLPY_FLASHSIZE="16MB"
++# CONFIG_ESPTOOLPY_FLASHSIZE_16MB is not set
++CONFIG_ESPTOOLPY_FLASHSIZE="4MB"
+ CONFIG_ESPTOOLPY_FLASHSIZE_DETECT=y
+ CONFIG_ESPTOOLPY_BEFORE_RESET=y
+ # CONFIG_ESPTOOLPY_BEFORE_NORESET is not set
+@@ -125,8 +125,8 @@ CONFIG_ESPTOOLPY_MONITOR_BAUD=115200
+ # CONFIG_PARTITION_TABLE_SINGLE_APP is not set
+ # CONFIG_PARTITION_TABLE_TWO_OTA is not set
+ CONFIG_PARTITION_TABLE_CUSTOM=y
+-CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_16mb.csv"
+-CONFIG_PARTITION_TABLE_FILENAME="partitions_16mb.csv"
++CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_plug_test.csv"
++CONFIG_PARTITION_TABLE_FILENAME="partitions_plug_test.csv"
+ CONFIG_PARTITION_TABLE_OFFSET=0x8000
+ # end of Partition Table
+ 
+diff --git a/src/project_include.cmake b/src/project_include.cmake
+index f1b1acf..f3f44b8 100644
+--- a/src/project_include.cmake
++++ b/src/project_include.cmake
+@@ -3,7 +3,7 @@
+ 
+ 
+ if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
+-	set(PARTITION_CSV_PATH "/Users/thecashit/Documents/LOOKin/Firmware/Source/partitions_4mb.csv")	
++	set(PARTITION_CSV_PATH "/Users/thecashit/Documents/LOOKin/Firmware/Source/partitions_plug.csv")	
+ else()
+ 	set(PARTITION_CSV_PATH "/Users/thecashit/Documents/LOOKin/Firmware/Source/partitions_16mb.csv")
+ endif()
