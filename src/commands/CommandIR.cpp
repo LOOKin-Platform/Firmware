@@ -307,8 +307,6 @@ class CommandIR_t : public Command_t {
 				if (ShouldOn > 0 && LastStatus == 0)
 					LastStatus = 0x2700;
 
-				//ESP_LOGI("ShouldON", "%s", (ShouldOn) ? "true" : "false");
-
 				if (ShouldOn && (CurrentStatus < 0x1000 || CurrentStatus == 0xFFFF)) {
 					HTTPClient::Query(	Settings.ServerUrls.GetACCode + "?operand=" + ACData.GetCodesetString() + "FFF0",
 										QueryType::POST, false, true,

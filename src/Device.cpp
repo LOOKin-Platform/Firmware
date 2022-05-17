@@ -188,8 +188,8 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 		if (JSONItem.GetKeys().size() == 1) 						{ Result.SetInvalid(); return; }
 
 		NVS Memory(NVSDeviceArea);
-		if (JSONItem.IsItemExists("ID") && JSONItem.IsItemNumber("ID"))
-			Memory.SetUInt32Bit(NVSDeviceID, Converter::InterpretHexAsDec((uint32_t)JSONItem.GetIntItem("ID")));
+		if (JSONItem.IsItemExists("ID") && JSONItem.IsItemString("ID"))
+			Memory.SetUInt32Bit(NVSDeviceID, (uint32_t)Converter::UintFromHexString<uint32_t>(JSONItem.GetItem("ID")));
 
 		if (JSONItem.IsItemExists("Type") && JSONItem.IsItemNumber("Type"))
 			Memory.SetUInt16Bit(NVSDeviceType, JSONItem.GetIntItem("Type"));

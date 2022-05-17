@@ -174,11 +174,13 @@ class SensorIR_t : public Sensor_t {
 				IsRepeatSignal = true;
 
 			if (!IsRepeatSignal) {
+				LastSignal.RepeatCount = 0;
+				LastSignal.RepeatPause = 0;
 				LastSignal.RawData = SensorIRCurrentMessage;
 				LastSignal.ExternFillPostOperations();
 			}
 
-			if (Settings.eFuse.DeviceID == 0x00000003) {
+			if (Settings.eFuse.DeviceID == 0x00000003 || Settings.eFuse.DeviceID == 0x00000004) {
 				string Output = "";
 				for (auto &Item : SensorIRCurrentMessage)
 					Output = Output + Converter::ToString(Item) + " ";

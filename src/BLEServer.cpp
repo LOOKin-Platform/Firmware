@@ -146,7 +146,9 @@ void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
 			pServer->disconnect(Connection);
 	}
 
-	ble_gatts_svc_set_visibility(HIDDevice->hidService()->getHandle(), (Mode == BASIC) ? 0 : 1);
+	if (HIDDevice->hidService() != NULL)
+		ble_gatts_svc_set_visibility(HIDDevice->hidService()->getHandle(), (Mode == BASIC) ? 0 : 1);
+
 	CurrentMode = Mode;
 }
 

@@ -78,8 +78,9 @@ class ACOperand {
 		}
 
 		static bool IsOnSeparateForCodeset(uint16_t CodesetInHEX) {
-			if (CodesetInHEX == 0x9000 || CodesetInHEX == 0x9003 || CodesetInHEX == 0x9013 || CodesetInHEX == 0x9017  ||
-				CodesetInHEX == 0x9022 || CodesetInHEX == 0x9030 || CodesetInHEX == 0x9037 || CodesetInHEX == 0x9042 )
+			if (CodesetInHEX == 0x9000 || CodesetInHEX == 0x9003 || CodesetInHEX == 0x9013 || CodesetInHEX == 0x9017 ||
+				CodesetInHEX == 0x9022 || CodesetInHEX == 0x9030 || CodesetInHEX == 0x9037 || CodesetInHEX == 0x9042 ||
+				CodesetInHEX == 0x9059)
 				return true;
 
 			return false;

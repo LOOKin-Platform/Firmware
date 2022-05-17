@@ -72,6 +72,8 @@ void app_main(void) {
 	Pooling_t::BARCheck();
 	BootAndRestore::OnDeviceStart();
 
+	ESP_LOGI("Current Firmware:", "%s", Settings.Firmware.ToString().c_str());
+
 	Network.WiFiScannedList = WiFi.Scan();
 
 	Time::SetTimezone();

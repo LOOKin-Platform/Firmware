@@ -42,6 +42,7 @@ void FillDevices() {
 	Remote.Indicator.Blue.Channel			= LEDC_CHANNEL_2;
 	Remote.Indicator.ISRTimerGroup			= TIMER_GROUP_0;
 	Remote.Indicator.ISRTimerIndex			= TIMER_0;
+	Remote.Indicator.Type 					= Settings_t::GPIOData_t::Indicator_t::RGB;
 
 	Remote.PowerMeter.ConstPowerChannel		= ADC1_CHANNEL_5;
 	Remote.PowerMeter.BatteryPowerChannel	= ADC1_CHANNEL_4;

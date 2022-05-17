@@ -94,6 +94,8 @@ esp_err_t WebServer_t::PATCHHandler(httpd_req_t *Request) {
 void WebServer_t::SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request) {
 	if (Response.ResponseCode != WebServer_t::Response::CODE::IGNORE)
 	{
+		httpd_resp_set_hdr(Request, "Connection", "close");
+
 		ESP_LOGE("REQUEST", "%s", Response.Body.c_str());
 		WebServer_t::SetHeaders(Response, Request);
 		httpd_resp_send(Request, Response.Body.c_str(), Response.Body.size());
