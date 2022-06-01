@@ -25,8 +25,9 @@ void PowerManagement::SetPMType(PowerManagementType PMType) {
 	SetBLEOptions();
 	SetPMOptions();
 
-	::esp_coex_preference_set(ESP_COEX_PREFER_WIFI);
+	SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
 }
+
 
 void PowerManagement::SetPMType(bool IsActive, bool IsConstPower) {
 	if (IsConstPower)
@@ -59,6 +60,11 @@ void PowerManagement::SetWiFiOptions() {
 		case MAX	: esp_wifi_set_ps(WIFI_PS_MAX_MODEM); break;
 	}
 }
+
+void PowerManagement::SetWirelessPriority(esp_coex_prefer_t Option) {
+	::esp_coex_preference_set(Option);
+}
+
 
 void PowerManagement::SetBLEOptions() {
 	if (!BLEDevice::getInitialized())

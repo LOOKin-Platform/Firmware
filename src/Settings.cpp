@@ -238,7 +238,7 @@ void Settings_t::eFuse_t::InitFromNVS() {
 
 	Log::Add(0x00F1);
 
-	if (!Memory.IsKeyExists("id"))
+	if (Memory.GetString("id") == "")
 		return;
 
 	uint32_t 	DeviceID 		= Converter::UintFromHexString<uint32_t>(Memory.GetString("id"));
