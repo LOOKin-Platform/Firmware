@@ -286,8 +286,8 @@ void BLEServer_t::StartAdvertisingAsHID()
 */
 	//advertising->setAdvertisementData(advertisementData);
 
-	advertising->setMaxInterval(0);
-	advertising->setMinInterval(0);
+	advertising->setMinInterval(40);
+	advertising->setMaxInterval(40);
 
 	advertising->start();
 
@@ -321,9 +321,8 @@ void BLEServer_t::StartAdvertisingAsGenericDevice()
 	pAdvertising->addServiceUUID((uint16_t)0x180A);
 	pAdvertising->setScanResponse(true);
 
-	pAdvertising->setMaxInterval(0);
-	pAdvertising->setMinInterval(0);
-
+	pAdvertising->setMinInterval(40);
+	pAdvertising->setMaxInterval(40);
 
 	BLEDevice::startAdvertising();
 
