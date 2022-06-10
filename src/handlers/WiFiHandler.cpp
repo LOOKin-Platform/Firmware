@@ -20,6 +20,7 @@ static bool 				IsIPCheckSuccess 	= false;
 static bool					IsEventDrivenStart	= false;
 static bool					IsConnectedBefore 	= false;
 static uint32_t				LastAPQueryTime 	= 0;
+static uint8_t				ConnectionTries		= 0;
 
 static esp_timer_handle_t 	RemoteControlStartTimer = NULL;
 
@@ -189,6 +190,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			//WebServer.HTTPStart();
 			WebServer.UDPStart();
 
+			ConnectionTries = 0;
+
 			Wireless.IsFirstWiFiStart = false;
 
 			if (IsConnectedBefore)
@@ -221,6 +224,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
+			ConnectionTries = 0;
 
 			if (!HomeKit::IsEnabledForDevice())
 				IPDidntGetTimer->Start();
@@ -236,6 +240,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
 
+
+
 			::esp_timer_stop(RemoteControlStartTimer);
 
 			//WebServer.HTTPStop();
@@ -250,6 +256,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			if (WiFi_t::GetWiFiNetworkSwitch())
 				return ESP_OK;
 
+			ESP_LOGE("DISCONNECT REASON", "%d, Tries %d", DisconnectedInfo.reason, ConnectionTries);
 
 			if (DisconnectedInfo.reason == WIFI_REASON_AUTH_EXPIRE ||
 				DisconnectedInfo.reason == WIFI_REASON_ASSOC_EXPIRE ||
@@ -260,14 +267,17 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			// Перезапустить Wi-Fi в режиме точки доступа, если по одной из причин
 			// (отсутствие точки доступа, неправильный пароль и т.д) подключение не удалось
-			if (DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 		||
-			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 		||
-				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL		||
-				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT) {
+			if (DisconnectedInfo.reason == WIFI_REASON_NO_AP_FOUND 				||
+			 	DisconnectedInfo.reason == WIFI_REASON_AUTH_FAIL 				||
+				DisconnectedInfo.reason == WIFI_REASON_ASSOC_FAIL				||
+				DisconnectedInfo.reason == WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT	||
+				ConnectionTries > 5) {
+				ConnectionTries = 0;
 				WiFi.StartAP(Settings.WiFi.APSSID);
 			}
 			else { // Повторно подключится к Wi-Fi, если подключение оборвалось
 				Wireless.IsFirstWiFiStart = true;
+				ConnectionTries++;
 				Wireless.StartInterfaces();
 			}
 
