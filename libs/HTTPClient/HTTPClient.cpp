@@ -201,6 +201,8 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		Config.cert_pem					= NULL;
 		Config.client_cert_pem			= NULL;
 		Config.client_key_pem			= NULL;
+		Config.use_global_ca_store		= false;
+		Config.crt_bundle_attach		= NULL;
 
 		Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
 
@@ -221,7 +223,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		Config.user_data 				= (void*)HashID;
 		Config.event_handler			= QueryHandler;
 
-		Config.url 						= ClientData.URL.c_str();;
+		Config.url 						= ClientData.URL.c_str();
 		Config.user_agent 				= UserAgent.c_str();
 
 		Config.is_async					= false;

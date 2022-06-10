@@ -45,13 +45,22 @@ esp_err_t OTA::PerformUpdate(string URL) {
 	ESP_LOGI(tag, "Starting OTA from URL %s", URL.c_str());
 
 	esp_http_client_config_t Config;
+	Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
+
+	Config.path						= "/";
+	Config.host						= NULL;
+	Config.query					= NULL;
+	Config.port						= 80;
+	Config.url 						= URL.c_str();
+
 	Config.username					= NULL;
 	Config.password 				= NULL;
-	Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
 
 	Config.cert_pem					= NULL;
 	Config.client_cert_pem			= NULL;
 	Config.client_key_pem			= NULL;
+	Config.use_global_ca_store		= false;
+	Config.crt_bundle_attach		= NULL;
 
 	Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
 
@@ -59,7 +68,7 @@ esp_err_t OTA::PerformUpdate(string URL) {
 	Config.buffer_size 				= Settings.OTA.BufferSize;
 	Config.buffer_size_tx 			= Settings.OTA.BufferSize;
 	Config.max_redirection_count 	= 10;
-	Config.disable_auto_redirect	= true;
+	Config.disable_auto_redirect	= false;
 	Config.method 					= esp_http_client_method_t::HTTP_METHOD_GET;
 
 	Config.user_data 				= NULL;
@@ -68,12 +77,6 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
 	Config.is_async					= false;
 	Config.timeout_ms				= 10000;
-
-	Config.host						= NULL;
-	Config.path						= "/";
-	Config.query					= NULL;
-	Config.port						= 80;
-	Config.url 						= URL.c_str();
 
 	Config.skip_cert_common_name_check = "";
 
