@@ -12,6 +12,8 @@ static char tag[] = "PowerManagement";
 PowerManagement::PowerManagementType PowerManagement::ActivePMType = NONE;
 map<string, PowerManagementLock> PowerManagement::Locks = map<string, PowerManagementLock>();
 
+esp_coex_prefer_t PowerManagement::CurrentPriority = ESP_COEX_PREFER_WIFI;
+uint64_t PowerManagement::CurrentPriorityChangeTime = 0;
 
 void PowerManagement::SetPMType(PowerManagementType PMType) {
 	if (PMType == ActivePMType)
@@ -25,7 +27,8 @@ void PowerManagement::SetPMType(PowerManagementType PMType) {
 	SetBLEOptions();
 	SetPMOptions();
 
-	SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+	//SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+	SetWirelessPriority(ESP_COEX_PREFER_WIFI);
 }
 
 
@@ -62,8 +65,25 @@ void PowerManagement::SetWiFiOptions() {
 }
 
 void PowerManagement::SetWirelessPriority(esp_coex_prefer_t Option) {
+	if (Option == CurrentPriority && CurrentPriorityChangeTime > 0)
+		return;
+
+	ESP_LOGE("Current Wireless priority set", "%d", Option);
+
+	CurrentPriority = Option;
 	::esp_coex_preference_set(Option);
+
+	CurrentPriorityChangeTime = Time::UptimeU();
 }
+
+esp_coex_prefer_t PowerManagement::GetWirelessPriority() {
+	return CurrentPriority;
+}
+
+uint64_t PowerManagement::GetWirelessPriorityChangeTime() {
+	return CurrentPriorityChangeTime;
+}
+
 
 
 void PowerManagement::SetBLEOptions() {

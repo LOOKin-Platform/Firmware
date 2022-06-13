@@ -13,6 +13,8 @@
 #include "Network.h"
 #include "RemoteControl.h"
 
+#include "PowerManagement.h"
+
 extern Device_t 		Device;
 extern WiFi_t			WiFi;
 extern Network_t		Network;
@@ -142,6 +144,8 @@ void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
 
 	if (Mode == BASIC && pServer->getConnectedCount())
 	{
+		PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+
 		for (auto& Connection : pServer->getPeerDevices())
 			pServer->disconnect(Connection);
 	}

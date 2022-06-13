@@ -9,6 +9,7 @@
 #include "NetworkMapHandler.cpp"
 #include "PingPeriodicHandler.cpp"
 #include "RemoteControlPeriodicHandler.cpp"
+#include "WirelessPriorityHandler.cpp"
 
 class Pooling_t {
 	public:
@@ -28,6 +29,7 @@ class Pooling_t {
 				WiFiUptimeHandler			::Pool();
 				//BluetoothPeriodicHandler	::Pool();
 				EnergyPeriodicHandler		::Pool();
+				WirelessPriorityHandler		::Pool();
 				SensorPeriodicHandler		::Pool();
 				RemoteControlPeriodicHandler::Pool();
 				PingPeriodicHandler			::Pool();

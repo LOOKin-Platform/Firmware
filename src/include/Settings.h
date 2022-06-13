@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware = FirmwareVersion(2, 42, 36);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 42, 48);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -197,14 +197,16 @@ class Settings_t {
 			public:
 				static constexpr uint8_t	Duo				= 0x02;
 				static constexpr uint8_t	Plug 			= 0x03;
+				static constexpr uint8_t	WindowOpener 	= 0x04;
 				static constexpr uint8_t	Remote			= 0x81;
 				static constexpr uint8_t	Motion			= 0x82;
 
 				map<uint8_t,string> Literaly = {
-					{ Duo	, "Duo"		},
-					{ Plug	, "Plug"	},
-					{ Remote, "Remote" 	},
-					{ Motion, "Motion" 	}
+					{ Duo			, "Duo"				},
+					{ Plug			, "Plug"			},
+					{ WindowOpener	, "WindowOpener"	},
+					{ Remote		, "Remote" 			},
+					{ Motion		, "Motion" 			}
 				};
 		} Devices;
 

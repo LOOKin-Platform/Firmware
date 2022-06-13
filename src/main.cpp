@@ -65,6 +65,7 @@ void app_main(void) {
 	*/
 
 	//esp_log_level_set("*", ESP_LOG_VERBOSE);      // enable WARN logs from WiFi stack
+	esp_log_level_set("wifi", ESP_LOG_WARN);      // set warning log level for wifi
 
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 	Settings.eFuse.ReadDataOrInit();

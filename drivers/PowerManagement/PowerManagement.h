@@ -35,11 +35,16 @@ class PowerManagement {
 		static void AddLock(string);
 		static void ReleaseLock(string);
 
-		static void SetWirelessPriority(esp_coex_prefer_t Option);
+		static void 				SetWirelessPriority(esp_coex_prefer_t Option);
+		static esp_coex_prefer_t 	GetWirelessPriority();
+		static uint64_t 			GetWirelessPriorityChangeTime();
 
 	private:
 		static map<string, PowerManagementLock> Locks;
 		static PowerManagementType ActivePMType;
+
+		static esp_coex_prefer_t 	CurrentPriority;
+		static uint64_t				CurrentPriorityChangeTime;
 
 };
 

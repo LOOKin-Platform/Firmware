@@ -94,6 +94,8 @@ class CommandBLE_t : public Command_t {
 				if (Operand.size() == 0)
 					return false;
 
+				PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+
 				if (Operand.size() == 4 && Converter::IsStringContainsOnlyDigits(Operand))
 				{
 					static MediaKeyReport CurrentMediaKeyReport;

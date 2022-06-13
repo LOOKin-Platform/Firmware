@@ -203,6 +203,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			BLEServer.ForceHIDMode(BASIC);
 
+			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+
 			return ESP_OK;
 		}
 
@@ -213,18 +215,29 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			WebServer.UDPStop();
 
 			Wireless.IsEventDrivenStart = false;
+
+			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
+
 			return ESP_OK;
 		}
 
 		esp_err_t staStart() {
 			Log::Add(Log::Events::WiFi::STAStarted);
+			ConnectionTries = 0;
+
 			Wireless.IsFirstWiFiStart = false;
+
+			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
+
 			return ESP_OK;
+
 		}
 
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
 			ConnectionTries = 0;
+
+			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
 
 			if (!HomeKit::IsEnabledForDevice())
 				IPDidntGetTimer->Start();
@@ -239,8 +252,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
 			Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
-
-
 
 			::esp_timer_stop(RemoteControlStartTimer);
 
