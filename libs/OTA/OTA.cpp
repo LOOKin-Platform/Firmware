@@ -45,42 +45,48 @@ esp_err_t OTA::PerformUpdate(string URL) {
 	ESP_LOGI(tag, "Starting OTA from URL %s", URL.c_str());
 
 	esp_http_client_config_t Config;
-	Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
+	Config.auth_type 					= HTTP_AUTH_TYPE_NONE;
 
-	Config.path						= "/";
-	Config.host						= NULL;
-	Config.query					= NULL;
-	Config.port						= 80;
-	Config.url 						= URL.c_str();
+	Config.path							= "/";
+	Config.host							= NULL;
+	Config.query						= NULL;
+	Config.username						= NULL;
+	Config.password 					= NULL;
 
-	Config.username					= NULL;
-	Config.password 				= NULL;
+	Config.port							= 80;
+	Config.url 							= URL.c_str();
 
-	Config.cert_pem					= NULL;
-	Config.client_cert_pem			= NULL;
-	Config.client_key_pem			= NULL;
-	Config.use_global_ca_store		= false;
-	Config.crt_bundle_attach		= NULL;
+	Config.cert_pem						= NULL;
+	Config.client_cert_pem				= NULL;
+	Config.client_cert_len				= 0;
+	Config.client_key_pem				= NULL;
+	Config.client_key_len				= 0;
+	Config.client_key_password			= NULL;
+	Config.client_key_password_len		= 0;
 
-	Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
+	Config.use_global_ca_store			= false;
+	Config.crt_bundle_attach			= NULL;
 
-	Config.timeout_ms 				= 7000;
-	Config.buffer_size 				= Settings.OTA.BufferSize;
-	Config.buffer_size_tx 			= Settings.OTA.BufferSize;
-	Config.max_redirection_count 	= 10;
-	Config.disable_auto_redirect	= false;
-	Config.method 					= esp_http_client_method_t::HTTP_METHOD_GET;
+	Config.transport_type 				= HTTP_TRANSPORT_UNKNOWN;
 
-	Config.user_data 				= NULL;
-	Config.event_handler			= NULL;
-	Config.user_agent 				= "";
+	Config.timeout_ms 					= 10000;
+	Config.buffer_size 					= Settings.OTA.BufferSize;
+	Config.buffer_size_tx 				= Settings.OTA.BufferSize;
 
-	Config.is_async					= false;
-	Config.timeout_ms				= 10000;
+	Config.disable_auto_redirect		= false;
+	Config.max_redirection_count 		= 10;
 
-	Config.skip_cert_common_name_check = "";
+	Config.method 						= esp_http_client_method_t::HTTP_METHOD_GET;
 
-    Config.keep_alive_enable 		= true,
+	Config.user_data 					= NULL;
+	Config.event_handler				= NULL;
+	Config.user_agent 					= "";
+
+	Config.is_async						= false;
+
+	Config.skip_cert_common_name_check 	= false;
+
+    Config.keep_alive_enable 			= true,
 
 	PowerManagement::AddLock("OTA");
 

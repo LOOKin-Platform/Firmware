@@ -362,7 +362,7 @@ void Device_t::OTAStart(string FirmwareURL, WebServer_t::QueryTransportType Tran
 		Response.Body = "{\"success\" : \"true\" , \"Message\": \"Firmware update will be started if file exists. Web server temporarily stopped.\"}";
 		Response.ResponseCode = WebServer_t::Response::CODE::OK;
 
-		WebServer_t::SendHTTPData(Response, Device_t::CachedRequest);
+		WebServer_t::SendHTTPData(Response, Device_t::CachedRequest, false);
 	}
 	else if (TransportType == WebServer_t::QueryTransportType::MQTT) {
 		RemoteControl.SendMessage("{\"success\" : \"true\" , \"Message\": \"Firmware update will be started if file exists. Web server temporarily stopped.\"}");
@@ -370,12 +370,18 @@ void Device_t::OTAStart(string FirmwareURL, WebServer_t::QueryTransportType Tran
 
 	LocalMQTT.Stop();
 	HomeKit::Stop();
-	NimBLEDevice::deinit(false);
+
+	if (NimBLEDevice::getAdvertising()->isAdvertising()) {
+		NimBLEDevice::stopAdvertising();
+		FreeRTOS::Sleep(1000);
+		NimBLEDevice::deinit(false);
+	}
 
 	FreeRTOS::Sleep(2000);
 
-	if (OTATaskHandler == NULL)
+	if (OTATaskHandler == NULL) {
 		OTATaskHandler = FreeRTOS::StartTask(Device_t::ExecuteOTATask, "ExecuteOTATask", NULL, 10240, 7);
+	}
 }
 
 void Device_t::ExecuteOTATask(void*) {
@@ -387,8 +393,8 @@ void Device_t::ExecuteOTATask(void*) {
 
 	OTA::Update(FirmwareURLForOTA, OTAStartedCallback, OTAFailedCallback);
 
-    FreeRTOS::DeleteTask();
 	OTATaskHandler = NULL;
+    FreeRTOS::DeleteTask();
 }
 
 void Device_t::OTAStartedCallback() {
