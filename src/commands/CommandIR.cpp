@@ -204,6 +204,7 @@ class CommandIR_t : public Command_t {
 					return false;
 
 				vector<int32_t> DataToSend = IRSignal.GetRawDataForSending();
+
 				TXSend(DataToSend, IRSignal.GetProtocolFrequency());
 				TriggerStateChange(IRSignal);
 
@@ -582,6 +583,15 @@ class CommandIR_t : public Command_t {
 				HashIDStr 	= CommandIRTXQueuePrefix + Converter::ToLower(Converter::ToHexString(HashID,8));
 			}
 			*/
+
+			if (Settings.eFuse.DeviceID < 0x100) {
+				string SignalToDebug = "";
+
+				for (auto& SignalPart : TXItemData)
+					SignalToDebug = SignalToDebug + " " + Converter::ToString<int32_t>(SignalPart);
+
+				ESP_LOGE("Signal to send", "%s", SignalToDebug.c_str());
+			}
 
 			if (HashIDStr.size() > 15)
 				return false;
