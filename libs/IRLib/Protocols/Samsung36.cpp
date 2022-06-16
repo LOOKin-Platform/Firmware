@@ -8,8 +8,8 @@
 #define SAMSUNG36_HDR_SPACE		4500
 
 #define SAMSUNG36_BIT_MARK		560
-#define SAMSUNG36_ONE_SPACE		1500
-#define SAMSUNG36_ZERO_SPACE	500
+#define SAMSUNG36_ONE_SPACE		1680
+#define SAMSUNG36_ZERO_SPACE	560
 
 class Samsung36 : public IRProto {
 	public:
