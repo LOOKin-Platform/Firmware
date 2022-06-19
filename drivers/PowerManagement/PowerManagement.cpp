@@ -85,7 +85,6 @@ uint64_t PowerManagement::GetWirelessPriorityChangeTime() {
 }
 
 
-
 void PowerManagement::SetBLEOptions() {
 	if (!BLEDevice::getInitialized())
 		return;

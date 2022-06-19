@@ -10,7 +10,6 @@
 
 #include "HomeKit.h"
 
-
 static char Tag[] = "RemoteControl";
 
 string						RemoteControl_t::Username		= "";

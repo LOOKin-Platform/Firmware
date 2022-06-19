@@ -70,10 +70,10 @@ void FillDevices() {
 
 	Settings_t::GPIOData_t::Devices =
 	{
-		{ 0x02, Duo 	},
-		{ 0x03, Plug 	},
-		{ 0x81, Remote 	},
-		{ 0x82, Motion 	}
+		{ 0x02, Duo 			},
+		{ 0x03, Plug 			},
+		{ 0x81, Remote 			},
+		{ 0x82, Motion 			}
 	};
 }
 
