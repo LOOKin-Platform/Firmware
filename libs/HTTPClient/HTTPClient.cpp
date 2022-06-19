@@ -228,6 +228,8 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 		Config.is_async					= false;
 
+	    Config.if_name 					= NULL;
+
 		esp_http_client_handle_t Handle = esp_http_client_init(&Config);
 
 		if (ClientData.POSTData != "" && ClientData.Method == POST)

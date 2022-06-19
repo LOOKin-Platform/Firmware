@@ -86,7 +86,12 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
 	Config.skip_cert_common_name_check 	= false;
 
-    Config.keep_alive_enable 			= true,
+    Config.keep_alive_enable 			= true;
+    Config.keep_alive_idle				= 5;
+    Config.keep_alive_interval			= 5;
+    Config.keep_alive_count				= 3;
+
+    Config.if_name 						= NULL;
 
 	PowerManagement::AddLock("OTA");
 
