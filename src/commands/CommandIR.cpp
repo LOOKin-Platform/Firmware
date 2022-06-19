@@ -94,6 +94,7 @@ class CommandIR_t : public Command_t {
 			Events["prontohex-blocked"]	= 0xF1;
 			Events["prontohex-repeated"]= 0xF2;
 
+			Events["pause"]				= 0xFD;
 			Events["localremote"]		= 0xFE;
 			Events["raw"]				= 0xFF;
 
@@ -183,8 +184,8 @@ class CommandIR_t : public Command_t {
 				if (ConverterOperand.size() > 12)
 					ConverterOperand = ConverterOperand.substr(ConverterOperand.size() - 12);
 
-				Misc 	= Converter::UintFromHexString<uint16_t>(ConverterOperand.substr(0,4));
-				Operand = Converter::UintFromHexString<uint32_t>(ConverterOperand.substr(4,8));
+				Operand = Converter::UintFromHexString<uint32_t>(ConverterOperand.substr(0,8));
+				Misc 	= Converter::UintFromHexString<uint16_t>(ConverterOperand.substr(8,4));
 			}
 			else
 				Operand = Converter::UintFromHexString<uint32_t>(StringOperand);
@@ -410,6 +411,18 @@ class CommandIR_t : public Command_t {
 				}
 
 				return IsExecuted;
+			}
+
+			if (EventCode == 0xFD) { // add pause (ms) to queue
+				if (strlen(StringOperand) > 4)
+					return false;
+
+				if (Settings.eFuse.Type != Settings.Devices.Remote)
+					return false;
+
+				TXSendAddPause(Converter::ToUint16(string(StringOperand)));
+
+				return true;
 			}
 
 

@@ -29,7 +29,7 @@ class IRProto {
 
 		virtual int32_t					GetBlocksDelimeter()											{ return -Settings.SensorsConfig.IR.SignalEndingLen;}
 
-		static bool TestValue(int32_t Value, int32_t Reference, float ComparisonDiff = 0.25) {
+		static bool TestValue(int32_t Value, int32_t Reference, float ComparisonDiff = 0.3) {
 			if (Converter::Sign(Value) != Converter::Sign(Reference))
 				return false;
 

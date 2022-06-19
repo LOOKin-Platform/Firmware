@@ -61,8 +61,8 @@ class Samsung36 : public IRProto {
 
 		    	Raw.erase(Raw.begin());
 
-				if      (TestValue(Raw.front(), -SAMSUNG36_ONE_SPACE)) 	Result = (Result << 1) | 1 ;
-				else if	(TestValue(Raw.front(), -SAMSUNG36_ZERO_SPACE))	Result = (Result << 1) | 0 ;
+				if (TestValue(Raw.front(), -SAMSUNG36_ONE_SPACE))		Result = (Result << 1) + 1 ;
+				else if	(TestValue(Raw.front(), -SAMSUNG36_ZERO_SPACE))	Result = (Result << 1) + 0 ;
 				else return make_pair(0x0, 0x0);
 
 				Raw.erase(Raw.begin());
@@ -102,7 +102,7 @@ class Samsung36 : public IRProto {
 				Raw.push_back((MiscBits[i]) ? -SAMSUNG36_ONE_SPACE : -SAMSUNG36_ZERO_SPACE);
 			}
 
-			Raw.push_back(+560);
+			Raw.push_back(SAMSUNG36_BIT_MARK);
 			Raw.push_back(-45000);
 
 			return Raw;

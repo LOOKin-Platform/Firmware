@@ -434,7 +434,7 @@ class DataRemote_t : public DataEndpoint_t {
 			bool			StatusSaved	{ true };
 
 			map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>
-							Functions = map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>();
+							Functions = map<uint8_t, pair<string,vector<tuple<uint8_t,uint32_t, uint16_t>>>>();
 
 			bool IsEmpty() { return (DeviceID == "" && DeviceType == 0x0); }
 		};
@@ -627,7 +627,7 @@ class DataRemote_t : public DataEndpoint_t {
 			}
 		}
 
-		void AddOrUpdateDeviceFunctionInCache(string DeviceUUID, uint8_t FunctionID, string FunctionType, vector<pair<uint8_t, uint32_t>> FunctionData) {
+		void AddOrUpdateDeviceFunctionInCache(string DeviceUUID, uint8_t FunctionID, string FunctionType, vector<tuple<uint8_t, uint32_t, uint16_t>> FunctionData) {
 			for (int i=0; i < IRDevicesCache.size(); i++)
 				if (IRDevicesCache[i].DeviceID == DeviceUUID) {
 					IRDevicesCache[i].Functions[FunctionID] = make_pair(FunctionType, FunctionData);
@@ -1086,13 +1086,13 @@ class DataRemote_t : public DataEndpoint_t {
 					return;
 				}
 
-				vector<pair<uint8_t, uint32_t>> FunctionCache = vector<pair<uint8_t, uint32_t>>();
+				vector<tuple<uint8_t, uint32_t, uint16_t>> FunctionCache = vector<tuple<uint8_t, uint32_t, uint16_t>>();
 
 				while(Child) {
 					JSON ChildObject(Child);
 					ChildObject.SetDestructable(false);
 
-					pair<uint8_t, uint32_t> IRDetails = make_pair(0,0);
+					tuple<uint8_t, uint32_t, uint16_t> IRDetails = make_tuple(0,0, 0);
 
 					if (!SaveFunction(UUID, Function, SerializeSignal(ChildObject, IRDetails), Index++, DeviceItem.Type))
 					{
@@ -1579,7 +1579,7 @@ class DataRemote_t : public DataEndpoint_t {
 				return SaveItem(ValueName, Item);
 			}
 
-			string SerializeSignal(JSON &JSONObject, pair<uint8_t,uint32_t> &IRDetails) {
+			string SerializeSignal(JSON &JSONObject, std::tuple<uint8_t,uint32_t, uint16_t> &IRDetails) {
 				IRLib Signal;
 
 				if (JSONObject.IsItemExists("raw")) { // сигнал передан в виде Raw
@@ -1598,21 +1598,29 @@ class DataRemote_t : public DataEndpoint_t {
 
 					if (JSONObject.IsItemExists("operand"))
 						Signal.Uint32Data = Converter::UintFromHexString<uint32_t>(JSONObject.GetItem("operand"));
+
+					if (JSONObject.IsItemExists("misc"))
+						Signal.MiscData = Converter::UintFromHexString<uint16_t>(JSONObject.GetItem("misc"));
 				}
 				else if (JSONObject.IsItemExists("ble_kbd")){ // сигнал передан в виде BLE клавиши
 					return Settings.CommandsConfig.BLE.DataPrefix + JSONObject.GetItem("ble_kbd");
 				}
 
 				if (Signal.Protocol != 0xFF) {
-					IRDetails 	= make_pair(Signal.Protocol, Signal.Uint32Data);
-					return Converter::ToHexString(Signal.Protocol,2) + Converter::ToHexString(Signal.Uint32Data, 8);
+					IRDetails 	= make_tuple(Signal.Protocol, Signal.Uint32Data, Signal.MiscData);
+					string Output = Converter::ToHexString(Signal.Protocol,2) + Converter::ToHexString(Signal.Uint32Data, 8);
+
+					if (Signal.MiscData > 0)
+						Output = Output + Converter::ToHexString(Signal.MiscData, 4);
+
+					return Output;
 				}
 				else if (Signal.Protocol == 0xFF && Signal.RawData.size() > 0) {
-					IRDetails 	= make_pair(0xFF, 0);
+					IRDetails 	= make_tuple(0xFF, 0, 0);
 					return Signal.GetProntoHex(false);
 				}
 				else {
-					IRDetails 	= make_pair(0, 0);
+					IRDetails 	= make_tuple(0, 0, 0);
 					return "";
 				}
 			}
@@ -1634,11 +1642,14 @@ class DataRemote_t : public DataEndpoint_t {
 				if (Item.size() < 10)
 					return Result;
 
-				if (Item.size() == 10)
+				if (Item.size() == 10 || Item.size() == 14)
 				{
 					Result.Type = IR;
 					Result.IRSignal.Protocol 	= Converter::ToUint8(Item.substr(0, 2));
-					Result.IRSignal.Uint32Data	= Converter::UintFromHexString<uint32_t>(Item.substr(2));
+					Result.IRSignal.Uint32Data	= Converter::UintFromHexString<uint32_t>(Item.substr(2,8));
+
+					if (Item.size() == 14)
+						Result.IRSignal.MiscData = Converter::UintFromHexString<uint32_t>(Item.substr(10,4));
 
 					return Result;
 				}

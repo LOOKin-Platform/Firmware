@@ -89,8 +89,12 @@ class SensorIR_t : public Sensor_t {
 			if (Key == "Protocol")
 				return Converter::ToHexString(Values[Key], 2);
 
-			if (Key == "Signal" && LastSignal.Protocol == IR_PROTOCOL_RAW)
-				return "0";
+			if (Key == "Signal") {
+				if (LastSignal.Protocol == IR_PROTOCOL_RAW)
+					return 0;
+				else if (LastSignal.MiscData > 0)
+					return Converter::ToHexString(LastSignal.Uint32Data,8) + Converter::ToHexString(LastSignal.MiscData,4);
+			}
 
 			if (Key == "Raw")
 				return LastSignal.GetRawSignal();
