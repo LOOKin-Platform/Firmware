@@ -8,6 +8,9 @@ else()
 	set(HOMEKIT_PATH ${CMAKE_CURRENT_LIST_DIR}/../Toolchain/esp-homekit-sdk)
 endif(DEFINED ENV{HOMEKIT_PATH})
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(EXTRA_COMPONENT_DIRS ${HOMEKIT_PATH} ${HOMEKIT_PATH}/components ${HOMEKIT_PATH}/components/homekit "drivers libs src drivers/Periphery")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
