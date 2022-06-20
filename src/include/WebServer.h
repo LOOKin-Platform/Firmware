@@ -65,7 +65,7 @@ class WebServer_t {
 	    static esp_err_t 		DELETEHandler	(httpd_req_t *);
 	    static esp_err_t 		PATCHHandler	(httpd_req_t *);
 
-	    static void				SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request);
+	    static void				SendHTTPData(WebServer_t::Response& Response, httpd_req_t *Request, bool TerminateSession = true);
 
 	    static void 			SendChunk(httpd_req_t *Request, string Part);
 	    static void 			EndChunk(httpd_req_t *Request);

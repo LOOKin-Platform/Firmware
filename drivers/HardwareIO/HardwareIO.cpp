@@ -91,7 +91,7 @@ bool GPIO::PWMIsInited = false;
  * @param [in] PWMChannel	LEDC Channel number [0..7]
  */
 
-void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel) {
+void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWMChannel, uint16_t Freq, ledc_timer_bit_t Resolution) {
 	if (GPIO == GPIO_NUM_0)
 		return;
 
@@ -105,8 +105,8 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_timer_t TimerIndex, ledc_channel_t PWM
 
 	ledc_timer_config_t ledc_timer;
 
-	ledc_timer.duty_resolution	= LEDC_TIMER_8_BIT;
-	ledc_timer.freq_hz			= 1000;
+	ledc_timer.duty_resolution	= Resolution;
+	ledc_timer.freq_hz			= Freq;
 	ledc_timer.speed_mode		= LEDC_HIGH_SPEED_MODE;
 	ledc_timer.timer_num		= TimerIndex;
 	ledc_timer.clk_cfg			= LEDC_USE_REF_TICK;
@@ -148,13 +148,12 @@ uint8_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
 	return floor(Duty);
 }
 
- /**
-  * @brief Set PWM channel data
-  *
-  * @param [in] PWMChannel 	LEDC Channel [0..7]
-  * @param [in] Duty 				Channel Power [0..255]
-  */
+void GPIO::PWMSetDuty(ledc_channel_t PWMChannel, uint32_t Duty) {
+    uint8_t Group=(PWMChannel/8);
 
+    ::ledc_set_duty((ledc_mode_t)Group, PWMChannel, Duty);
+    ::ledc_update_duty((ledc_mode_t)Group, PWMChannel);
+}
 
 
 void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty, uint16_t FadeTime) {
@@ -162,8 +161,7 @@ void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint8_t Duty, uint16_t FadeTime)
 		return;
 
 	if (FadeTime < 50) {
-		::ledc_set_duty(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty);
-        ::ledc_update_duty(LEDC_HIGH_SPEED_MODE, PWMChannel);
+		PWMSetDuty(PWMChannel, Duty);
 		return;
 	}
 
