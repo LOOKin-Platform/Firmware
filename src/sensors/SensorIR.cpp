@@ -89,9 +89,10 @@ class SensorIR_t : public Sensor_t {
 			if (Key == "Protocol")
 				return Converter::ToHexString(Values[Key], 2);
 
-			if (Key == "Signal") {
+			if (Key == "Signal")
+			{
 				if (LastSignal.Protocol == IR_PROTOCOL_RAW)
-					return 0;
+					return "";
 				else if (LastSignal.MiscData > 0)
 					return Converter::ToHexString(LastSignal.Uint32Data,8) + Converter::ToHexString(LastSignal.MiscData,4);
 			}
@@ -99,11 +100,17 @@ class SensorIR_t : public Sensor_t {
 			if (Key == "Raw")
 				return LastSignal.GetRawSignal();
 
-			if (Key == "IsRepeated")
-				return (LastSignal.IsRepeated) ? "1" : "0";;
+			if (Key == "IsRepeated") {
+				// hack для обработки унарного оператора - иначе crash
+				string IsRepeated = (LastSignal.IsRepeated) ? "1" : "0";
+				return IsRepeated;
+			}
 
-			if (Key == "RepeatPause")
-				return (LastSignal.IsRepeated) ? Converter::ToString(LastSignal.RepeatPause) : "0";
+			if (Key == "RepeatPause") {
+				// hack для обработки унарного оператора - иначе crash
+				string RepeatPause = (LastSignal.IsRepeated) ? Converter::ToString(LastSignal.RepeatPause) : "0";
+				return RepeatPause;
+			}
 
 			if (Key == "RepeatCount")
 				return Converter::ToString(LastSignal.RepeatCount);

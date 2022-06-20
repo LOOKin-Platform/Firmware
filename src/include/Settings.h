@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 42, 73);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 42, 74);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
