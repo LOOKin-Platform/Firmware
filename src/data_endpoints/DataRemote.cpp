@@ -433,7 +433,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 			bool			StatusSaved	{ true };
 
-			map<uint8_t, pair<string,vector<pair<uint8_t,uint32_t>>>>
+			map<uint8_t, pair<string,vector<tuple<uint8_t,uint32_t, uint16_t>>>>
 							Functions = map<uint8_t, pair<string,vector<tuple<uint8_t,uint32_t, uint16_t>>>>();
 
 			bool IsEmpty() { return (DeviceID == "" && DeviceType == 0x0); }
@@ -475,7 +475,7 @@ class DataRemote_t : public DataEndpoint_t {
 					if (Items.count("ls")) 			{ LastStatus 	= Converter::UintFromHexString<uint16_t>(Items["ls"]); 		Items.erase("ls"); }
 					if (Items.count("laststatus"))	{ LastStatus 	= Converter::UintFromHexString<uint16_t>(Items["laststatus"]);	Items.erase("laststatus"); }
 
-					if (Items.count("uuid")) 	{ UUID		= Converter::ToUpper(Items["uuid"]); 	Items.erase("uuid"); }
+					if (Items.count("uuid")) 		{ UUID		= Converter::ToUpper(Items["uuid"]); 	Items.erase("uuid"); }
 
 					for (auto& Item : Items)
 						Functions[Item.first] = Item.second;
@@ -607,11 +607,11 @@ class DataRemote_t : public DataEndpoint_t {
 					uint8_t 	FunctionID 		= DevicesHelper.FunctionIDByName(FunctionItem.first);
 					string 		FunctionType 	= FunctionItem.second;
 
-					vector<pair<uint8_t,uint32_t>> FunctionsCache = vector<pair<uint8_t,uint32_t>>();
+					vector<tuple<uint8_t,uint32_t, uint16_t>> FunctionsCache = vector<tuple<uint8_t,uint32_t, uint16_t>>();
 
 					for (DataSignal &Signal : LoadAllFunctionSignals(DeviceItem.UUID, FunctionItem.first, DeviceItem))
 						if (Signal.Type == IR)
-							FunctionsCache.push_back(make_pair(Signal.IRSignal.Protocol, Signal.IRSignal.Uint32Data));
+							FunctionsCache.push_back(make_tuple(Signal.IRSignal.Protocol, Signal.IRSignal.Uint32Data, Signal.IRSignal.MiscData));
 
 					CacheItem.Functions[FunctionID] = make_pair(FunctionType, FunctionsCache);
 				}
@@ -788,11 +788,18 @@ class DataRemote_t : public DataEndpoint_t {
 
 					for (DataSignal Signal : LoadAllFunctionSignals(UUID, Function, DeviceItem)) {
 						if (Signal.Type == IR) {
-							if (Signal.IRSignal.Protocol != 0xFF)
+							if (Signal.IRSignal.Protocol != 0xFF) {
+								string Operand = Converter::ToHexString(Signal.IRSignal.Uint32Data,8);
+
+								if (Signal.IRSignal.MiscData > 0)
+									Operand = Operand + Converter::ToHexString(Signal.IRSignal.MiscData,4);
+
 								OutputItems.push_back({
 									{ "Protocol"	, Converter::ToHexString(Signal.IRSignal.Protocol,2) 	},
-									{ "Operand"		, Converter::ToHexString(Signal.IRSignal.Uint32Data,8)	}
+									{ "Operand"		, Operand												}
 								});
+
+							}
 							else
 								OutputItems.push_back({
 									{ "ProntoHEX"	, Signal.IRSignal.GetProntoHex(false) 	}
@@ -1088,7 +1095,8 @@ class DataRemote_t : public DataEndpoint_t {
 
 				vector<tuple<uint8_t, uint32_t, uint16_t>> FunctionCache = vector<tuple<uint8_t, uint32_t, uint16_t>>();
 
-				while(Child) {
+				while(Child)
+				{
 					JSON ChildObject(Child);
 					ChildObject.SetDestructable(false);
 
@@ -1267,9 +1275,9 @@ class DataRemote_t : public DataEndpoint_t {
 					string 	FunctionType	= FunctionItem.second.first;
 
 					for (int i = 0 ; i< FunctionItem.second.second.size(); i++) {
-						pair<uint8_t, uint32_t> FunctionSignal = FunctionItem.second.second[i];
+						tuple<uint8_t, uint32_t, uint16_t> FunctionSignal = FunctionItem.second.second[i];
 
-						if (Signal.Protocol == FunctionSignal.first) { // protocol identical
+						if (Signal.Protocol == get<0>(FunctionSignal)) { // protocol identical
 							if (Signal.Protocol == 0xFF) { // raw signal
 								DataSignal FunctionSignal = LoadFunctionByIndex(CacheItem.DeviceID, DevicesHelper.FunctionNameByID(FunctionID), i);
 								if (FunctionSignal.Type == IR && FunctionSignal.IRSignal.CompareIsIdenticalWith(Signal))
@@ -1278,7 +1286,7 @@ class DataRemote_t : public DataEndpoint_t {
 									return Result.first;
 								}
 							}
-							else if (Signal.Uint32Data == FunctionSignal.second && Signal.Uint32Data != 0x0)
+							else if (Signal.Uint32Data == get<1>(FunctionSignal) && Signal.MiscData == get<2>(FunctionSignal) && Signal.Uint32Data != 0x0)
 							{
 								pair<bool,uint16_t> Result = StatusUpdateForDevice(CacheItem.DeviceID, FunctionID, i);
 								return Result.first;
@@ -1672,7 +1680,7 @@ class DataRemote_t : public DataEndpoint_t {
 						ESP_LOGE("-->"		, "%02X %s"	, MapItem.first, MapItem.second.first.c_str());
 
 						for (auto& MapFunctionItem : MapItem.second.second)
-							ESP_LOGE("---->", "%02X %02X"	, MapFunctionItem.first, MapFunctionItem.second);
+							ESP_LOGE("---->", "%02X %08X %04X", get<0>(MapFunctionItem), get<1>(MapFunctionItem), get<2>(MapFunctionItem));
 					}
 				}
 			}
