@@ -143,6 +143,12 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 				BootAndRestore::Reboot(true);
 				return;
 			}
+
+			if (Query.CheckURLPart("rollback", 1)) {
+				Result.SetSuccess();
+				OTA::Rollback();
+				return;
+			}
 		}
 
 
