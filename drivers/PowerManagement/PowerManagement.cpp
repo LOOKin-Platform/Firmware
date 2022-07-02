@@ -99,7 +99,7 @@ void PowerManagement::AddLock(string LockName) {
 	PowerManagementLock Lock;
 
 	if (ActivePMType == NONE) {
-		ESP_LOGE(tag, "PowerManagement not in active state. Can't set lock %s", LockName.c_str());
+		ESP_LOGD(tag, "PowerManagement not in active state. Can't set lock %s", LockName.c_str());
 		return;
 	}
 

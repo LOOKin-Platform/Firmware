@@ -223,7 +223,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staStart() {
 			Log::Add(Log::Events::WiFi::STAStarted);
-			ConnectionTries = 0;
 
 			Wireless.IsFirstWiFiStart = false;
 
@@ -286,7 +285,8 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 				ConnectionTries = 0;
 				WiFi.StartAP(Settings.WiFi.APSSID);
 			}
-			else { // Повторно подключится к Wi-Fi, если подключение оборвалось
+			else
+			{ // Повторно подключится к Wi-Fi, если подключение оборвалось
 				Wireless.IsFirstWiFiStart = true;
 				ConnectionTries++;
 				Wireless.StartInterfaces();

@@ -32,35 +32,38 @@ class JSON {
 
     ~JSON();
 
-    enum RootType { Object, Array, Undefined };
-    RootType							GetType();
-    cJSON*								GetRoot();
-    void								SetDestructable(bool);
+    enum RootType   { Object, Array, Undefined };
+    enum ValueType  { String, Bool, Float };
 
-    bool								IsItemExists			(string Key);
+    RootType                    GetType();
+    cJSON*                      GetRoot();
+    void                        SetDestructable(bool);
 
-    bool								IsItemString			(string Key);
-    bool								IsItemNumber			(string Key);
-    bool								IsItemBool				(string Key);
+    bool                        IsItemExists			(string Key);
 
-    string								GetItem					(string Key);
-    double								GetDoubleItem			(string Key);
-    int									GetIntItem				(string Key);
-    bool								GetBoolItem				(string Key);
+    bool                        IsItemString			(string Key);
+    bool                        IsItemNumber			(string Key);
+    bool                        IsItemBool				(string Key);
 
-    void								SetItem					(string Key, string Value);
-    void								SetItem					(string Key, float Value);
+    string                      GetItem					  (string Key);
+    double                      GetDoubleItem			(string Key);
+    int                         GetIntItem				(string Key);
+    bool                        GetBoolItem				(string Key);
 
-    vector<string>						GetKeys					();
+    void                        SetItem           (string Key, string Value);
+    void                        SetFloatItem			(string Key, float Value);
+    void                        SetBoolItem				(string Key, bool Value);
 
-    JSON								Detach					(string Key);
-    void								Attache					(string Key, JSON);
+    vector<string>              GetKeys					();
 
-    void								SetItems				(map<string,string>, cJSON *Item = NULL);
-    void								SetItems				(vector<pair<string,string>>, cJSON *Item = NULL);
+    JSON                        Detach					(string Key);
+    void                        Attache					(string Key, JSON);
+
+    void                        SetItems				(map<string,string>, cJSON *Item = NULL);
+    void                        SetItems				(vector<pair<string,string>>, cJSON *Item = NULL);
     map<string,string>					GetItemsForKey			(string Key, bool CaseSensitive = false);
     map<string,string>					GetItems				(cJSON* = NULL, bool CaseSensitive = false);
-    vector<pair<string,string>>			GetItemsUnordered		(cJSON* = NULL, bool CaseSensitive = false);
+    vector<pair<string,string>> GetItemsUnordered		(cJSON* = NULL, bool CaseSensitive = false);
 
     void								SetObject				(string Key, vector<pair<string,string>> Value);
 

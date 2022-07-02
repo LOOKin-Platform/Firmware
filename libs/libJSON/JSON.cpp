@@ -167,9 +167,14 @@ void JSON::SetItem(string Key, string Value) {
 	cJSON_AddStringToObject(Root, Key.c_str(), Value.c_str());
 }
 
-void JSON::SetItem(string Key, float Value) {
+void JSON::SetFloatItem(string Key, float Value) {
 	cJSON_AddNumberToObject(Root, Key.c_str(), Value);
 }
+
+void JSON::SetBoolItem(string Key, bool Value) {
+	cJSON_AddBoolToObject(Root, Key.c_str(), Value);
+}
+
 
 vector<string> JSON::GetKeys() {
 	vector<string> Result = vector<string>();

@@ -312,9 +312,9 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	{
 		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
 		{
-			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Red.GPIO	, GPIOSettings.Timer, GPIOSettings.Red.Channel	);
-			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Green.GPIO	, GPIOSettings.Timer, GPIOSettings.Green.Channel);
-			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Blue.GPIO	, GPIOSettings.Timer, GPIOSettings.Blue.Channel	);
+			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Red.GPIO	, GPIOSettings.Red.Channel	);
+			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Green.GPIO	, GPIOSettings.Green.Channel);
+			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Blue.GPIO	, GPIOSettings.Blue.Channel	);
 		}
 		else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812)
 		{
@@ -465,7 +465,7 @@ void Log::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
 			if (Query.CheckURLPart("settings", 1)) {
 				JSON JSONObject;
 
-				JSONObject.SetItem("IndicatorBrightness", Log::Indicator_t::GetBrightness());
+				JSONObject.SetFloatItem("IndicatorBrightness", Log::Indicator_t::GetBrightness());
 
 				Result.Body = JSONObject.ToString();
 			}

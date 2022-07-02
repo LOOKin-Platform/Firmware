@@ -258,9 +258,10 @@ void BLEServer_t::StartAdvertisingAsHID()
 	HIDDevice->deviceInfo()->addCharacteristic(WiFiSetupCharacteristic);
 	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
-	//HIDDevice->deviceInfo()->
-
+	BLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
+	//BLEDevice::setSecurityAuth(BLE_SM_PAIR_AUTHREQ_BOND);
 	BLEDevice::setSecurityAuth(true, true, true);
+	BLEDevice::setSecurityPasskey(123456);
 
 	HIDDevice->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
 	HIDDevice->startServices();
@@ -788,18 +789,6 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 
 	    return;
 	}
-
-	/*
-	 *
-	 *
-	//me->getValue()
-
-	uint8_t* value = (uint8_t*)(me->getValue().c_str());
-	(void)value;
-
-	ESP_LOGI(Tag, "special keys: %d", *value);
-	 *
-	 */
 }
 
 void BLEServer_t::delay_ms(uint64_t ms) {
