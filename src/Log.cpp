@@ -13,8 +13,6 @@ esp_timer_handle_t	Log::Indicator_t::IndicatorTimer = NULL;
 float 				Log::Indicator_t::CurrentBrightness = 0.03;
 WS2812*				Log::ws2812 = NULL;
 
-
-
 Log::Log() { }
 
 /**
@@ -275,7 +273,6 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
 		case Events::Commands	::IRExecuted		:
 		case Events::Sensors 	::IRReceived		: Execute(60, 0, 0, STROBE, 2);	break;
 
-
 		case Events::Commands	::BLEFailed			:
 		case Events::Commands	::BLEExecuted		: Execute(0, 0,255, STROBE, 2); break;
 
@@ -296,9 +293,10 @@ void Log::Indicator_t::Display(uint16_t LogItem) {
  *
  */
 
-uint8_t		Log::Indicator_t::tRed 		= 0;
-uint8_t		Log::Indicator_t::tGreen	= 0;
-uint8_t		Log::Indicator_t::tBlue		= 0;
+uint8_t	Log::Indicator_t::tRed 		= 0;
+uint8_t	Log::Indicator_t::tGreen	= 0;
+uint8_t	Log::Indicator_t::tBlue		= 0;
+
 bool 		Log::Indicator_t::IsInited 	= false;
 uint32_t	Log::Indicator_t::tDuration = 0;
 uint32_t	Log::Indicator_t::tExpired	= 0;
@@ -310,7 +308,7 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 
 	if (!IsInited)
 	{
-		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
+		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB || GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGBFrequencyControl)
 		{
 			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Red.GPIO	, GPIOSettings.Red.Channel	);
 			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Green.GPIO	, GPIOSettings.Green.Channel);
@@ -353,19 +351,27 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	if (GPIOSettings.SwitchLedOn.GPIO != GPIO_NUM_0)
 		GPIO::Write(GPIOSettings.SwitchLedOn.GPIO, true);
 
-	tRed 		= (uint8_t)(Red 	* CurrentBrightness);
-	tGreen 		= (uint8_t)(Green 	* CurrentBrightness);
-	tBlue 		= (uint8_t)(Blue 	* CurrentBrightness);
+	tRed 		= (uint8_t)round((Red 	* CurrentBrightness) * ((float)GPIOSettings.Red.MaxDuty 	/ 255));
+	tGreen 		= (uint8_t)round((Green	* CurrentBrightness) * ((float)GPIOSettings.Green.MaxDuty 	/ 255));
+	tBlue 		= (uint8_t)round((Blue 	* CurrentBrightness) * ((float)GPIOSettings.Blue.MaxDuty 	/ 255));
+
+	if (GPIOSettings.Red.IsInverted) 	tRed	= 255 - tRed;	
+	if (GPIOSettings.Green.IsInverted) 	tGreen 	= 255 - tGreen;	
+	if (GPIOSettings.Blue.IsInverted) 	tBlue 	= 255 - tBlue;
 
 	tDuration	= Duration * 1000000;
 	tExpired	= 0;
 	tBlinking	= Blinking;
 
-	if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
+	if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB || GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGBFrequencyControl)
 	{
 		if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Red	, tRed	, 	0);
 		if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Green	, tGreen, 	0);
 		if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Blue 	, tBlue	, 	0);
+
+		if (GPIOSettings.Red.IsInverted) 	ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Red.Channel	,  255);
+		if (GPIOSettings.Green.IsInverted)	ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Green.Channel	,  255);
+		if (GPIOSettings.Blue.IsInverted)	ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Blue.Channel	,  255);
 	}
 	else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) {
 		ws2812->setAllPixels(tRed, tGreen, tBlue);
@@ -411,8 +417,17 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 			tBlinking = NONE;
 		}
 
-		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
-			IsLighted =!(GPIO::PWMValue(GPIOSettings.Red.Channel)+GPIO::PWMValue(GPIOSettings.Green.Channel)+GPIO::PWMValue(GPIOSettings.Blue.Channel) == 0);
+		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB || GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGBFrequencyControl) {
+			uint32_t RedValue 	= GPIO::PWMValue(GPIOSettings.Red.Channel);
+			uint32_t GreenValue = GPIO::PWMValue(GPIOSettings.Green.Channel);
+			uint32_t BlueValue 	= GPIO::PWMValue(GPIOSettings.Blue.Channel);
+			
+			if (GPIOSettings.Red.IsInverted) 	RedValue	= 255 - RedValue;	
+			if (GPIOSettings.Green.IsInverted) 	GreenValue 	= 255 - GreenValue;	
+			if (GPIOSettings.Blue.IsInverted) 	BlueValue 	= 255 - BlueValue;
+
+			IsLighted =!((RedValue + GreenValue + BlueValue) == 0);
+		}
 		else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) {
 			IsLighted = ws2812->GetIsLighted();
 		}
@@ -424,13 +439,23 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 	if (tBlinking == NONE)
 		tRed = tGreen = tBlue = 0;
 
-	if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB)
+	if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB || GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGBFrequencyControl)
 	{
-		GPIO::PWMFadeTo(GPIOSettings.Red	, (IsLighted) ? 0 : tRed, 	0);
-		GPIO::PWMFadeTo(GPIOSettings.Green	, (IsLighted) ? 0 : tGreen, 0);
-		GPIO::PWMFadeTo(GPIOSettings.Blue 	, (IsLighted) ? 0 : tBlue, 	0);
+		uint8_t RedBlank 	= (GPIOSettings.Red.IsInverted) 	? 255 : 0;
+		uint8_t GreenBlank 	= (GPIOSettings.Green.IsInverted) 	? 255 : 0;
+		uint8_t BlueBlank 	= (GPIOSettings.Blue.IsInverted) 	? 255 : 0;
+
+		GPIO::PWMFadeTo(GPIOSettings.Red, (IsLighted) ? RedBlank : tRed, 	0);
+		if (IsLighted && GPIOSettings.Green.IsInverted) ledc_stop(LEDC_HIGH_SPEED_MODE	, GPIOSettings.Red.Channel	,  255);
+
+		GPIO::PWMFadeTo(GPIOSettings.Green, (IsLighted) ? GreenBlank : tGreen, 	0);
+		if (IsLighted && GPIOSettings.Green.IsInverted) ledc_stop(LEDC_HIGH_SPEED_MODE	, GPIOSettings.Green.Channel,  255);
+
+		GPIO::PWMFadeTo(GPIOSettings.Blue, (IsLighted) ? BlueBlank : tBlue, 	0);
+		if (IsLighted && GPIOSettings.Blue.IsInverted) ledc_stop(LEDC_HIGH_SPEED_MODE	, GPIOSettings.Blue.Channel	,  255);
 	}
-	else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) {
+	else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) 
+	{
 		if (!IsLighted)
 		{
 			ws2812->setAllPixels(tRed, tGreen, tBlue);

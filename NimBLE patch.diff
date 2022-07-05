@@ -1,0 +1,64 @@
+From a36655c105444f26d1ef7dd0893b189ab26f23ce Mon Sep 17 00:00:00 2001
+From: h2zero <powellperalta@gmail.com>
+Date: Sat, 16 Apr 2022 20:32:01 -0600
+Subject: [PATCH] Add success/fail return value to disoverAttributes.
+
+---
+ src/NimBLEClient.cpp | 24 ++++++++++++++++++++----
+ src/NimBLEClient.h   |  2 +-
+ 2 files changed, 21 insertions(+), 5 deletions(-)
+
+diff --git a/src/NimBLEClient.cpp b/src/NimBLEClient.cpp
+index 3619b44..504fdb2 100644
+--- a/src/NimBLEClient.cpp
++++ b/src/NimBLEClient.cpp
+@@ -703,13 +703,29 @@ std::vector<NimBLERemoteService*>* NimBLEClient::getServices(bool refresh) {
+ 
+ /**
+  * @brief Retrieves the full database of attributes that the peripheral has available.
++ * @return True if successful.
+  */
+-void NimBLEClient::discoverAttributes() {
+-    for(auto svc: *getServices(true)) {
+-        for(auto chr: *svc->getCharacteristics(true)) {
+-            chr->getDescriptors(true);
++bool NimBLEClient::discoverAttributes() {
++    deleteServices();
++
++    if (!retrieveServices()){
++        return false;
++    }
++
++
++    for(auto svc: m_servicesVector) {
++        if (!svc->retrieveCharacteristics()) {
++            return false;
++        }
++
++        for(auto chr: svc->m_characteristicVector) {
++            if (!chr->retrieveDescriptors()) {
++                return false;
++            }
+         }
+     }
++
++    return true;
+ } // discoverAttributes
+ 
+ 
+diff --git a/src/NimBLEClient.h b/src/NimBLEClient.h
+index 4aed02a..0061fd3 100644
+--- a/src/NimBLEClient.h
++++ b/src/NimBLEClient.h
+@@ -70,7 +70,7 @@ public:
+     void                                        updateConnParams(uint16_t minInterval, uint16_t maxInterval,
+                                                                  uint16_t latency, uint16_t timeout);
+     void                                        setDataLen(uint16_t tx_octets);
+-    void                                        discoverAttributes();
++    bool                                        discoverAttributes();
+     NimBLEConnInfo                              getConnInfo();
+     int                                         getLastError();
+ #if CONFIG_BT_NIMBLE_EXT_ADV
+-- 
+2.31.0
+

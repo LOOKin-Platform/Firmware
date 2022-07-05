@@ -11,70 +11,121 @@
 map<uint8_t, Settings_t::GPIOData_t::DeviceInfo_t> Settings_t::GPIOData_t::Devices = {};
 
 void FillDevices() {
-	Settings_t::GPIOData_t::DeviceInfo_t Plug;
-	Plug.Switch.GPIO						= GPIO_NUM_25;
+	Settings_t::GPIOData_t::DeviceInfo_t DeviceHardware;
 
-	Plug.Indicator.Type						= Settings_t::GPIOData_t::Indicator_t::ws2812;
-	Plug.Indicator.Alternative.GPIO			= GPIO_NUM_26;
-	Plug.Indicator.SwitchLedOn.GPIO			= GPIO_NUM_16;
+	switch (Settings.eFuse.Type) 
+	{
+		case Settings_t::Devices_t::Plug:
+			DeviceHardware.Switch.GPIO						= GPIO_NUM_25;
 
-	Settings_t::GPIOData_t::DeviceInfo_t Duo;
-	Duo.MultiSwitch.GPIO 					= { GPIO_NUM_4, GPIO_NUM_17 };
-	Duo.Touch.GPIO							= { GPIO_NUM_18 };
+			DeviceHardware.Indicator.Type					= Settings_t::GPIOData_t::Indicator_t::ws2812;
+			DeviceHardware.Indicator.Alternative.GPIO		= GPIO_NUM_26;
+			DeviceHardware.Indicator.SwitchLedOn.GPIO		= GPIO_NUM_16;
+			break;
 
-	Duo.Indicator.Timer						= LEDC_TIMER_0;
-	Duo.Indicator.Red.GPIO					= GPIO_NUM_0;
-	Duo.Indicator.Red.Channel				= LEDC_CHANNEL_0;
-	Duo.Indicator.Green.GPIO				= GPIO_NUM_25;
-	Duo.Indicator.Green.Channel				= LEDC_CHANNEL_1;
-	Duo.Indicator.Blue.GPIO					= GPIO_NUM_0;
-	Duo.Indicator.Blue.Channel				= LEDC_CHANNEL_2;
-	Duo.Indicator.ISRTimerGroup				= TIMER_GROUP_0;
-	Duo.Indicator.ISRTimerIndex				= TIMER_0;
+		case Settings_t::Devices_t::Duo:
+			DeviceHardware.MultiSwitch.GPIO 				= { GPIO_NUM_4, GPIO_NUM_17 };
+			DeviceHardware.Touch.GPIO						= { GPIO_NUM_18 };
 
-	Settings_t::GPIOData_t::DeviceInfo_t Remote;
-	Remote.Indicator.Timer					= LEDC_TIMER_0;
-	Remote.Indicator.Red.GPIO				= GPIO_NUM_25;
-	Remote.Indicator.Red.Channel			= LEDC_CHANNEL_0;
-	Remote.Indicator.Green.GPIO				= GPIO_NUM_12;
-	Remote.Indicator.Green.Channel			= LEDC_CHANNEL_1;
-	Remote.Indicator.Blue.GPIO				= GPIO_NUM_13;
-	Remote.Indicator.Blue.Channel			= LEDC_CHANNEL_2;
-	Remote.Indicator.ISRTimerGroup			= TIMER_GROUP_0;
-	Remote.Indicator.ISRTimerIndex			= TIMER_0;
-	Remote.Indicator.Type 					= Settings_t::GPIOData_t::Indicator_t::RGB;
+			DeviceHardware.Indicator.Timer					= LEDC_TIMER_0;
+			DeviceHardware.Indicator.Red.GPIO				= GPIO_NUM_0;
+			DeviceHardware.Indicator.Red.Channel			= LEDC_CHANNEL_0;
+			DeviceHardware.Indicator.Green.GPIO				= GPIO_NUM_25;
+			DeviceHardware.Indicator.Green.Channel			= LEDC_CHANNEL_1;
+			DeviceHardware.Indicator.Blue.GPIO				= GPIO_NUM_0;
+			DeviceHardware.Indicator.Blue.Channel			= LEDC_CHANNEL_2;
+			DeviceHardware.Indicator.ISRTimerGroup			= TIMER_GROUP_0;
+			DeviceHardware.Indicator.ISRTimerIndex			= TIMER_0;
 
-	Remote.PowerMeter.ConstPowerChannel		= ADC1_CHANNEL_5;
-	Remote.PowerMeter.BatteryPowerChannel	= ADC1_CHANNEL_4;
+			break;
 
-	Remote.IR.ReceiverGPIO38				= GPIO_NUM_26;
-	Remote.IR.ReceiverGPIO56				= GPIO_NUM_27;
+		case Settings_t::Devices_t::Remote:
+			DeviceHardware.Indicator.Timer					= LEDC_TIMER_0;
+			DeviceHardware.Indicator.Red.GPIO				= GPIO_NUM_25;
+			DeviceHardware.Indicator.Red.Channel			= LEDC_CHANNEL_0;
+			DeviceHardware.Indicator.Green.GPIO				= GPIO_NUM_12;
+			DeviceHardware.Indicator.Green.Channel			= LEDC_CHANNEL_1;
+			DeviceHardware.Indicator.Blue.GPIO				= GPIO_NUM_13;
+			DeviceHardware.Indicator.Blue.Channel			= LEDC_CHANNEL_2;
+			DeviceHardware.Indicator.ISRTimerGroup			= TIMER_GROUP_0;
+			DeviceHardware.Indicator.ISRTimerIndex			= TIMER_0;
+			DeviceHardware.Indicator.Type 					= Settings_t::GPIOData_t::Indicator_t::RGB;
 
-	Remote.IR.SenderGPIOExt 				= GPIO_NUM_0;
+			DeviceHardware.PowerMeter.ConstPowerChannel		= ADC1_CHANNEL_5;
+			DeviceHardware.PowerMeter.BatteryPowerChannel	= ADC1_CHANNEL_4;
 
-	if (Settings.eFuse.Model > 0) {
-		Remote.IR.SenderGPIOs				= { GPIO_NUM_14, GPIO_NUM_27, GPIO_NUM_16 };
+			DeviceHardware.IR.ReceiverGPIO38				= GPIO_NUM_26;
+			DeviceHardware.IR.ReceiverGPIO56				= GPIO_NUM_27;
 
-		if (Settings.eFuse.Model == 2)
-			Remote.IR.SenderGPIOExt = GPIO_NUM_4;
+			DeviceHardware.IR.SenderGPIOExt 				= GPIO_NUM_0;
+
+			if (Settings.eFuse.Model > 0) {
+				DeviceHardware.IR.SenderGPIOs				= { GPIO_NUM_14, GPIO_NUM_27, GPIO_NUM_16 };
+
+				if (Settings.eFuse.Model == 2)
+					DeviceHardware.IR.SenderGPIOExt 		= GPIO_NUM_4;
+			}
+			else
+				DeviceHardware.IR.SenderGPIOs				= { GPIO_NUM_4 };
+
+			if (Settings.eFuse.Revision == 0x01)
+				DeviceHardware.Temperature.I2CAddress 		= 0x48;
+			break;
+
+		case Settings_t::Devices_t::WindowOpener:
+			if (Settings.eFuse.Model == 0xF0) 
+			{
+				DeviceHardware.WindowOpener.MotorGPIO1.GPIO 		= GPIO_NUM_18;
+				DeviceHardware.WindowOpener.MotorGPIO1.Channel 		= LEDC_CHANNEL_0;
+				DeviceHardware.WindowOpener.MotorGPIO1.Frequency 	= 15000;
+				DeviceHardware.WindowOpener.MotorGPIO1.Resolution	= LEDC_TIMER_10_BIT;
+
+				DeviceHardware.WindowOpener.MotorGPIO2.GPIO			= GPIO_NUM_19;
+				DeviceHardware.WindowOpener.MotorGPIO2.Channel 		= LEDC_CHANNEL_1;
+				DeviceHardware.WindowOpener.MotorGPIO2.Frequency 	= 15000;
+				DeviceHardware.WindowOpener.MotorGPIO2.Resolution	= LEDC_TIMER_10_BIT;
+
+				DeviceHardware.WindowOpener.Button1					= GPIO_NUM_4;	// Close button
+				DeviceHardware.WindowOpener.Button2					= GPIO_NUM_14; 	// Open button
+
+				DeviceHardware.Indicator.Type						= Settings_t::GPIOData_t::Indicator_t::RGBFrequencyControl;
+
+				DeviceHardware.Indicator.ISRTimerGroup				= TIMER_GROUP_0;
+				DeviceHardware.Indicator.ISRTimerIndex				= TIMER_0;
+
+				DeviceHardware.Indicator.Red.GPIO 					= GPIO_NUM_23;
+				DeviceHardware.Indicator.Red.Channel				= LEDC_CHANNEL_2;
+				DeviceHardware.Indicator.Red.Frequency				= 1000;
+				DeviceHardware.Indicator.Red.IsInverted				= true;
+				DeviceHardware.Indicator.Red.MaxDuty				= 63;
+				
+				DeviceHardware.Indicator.Green.GPIO 				= GPIO_NUM_22;
+				DeviceHardware.Indicator.Green.Channel				= LEDC_CHANNEL_4;
+				DeviceHardware.Indicator.Green.Frequency			= 600;
+				DeviceHardware.Indicator.Green.IsInverted			= true;
+				DeviceHardware.Indicator.Red.MaxDuty				= 127;
+
+				DeviceHardware.Indicator.Blue.GPIO 					= GPIO_NUM_21;
+				DeviceHardware.Indicator.Blue.Channel				= LEDC_CHANNEL_6;
+				DeviceHardware.Indicator.Blue.Frequency				= 400;
+				DeviceHardware.Indicator.Blue.IsInverted			= true;		
+				DeviceHardware.Indicator.Red.MaxDuty				= 255;
+			}
+
+			break;
+
+		case Settings_t::Devices_t::Motion:
+			Settings_t::GPIOData_t::DeviceInfo_t Motion;
+			DeviceHardware.Motion.PoolInterval						= 50;
+			DeviceHardware.Motion.ADCChannel						= ADC1_CHANNEL_3;
+			break;
 	}
-	else
-		Remote.IR.SenderGPIOs				= { GPIO_NUM_4 };
-
-	if (Settings.eFuse.Revision == 0x01)
-		Remote.Temperature.I2CAddress 		= 0x48;
-
-	Settings_t::GPIOData_t::DeviceInfo_t Motion;
-	Motion.Motion.PoolInterval				= 50;
-	Motion.Motion.ADCChannel				= ADC1_CHANNEL_3;
 
 	Settings_t::GPIOData_t::Devices =
 	{
-		{ 0x02, Duo 			},
-		{ 0x03, Plug 			},
-		{ 0x81, Remote 			},
-		{ 0x82, Motion 			}
+		{ Settings.eFuse.Type, DeviceHardware }
 	};
+
 }
 
 Settings_t::GPIOData_t::DeviceInfo_t Settings_t::GPIOData_t::GetCurrent() {

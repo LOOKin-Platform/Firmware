@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 42, 74);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 42, 75);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -373,8 +373,11 @@ class Settings_t {
 
 			struct Color_t {
 				struct Item_t {
-					gpio_num_t		GPIO 			= GPIO_NUM_0;
-					ledc_channel_t	Channel 		= LEDC_CHANNEL_MAX;
+					gpio_num_t			GPIO 			= GPIO_NUM_0;
+					ledc_channel_t		Channel 		= LEDC_CHANNEL_MAX;
+					uint16_t			Frequency		= 0;
+					bool				IsInverted		= false;
+					uint8_t				MaxDuty			= 255;
 				};
 
 				ledc_timer_t		Timer			= LEDC_TIMER_MAX;
@@ -401,9 +404,23 @@ class Settings_t {
 				adc1_channel_t		ADCChannel		= ADC1_CHANNEL_MAX;
 			};
 
+			struct WindowOpener_t {
+				struct GPIO_t {
+					gpio_num_t			GPIO 			= GPIO_NUM_0;
+					ledc_channel_t		Channel 		= LEDC_CHANNEL_MAX;
+					uint16_t			Frequency		= 0;
+					ledc_timer_bit_t	Resolution		= LEDC_TIMER_BIT_MAX;
+				};
+
+				GPIO_t				MotorGPIO1;
+				GPIO_t				MotorGPIO2;
+
+				gpio_num_t			Button1			= GPIO_NUM_0;
+				gpio_num_t			Button2			= GPIO_NUM_0;
+			};
 
 			struct Indicator_t {
-				enum IndicatorType { RGB, ws2812};
+				enum IndicatorType { RGB, ws2812, RGBFrequencyControl};
 
 				ledc_timer_t		Timer	= LEDC_TIMER_MAX;
 				Settings_t::GPIOData_t::Color_t::Item_t
@@ -431,6 +448,7 @@ class Settings_t {
 				IR_t			IR;
 				Motion_t		Motion;
 				Temperature_t	Temperature;
+				WindowOpener_t	WindowOpener;
 
 				// Device modes indicator
 				Indicator_t		Indicator;

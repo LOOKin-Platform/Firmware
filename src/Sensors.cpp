@@ -34,11 +34,16 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 			else
 				Sensors = { new SensorIR_t(), new SensorMeteo_t() };
 		break;
+
+		case Settings.Devices.WindowOpener:
+			if (Settings.eFuse.Model == 0xF0)
+				Sensors = { new SensorWindowOpener_t() };
+			break;
+
 		//case Settings.Devices.Motion:
 		//	Sensors = { new SensorMotion_t() };
 #endif
 	}
-
 
 	for (auto& SensorItem : Sensors)
 		SensorItem->InitSettings();
@@ -190,10 +195,20 @@ string Sensor_t::RootSensorJSON() {
 			JSONObject.SetItem("Value", FormatValue());
 
 		// Дополнительные значения сенсора, кроме Primary. Например - яркость каналов в RGBW Switch
-		if (Values.size() > 1) {
-			for (const auto &Value : Values)
-				if (Value.first != "Primary")
+
+		if (Values.size() > 0) {
+			for (const auto &Value : Values) {
+				ESP_LOGE("Value", "Key: %s, Value: %d", Value.first.c_str(), Value.second);
+				if (Value.first == "Primary")
+					continue;
+
+				if (ValueType(Value.first) == JSON::ValueType::Float)
+					JSONObject.SetFloatItem(Value.first, Value.second);
+				else if (ValueType(Value.first) == JSON::ValueType::Bool)
+					JSONObject.SetBoolItem(Value.first, Value.second);
+				else
 					JSONObject.SetItem(Value.first, FormatValue(Value.first));
+			}
 		}
 
 		JSONObject.SetItem("Updated", Converter::ToString(Updated));

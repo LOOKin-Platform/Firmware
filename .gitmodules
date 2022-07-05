@@ -1,3 +1,6 @@
 [submodule "libs/NimBLE"]
 	path = libs/NimBLE
 	url = https://github.com/h2zero/esp-nimble-cpp.git
+[submodule "partners/drivent"]
+	path = partners/drivent
+	url = https://thecashit@bitbucket.org/look-in/drivent.git
