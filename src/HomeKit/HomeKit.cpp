@@ -215,6 +215,9 @@ hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Ite
         		IRCommand->Execute(0xFE, Operand.c_str());
             	return HAP_STATUS_SUCCESS;
         	}
+
+			if (Functions.count("poweron") > 0 || Functions.count("poweroff") > 0)
+            	return HAP_STATUS_SUCCESS;
         }
     }
 
