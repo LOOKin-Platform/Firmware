@@ -902,6 +902,7 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 		switch (IRDevice.Type) {
 			case 0x01: // TV
+			case 0x02: // Media
 			{
 				hap_serv_t *ServiceTV;
 

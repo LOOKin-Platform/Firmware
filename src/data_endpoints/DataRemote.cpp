@@ -1191,13 +1191,16 @@ class DataRemote_t : public DataEndpoint_t {
 
 			vector<DataSignal> Result = vector<DataSignal>();
 
-			if (DeviceItem.Functions.count(Function) > 0) {
+			if (DeviceItem.Functions.count(Function) > 0) 
+			{
 				if (DeviceItem.Functions[Function] == "single")
 					Result.push_back(LoadFunctionByIndex(UUID, Function, 0, DeviceItem));
-				else {
+				else 
+				{
 					string KeyString = UUID + "_" + Function;
 
-					for (int i = 0; i < Settings.Data.MaxIRItemSignals; i++) {
+					for (int i = 0; i < Settings.Data.MaxIRItemSignals; i++) 
+					{
 						DataSignal CurrentSignal = LoadFunctionByIndex(UUID, Function, i, DeviceItem);
 
 						if (CurrentSignal.Type != Empty) Result.push_back(CurrentSignal);

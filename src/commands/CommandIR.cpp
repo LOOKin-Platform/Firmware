@@ -452,9 +452,12 @@ class CommandIR_t : public Command_t {
 				{
 					DataRemote_t::DataSignal SignalToAdd = ((DataRemote_t*)Data)->LoadFunctionByIndex(UUID, Function, SignalID);
 
-					if (SignalToAdd.Type == DataRemote_t::SignalType::IR) {
+					if (SignalToAdd.Type == DataRemote_t::SignalType::IR) 
+					{
 						bool Result = TXSendHelper(SignalToAdd.IRSignal, Operand, Misc);
-						if (!Result) return false;
+
+						if (!Result) 
+							return false;
 					}
 					else if (SignalToAdd.Type == DataRemote_t::SignalType::BLE)
 					{
@@ -463,15 +466,21 @@ class CommandIR_t : public Command_t {
 				}
 				else
 				{
-					for (DataRemote_t::DataSignal SignalIterator : ((DataRemote_t*)Data)->LoadAllFunctionSignals(UUID, Function))
-						if (SignalIterator.Type == DataRemote_t::SignalType::IR) {
+					for (DataRemote_t::DataSignal SignalIterator : ((DataRemote_t*)Data)->LoadAllFunctionSignals(UUID, Function)) {
+						if (SignalIterator.Type == DataRemote_t::SignalType::IR) 
+						{
 							bool Result = TXSendHelper(SignalIterator.IRSignal, Operand, Misc);
-							if (!Result) return false;
+							if (!Result) 
+								return false;
 						}
 						else if (SignalIterator.Type == DataRemote_t::SignalType::BLE)
 						{
 							BLESendToQueue(SignalIterator.BLESignal);
 						}
+
+						if (FunctionType == "sequence")
+							TXSendAddPause(500);
+					}
 				}
 
 				((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, SignalID);
