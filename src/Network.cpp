@@ -543,10 +543,8 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 	if (Query.Type == QueryType::DELETE) {
 		if (Query.GetURLPartsCount() == 3 && Query.CheckURLPart("savedssid", 1))
 		{
-			string URL = Query.GetStringURLPartByNumber(2);
-			Converter::FindAndReplace(URL, "%20", " "); // replace %20 for space
-
-			vector<string> SSIDToDelete = Converter::StringToVector(URL, ",");
+			string URL = Query.GetStringURLPartByNumber(2); 
+			vector<string> SSIDToDelete = Converter::StringToVector(Converter::UrlDecode(URL), ",");
 
 			bool IsSuccess = false;
 

@@ -484,3 +484,31 @@ string Converter::CutMultibyteString(string &Input, size_t MaxByteSize, string O
 	//If your first byte isn't even a valid UTF-8 starting point, then something terrible has happened.
 	return OutputIfInvalid;
 }
+
+char Converter::FromHEX_inner(char ch) {
+    return isdigit(ch) ? ch - '0' : tolower(ch) - 'a' + 10;
+}
+
+string Converter::UrlDecode(string& text) {
+    char h;
+    ostringstream escaped;
+    escaped.fill('0');
+
+    for (auto i = text.begin(), n = text.end(); i != n; ++i) {
+        string::value_type c = (*i);
+
+        if (c == '%') {
+            if (i[1] && i[2]) {
+                h = FromHEX_inner(i[1]) << 4 | FromHEX_inner(i[2]);
+                escaped << h;
+                i += 2;
+            }
+        } else if (c == '+') {
+            escaped << ' ';
+        } else {
+            escaped << c;
+        }
+    }
+
+    return escaped.str();
+}

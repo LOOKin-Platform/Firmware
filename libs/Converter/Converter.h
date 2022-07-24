@@ -108,5 +108,9 @@ class Converter {
 
 		static string 			CutMultibyteString(string &Input, size_t MaxByteSize, string OutputIfInvalid = "");
 
+		static char 			FromHEX_inner(char ch);
+		static string 			UrlDecode(string& text);
+
+
 };
 #endif
