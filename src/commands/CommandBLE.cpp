@@ -39,6 +39,7 @@ class CommandBLE_t : public Command_t {
 
 			Events["kbd_key-blocked"]	= 0x90;
 			Events["kbd_key-repeated"]	= 0x91;
+			Events["pairing_pin"]		= 0xFF;
 		}
 
 		void InitSettings() override {
@@ -169,7 +170,6 @@ class CommandBLE_t : public Command_t {
 				return false;
 			}
 
-
 			if (EventCode == 0x90) { // Blocked kbd_key
 				if ((Time::UptimeU() - CommandBLELastTimeSended < Settings.CommandsConfig.BLE.BLEKbdBlockedDelayU)
 					&& (StringOperand == CommandBLELastKBDSignalSended))
@@ -189,6 +189,14 @@ class CommandBLE_t : public Command_t {
 				}
 
 				return IsExecuted;
+			}
+
+			if (EventCode == 0xFF) { // pincode entered
+				string Operand(StringOperand);
+				uint32_t PairingPin = Converter::ToUint32(Operand);
+
+				BLEServer.SetPairingPin(PairingPin);
+				return true;
 			}
 
 			return false;

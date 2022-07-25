@@ -229,7 +229,8 @@ JSON Device_t::RootInfo() {
 		make_pair("Firmware"		, FirmwareVersionToString()),
 		make_pair("Temperature"		, TemperatureToString()),
 		make_pair("HomeKit"			, HomeKitToString()),
-		make_pair("EcoMode"			, EcoToString())
+		make_pair("EcoMode"			, EcoToString()),
+		make_pair("BLEStatus"		, Converter::ToHexString(Wireless.GetBLEStatus(),2))
 	}));
 
 	if (Device.Type.Hex == Settings.Devices.Remote)

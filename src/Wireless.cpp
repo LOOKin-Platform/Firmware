@@ -99,3 +99,7 @@ bool Wireless_t::IsPeriodicPool() {
 	else
 		return false;
 }
+
+uint8_t Wireless_t::GetBLEStatus() {
+	return BLEServer.GetStatus();
+}

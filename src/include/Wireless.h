@@ -23,6 +23,8 @@ class Wireless_t {
 		void 	SendBroadcastUpdated(string ServiceID, string Value, string Operand = "", bool IsScheduled = true);
 		bool 	IsPeriodicPool();
 
+		uint8_t GetBLEStatus();
+
 		bool 	IsFirstWiFiStart	= true;
 		bool 	IsEventDrivenStart = false;
 	private:

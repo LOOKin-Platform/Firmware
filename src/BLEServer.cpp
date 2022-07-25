@@ -12,6 +12,7 @@
 #include "WiFi.h"
 #include "Network.h"
 #include "RemoteControl.h"
+#include "Wireless.h"
 
 #include "PowerManagement.h"
 
@@ -19,6 +20,7 @@ extern Device_t 		Device;
 extern WiFi_t			WiFi;
 extern Network_t		Network;
 extern RemoteControl_t	RemoteControl;
+extern Wireless_t		Wireless;
 
 
 #include "esp_log.h"
@@ -258,10 +260,12 @@ void BLEServer_t::StartAdvertisingAsHID()
 	HIDDevice->deviceInfo()->addCharacteristic(WiFiSetupCharacteristic);
 	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
-	BLEDevice::setSecurityIOCap(BLE_HS_IO_NO_INPUT_OUTPUT);
+	BLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
+	BLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC);
+	BLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC);
 	//BLEDevice::setSecurityAuth(BLE_SM_PAIR_AUTHREQ_BOND);
 	BLEDevice::setSecurityAuth(true, true, true);
-	BLEDevice::setSecurityPasskey(123456);
+	//BLEDevice::setSecurityPasskey(123456);
 
 	HIDDevice->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
 	HIDDevice->startServices();
@@ -385,14 +389,14 @@ void BLEServer_t::set_version(uint16_t version) {
 
 void BLEServer_t::SendReport(KeyReport* keys)
 {
-  if (this->isConnected())
-  {
-    this->inputKeyboard->setValue((uint8_t*)keys, sizeof(KeyReport));
-    this->inputKeyboard->notify();
+	if (this->isConnected())
+	{
+		this->inputKeyboard->setValue((uint8_t*)keys, sizeof(KeyReport));
+		this->inputKeyboard->notify();
 
-    // vTaskDelay(delayTicks);
-    this->delay_ms(_delay_ms);
-  }
+		FreeRTOS::Sleep(_delay_ms);
+		//this->delay_ms(_delay_ms);
+	}
 }
 
 void BLEServer_t::SendReport(MediaKeyReport* keys)
@@ -404,8 +408,8 @@ void BLEServer_t::SendReport(MediaKeyReport* keys)
 		this->inputMediaKeys->setValue((uint8_t*)keys, sizeof(MediaKeyReport));
 		this->inputMediaKeys->notify();
 
-		//vTaskDelay(delayTicks);
-		this->delay_ms(_delay_ms);
+		FreeRTOS::Sleep(_delay_ms);
+		//this->delay_ms(_delay_ms);
 	}
 }
 
@@ -791,14 +795,54 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 	}
 }
 
-void BLEServer_t::delay_ms(uint64_t ms) {
-  uint64_t m = esp_timer_get_time();
-  if(ms){
-    uint64_t e = (m + (ms * 1000));
-    if(m > e){ //overflow
-        while(esp_timer_get_time() > e) { }
-    }
-    while(esp_timer_get_time() < e) {}
-  }
+void BLEServer_t::SetPairingPin(uint32_t Pin) {
+	PairingPin = Pin;
 }
 
+uint8_t BLEServer_t::GetStatus() {
+	uint8_t Result = (uint8_t)CurrentMode;
+	Result = Result << 4;
+	
+	if (IsPinRequested)
+		Result += 1;
+	
+	return Result;
+}
+
+
+uint32_t BLEServer_t::onPassKeyRequest() {
+	printf("Client Passkey Request\n");
+	PairingPin = Settings.Memory.Empty32Bit;
+	IsPinRequested = true;
+	Wireless.SendBroadcastUpdated("BLE", Converter::ToHexString(GetStatus(),2));
+
+	uint64_t 	TimeExpired		= 0;
+	uint16_t 	Pause 			= 500; // 500ms
+	while (TimeExpired < 120*1000) // 2 minutes
+	{
+		TimeExpired += 1000;
+
+		if (PairingPin != Settings.Memory.Empty32Bit)
+			break;
+
+		FreeRTOS::Sleep(Pause);
+	}
+
+	IsPinRequested = false;
+
+	return PairingPin;
+};
+
+// Pairing process complete, we can check the results in ble_gap_conn_desc
+void BLEServer_t::onAuthenticationComplete(ble_gap_conn_desc* desc){
+	if(!desc->sec_state.encrypted) {
+		printf("Encrypt connection failed - disconnecting for conn_handle %d \n", desc->conn_handle);
+		// Find the client with the connection handle provided in desc
+		NimBLEDevice::createServer()->disconnect(desc->conn_handle);
+		return;
+	}
+}
+
+bool BLEServer_t::onConfirmPIN(uint32_t pass_key) {
+	return true;
+}

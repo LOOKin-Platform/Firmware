@@ -92,8 +92,7 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		bool				isRunning	= false;
 
 		BLEServerModeEnum	CurrentMode = OFF;
-
-		void 				delay_ms(uint64_t ms);
+		bool				IsPinRequested = false;
 
 		uint16_t vid       = 0x05ac;
 		uint16_t pid       = 0x820a;
@@ -115,6 +114,7 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 
 		void		Init();
 
+		uint32_t 	PairingPin = 0;
 	public:
 		void		CheckHIDMode();
 		void		ForceHIDMode(BLEServerModeEnum Mode);
@@ -151,6 +151,10 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 
 		bool		IsRunning();
 
+		void		SetPairingPin(uint32_t PinCode);
+
+		uint8_t		GetStatus();
+
 		const MediaKeyReport KEY_MEDIA_NEXT_TRACK 			= {0x01	, 0x00, 0x00};
 		const MediaKeyReport KEY_MEDIA_PREVIOUS_TRACK 		= {0x02	, 0x00, 0x00};
 		const MediaKeyReport KEY_MEDIA_STOP 				= {0x04	, 0x00, 0x00};
@@ -181,13 +185,15 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		const MediaKeyReport KEY_MEDIA_EMAIL_READER 		= {0	, 0x80};
 		 */
 	protected:
-		virtual void onStarted(NimBLEServer *pServer) { };
-		virtual void onConnect(NimBLEServer* pServer) override;
-		virtual void onDisconnect(NimBLEServer* pServer) override;
+		virtual void		onStarted(NimBLEServer *pServer) { };
+		virtual void		onConnect(NimBLEServer* pServer) override;
+		virtual void		onDisconnect(NimBLEServer* pServer) override;
 
-		virtual void onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) override;
+		virtual void		onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) override;
+
+		virtual uint32_t	onPassKeyRequest() override;
+		virtual void		onAuthenticationComplete(ble_gap_conn_desc* desc) override;
+		virtual bool		onConfirmPIN(uint32_t pass_key) override;
 };
-
-
 
 #endif // BLE_SERVER_H
