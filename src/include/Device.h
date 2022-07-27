@@ -40,6 +40,7 @@ using namespace std;
 #define	NVSDevicePowerModeVoltage	"PowerModeVoltage"
 #define	NVSDeviceSensorMode			"SensorMode"
 #define	NVSDeviceEco				"Eco"
+#define	NVSDeviceAutoUpdate			"IsAutoUpdate"
 
 #define NVSDeviceID					"ID"
 #define NVSDeviceType				"Type"
@@ -90,6 +91,9 @@ class Device_t {
 		static bool			GetSensorModeFromNVS();
 		static void			SetSensorModeToNVS(bool);
 
+		static bool 		GetAutoUpdateFromNVS();
+		static void 		SetAutoUpdateToNVS(bool);
+
 		string				IDToString();
 		string				TypeToString();
 		string				ModelToString();
@@ -103,6 +107,8 @@ class Device_t {
 
 		void 				OTAStart(string FirmwareURL, WebServer_t::QueryTransportType TransportType = WebServer_t::QueryTransportType::Undefined);
 
+		static inline bool 	IsAutoUpdate = true;
+
 	private:
 		bool 				POSTName(map<string,string>);
 		bool 				POSTTime(map<string,string>);
@@ -110,6 +116,7 @@ class Device_t {
 		bool 				POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request, WebServer_t::QueryTransportType);
 		bool 				POSTSensorMode(map<string,string>, WebServer_t::Response &);
 		bool 				POSTEco(map<string,string> Params);
+		bool				POSTIsAutoUpdate(Query_t& Query);
 
 		string 				StatusToString();
 		string 				NameToString();
@@ -124,7 +131,6 @@ class Device_t {
 		static string 		FirmwareURLForOTA;
 		static TaskHandle_t	OTATaskHandler;
 		static void 		ExecuteOTATask(void*);
-
 };
 
 #endif

@@ -88,7 +88,6 @@ void PingPeriodicHandler::Pool() {
 	RemotePingRestartCounter += Settings.Pooling.Interval;
 	RouterPingRestartCounter += Settings.Pooling.Interval;
 
-
 	if (RemotePingRestartCounter >= Settings.Pooling.ServerPingInterval) {
 		RemotePingRestartCounter = 0;
 		RouterPingRestartCounter = 0;
@@ -99,18 +98,19 @@ void PingPeriodicHandler::Pool() {
 		{
 			DateTime_t CurrentTime = Time::DateTime();
 
-			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000))
+			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000) && Device_t::IsAutoUpdate == true)
 				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, &PingPeriodicHandler::FirmwareCheckFailed);
 			else
 			{
 				JSON TelemetryData;
 
-				TelemetryData.SetItem("Uptime", Converter::ToString<uint32_t>(Time::Uptime()));
-				TelemetryData.SetItem("Eco", (Device.GetEcoFromNVS()) ? "1" : "0");
-				TelemetryData.SetItem("HomeKit", Device.HomeKitToString());
-				TelemetryData.SetItem("IsBattery", (Device.PowerMode == DevicePowerMode::BATTERY) ? "1" : "0");
-				TelemetryData.SetItem("RCStatus", RemoteControl.GetStatusString());
-				TelemetryData.SetItem("Memory", Converter::ToString(::esp_get_free_heap_size()));
+				TelemetryData.SetItem("Uptime"		, Converter::ToString<uint32_t>(Time::Uptime()));
+				TelemetryData.SetItem("Eco"			, (Device.GetEcoFromNVS()) ? "1" : "0");
+				TelemetryData.SetItem("HomeKit"		, Device.HomeKitToString());
+				TelemetryData.SetItem("IsBattery"	, (Device.PowerMode == DevicePowerMode::BATTERY) ? "1" : "0");
+				TelemetryData.SetItem("RCStatus"	, RemoteControl.GetStatusString());
+				TelemetryData.SetItem("Memory"		, Converter::ToString(::esp_get_free_heap_size()));
+				TelemetryData.SetItem("IsAutoUpdate", (Device.IsAutoUpdate) ? "true" : "false");
 
 				CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
 				if (CommandIR != nullptr) {

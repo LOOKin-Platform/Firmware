@@ -261,11 +261,11 @@ void BLEServer_t::StartAdvertisingAsHID()
 	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
 	BLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
-	BLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC);
-	BLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC);
+	BLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
+	BLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
 	//BLEDevice::setSecurityAuth(BLE_SM_PAIR_AUTHREQ_BOND);
 	BLEDevice::setSecurityAuth(true, true, true);
-	//BLEDevice::setSecurityPasskey(123456);
+	BLEDevice::setSecurityPasskey(345139);
 
 	HIDDevice->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
 	HIDDevice->startServices();
@@ -708,9 +708,8 @@ size_t BLEServer_t::Write(const uint8_t *buffer, size_t size) {
 }
 
 void BLEServer_t::onConnect(NimBLEServer* pServer) {
-	ESP_LOGE(Tag, "ISconnected");
-
-	BLEDevice::startAdvertising();
+	if (!(pServer->getAdvertising()->isAdvertising()))
+		BLEDevice::startAdvertising();
 
 	this->connected = true;
 }
@@ -768,7 +767,6 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 
 	if (me->getUUID().toString() == "0x5000") // GATTDeviceMQTTCallback
 	{
-
 		//return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
 		string MQTTData = me->getValue();
@@ -809,7 +807,6 @@ uint8_t BLEServer_t::GetStatus() {
 	return Result;
 }
 
-
 uint32_t BLEServer_t::onPassKeyRequest() {
 	printf("Client Passkey Request\n");
 	PairingPin = Settings.Memory.Empty32Bit;
@@ -818,7 +815,7 @@ uint32_t BLEServer_t::onPassKeyRequest() {
 
 	uint64_t 	TimeExpired		= 0;
 	uint16_t 	Pause 			= 500; // 500ms
-	while (TimeExpired < 120*1000) // 2 minutes
+	while (TimeExpired < 90*1000) // 90 seconds
 	{
 		TimeExpired += 1000;
 

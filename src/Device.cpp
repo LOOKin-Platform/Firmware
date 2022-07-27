@@ -70,6 +70,8 @@ void Device_t::Init() {
 	}
 
 	PowerManagement::SetPMType(GetEcoFromNVS(), (PowerMode == DevicePowerMode::CONST));
+
+	IsAutoUpdate = GetAutoUpdateFromNVS();
 }
 
 void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {
@@ -126,8 +128,9 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			bool isEcoSet				= POSTEco(Params);
 			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Query.GetRequest(), Query.Transport);
 			bool isSensorModeSet		= POSTSensorMode(Params, Result);
+			bool IsAutoUpdateSet		= POSTIsAutoUpdate(Query);
 
-			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet || isEcoSet) && Result.Body == "")
+			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet || isEcoSet || IsAutoUpdateSet) && Result.Body == "")
 				Result.Body = "{\"success\" : \"true\"}";
 		}
 
@@ -233,6 +236,8 @@ JSON Device_t::RootInfo() {
 		make_pair("BLEStatus"		, Converter::ToHexString(Wireless.GetBLEStatus(),2))
 	}));
 
+	JSONObject.SetBoolItem("IsAutoUpdate", IsAutoUpdate);
+
 	if (Device.Type.Hex == Settings.Devices.Remote)
 		JSONObject.SetItem("SensorMode", SensorModeToString());
 
@@ -270,6 +275,25 @@ void Device_t::SetSensorModeToNVS(bool SensorMode) {
 	NVS Memory(NVSDeviceArea);
 	Memory.SetString(NVSDeviceSensorMode, (SensorMode) ? "1" : "0");
 	Memory.Commit();
+}
+
+bool Device_t::GetAutoUpdateFromNVS() {
+	NVS Memory(NVSDeviceArea);
+
+	uint8_t Result = Memory.GetInt8Bit(NVSDeviceAutoUpdate);
+
+	if (Result == 0) // not inited, return true
+		Result = 2;
+
+	return (Result == 2) ? true : false;
+}
+
+void Device_t::SetAutoUpdateToNVS(bool AutoUpdateNew) {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetInt8Bit(NVSDeviceAutoUpdate, (AutoUpdateNew) ? 2 : 1); // 2 for true, 1 for false
+	Memory.Commit();
+
+	IsAutoUpdate = AutoUpdateNew;
 }
 
 // Генерация ID на основе MAC-адреса чипа
@@ -444,6 +468,23 @@ bool Device_t::POSTEco(map<string,string> Params) {
 		PowerManagement::SetPMType(EcoOn, (Device.PowerMode == CONST));
 
 		Log::Add((EcoOn) ? Log::Events::System::PowerManageOn : Log::Events::System::PowerManageOff);
+
+		return true;
+	}
+
+	return false;
+}
+
+
+bool Device_t::POSTIsAutoUpdate(Query_t& Query) {
+	JSON JSONObject(Query.GetBody());
+
+	if (JSONObject.IsItemExists("isautoupdate"))
+	{
+		bool NewAutoUpdateValue = JSONObject.GetBoolItem("isautoupdate");
+
+		if (NewAutoUpdateValue != IsAutoUpdate)
+			SetAutoUpdateToNVS(NewAutoUpdateValue);
 
 		return true;
 	}

@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 11);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 18);
 
 //		const FirmwareVersion Firmware =  0x020A0000;
 
@@ -117,8 +117,8 @@ class Settings_t {
 
         	const int8_t					RSSILimit				= -100; // Ниже этого значения secure endpoints не работают
 
-        	const esp_power_level_t			PublicModePower			= ESP_PWR_LVL_P6;
-        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_P6;//ESP_PWR_LVL_P3 и ESP_PWR_LVL_N0; - не работает на части мобильных телефонов?
+        	const esp_power_level_t			PublicModePower			= ESP_PWR_LVL_P9;
+        	const esp_power_level_t			PrivateModePower		= ESP_PWR_LVL_P9;//ESP_PWR_LVL_P3 и ESP_PWR_LVL_N0; - не работает на части мобильных телефонов?
 		} Bluetooth;
 
 		struct RemoteControl_t {

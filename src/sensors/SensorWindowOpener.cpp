@@ -49,18 +49,12 @@ class SensorWindowOpener_t : public Sensor_t {
 			
 			return "";
 		}
-
-		void Update() override {
-			/*
-			SetValue(ReceiveValue(), "Position");
-			*/
-			/*
-			if (SetValue(ReceiveValue(), "Position"), 0) {
-				Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
-				Automation.SensorChanged(ID);
-			}
-			*/
-		};
+		
+		void Update() override
+		{
+			Wireless.SendBroadcastUpdated(ID, "03", Converter::ToHexString(GetValue("Position"),8));
+			Automation.SensorChanged(ID);
+		}
 
 		uint32_t ReceiveValue(string Key = "Primary") override {
 			/*

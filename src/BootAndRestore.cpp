@@ -107,7 +107,6 @@ void BootAndRestore::HardResetFromInit() {
 	RunOperation(OperationTypeEnum::HARDRESET_ON_START, false);
 }
 
-
 void BootAndRestore::RunOperation(OperationTypeEnum Operation, bool IsDelayed) {
 	if (IsDelayed)
 		ExecuteOperationDelayed(Operation);
@@ -127,6 +126,14 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 	{
 		NVS Memory(NVSDeviceArea);
 		Memory.SetInt8Bit(NVSDeviceEco, 0);
+		Memory.Commit();
+	}
+
+	// set autoupdate to true
+	if (OldFirmware < "2.43" && OldFirmware != "")
+	{
+		NVS Memory(NVSDeviceArea);
+		Memory.SetInt8Bit(NVSDeviceAutoUpdate, 2);
 		Memory.Commit();
 	}
 

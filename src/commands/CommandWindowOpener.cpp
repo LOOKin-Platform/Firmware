@@ -33,7 +33,7 @@ class CommandWindowOpener_t : public Command_t {
     }
 
 	// Команда открытия окна на нужную позицию
-	virtual void SetPosition(uint8_t Target, uint8_t Speed) { };
+	virtual void SetPosition(uint8_t Target) 				{ };
 	virtual void SetLimitModeEnabledPostActions()			{ };
 	virtual bool ResetMotorPosition()						{ return false; };
 	virtual bool SaveOpenPosition()							{ return false; };
@@ -41,15 +41,34 @@ class CommandWindowOpener_t : public Command_t {
 	virtual bool AutoCallibrationStart()					{ return false; };
 
 	void SetCurrentOpenPercent(uint8_t Value) {
+		UpdateSensorWindowOpener(Value);
+	}
+
+	void SetCurrentOpenFinished(uint8_t Value) {
+		UpdateSensorWindowOpener(Value, true);
+	}
+
+	static inline uint8_t LastPosition = 0;
+
+	void UpdateSensorWindowOpener(uint8_t Value, bool ForceUpdate  = false) {
 		CurrentOpenProcent = Value;
 
-		if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr)
+		if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr) 
+		{
 			Sensor_t::GetSensorByID(ID + 0x80)->SetValue(Value, "Position", 0);
+
+			if (abs((int)LastPosition - (int)Value) > 9 || ForceUpdate) {
+				Sensor_t::GetSensorByID(ID + 0x80)->Update();
+				LastPosition = Value;
+			}
+		}
 	}
 
 	void SetCurrentMode(OperationalModeEnum Mode) {
-		if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr)
+		if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr) {
 			Sensor_t::GetSensorByID(ID + 0x80)->SetValue((uint32_t)Mode, "Mode", 0);
+			Sensor_t::GetSensorByID(ID + 0x80)->Update();
+		}
 	}
 
 	// Event code это один из трех uint8_t полей. открыть, закрыть или установить в процентах открытие
@@ -96,7 +115,7 @@ class CommandWindowOpener_t : public Command_t {
 			// изменить угол наклона в позицию Delta
 			if (!IsPositionTheSame) {
 				ESP_LOGI(CommandWOBaseTag, "Position to set: %d", Position);
-				SetPosition((uint8_t)Position, 25);
+				SetPosition((uint8_t)Position);
 			}
 
 			return true;
@@ -138,7 +157,7 @@ class CommandWindowOpener_t : public Command_t {
 			}
 
 			// Сохранить положение "Открыто"
-			if (Operand == "closed_set") {
+			if (Operand == "close_set") {
 				return SaveClosePosition();
 			}
 		}
