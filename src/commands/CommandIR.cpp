@@ -290,7 +290,6 @@ class CommandIR_t : public Command_t {
 				/// FFF0  	- switch on
 				/// FFF1	- swing
 				/// FFF2	- swing
-
 				pair<uint16_t, uint16_t>  Statuses = make_pair(0xFFFF, 0xFFFF);
 
 				if (Settings.eFuse.Type == Settings.Devices.Remote)
@@ -306,7 +305,7 @@ class CommandIR_t : public Command_t {
 				if (ACData.ToUint16() == 0xFFF0 || (IsOnSeparate && CurrentStatus < 0x1000 && LastStatus > 0x0FFF)) // if switch on signal received
 					ShouldOn = true;
 
-				if (ShouldOn > 0 && LastStatus == 0)
+				if (ShouldOn && LastStatus == 0)
 					LastStatus = 0x2700;
 
 				if (ShouldOn && (CurrentStatus < 0x1000 || CurrentStatus == 0xFFFF)) {

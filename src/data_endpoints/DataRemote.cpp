@@ -1302,7 +1302,7 @@ class DataRemote_t : public DataEndpoint_t {
 			return false;
 		}
 
-		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value, string FunctionType = "", bool IsBroadcasted = true) {
+		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value, string FunctionType = "", bool IsBroadcasted = true, bool EmulateSave = false) {
 			uint16_t 	Status 		= 0x0;
 			uint8_t		DeviceType	= 0x0;
 
@@ -1323,7 +1323,8 @@ class DataRemote_t : public DataEndpoint_t {
 			if (Status == NewStatus)
 				return make_pair(false, Status);
 
-			StatusSave(DeviceID, NewStatus);
+			if (!EmulateSave)
+				StatusSave(DeviceID, NewStatus);
 
 			if (IsBroadcasted)
 				StatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value, NewStatus);
