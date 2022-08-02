@@ -173,7 +173,7 @@ class Settings_t {
 
 			struct {
 				const uint16_t				Inverval 		= 4000;
-				const uint8_t 				OverheatTemp	= 90;
+				const uint8_t 				OverheatTemp	= 100;
 				const uint8_t				ChilledTemp		= 77;
 			} OverHeat;
 

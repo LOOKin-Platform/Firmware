@@ -1,0 +1,20 @@
+{
+	"folders": [
+		{
+			"name": "Source",
+			"path": "."
+		}
+	],
+	"settings": {
+		"idf.adapterTargetName": "esp32",
+		"cmake.configureOnOpen": false,
+		"idf.flashType": "UART",
+		"idf.port": "/dev/cu.usbserial-1460",
+		"C_Cpp.errorSquiggles": "Disabled",
+		"files.associations": {
+			"iosfwd": "cpp",
+			"vector": "cpp",
+			"map": "cpp"
+		}
+	}
+}

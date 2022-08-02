@@ -693,7 +693,7 @@ class CommandIR_t : public Command_t {
 		        if (FreeRTOS::Queue::Count(CommandIRTXQueue) == 0 && ulNotifiedValue == 0)
 		        {
 		        	if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 == GPIO_NUM_0)
-		        		continue;
+					{ continue; }
 
 		            if (rb == NULL) { continue; }
 
@@ -728,7 +728,6 @@ class CommandIR_t : public Command_t {
 		        }
 		        else
 		        {
-
 		        	PowerManagement::AddLock("CommandIRTXTask");
 		        	FreeRTOS::SetTaskPriority(CommandIRTXHandle, Settings.CommandsConfig.IR.SendTaskPeakPriority);
 
