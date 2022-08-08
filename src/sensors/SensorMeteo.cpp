@@ -89,9 +89,8 @@ class SensorMeteo_t : public Sensor_t {
 			return Converter::ToString(((float)Values[Key])/10);
 		}
 
-
 		void Pool() override {
-			if (Time::Uptime() %3 != 0) // read temp only in 3 seconds interval
+			if (Time::Uptime() %5 != 0) // read temp only in 5 seconds interval
 				return;
 
 			if (Settings.eFuse.Type != Settings.Devices.Remote)

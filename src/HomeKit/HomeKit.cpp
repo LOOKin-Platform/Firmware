@@ -790,6 +790,8 @@ hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
 		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
 
+		hap_acc_add_wifi_transport_service(Accessory, 0);
+
 		hap_add_accessory(Accessory);
 	}
 	else
@@ -829,8 +831,10 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
 		Accessory = hap_acc_create(&cfg);
 
-		uint8_t product_data[] = {'E','S','P','3','2','H','A','P'};
+		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
 		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
+
+		hap_acc_add_wifi_transport_service(Accessory, 0);
 
 		hap_add_accessory(Accessory);
 	}

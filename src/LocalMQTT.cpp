@@ -295,6 +295,7 @@ esp_mqtt_client_config_t LocalMQTT_t::CreateConfig() {
 
 esp_mqtt_client_config_t LocalMQTT_t::ConfigDefault() {
 	esp_mqtt_client_config_t Config;
+	::memset(&Config, 0, sizeof(Config));
 
 	Config.host					= NULL;
 	Config.uri					= NULL;

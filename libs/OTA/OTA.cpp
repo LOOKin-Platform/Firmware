@@ -45,6 +45,8 @@ esp_err_t OTA::PerformUpdate(string URL) {
 	ESP_LOGI(tag, "Starting OTA from URL %s", URL.c_str());
 
 	esp_http_client_config_t Config;
+	::memset(&Config, 0, sizeof(Config));
+
 	Config.auth_type 					= HTTP_AUTH_TYPE_NONE;
 
 	Config.path							= "/";

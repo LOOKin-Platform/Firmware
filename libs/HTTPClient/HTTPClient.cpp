@@ -121,40 +121,6 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
     return ESP_OK;
 }
 
-/*
-void HTTPClient::RemoveFromQueueURLStartedWith(string URLStart, bool IsSystemQueue) {
-	QueueHandle_t Handle = (IsSystemQueue) ? SystemQueue : Queue;
-
-	if (FreeRTOS::Queue::Count(Handle) == 0)
-		return;
-
-	bool IsFirstElement = true;
-	uint32_t FirstElement = 0;
-
-	do
-	{
-		uint32_t HashID;
-		FreeRTOS::Queue::Receive(Handle, &HashID, 5);
-
-		if (IsFirstElement) {
-			FirstElement = HashID;
-			IsFirstElement = false;
-		}
-
-		HTTPClientData_t ClientData = QueryData[HashID];
-
-		if (ClientData.URL.size() >= URLStart.size() && (ClientData.URL.rfind(URLStart, 0) == 0)) {
-			QueryData.erase(HashID);
-		}
-		else
-			FreeRTOS::Queue::Queue::Send(Handle, &HashID, false, (TickType_t) Settings.HTTPClient.BlockTicks);
-
-	} while (FirstElement != CurrentElement && !IsFirstElement)
-
-}
-*/
-
-
 /**
  * @brief The task of processing the HTTP requests in queue
  *
@@ -189,6 +155,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		HTTPClientData_t ClientData = QueryData[HashID];
 
 		esp_http_client_config_t Config;
+		::memset(&Config, 0, sizeof(Config));
 
 		Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
 

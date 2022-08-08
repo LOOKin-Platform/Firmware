@@ -435,6 +435,14 @@ class CommandIR_t : public Command_t {
 				string  SavedRemoteOperand(StringOperand,8);
 
 				string  UUID 		= SavedRemoteOperand.substr(0, 4);
+
+				DataRemote_t::IRDeviceCacheItem_t CacheItem = ((DataRemote_t*)Data)->GetDeviceFromCache(UUID);
+
+				if (CacheItem.DeviceType == 0xEF) { // AC unit
+					string ExecuteOperand = Converter::ToHexString(CacheItem.Extra,4) + SavedRemoteOperand.substr(4, 4);
+					return Execute(0xEF, ExecuteOperand.c_str());
+				}
+
 				uint8_t FunctionID	= Converter::UintFromHexString<uint8_t>(SavedRemoteOperand.substr(4, 2));
 				string  Function 	= ((DataRemote_t*)Data)->DevicesHelper.FunctionNameByID(FunctionID);
 				uint8_t SignalID 	= Converter::UintFromHexString<uint8_t>( SavedRemoteOperand.substr(6,2));
