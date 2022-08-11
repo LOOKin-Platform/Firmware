@@ -77,22 +77,22 @@ enum BLEServerModeEnum { OFF = 0, BASIC, HID };
 class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 {
 	private:
-		BLEHIDDevice* 		HIDDevice;
-		BLECharacteristic*	inputKeyboard;
-		BLECharacteristic*	outputKeyboard;
-		BLECharacteristic*	inputMediaKeys;
-		BLEAdvertising*		advertising;
-		KeyReport			_keyReport;
-		MediaKeyReport		_mediaKeyReport;
-		std::string			deviceName;
-		std::string			deviceManufacturer;
-		uint8_t				batteryLevel;
-		bool				connected = false;
-		uint32_t			_delay_ms = 7;
-		bool				isRunning	= false;
+		BLEHIDDevice* 			HIDDevice;
+		BLECharacteristic*		inputKeyboard;
+		BLECharacteristic*		outputKeyboard;
+		BLECharacteristic*		inputMediaKeys;
+		BLEAdvertising*			advertising;
+		KeyReport				_keyReport;
+		MediaKeyReport			_mediaKeyReport;
+		std::string				deviceName;
+		std::string				deviceManufacturer;
+		uint8_t					batteryLevel;
+		bool					connected 		= false;
+		uint32_t				_delay_ms 		= 7;
+		bool					isRunning		= false;
 
-		BLEServerModeEnum	CurrentMode = OFF;
-		bool				IsPinRequested = false;
+		BLEServerModeEnum		CurrentMode 	= OFF;
+		bool					IsPinRequested 	= false;
 
 		uint16_t vid       = 0x05ac;
 		uint16_t pid       = 0x820a;
@@ -100,15 +100,15 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 
 		int8_t 				GetRSSIForConnection(uint16_t ConnectionHandle);
 
-		NimBLEServer* 			pServer						= NULL;
+		NimBLEServer*			pServer							= NULL;
 
-		NimBLECharacteristic*	ManufactorerCharacteristic 	= NULL;
-		NimBLECharacteristic* 	DeviceTypeCharacteristic 	= NULL;
-		NimBLECharacteristic* 	DeviceIDCharacteristic 		= NULL;
-		NimBLECharacteristic* 	FirmwareVersionCharacteristic = NULL;
-		NimBLECharacteristic* 	DeviceModelCharacteristic 	= NULL;
-		NimBLECharacteristic* 	WiFiSetupCharacteristic 	= NULL;
-		NimBLECharacteristic* 	RCSetupCharacteristic 		= NULL;
+		NimBLECharacteristic*	ManufactorerCharacteristic 		= NULL;
+		NimBLECharacteristic* 	DeviceTypeCharacteristic 		= NULL;
+		NimBLECharacteristic* 	DeviceIDCharacteristic 			= NULL;
+		NimBLECharacteristic* 	FirmwareVersionCharacteristic 	= NULL;
+		NimBLECharacteristic* 	DeviceModelCharacteristic 		= NULL;
+		NimBLECharacteristic* 	WiFiSetupCharacteristic 		= NULL;
+		NimBLECharacteristic* 	RCSetupCharacteristic 			= NULL;
 
 		bool		IsHIDEnabledForDevice();
 

@@ -22,7 +22,6 @@ extern Network_t		Network;
 extern RemoteControl_t	RemoteControl;
 extern Wireless_t		Wireless;
 
-
 #include "esp_log.h"
 static const char* Tag = "BLEDevice";
 
@@ -152,7 +151,7 @@ void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
 			pServer->disconnect(Connection);
 	}
 
-	if (HIDDevice->hidService() != NULL)
+	if (HIDDevice != NULL && HIDDevice->hidService() != NULL)
 		ble_gatts_svc_set_visibility(HIDDevice->hidService()->getHandle(), (Mode == BASIC) ? 0 : 1);
 
 	CurrentMode = Mode;
@@ -736,8 +735,6 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 
 			map<string,string> Params;
 
-			ESP_LOGE(Tag, "Value %s", WiFiData.c_str());
-
 			if (JSONItem.GetType() == JSON::RootType::Object)
 				Params = JSONItem.GetItems();
 
@@ -771,7 +768,6 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 
 		string MQTTData = me->getValue();
 
-		ESP_LOGE(Tag, "%s", MQTTData.c_str());
 		if (MQTTData.length() > 0)
 		{
 			vector<string> Parts = Converter::StringToVector(MQTTData," ");
@@ -783,12 +779,8 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 			{
 				ESP_LOGD(Tag, "MQTT credentials data received. ClientID: %s, ClientSecret: %s", Parts[0].c_str(), Parts[1].c_str());
 				RemoteControl.ChangeOrSetCredentialsBLE(Parts[0], Parts[1]);
-
-				FreeRTOS::Sleep(500);
-				ForceHIDMode(HID);
 			}
 		}
-
 	    return;
 	}
 }

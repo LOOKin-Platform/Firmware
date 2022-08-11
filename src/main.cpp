@@ -103,10 +103,11 @@ void app_main(void) {
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
+	BLEServer.StartAdvertising();
+
 	if (Network.WiFiSettings.size() == 0) // first start for HID devices
-		BLEServer.StartAdvertisingAsGenericDevice();
+		BLEServer.ForceHIDMode(BASIC);
 	else
-		BLEServer.StartAdvertising();
 
 	//BLEClient.Scan(60);
 
