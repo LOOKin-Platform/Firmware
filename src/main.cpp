@@ -109,8 +109,6 @@ void app_main(void) {
 		BLEServer.ForceHIDMode(BASIC);
 	else
 
-	//BLEClient.Scan(60);
-
 	Pooling_t::Pool();
 
 	/*
