@@ -234,8 +234,6 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	wifi_scan_config_t conf;
 	memset(&conf, 0, sizeof(conf));
-	conf.bssid 					= NULL;
-	conf.ssid 					= NULL;
 	conf.show_hidden 			= 1;
 	conf.scan_type 				= WIFI_SCAN_TYPE_ACTIVE;
 	conf.scan_time.active.min 	= 500;

@@ -107,7 +107,6 @@ void app_main(void) {
 
 	if (Network.WiFiSettings.size() == 0) // first start for HID devices
 		BLEServer.ForceHIDMode(BASIC);
-	else
 
 	Pooling_t::Pool();
 
