@@ -310,9 +310,22 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 	{
 		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB || GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGBFrequencyControl)
 		{
-			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Red.GPIO	, GPIOSettings.Red.Channel	);
-			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Green.GPIO	, GPIOSettings.Green.Channel);
-			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::SetupPWM(GPIOSettings.Blue.GPIO	, GPIOSettings.Blue.Channel	);
+			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	
+				GPIO::SetupPWM(GPIOSettings.Red.GPIO, GPIOSettings.Red.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_REF_TICK, (GPIOSettings.Red.IsInverted) ? 255 : 0);
+			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	
+				GPIO::SetupPWM(GPIOSettings.Green.GPIO, GPIOSettings.Green.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_REF_TICK, (GPIOSettings.Green.IsInverted) ? 255 : 0);
+			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	
+				GPIO::SetupPWM(GPIOSettings.Blue.GPIO, GPIOSettings.Blue.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_REF_TICK, (GPIOSettings.Blue.IsInverted) ? 255 : 0);
+
+			if (GPIOSettings.Red.GPIO != GPIO_NUM_0 || GPIOSettings.Green.GPIO != GPIO_NUM_0 || GPIOSettings.Blue.GPIO != GPIO_NUM_0)
+				GPIO::PWMFadeInstallFunction();
+
+			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	
+				ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Red.Channel	, (GPIOSettings.Red.IsInverted) 	? 255 : 0);
+			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	
+				ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Green.Channel	, (GPIOSettings.Green.IsInverted)	? 255 : 0);
+			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	
+				ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Blue.Channel	, (GPIOSettings.Blue.IsInverted) 	? 255 : 0);
 		}
 		else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812)
 		{

@@ -19,6 +19,9 @@ class CommandColor_t : public Command_t {
 		if (GPIO.Green.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
 		if (GPIO.Blue.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
 		if (GPIO.White.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.White.GPIO	, GPIO.Timer, GPIO.White.Channel);
+
+		if (GPIO.Red.GPIO != GPIO_NUM_0 || GPIO.Green.GPIO	!= GPIO_NUM_0 || GPIO.Blue.GPIO	!= GPIO_NUM_0 || GPIO.White.GPIO != GPIO_NUM_0)
+			GPIO::PWMFadeInstallFunction();
     }
 
     void Overheated() override {

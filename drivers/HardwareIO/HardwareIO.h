@@ -48,8 +48,10 @@ class GPIO {
 		static void		Hold(gpio_num_t pin, bool value);
 
 		// PWM to rule LEDs
-		static bool		PWMIsInited;
-		static void 	SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq = 1000, ledc_timer_bit_t Resolution = LEDC_TIMER_8_BIT, ledc_timer_t TimerIndex = LEDC_TIMER_MAX, ledc_clk_cfg_t ClockSource = LEDC_USE_REF_TICK);
+		static bool 	PWMIsInited;
+		static void 	SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq = 1000, ledc_timer_bit_t Resolution = LEDC_TIMER_8_BIT, ledc_timer_t TimerIndex = LEDC_TIMER_MAX, ledc_clk_cfg_t ClockSource = LEDC_USE_REF_TICK, uint32_t DefaultDuty = 0);
+		static void 	PWMFadeInstallFunction();
+
 		static uint32_t PWMValue(ledc_channel_t PWMChannel);
 		static void 	PWMSetDuty(ledc_channel_t PWMChannel, uint32_t Duty);
 		static void 	PWMFadeTo(ledc_channel_t PWMChannel, uint32_t Duty = 255, uint16_t FadeTime = PWM_FADING_LENGTH);

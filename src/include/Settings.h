@@ -38,20 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 56);
-
-//		const FirmwareVersion Firmware =  0x020A0000;
-
-		/*
-		struct {
-			const FirmwareVersion			Version			= 0x020A0000;
-
-
-			string 			ToString() 						{ return Converter::ToString<uint8_t>(Major) + "." + Converter::ToString<uint8_t>(Minor,2);}
-			uint32_t 		ToUint32() 						{ return (((uint32_t)Major) << 24) + (((uint32_t)Minor) << 16) + Revision; }
-			static string 	Uint32ToString(uint32_t Version){ return Converter::ToString((uint8_t)(Version >> 24)) + "." + Converter::ToString((uint8_t)((Version << 8) >> 24), 2);}
-		} Firmware;
-		*/
+		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 61);
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";

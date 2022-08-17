@@ -90,7 +90,7 @@ bool GPIO::PWMIsInited = false;
  * @param [in] PWMChannel	LEDC Channel number [0..7]
  */
 
-void GPIO::SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq, ledc_timer_bit_t Resolution, ledc_timer_t TimerIndex, ledc_clk_cfg_t ClockSource) {
+void GPIO::SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq, ledc_timer_bit_t Resolution, ledc_timer_t TimerIndex, ledc_clk_cfg_t ClockSource, uint32_t DefaultDuty) {
 	if (GPIO == GPIO_NUM_0)
 		return;
 
@@ -106,6 +106,7 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq, l
     uint8_t Timer = ((PWMChannel/2)%4);
 
 	ledc_timer_config_t ledc_timer;
+	::memset(&ledc_timer, 0, sizeof(ledc_timer));
 
 	ledc_timer.duty_resolution	= Resolution;
 	ledc_timer.freq_hz			= Freq;
@@ -122,11 +123,13 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq, l
    	uint8_t Channel = (PWMChannel%8);
 
 	ledc_channel_config_t ledc_channel;
+	::memset(&ledc_channel, 0, sizeof(ledc_channel));
+
 	ledc_channel.speed_mode = (ledc_mode_t)Group;
 	ledc_channel.timer_sel	= (TimerIndex == LEDC_TIMER_MAX ? (ledc_timer_t)Timer : TimerIndex);
 	ledc_channel.channel	= (ledc_channel_t)Channel;
 	ledc_channel.gpio_num	= GPIO;
-	ledc_channel.duty 		= 0;
+	ledc_channel.duty 		= DefaultDuty;
 	ledc_channel.hpoint		= 0;
 	ledc_channel.intr_type	= LEDC_INTR_FADE_END;
 
@@ -135,13 +138,12 @@ void GPIO::SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq, l
         ESP_LOGE(tag,"LEDC ledc_channel_config failed!");
         return;
     }
-
-    if(::ledc_fade_func_install(0) != ESP_OK)
-    {
-        ESP_LOGE(tag,"LEDC ledc_fade_func_install failed!");
-        return;
-    }
  }
+
+void GPIO::PWMFadeInstallFunction() {
+	if(::ledc_fade_func_install(0) != ESP_OK)
+        ESP_LOGE(tag,"LEDC ledc_fade_func_install failed!");
+}
 
  /**
   * @brief Set PWM channel data
