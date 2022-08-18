@@ -191,6 +191,7 @@ class SensorIR_t : public Sensor_t {
 				LastSignal.ExternFillPostOperations();
 			}
 
+			/*
 			if (Settings.eFuse.DeviceID == 0x00000003 || Settings.eFuse.DeviceID == 0x00000004) {
 				string Output = "";
 				for (auto &Item : SensorIRCurrentMessage)
@@ -198,6 +199,7 @@ class SensorIR_t : public Sensor_t {
 
 				ESP_LOGI("Received", "%s", Output.c_str());
 			}
+			*/
 
 			SensorIRCurrentMessage.empty();
 
