@@ -369,14 +369,14 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	::memcpy(sta_config.sta.password, Password.data(), Password.size());
 
 	sta_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
-	//sta_config.sta.bssid_set = 0;
-	//sta_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
-	//sta_config.sta.listen_interval = 5;
+	sta_config.sta.bssid_set = 0;
+	sta_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+	sta_config.sta.listen_interval = 5;
 
-	//sta_config.sta.pmf_cfg.capable 	= true;
-	//sta_config.sta.pmf_cfg.required = false;
-	//sta_config.sta.rm_enabled		= 1;
-	//sta_config.sta.btm_enabled		= 1;
+	sta_config.sta.pmf_cfg.capable 	= true;
+	sta_config.sta.pmf_cfg.required = false;
+	sta_config.sta.rm_enabled		= 1;
+	sta_config.sta.btm_enabled		= 1;
 
 	sta_config.sta.channel = Channel;
 

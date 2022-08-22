@@ -339,7 +339,7 @@ esp_mqtt_client_config_t RemoteControl_t::ConfigDefault() {
 	Config.refresh_connection_after_ms
 								= 0;
 
-    Config.task_stack			= 6144;//8192;//8192;
+    Config.task_stack			= 4096;//6144;//8192;//8192;
 	Config.buffer_size			= 3072;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size
 	Config.task_prio			= 6;

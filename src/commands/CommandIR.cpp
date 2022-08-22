@@ -117,7 +117,7 @@ class CommandIR_t : public Command_t {
 			CommandIRTXQueue = FreeRTOS::Queue::Create((uint16_t)Settings.CommandsConfig.IR.SendTaskQueueCount2Gen, sizeof( uint32_t ));
 
 			if (CommandIRTXHandle == NULL) {
-				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 8192, Settings.CommandsConfig.IR.SendTaskPriority);
+				CommandIRTXHandle = FreeRTOS::StartTask(CommandIRTXTask, "RMTTXTask", NULL, 6144, Settings.CommandsConfig.IR.SendTaskPriority);
 				//vTaskStartScheduler();
 			}
 		}
