@@ -31,7 +31,9 @@ IRLib::IRLib(const char *ProntoHex) {
 
 	FillProtocols();
 
-	if (FillFromProntoHex(ProntoHex))
+	FillFromProntoHex(ProntoHex);
+
+	if (!IsSkipProntoFlag)
 		LoadDataFromRaw();
 }
 
@@ -40,7 +42,9 @@ IRLib::IRLib(string &ProntoHex) {
 
 	FillProtocols();
 
-	if (FillFromProntoHex(ProntoHex))
+	FillFromProntoHex(ProntoHex);
+
+	if (!IsSkipProntoFlag)
 		LoadDataFromRaw();
 }
 
@@ -416,13 +420,13 @@ bool IRLib::IsProntoHex() {
 	return true;
 }
 
-bool IRLib::FillFromProntoHex(string &SrcString) {
+void IRLib::FillFromProntoHex(string &SrcString) {
 	if (SrcString.size() < 20) {
 		ESP_LOGE(tag, "Too small ProntoHEX data. Skipped");
-		return false;
+		return;
 	}
 
-	bool 		IsSkipProntoFlag	= false;
+	IsSkipProntoFlag	= false;
 
 	//uint8_t	Learned = Converter::UintFromHexString<uint8_t>(SrcString.substr(0,4));
 	Frequency = (uint16_t)(1000000/((Converter::UintFromHexString<uint16_t>(SrcString.substr(4,4)))* 0.241246));
@@ -444,14 +448,12 @@ bool IRLib::FillFromProntoHex(string &SrcString) {
 	}
 
 	SrcString.erase();
-
-	return (!IsSkipProntoFlag);
 }
 
-bool IRLib::FillFromProntoHex(const char *SrcString) {
+void IRLib::FillFromProntoHex(const char *SrcString) {
 	if (strlen(SrcString) < 24) {
 		ESP_LOGE(tag, "Too small ProntoHEX data. Skipped");
-		return false;
+		return;
 	}
 
 	RawData.clear();
@@ -461,7 +463,8 @@ bool IRLib::FillFromProntoHex(const char *SrcString) {
 	bool		Sign			= true;
 	uint8_t		USec 			= 0;
 	char		SignalChar[1];
-	bool 		IsSkipProtoFlag	= false;
+	
+	IsSkipProntoFlag = false;
 
 	for (int i = 0; i < strlen(SrcString); i++) {
 		memcpy(SignalChar, SrcString + i, 1);
@@ -477,7 +480,7 @@ bool IRLib::FillFromProntoHex(const char *SrcString) {
 
 		if (SymbolCounter == 3) {
 			if (Group == "000F")
-				IsSkipProtoFlag = true;
+				IsSkipProntoFlag = true;
 		}
 		else if (SymbolCounter == 7) {
 			Frequency 	= (uint16_t)(1000000/((Converter::UintFromHexString<uint16_t>(Group))* 0.241246));
@@ -499,15 +502,14 @@ bool IRLib::FillFromProntoHex(const char *SrcString) {
 		}
 		SymbolCounter++;
 	}
-
-	return (!IsSkipProtoFlag);
 }
 
 string IRLib::ProntoHexConstruct(bool SpaceDelimeter) {
-	uint8_t	USec	 = (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
-	string	Result = "0000";
+	uint8_t	USec	 	= (uint8_t)(((1.0 / Frequency) * 1000000) + 0.5);
 
-	string 	Delimeter = (SpaceDelimeter) ? " " : "";
+	string	Result 		= (IsSkipProntoFlag) ? "000F" : "0000";
+
+	string 	Delimeter 	= (SpaceDelimeter) ? " " : "";
 
 	Result += Delimeter + Converter::ToHexString((uint8_t)floor(1000000/(Frequency*0.241246)), 4);
 

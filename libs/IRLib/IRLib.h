@@ -75,12 +75,14 @@ class IRLib {
 		IRProto*		GetProtocolByID(uint8_t);
 
 		bool 			IsProntoHex();
-		bool 			FillFromProntoHex(string &);
-		bool 			FillFromProntoHex(const char *);
+		void 			FillFromProntoHex(string &);
+		void 			FillFromProntoHex(const char *);
 
 		string 			ProntoHexConstruct(bool SpaceDelimeter = true);
 
-		bool			CRCCompareFunction(uint16_t Item1, uint16_t Item2, float Threshold = 0.3);
+		bool 			CRCCompareFunction(uint16_t Item1, uint16_t Item2, float Threshold = 0.3);
+
+		bool 			IsSkipProntoFlag = false;
 
 		static vector<IRProto *> Protocols;
 };

@@ -420,6 +420,7 @@ bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t
         if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // Air Conditionair
         	return false;
 
+		/*
         if ((Value > 0 && IRDeviceItem.Status < 0x1000) || (Value == 0 && IRDeviceItem.Status >= 0x1000)) {
             hap_val_t ValueForACActive;
             ValueForACActive.u = (Value == 0) ? 0 : 1;
@@ -435,8 +436,9 @@ bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t
             ValueForACFanAuto.u = 0;
             HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
     	}
+		*/
 
-        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value));
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value), (IRDeviceItem.Status >= 0x1000));
 
         return true;
     }
