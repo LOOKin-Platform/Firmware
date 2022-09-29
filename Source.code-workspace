@@ -14,7 +14,9 @@
 		"files.associations": {
 			"iosfwd": "cpp",
 			"vector": "cpp",
-			"map": "cpp"
+			"map": "cpp",
+			"algorithm": "cpp",
+			"functional": "cpp"
 		}
 	}
 }

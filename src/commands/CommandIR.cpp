@@ -613,6 +613,7 @@ class CommandIR_t : public Command_t {
 			}
 			*/
 
+
 			if (Settings.eFuse.DeviceID < 0x100) {
 				string SignalToDebug = "";
 

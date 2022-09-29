@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 72);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 88);
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -263,7 +263,7 @@ class Settings_t {
 		struct Scenarios_t {
 			static constexpr uint8_t		QueueSize		= 64;
 			static constexpr uint16_t		BlockTicks		= 50;
-			static constexpr uint16_t		TaskStackSize	= 8192;
+			static constexpr uint16_t		TaskStackSize	= 4096;
 
 			static constexpr uint16_t		OperandBitLength= 64;
 			static constexpr uint8_t		NameLength		= 64;

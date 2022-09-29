@@ -35,63 +35,63 @@ class JSON {
     enum RootType   { Object, Array, Undefined };
     enum ValueType  { String, Bool, Float };
 
-    RootType                    GetType();
-    cJSON*                      GetRoot();
-    void                        SetDestructable(bool);
+    RootType                            GetType();
+    cJSON*                              GetRoot();
+    void                                SetDestructable(bool);
 
-    bool                        IsItemExists			(string Key);
+    bool                                IsItemExists            (string Key);
 
-    bool                        IsItemString			(string Key);
-    bool                        IsItemNumber			(string Key);
-    bool                        IsItemBool				(string Key);
+    bool                                IsItemString            (string Key);
+    bool                                IsItemNumber            (string Key);
+    bool                                IsItemBool              (string Key);
 
-    string                      GetItem					  (string Key);
-    double                      GetDoubleItem			(string Key);
-    int                         GetIntItem				(string Key);
-    bool                        GetBoolItem				(string Key);
+    string                              GetItem                 (string Key);
+    double                              GetDoubleItem           (string Key);
+    int                                 GetIntItem              (string Key);
+    bool                                GetBoolItem             (string Key);
 
-    void                        SetItem           (string Key, string Value);
-    void                        SetFloatItem			(string Key, float Value);
-    void                        SetBoolItem				(string Key, bool Value);
+    void                                SetItem                 (string Key, string Value);
+    void                                SetFloatItem            (string Key, float Value);
+    void                                SetBoolItem             (string Key, bool Value);
 
-    vector<string>              GetKeys					();
+    vector<string>                      GetKeys                 ();
 
-    JSON                        Detach					(string Key);
-    void                        Attache					(string Key, JSON);
+    JSON                                Detach                  (string Key);
+    void                                Attache                 (string Key, JSON);
 
-    void                        SetItems				(map<string,string>, cJSON *Item = NULL);
-    void                        SetItems				(vector<pair<string,string>>, cJSON *Item = NULL);
-    map<string,string>					GetItemsForKey			(string Key, bool CaseSensitive = false);
-    map<string,string>					GetItems				(cJSON* = NULL, bool CaseSensitive = false);
-    vector<pair<string,string>> GetItemsUnordered		(cJSON* = NULL, bool CaseSensitive = false);
+    void                                SetItems                (map<string,string>, cJSON *Item = NULL);
+    void                                SetItems                (vector<pair<string,string>>, cJSON *Item = NULL);
+    map<string,string>                  GetItemsForKey          (string Key, bool CaseSensitive = false);
+    map<string,string>                  GetItems                (cJSON* = NULL, bool CaseSensitive = false);
+    vector<pair<string,string>>         GetItemsUnordered       (cJSON* = NULL, bool CaseSensitive = false);
 
-    void								SetObject				(string Key, vector<pair<string,string>> Value);
+    void                                SetObject               (string Key, vector<pair<string,string>> Value);
 
-    void								SetStringArray			(string Key, vector<string> Array);
-    vector<string>						GetStringArray			(string Key = "");
+    void                                SetStringArray          (string Key, vector<string> Array);
+    vector<string>                      GetStringArray          (string Key = "");
 
-	template <typename T> void			SetUintArray			(string Key, vector<T>, uint8_t HexCount = 0);
+    template <typename T> void          SetUintArray            (string Key, vector<T>, uint8_t HexCount = 0);
 
-    void								SetObjectsArray			(string Key, vector<map<string,string>> Value);
-    void								SetObjectsArray			(string Key, vector<vector<pair<string,string>>> Value);
-    vector<map<string,string>>			GetObjectsArray			(string Key = "");
+    void                                SetObjectsArray         (string Key, vector<map<string,string>> Value);
+    void                                SetObjectsArray         (string Key, vector<vector<pair<string,string>>> Value);
+    vector<map<string,string>>          GetObjectsArray         (string Key = "");
     vector<vector<pair<string,string>>> GetObjectsArrayUnordered(string Key = "");
 
-    string								ToString();
+    string                              ToString();
 
-    static string						CreateStringFromVector(vector<string>);
-    template <typename T> static string	CreateStringFromIntVector(vector<T>, uint8_t HexCount = 0);
+    static string                       CreateStringFromVector  (vector<string>);
+    template <typename T> static string CreateStringFromIntVector(vector<T>, uint8_t HexCount = 0);
 
   private:
-	void								AddToMapOrTupple(map<string,string> &, string first, string second, bool CaseSensitive);
-	void								AddToMapOrTupple(vector<pair<string,string>> &, string first, string second, bool CaseSensitive);
+    void                                AddToMapOrTupple        (map<string,string> &, string first, string second, bool CaseSensitive);
+    void                                AddToMapOrTupple        (vector<pair<string,string>> &, string first, string second, bool CaseSensitive);
 
-    template <typename T> void 			SetItemsTemplated		(T Values, cJSON *Item = NULL);
-    template <typename T> T				GetItemsTemplated		(cJSON* = NULL, bool CaseSensitive = false);
-    template <typename T> void			SetObjectsArrayTemplated(string Key, vector<T> Value);
-    template <typename T> vector<T>		GetObjectsArrayTemplated(string Key = "");
+    template <typename T> void          SetItemsTemplated       (T Values, cJSON *Item = NULL);
+    template <typename T> T             GetItemsTemplated       (cJSON* = NULL, bool CaseSensitive = false);
+    template <typename T> void          SetObjectsArrayTemplated(string Key, vector<T> Value);
+    template <typename T> vector<T>     GetObjectsArrayTemplated(string Key = "");
 
-    cJSON 	*Root;
+    cJSON *Root;
     bool	IsDestructable = true;
 };
 
