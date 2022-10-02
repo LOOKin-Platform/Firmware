@@ -52,11 +52,11 @@ void Wireless_t::StopBluetooth() {
 	BLEServer.StopAdvertising();
 }
 
-void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand, bool IsScheduled) {
+void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand, bool IsScheduled, bool InvokeStartIntefaces) {
 	SendBroadcastUpdated(Converter::ToHexString(SensorID, 2), EventID, Operand, IsScheduled);
 }
 
-void Wireless_t::SendBroadcastUpdated(string SensorOrServiceID, string EventID, string Operand, bool IsScheduled) {
+void Wireless_t::SendBroadcastUpdated(string SensorOrServiceID, string EventID, string Operand, bool IsScheduled, bool InvokeStartIntefaces) {
 	if (Device.Status == UPDATING)
 		return;
 
@@ -80,7 +80,9 @@ void Wireless_t::SendBroadcastUpdated(string SensorOrServiceID, string EventID, 
 	{
 		WebServer.UDPSendBroadcast(UpdatedString, IsScheduled);
 		IsEventDrivenStart = true;
-		StartInterfaces();
+		
+		if (InvokeStartIntefaces)
+			StartInterfaces();
 	}
 
 	//BLEServer.StartAdvertising("1" + Converter::ToHexString(SensorID,2) + Value + AdditionalData);

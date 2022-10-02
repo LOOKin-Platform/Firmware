@@ -305,10 +305,10 @@ void Settings_t::eFuse_t::InitFromNVS() {
 	string 		HKSetupID		= Memory.GetString("hksetupid");
 	string 		HKPinCode		= Memory.GetString("hkpincode");
 
-	uint32_t eFuseData1 = 0;
-	uint32_t eFuseData2 = 0;
-	uint32_t eFuseData3 = 0;
-	uint32_t eFuseData4 = 0;
+	uint32_t	eFuseData1 = 0;
+	uint32_t	eFuseData2 = 0;
+	uint32_t	eFuseData3 = 0;
+	uint32_t	eFuseData4 = 0;
 
 	//00810001
 	eFuseData1 = ((uint32_t)DeviceType) << 16;

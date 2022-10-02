@@ -72,7 +72,9 @@ class HomeKit {
 		static hap_cid_t 		FillRemoteACOnly(hap_acc_t *Accessory);
 		static hap_cid_t 		FillRemoteBridge(hap_acc_t *Accessory);
 
-		static void 			Task(void *);
+		static hap_cid_t 		FillWindowOpener(hap_acc_t *Accessory);
+
+		static void				Task(void *);
 
 		static 					TaskHandle_t TaskHandle;
 		static bool				IsRunning;

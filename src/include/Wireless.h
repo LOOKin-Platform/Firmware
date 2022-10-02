@@ -19,8 +19,8 @@ class Wireless_t {
 		void	StopWiFi();
 		void 	StopBluetooth();
 
-		void 	SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "", bool IsScheduled = true);
-		void 	SendBroadcastUpdated(string ServiceID, string Value, string Operand = "", bool IsScheduled = true);
+		void 	SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "", bool IsScheduled = true, bool InvokeStartIntefaces = false);
+		void 	SendBroadcastUpdated(string ServiceID, string Value, string Operand = "", bool IsScheduled = true, bool InvokeStartIntefaces = false);
 		bool 	IsPeriodicPool();
 
 		uint8_t GetBLEStatus();

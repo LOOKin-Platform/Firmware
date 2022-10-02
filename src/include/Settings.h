@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 88);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(2, 43, 89);
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -137,56 +137,56 @@ class Settings_t {
 				{ 0x8, { 294, 6 }}
 			};
 
-			const uint8_t					IntervalID 		= 0x8;
+			const uint8_t					IntervalID 				= 0x8;
 		} Wireless;
 
 		struct {
-			const uint8_t 					MaxIRItemSignals= 16;
-			const uint32_t					StatusSaveDelay	= 10000000; // 10 seconds
+			const uint8_t 					MaxIRItemSignals		= 16;
+			const uint32_t					StatusSaveDelay			= 10000000; // 10 seconds
 
 		} Data;
 
 		struct {
-			const uint8_t 					SystemLogSize	= 16;
-			const uint8_t 					EventsLogSize	= 32;
+			const uint8_t 					SystemLogSize			= 16;
+			const uint8_t 					EventsLogSize			= 32;
 		} Log;
 
 		struct {
-			const uint16_t					Interval 		= 1000;
+			const uint16_t					Interval 				= 1000;
 
-			const uint32_t					MQTTInterval		= 90*1000; 		// 90 секунд
-			const uint32_t					ServerPingInterval	= 30*60*1000; 	// 30 минут
-			const uint32_t					RouterPingInterval 	= 10*60*1000;	// 10 минут
+			const uint32_t					MQTTInterval			= 90*1000; 		// 90 секунд
+			const uint32_t					ServerPingInterval		= 30*60*1000; 	// 30 минут
+			const uint32_t					RouterPingInterval 		= 10*60*1000;	// 10 минут
 
 			struct {
-				const uint16_t				Inverval 		= 4000;
-				const uint8_t 				OverheatTemp	= 100;
-				const uint8_t				ChilledTemp		= 77;
+				const uint16_t				Inverval 				= 4000;
+				const uint8_t 				OverheatTemp			= 100;
+				const uint8_t				ChilledTemp				= 77;
 			} OverHeat;
 
 			struct {
-				const uint8_t				ActionsDelay	= 5;
-				const uint8_t				DefaultValue	= 0xFF;
+				const uint8_t				ActionsDelay			= 5;
+				const uint8_t				DefaultValue			= 0xFF;
 			} NetworkMap;
 		} Pooling;
 
 		struct {
-			const uint16_t					ActionsDelay	= 2000;
+			const uint16_t					ActionsDelay			= 2000;
 
-			const uint16_t					APSuccessDelay	= 2500;
-			const uint16_t					STASuccessADelay= 5000;
+			const uint16_t					APSuccessDelay			= 2500;
+			const uint16_t					STASuccessADelay		= 5000;
 
-			const uint8_t					AttemptsToReset	= 10;
-			const uint8_t					AttemptsToRevert= 20;
+			const uint8_t					AttemptsToReset			= 10;
+			const uint8_t					AttemptsToRevert		= 20;
 		} BootAndRestore;
 
 		struct Devices_t {
 			public:
-				static constexpr uint8_t	Duo				= 0x02;
-				static constexpr uint8_t	Plug 			= 0x03;
-				static constexpr uint8_t	WindowOpener 	= 0x04;
-				static constexpr uint8_t	Remote			= 0x81;
-				static constexpr uint8_t	Motion			= 0x82;
+				static constexpr uint8_t	Duo						= 0x02;
+				static constexpr uint8_t	Plug 					= 0x03;
+				static constexpr uint8_t	WindowOpener 			= 0x04;
+				static constexpr uint8_t	Remote					= 0x81;
+				static constexpr uint8_t	Motion					= 0x82;
 
 				map<uint8_t,string> Literaly = {
 					{ Duo			, "Duo"				},
@@ -351,77 +351,77 @@ class Settings_t {
 
 		struct GPIOData_t {
 			struct Switch_t {
-				gpio_num_t			GPIO 			= GPIO_NUM_0;
+				gpio_num_t					GPIO					= GPIO_NUM_0;
 			};
 
 			struct MultiSwitch_t {
-				vector<gpio_num_t>	GPIO			= vector<gpio_num_t>();
+				vector<gpio_num_t>			GPIO					= vector<gpio_num_t>();
 			};
 
 			struct Color_t {
 				struct Item_t {
-					gpio_num_t			GPIO 			= GPIO_NUM_0;
-					ledc_channel_t		Channel 		= LEDC_CHANNEL_MAX;
-					uint16_t			Frequency		= 0;
-					bool				IsInverted		= false;
-					uint8_t				MaxDuty			= 255;
+					gpio_num_t				GPIO 					= GPIO_NUM_0;
+					ledc_channel_t			Channel 				= LEDC_CHANNEL_MAX;
+					uint16_t				Frequency				= 0;
+					bool					IsInverted				= false;
+					uint8_t					MaxDuty					= 255;
 				};
 
-				ledc_timer_t		Timer			= LEDC_TIMER_MAX;
-				Item_t				Red, Green, Blue, White;
+				ledc_timer_t				Timer					= LEDC_TIMER_MAX;
+				Item_t						Red, Green, Blue, White;
 			};
 
 			struct IR_t {
-				gpio_num_t			ReceiverGPIO38	= GPIO_NUM_0;
-				gpio_num_t			ReceiverGPIO56	= GPIO_NUM_0;
+				gpio_num_t					ReceiverGPIO38			= GPIO_NUM_0;
+				gpio_num_t					ReceiverGPIO56			= GPIO_NUM_0;
 
-				gpio_num_t			SenderGPIO		= GPIO_NUM_0;
+				gpio_num_t					SenderGPIO				= GPIO_NUM_0;
 
-				vector<gpio_num_t>	SenderGPIOs		= vector<gpio_num_t>();
-				gpio_num_t			SenderGPIOExt	= GPIO_NUM_0;
+				vector<gpio_num_t>			SenderGPIOs				= vector<gpio_num_t>();
+				gpio_num_t					SenderGPIOExt			= GPIO_NUM_0;
 
 			};
 
 			struct Temperature_t {
-				uint8_t				I2CAddress		= 0x00;
+				uint8_t						I2CAddress				= 0x00;
 			};
 
 			struct Motion_t {
-				uint32_t			PoolInterval	= 50;
-				adc1_channel_t		ADCChannel		= ADC1_CHANNEL_MAX;
+				uint32_t					PoolInterval			= 50;
+				adc1_channel_t				ADCChannel				= ADC1_CHANNEL_MAX;
 			};
 
 			struct WindowOpener_t {
 				struct GPIO_t {
-					gpio_num_t			GPIO 			= GPIO_NUM_0;
-					ledc_channel_t		Channel 		= LEDC_CHANNEL_MAX;
-					uint16_t			Frequency		= 0;
-					ledc_timer_bit_t	Resolution		= LEDC_TIMER_BIT_MAX;
+					gpio_num_t				GPIO 					= GPIO_NUM_0;
+					ledc_channel_t			Channel 				= LEDC_CHANNEL_MAX;
+					uint16_t				Frequency				= 0;
+					ledc_timer_bit_t		Resolution				= LEDC_TIMER_BIT_MAX;
 				};
 
-				GPIO_t				MotorGPIO1;
-				GPIO_t				MotorGPIO2;
+				GPIO_t						MotorGPIO1;
+				GPIO_t						MotorGPIO2;
 
-				gpio_num_t			Button1			= GPIO_NUM_0;
-				gpio_num_t			Button2			= GPIO_NUM_0;
+				gpio_num_t					Button1					= GPIO_NUM_0;
+				gpio_num_t					Button2					= GPIO_NUM_0;
 			};
 
 			struct Indicator_t {
 				enum IndicatorType { RGB, ws2812, RGBFrequencyControl};
 
-				ledc_timer_t		Timer	= LEDC_TIMER_MAX;
+				ledc_timer_t				Timer					= LEDC_TIMER_MAX;
 				Settings_t::GPIOData_t::Color_t::Item_t
 									Red, Green, Blue, White, Alternative, SwitchLedOn;
 
-				IndicatorType		Type = IndicatorType::RGB;
+				IndicatorType				Type 					= IndicatorType::RGB;
 
-				timer_group_t 		ISRTimerGroup = TIMER_GROUP_MAX;
-				timer_idx_t			ISRTimerIndex = TIMER_MAX;
+				timer_group_t 				ISRTimerGroup 			= TIMER_GROUP_MAX;
+				timer_idx_t					ISRTimerIndex 			= TIMER_MAX;
 			};
 
 			struct PowerMeter_t {
-				adc1_channel_t 		ConstPowerChannel 	= ADC1_CHANNEL_MAX;
-				adc1_channel_t 		BatteryPowerChannel = ADC1_CHANNEL_MAX;
+				adc1_channel_t 				ConstPowerChannel 		= ADC1_CHANNEL_MAX;
+				adc1_channel_t 				BatteryPowerChannel 	= ADC1_CHANNEL_MAX;
 			};
 
 			struct Touch_t {

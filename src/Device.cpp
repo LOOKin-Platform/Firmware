@@ -67,6 +67,10 @@ void Device_t::Init() {
 			PowerModeVoltage 	= +5;
 			SensorMode 			= GetSensorModeFromNVS();
 			break;
+
+		case Settings.Devices.WindowOpener:
+			PowerModeVoltage 	= +5;
+			break;
 	}
 
 	PowerManagement::SetPMType(GetEcoFromNVS(), (PowerMode == DevicePowerMode::CONST));
@@ -340,7 +344,6 @@ bool Device_t::POSTTimezone(map<string,string> Params) {
 	return false;
 }
 
-
 bool Device_t::POSTFirmwareVersion(map<string,string> Params, WebServer_t::Response& Response, httpd_req_t *Request, WebServer_t::QueryTransportType TransportType) {
 	if (Params.count("firmware") == 0)
 		return false;
@@ -475,7 +478,6 @@ bool Device_t::POSTEco(map<string,string> Params) {
 	return false;
 }
 
-
 bool Device_t::POSTIsAutoUpdate(Query_t& Query) {
 	JSON JSONObject(Query.GetBody());
 
@@ -491,7 +493,6 @@ bool Device_t::POSTIsAutoUpdate(Query_t& Query) {
 
 	return false;
 }
-
 
 string Device_t::TypeToString() {
 	return Type.ToString();

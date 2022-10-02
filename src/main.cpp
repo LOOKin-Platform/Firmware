@@ -58,7 +58,6 @@ const char tag[] = "Main";
 
 void app_main(void) {
 	NVS::Init();
-
 	/*
 	IRLib::TestAll();
 	FreeRTOS::Sleep(5000);

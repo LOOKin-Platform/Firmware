@@ -36,9 +36,13 @@ void HomeKit::Init() {
 
 	uint8_t NewMode = 0;
 
-	if (LoadedMode == 0) { // check and set if there first start of new device
+	if (LoadedMode == 0) // check and set if there first start of new device
+	{
 		if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
 			NewMode = 1;
+
+		if (Settings.eFuse.Type == Settings.Devices.WindowOpener)
+			NewMode = 2;
 
 		if (LoadedMode != NewMode) {
 			Memory.SetInt8Bit(NVS_HOMEKIT_AREA_MODE, NewMode);
@@ -88,8 +92,6 @@ bool HomeKit::IsEnabledForDevice() {
 bool HomeKit::IsExperimentalMode() {
 	return (Mode == ModeEnum::EXPERIMENTAL);
 }
-
-
 
 /* Mandatory identify routine for the accessory (bridge)
  * In a real accessory, something like LED blink should be implemented
@@ -545,7 +547,6 @@ bool HomeKit::SetConfiguredName(char* Value, uint16_t AID, hap_char_t *Char, uin
 	return true;
 }
 
-
 void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
 	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value, "", false, true);
 
@@ -569,8 +570,6 @@ void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t Functi
 
     IRCommand->Execute(0xEF, Operand.c_str());
 }
-
-
 
 /* A dummy callback for handling a write on the "On" characteristic of Fan.
  * In an actual accessory, this should control the hardware
@@ -709,14 +708,16 @@ hap_cid_t HomeKit::FillAccessories() {
 	hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
 
 	switch (Settings.eFuse.Type) {
-		case 0x81:
+		case Settings_t::Devices_t::Remote:
 			return (Mode == ModeEnum::BASIC) ? FillRemoteACOnly(Accessory) : FillRemoteBridge(Accessory);
+			break;
+		case Settings_t::Devices_t::WindowOpener:
+			return FillWindowOpener(Accessory);
 			break;
 	}
 
 	return HAP_CID_NONE;
 }
-
 
 hap_cid_t HomeKit::FillRemoteACOnly(hap_acc_t *Accessory) {
 	string 		NameString 	=  "";
@@ -1054,6 +1055,67 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 	}
 
 	return HAP_CID_BRIDGE;
+}
+
+hap_cid_t HomeKit::FillWindowOpener(hap_acc_t *Accessory) {
+	string 		NameString 	=  "";
+	uint16_t 	UUID 		= 0;
+	uint16_t	Status		= 0;
+
+	hap_acc_t* ExistedAccessory = hap_get_first_acc();
+
+	if (ExistedAccessory == NULL)
+	{
+		NameString = Converter::CutMultibyteString(NameString, 16);
+
+		if (NameString == "")
+			NameString = Device.TypeToString() + " " + Device.IDToString();
+
+		static AccessoryData_t AccessoryData(NameString, Device.ModelToString(), Device.IDToString());
+
+		hap_acc_cfg_t cfg = {
+			.name 				= AccessoryData.Name,
+			.model 				= AccessoryData.Model,
+			.manufacturer 		= "LOOKin",
+			.serial_num 		= AccessoryData.ID,
+			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
+			.hw_rev 			= NULL,
+			.pv 				= "1.1.0",
+			.cid 				= HAP_CID_WINDOW,
+			.identify_routine 	= BridgeIdentify,
+		};
+
+		Accessory = hap_acc_create(&cfg);
+
+		ACOperand Operand((uint32_t)Status);
+
+		hap_serv_t *ServiceWindowOpener;
+
+		uint8_t CurrentPos = 0;
+		if (Sensor_t::GetSensorByID(0x90) != nullptr)
+			CurrentPos = (uint8_t)Sensor_t::GetSensorByID(0x90)->GetValue("Position");
+
+		ServiceWindowOpener = hap_serv_window_create(CurrentPos, CurrentPos, 2);
+		hap_serv_add_char(ServiceWindowOpener, hap_char_name_create("Window Opener"));
+		hap_serv_set_priv(ServiceWindowOpener, (void *)(uint32_t)UUID);
+		hap_serv_set_write_cb(ServiceWindowOpener, WriteCallback);
+		hap_acc_add_serv(Accessory, ServiceWindowOpener);
+
+		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
+		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
+
+		hap_acc_add_wifi_transport_service(Accessory, 0);
+
+		hap_add_accessory(Accessory);
+	}
+	else
+	{
+		hap_serv_t *ServiceWindowOpener = hap_acc_get_serv_by_uuid(ExistedAccessory, HAP_SERV_UUID_HEATER_COOLER);
+		if (ServiceWindowOpener != NULL)
+			hap_serv_set_priv(ServiceWindowOpener, (void *)(uint32_t)UUID);
+	}
+
+	return HAP_CID_WINDOW;
 }
 
 void HomeKit::Task(void *) {

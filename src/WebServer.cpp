@@ -165,7 +165,7 @@ void WebServer_t::UDPStart() {
 	ESP_LOGD(tag, "UDPServer -> Start");
 
 	if (UDPListenerTaskHandle == NULL) {
-		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 3072, 6);
+		UDPListenerTaskHandle = FreeRTOS::StartTask(UDPListenerTask , "UDPListenerTask" , NULL, 3072, 5);
 	}
 }
 
