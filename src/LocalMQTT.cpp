@@ -154,6 +154,8 @@ esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t even
 			::esp_mqtt_client_subscribe(client, string(Settings.LocalMQTT.TopicPrefix + "broadcast").c_str(), Settings.LocalMQTT.DefaultQOS);
 
 			SendMessage(WebServer.UDPAliveBody(), Settings.LocalMQTT.TopicPrefix + "broadcast");
+
+			RemoteControl.ChangeSecuredType(false);
 			break;
 
         case MQTT_EVENT_DISCONNECTED:

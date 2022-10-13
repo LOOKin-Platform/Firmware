@@ -16,7 +16,8 @@
 			"vector": "cpp",
 			"map": "cpp",
 			"algorithm": "cpp",
-			"functional": "cpp"
+			"functional": "cpp",
+			"string": "cpp"
 		}
 	}
 }

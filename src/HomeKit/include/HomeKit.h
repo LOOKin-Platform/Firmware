@@ -58,6 +58,7 @@ class HomeKit {
 		static bool				RotationSpeed		(float		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 		static bool				TargetFanState		(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 		static bool				SwingMode			(bool		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
+		static bool				TargetPosition		(uint8_t	Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 
 		static bool				GetConfiguredName	(char*		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);
 		static bool				SetConfiguredName	(char*		Value	, uint16_t AID, hap_char_t *Char, uint8_t Iterator = 0);

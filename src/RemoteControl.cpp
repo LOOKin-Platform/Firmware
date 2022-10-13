@@ -74,6 +74,32 @@ void RemoteControl_t::Reconnect(uint16_t Delay) {
 	}
 }
 
+void RemoteControl_t::ChangeSecuredType(bool sIsSecuredFlag) {
+	if (!IsCredentialsSet())
+		return;
+	
+	if (Status == UNACTIVE)
+		return;
+
+	if (sIsSecuredFlag && IsSecured())
+		return;
+
+	if (!sIsSecuredFlag && !IsSecured())
+		return;
+	
+	esp_mqtt_client_config_t Config;
+
+	Config = CreateConfig();
+
+	Config.uri 			= (!sIsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
+
+	IsSecuredFlag = sIsSecuredFlag;
+
+	esp_mqtt_set_config(ClientHandle, &Config);
+	esp_mqtt_client_reconnect(ClientHandle);
+}
+
+
 
 string RemoteControl_t::GetClientID() {
 	return Username;
@@ -260,6 +286,10 @@ bool RemoteControl_t::IsCredentialsSet() {
 	return (Username != "" && Password != "");
 }
 
+bool RemoteControl_t::IsSecured() {
+	return IsSecuredFlag;
+}
+
 string RemoteControl_t::GetStatusString() {
 	switch (RemoteControl_t::GetStatus())
 	{
@@ -280,8 +310,10 @@ RemoteControl_t::Status_t RemoteControl_t::GetStatus() {
 esp_mqtt_client_config_t RemoteControl_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
+	IsSecuredFlag = !(HomeKit::IsExperimentalMode() || LocalMQTT.GetIsActive());
+
 	//Config.host			= "mqtt.look-in.club";
-	Config.uri 			= (HomeKit::IsExperimentalMode() || LocalMQTT.GetIsActive()) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
+	Config.uri 			= (!IsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
 	Config.port			= 8883;
 
 	Config.event_handle = mqtt_event_handler;
@@ -339,7 +371,7 @@ esp_mqtt_client_config_t RemoteControl_t::ConfigDefault() {
 	Config.refresh_connection_after_ms
 								= 0;
 
-    Config.task_stack			= 4096;//6144;//8192;//8192;
+    Config.task_stack			= 5120;//6144;//8192;//8192;
 	Config.buffer_size			= 3072;
 	Config.out_buffer_size		= 0; // if 0 then used buffer_size
 	Config.task_prio			= 6;

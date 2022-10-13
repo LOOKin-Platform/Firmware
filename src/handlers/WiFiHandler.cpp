@@ -152,6 +152,10 @@ static void GatewayPingSuccess(esp_ping_handle_t hdl, void *args)
 
 void WiFiUptimeHandler::RemoteControlStartTimerCallback(void *Param) {
 	LocalMQTT.Start();
+
+	if (LocalMQTT.IsCredentialsSet() && LocalMQTT.GetIsActive())
+		FreeRTOS::Sleep(2500);
+
 	RemoteControl.Start();
 }
 

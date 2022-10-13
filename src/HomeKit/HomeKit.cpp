@@ -513,6 +513,29 @@ bool HomeKit::SwingMode(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iter
     return false;
 }
 
+bool HomeKit::TargetPosition(uint8_t Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+	ESP_LOGE("TargetPosition", "UUID: %04X, Value: %d, Iterator: %d", AID, Value, Iterator);
+
+    if (Settings.eFuse.Type == Settings.Devices.WindowOpener) {
+    	if (Iterator > 0) return true;
+
+		hap_val_t ValueForPosition;
+		ValueForPosition.u = Value;
+
+		CommandWindowOpener_t* WindowOpener = (CommandWindowOpener_t *)Command_t::GetCommandByID(0x10);
+
+		if (WindowOpener != nullptr) 
+		{
+			WindowOpener->SetPosition(Value);
+			HomeKitUpdateCharValue(AID, HAP_SERV_UUID_WINDOW, HAP_CHAR_UUID_TARGET_POSITION, ValueForPosition);
+			return true;
+		}
+	}
+
+    return false;
+}
+
+
 bool HomeKit::GetConfiguredName(char* Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
 
 
@@ -689,6 +712,10 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
                 }
         	}
         }
+		else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_POSITION)) {
+			TargetPosition(write->val.u, AID, write->hc, i);
+            *(write->status) = HAP_STATUS_SUCCESS;
+		}
         else {
             *(write->status) = HAP_STATUS_RES_ABSENT;
         }
@@ -1094,6 +1121,9 @@ hap_cid_t HomeKit::FillWindowOpener(hap_acc_t *Accessory) {
 		uint8_t CurrentPos = 0;
 		if (Sensor_t::GetSensorByID(0x90) != nullptr)
 			CurrentPos = (uint8_t)Sensor_t::GetSensorByID(0x90)->GetValue("Position");
+
+		if (CurrentPos > 100)
+			CurrentPos = 100;
 
 		ServiceWindowOpener = hap_serv_window_create(CurrentPos, CurrentPos, 2);
 		hap_serv_add_char(ServiceWindowOpener, hap_char_name_create("Window Opener"));

@@ -89,7 +89,6 @@ class Sensor_t {
 	protected:
 		bool							IsHomeKitEnabled();
 		bool 							IsHomeKitExperimental();
-
 };
 
 extern Settings_t 	Settings;

@@ -949,12 +949,18 @@ class CommandIR_t : public Command_t {
 					uint16_t Codeset = Converter::UintFromHexString<uint16_t>(Params["operand"].substr(0, 4));
 					uint16_t Operand = Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4));
 
-					((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Operand);
+					pair<bool, uint16_t> StatusSetResult = ((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Operand);
 
 					if (ACOperand::IsOnSeparateForCodeset(Codeset) && Operand == 0xFFF0)
 						CommandIR->TXSendAddPause(500);
 
-					Sensor_t::LocalMQTTSend(Params["operand"], "/ir/ac/sent");
+					if (StatusSetResult.first && LocalMQTT_t::GetStatus() == LocalMQTT_t::CONNECTED) 
+					{
+						string DeviceID =  ((DataRemote_t*)Data)->GetUUIDByExtraValue(Codeset);
+
+						if (DeviceID != "")
+							Sensor_t::LocalMQTTSend("{\"UUID\": \""+DeviceID+"\", \"Status\":\"" + Converter::ToHexString(StatusSetResult.second,4) + "\"}", "/ir/localremote/sent");
+					}
 				}
 		}
 

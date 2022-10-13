@@ -1224,6 +1224,16 @@ class DataRemote_t : public DataEndpoint_t {
 				return "single";
 		}
 
+		string GetUUIDByExtraValue(uint16_t Extra) {
+			string 		DeviceID	= "";
+
+			for (auto& IRDeviceCacheItem : IRDevicesCache)
+				if (IRDeviceCacheItem.Extra == Extra)
+					return IRDeviceCacheItem.DeviceID;
+
+			return "";
+		}
+
 		pair<bool,uint16_t> SetExternalStatusForAC(uint16_t Codeset, uint16_t NewStatus) {
 			uint16_t 	Status 		= 0x0;
 			string 		DeviceID	= "";
@@ -1393,6 +1403,8 @@ class DataRemote_t : public DataEndpoint_t {
 
 			Wireless.SendBroadcastUpdated(0x87, "FE", DeviceID + Converter::ToHexString(Status,4));
 
+			if (DeviceType != 0xEF)
+				Sensor_t::LocalMQTTSend("{\"UUID\": \""+DeviceID+"\", \"Status\":\"" + Converter::ToHexString(Status,4) + "\"}", "/ir/localremote/sent");
 		}
 
 		void HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {
@@ -1512,13 +1524,9 @@ class DataRemote_t : public DataEndpoint_t {
 					HAPValue.f = (float)Value;
 					//UpdateHomeKitCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, HAPValue);
 
-					ESP_LOGE("temperature", "%d", Value);
-
 					const hap_val_t* IsActive 		= HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE);
 					if (IsActive->b)
 					{
-						ESP_LOGE("FURTHER", "%d", (uint8_t)(IsActive->b));
-
 						const hap_val_t* CurrentMode 	= HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE);
 
 						if (CurrentMode != NULL)

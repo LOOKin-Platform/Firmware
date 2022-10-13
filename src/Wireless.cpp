@@ -69,8 +69,9 @@ void Wireless_t::SendBroadcastUpdated(string SensorOrServiceID, string EventID, 
 		if (LocalMQTT.GetStatus() == LocalMQTT_t::CONNECTED) {
 			Sensor_t* Sensor = Sensor_t::GetSensorByID(Converter::UintFromHexString<uint8_t>(SensorOrServiceID));
 
-			if (Sensor != nullptr)
+			if (Sensor != nullptr) {
 				LocalMQTT.SendMessage(Sensor->RootSensorJSON(), "/sensors/" + Converter::ToLower(Sensor->Name));
+			}
 		}
 
 		if (RemoteControl.GetStatus() == RemoteControl_t::CONNECTED)

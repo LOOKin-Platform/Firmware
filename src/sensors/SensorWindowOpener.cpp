@@ -52,8 +52,18 @@ class SensorWindowOpener_t : public Sensor_t {
 		
 		void Update() override
 		{
-			Wireless.SendBroadcastUpdated(ID, "03", Converter::ToHexString(GetValue("Position"),8));
+			uint8_t Position = GetValue("Position");
+
+			Wireless.SendBroadcastUpdated(ID, "03", Converter::ToHexString(Position,8));
 			Automation.SensorChanged(ID);
+
+			if (IsHomeKitEnabled())
+			{
+				hap_val_t ValueForPosition;
+				ValueForPosition.u = Position;
+
+				HomeKitUpdateCharValue(0, HAP_SERV_UUID_WINDOW, HAP_CHAR_UUID_CURRENT_POSITION, ValueForPosition);
+			}
 		}
 
 		uint32_t ReceiveValue(string Key = "Primary") override {

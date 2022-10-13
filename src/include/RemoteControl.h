@@ -26,20 +26,22 @@ class RemoteControl_t {
 	public:
 		enum Status_t { UNACTIVE, STARTED, CONNECTED, ERROR};
 
-		RemoteControl_t					(string Username = "", string Password = "");
+		RemoteControl_t		(string Username = "", string Password = "");
 
-		void SetCredentials				(string Username = "", string Password = "");
-		void ChangeOrSetCredentialsBLE	(string Username = "", string Password = "");
+		void 				SetCredentials				(string Username = "", string Password = "");
+		void 				ChangeOrSetCredentialsBLE	(string Username = "", string Password = "");
 
-		void Init();
+		void 				Init();
 
-		void Start();
-		void Stop();
-		void Reconnect(uint16_t Delay = 1000);
+		void 				Start();
+		void 				Stop();
+		void 				Reconnect(uint16_t Delay = 1000);
 
-		string GetStatusString();
+		void 				ChangeSecuredType(bool IsSecured);
 
-		string GetClientID();
+		string 				GetStatusString();
+
+		string 				GetClientID();
 
 		static esp_err_t 	mqtt_event_handler(esp_mqtt_event_handle_t event);
 
@@ -51,6 +53,7 @@ class RemoteControl_t {
 		static void 		EndChunk 	(string ChunkHash, int MessageID = 0,uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
 
 		static bool 		IsCredentialsSet();
+		static bool			IsSecured();
 		static Status_t 	GetStatus();
 
 	private:
@@ -61,6 +64,8 @@ class RemoteControl_t {
 
 		static Status_t		Status;
 		static uint8_t		ConnectionTries;
+
+		static inline bool	IsSecuredFlag = true;
 
 		esp_mqtt_client_config_t CreateConfig();
 		esp_mqtt_client_config_t ConfigDefault();

@@ -81,6 +81,7 @@ void app_main(void) {
 	Device.Init();
 	Network.Init();
 	Automation.Init();
+
 	LocalMQTT.Init();
 	RemoteControl.Init();
 
