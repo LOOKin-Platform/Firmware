@@ -186,13 +186,13 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		 */
 	protected:
 		virtual void		onStarted(NimBLEServer *pServer) { };
-		virtual void		onConnect(NimBLEServer* pServer) override;
-		virtual void		onDisconnect(NimBLEServer* pServer) override;
+		virtual void		onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override;
+		virtual void		onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override;
 
-		virtual void		onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) override;
+		virtual void		onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) override;
 
 		virtual uint32_t	onPassKeyRequest() override;
-		virtual void		onAuthenticationComplete(ble_gap_conn_desc* desc) override;
+		virtual void		onAuthenticationComplete(NimBLEConnInfo& connInfo) override;
 		virtual bool		onConfirmPIN(uint32_t pass_key) override;
 };
 

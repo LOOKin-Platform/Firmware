@@ -54,6 +54,7 @@ vector<Command_t*> Command_t::GetCommandsForDevice() {
 			break;
 		case Settings.Devices.Remote:
 			Commands = { new CommandIR_t(), new CommandBLE_t() };
+			break;
 		case Settings.Devices.WindowOpener:
 			if (Settings.eFuse.Model == 0xF0)
 				Commands = { new CommandDriventWindowOpener_t() };

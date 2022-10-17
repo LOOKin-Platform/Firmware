@@ -706,28 +706,28 @@ size_t BLEServer_t::Write(const uint8_t *buffer, size_t size) {
 	return n;
 }
 
-void BLEServer_t::onConnect(NimBLEServer* pServer) {
+void BLEServer_t::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
 	if (!(pServer->getAdvertising()->isAdvertising()))
 		BLEDevice::startAdvertising();
 
 	this->connected = true;
 }
 
-void BLEServer_t::onDisconnect(NimBLEServer* pServer) {
+void BLEServer_t::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
 	this->connected = false;
 
 	//BLEDevice::startAdvertising();
 }
 
-void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
-	if (((me->getUUID().toString() == "0x4000") || (me->getUUID().toString() == "0x5000")) && GetRSSIForConnection(desc->conn_handle) < Settings.Bluetooth.RSSILimit)
+void BLEServer_t::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
+	if (((pCharacteristic->getUUID().toString() == "0x4000") || (pCharacteristic->getUUID().toString() == "0x5000")) && GetRSSIForConnection(connInfo.getConnHandle()) < Settings.Bluetooth.RSSILimit)
 	{
-		ESP_LOGE(Tag ,"RSSI so small: %d", GetRSSIForConnection(desc->conn_handle));
+		ESP_LOGE(Tag ,"RSSI so small: %d", GetRSSIForConnection(connInfo.getConnHandle()));
 	}
 
-	if (me->getUUID().toString() == "0x4000") // GATTDeviceWiFiCallback
+	if (pCharacteristic->getUUID().toString() == "0x4000") // GATTDeviceWiFiCallback
 	{
-		string WiFiData = me->getValue();
+		string WiFiData = pCharacteristic->getValue();
 
 		if (WiFiData.length() > 0)
 		{
@@ -762,11 +762,11 @@ void BLEServer_t::onWrite(BLECharacteristic* me, ble_gap_conn_desc* desc) {
 		}
 	}
 
-	if (me->getUUID().toString() == "0x5000") // GATTDeviceMQTTCallback
+	if (pCharacteristic->getUUID().toString() == "0x5000") // GATTDeviceMQTTCallback
 	{
 		//return os_mbuf_append(ctxt->om, Result.c_str(), Result.size()) == 0 ? 0 : BLE_ATT_ERR_INSUFFICIENT_RES;
 
-		string MQTTData = me->getValue();
+		string MQTTData = pCharacteristic->getValue();
 
 		if (MQTTData.length() > 0)
 		{
@@ -823,11 +823,11 @@ uint32_t BLEServer_t::onPassKeyRequest() {
 };
 
 // Pairing process complete, we can check the results in ble_gap_conn_desc
-void BLEServer_t::onAuthenticationComplete(ble_gap_conn_desc* desc){
-	if(!desc->sec_state.encrypted) {
-		printf("Encrypt connection failed - disconnecting for conn_handle %d \n", desc->conn_handle);
+void BLEServer_t::onAuthenticationComplete(NimBLEConnInfo& connInfo){ //
+	if(!connInfo.isEncrypted()) {
+		printf("Encrypt connection failed - disconnecting for conn_handle %d \n",  connInfo.getConnHandle() );
 		// Find the client with the connection handle provided in desc
-		NimBLEDevice::createServer()->disconnect(desc->conn_handle);
+		NimBLEDevice::createServer()->disconnect(connInfo.getConnHandle());
 		return;
 	}
 }
