@@ -156,7 +156,7 @@ class Settings_t {
 
 			const uint32_t					MQTTInterval			= 90*1000; 		// 90 секунд
 			const uint32_t					ServerPingInterval		= 30*60*1000; 	// 30 минут
-			const uint32_t					RouterPingInterval 		= 10*60*1000;	// 10 минут
+			const uint32_t					RouterPingInterval 		= 2*60*1000;	// 10 минут
 
 			struct {
 				const uint16_t				Inverval 				= 4000;
