@@ -5,7 +5,7 @@
  */
 #include "Globals.h"
 #include "Device.h"
-#include "HomeKit.h"
+#include "Matter.h"
 #include "BootAndRestore.h"
 #include "NimBLEDevice.h"
 

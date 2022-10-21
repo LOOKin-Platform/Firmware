@@ -26,10 +26,6 @@ using namespace std;
 
 #define ARP_TABLE_SIZE 256
 
-extern "C" {
-	void app_main(void);
-}
-
 Settings_t 			Settings;
 
 WiFi_t				WiFi;
@@ -52,11 +48,10 @@ vector<Command_t*>	Commands;
 RemoteControl_t		RemoteControl;
 LocalMQTT_t			LocalMQTT;
 
-
 const char tag[] = "Main";
 
-
-void app_main(void) {
+extern "C" void app_main() 
+{
 	NVS::Init();
 	/*
 	IRLib::TestAll();

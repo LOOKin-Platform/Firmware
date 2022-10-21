@@ -5,7 +5,7 @@
 */
 
 #include "API.h"
-#include <HomeKit.h>
+#include <Matter.h>
 
 uint32_t API::LastAPQueryTime = 0;
 

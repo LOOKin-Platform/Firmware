@@ -483,7 +483,7 @@ void HomeKitUpdateCharValue(string StringAID, const char *ServiceUUID, const cha
 
 void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value)
 {
-	hap_acc_t* Accessory = HomeKit::IsExperimentalMode() ? hap_acc_get_by_aid(AID) : hap_get_first_acc();
+	hap_acc_t* Accessory =  hap_acc_get_by_aid(AID);
 
 	if (Accessory == NULL) 	return;
 

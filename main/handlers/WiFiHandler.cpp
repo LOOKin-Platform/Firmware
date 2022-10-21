@@ -9,7 +9,7 @@
 #include <netdb.h>
 #include <mdns.h>
 
-#include "HomeKit.h"
+#include "Matter.h"
 #include "API.h"
 
 static char HandlerTag[] = "WiFiHandler";

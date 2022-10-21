@@ -5,7 +5,7 @@
 */
 
 #include "HTTPClient.h"
-#include "Globals.h"
+#include "Settings.h"
 
 static char tag[] = "HTTPClient";
 

@@ -1,0 +1,85 @@
+set(SRC_FILES 
+    "API.cpp"
+	"Automation.cpp"
+	"BLEClient.cpp"
+	"BLEServer.cpp"
+	"Commands.cpp"
+	"Device.cpp"
+	"Log.cpp"
+	"main.cpp"
+	"RemoteControl.cpp"
+	"LocalMQTT.cpp"
+	"Network.cpp"
+	"Query.cpp"
+	"Scenarios.cpp"
+	"Sensors.cpp"
+	"Settings.cpp"
+	"Storage.cpp"
+	"Data.cpp"
+	"WebServer.cpp"
+	"Wireless.cpp"
+	"BootAndRestore.cpp")
+
+idf_component_register(
+	PRIV_INCLUDE_DIRS
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/bridge-app"
+	"${CMAKE_SOURCE_DIR}/main/include"
+	"${CMAKE_SOURCE_DIR}/main/Matter/include"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/providers"
+	INCLUDE_DIRS
+	"${CMAKE_SOURCE_DIR}/main/include"
+	"${CMAKE_SOURCE_DIR}/main/Matter/include"
+	"${CMAKE_SOURCE_DIR}/main/Matter/Apps"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/util"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/nlio/repo/include"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/nlassert/repo/include"
+	SRCS
+	"${SRC_FILES}"
+	"${CMAKE_SOURCE_DIR}/main"
+	"${CMAKE_SOURCE_DIR}/main/Matter"
+	"${CMAKE_SOURCE_DIR}/main/Matter/Apps"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/bridge-app/zap-generated"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/app-common/app-common/zap-generated/attributes"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/app-common/app-common/zap-generated"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/util"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/reporting"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/access-control-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/administrator-commissioning-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/basic"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/bridged-device-basic-information-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/level-control"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/identify-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/diagnostic-logs-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/ethernet-network-diagnostics-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/localization-configuration-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/time-format-localization-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/fixed-label-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/user-label-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/thread-network-diagnostics-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/wifi-network-diagnostics-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/software-diagnostics-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/switch-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/general-diagnostics-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/group-key-mgmt-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/descriptor"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/network-commissioning"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/on-off-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/operational-credentials-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/general-commissioning-server"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/platform/esp32/route_hook"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/platform/esp32/common"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/providers"
+	PRIV_REQUIRES chip QRCode bt
+	REQUIRES 
+	"bt Converter DateTime HTTPClient libJSON esp_http_server WiFi OTA HardwareIO ISR RMT IRLib mqtt UART Sleep mdns PowerManagement esp32-ds18b20 esp32-owb esp-bme280 hdc1080 NimBLE ds18b20-wrapper ws2812")
+
+target_compile_options(${COMPONENT_LIB} PRIVATE "-D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG")
+
+set_property(TARGET ${COMPONENT_LIB} PROPERTY CXX_STANDARD 17)
+target_compile_options(${COMPONENT_LIB} PRIVATE "-DCHIP_HAVE_CONFIG_H")
+target_compile_options(${COMPONENT_LIB} PUBLIC
+           "-DCHIP_ADDRESS_RESOLVE_IMPL_INCLUDE_HEADER=<lib/address_resolve/AddressResolve_DefaultImpl.h>")
+
+flashing_script()

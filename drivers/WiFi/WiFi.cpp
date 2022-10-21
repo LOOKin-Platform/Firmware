@@ -7,8 +7,6 @@
 #include "WiFi.h"
 #include "PowerManagement.h"
 
-#include "HomeKit.h"
-
 static char 	tag[]						= "WiFi";
 
 string			WiFi_t::STAHostName 		= "LOOK.in Device";

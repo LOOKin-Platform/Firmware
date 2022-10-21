@@ -5,7 +5,7 @@
 */
 #include "Globals.h"
 #include "Data.h"
-#include "HomeKit.h"
+#include "Matter.h"
 
 const char *DataEndpoint_t::Tag 			= "Data_t";
 string		DataEndpoint_t::NVSArea			= "Data";
@@ -405,7 +405,6 @@ void DataEndpoint_t::EraseAll() {
 }
 
 bool DataEndpoint_t::IsHomeKitEnabled() 		{ return HomeKit::IsEnabledForDevice();		}
-bool DataEndpoint_t::IsHomeKitExperimental()	{ return HomeKit::IsExperimentalMode();	}
 
 void DataEndpoint_t::Debug(string Tag) {
     const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);

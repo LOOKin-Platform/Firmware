@@ -5,9 +5,15 @@
 */
 
 #include "OTA.h"
-#include "Globals.h"
+#include "Settings.h"
 #include "HTTPClient.h"
 #include "esp_https_ota.h"
+
+#include "Log.h"
+#include "PowerManagement.h"
+#include "Device.h"
+
+extern Device_t				Device;
 
 static char tag[] = "OTA";
 

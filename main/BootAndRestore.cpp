@@ -5,7 +5,7 @@
 */
 
 #include "BootAndRestore.h"
-#include "HomeKit.h"
+#include "Matter.h"
 #include "Memory.h"
 #include "Settings.h"
 

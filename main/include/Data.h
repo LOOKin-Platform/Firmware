@@ -15,10 +15,6 @@
 #include "WiFi.h"
 #include "Memory.h"
 
-#include <hap.h>
-#include "hap_apple_chars.h"
-#include "hap_apple_servs.h"
-
 using namespace std;
 
 #define FREE_MEMORY_NVS		"FreeMemoryAddr"
