@@ -29,10 +29,10 @@ using namespace std;
 #define SERVICE_TELEVISION_SPEAKER_UUID		"113"
 #define SERVICE_INPUT_SOURCE_UUID			"D9"
 
-void HomeKitUpdateCharValue(string AIDString, const char *ServiceUUID, const char *CharUUID, hap_val_t Value);
-void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value);
+void HomeKitUpdateCharValue(string AIDString, const char *ServiceUUID, const char *CharUUID, uint8_t Value);
+void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, uint8_t Value);
 
-const hap_val_t* HomeKitGetCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID);
-const hap_val_t* HomeKitGetCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID);
+const uint8_t* HomeKitGetCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID);
+const uint8_t* HomeKitGetCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID);
 
 #endif

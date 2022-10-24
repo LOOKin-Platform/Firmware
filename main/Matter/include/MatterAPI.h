@@ -9,7 +9,7 @@
 
 #include "Globals.h"
 
-class HomeKitAPI_t {
+class MatterAPI_t {
 	public:
 		static void	HandleHTTPRequest(WebServer_t::Response &, Query_t &);
 };

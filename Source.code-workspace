@@ -17,7 +17,8 @@
 			"map": "cpp",
 			"algorithm": "cpp",
 			"functional": "cpp",
-			"string": "cpp"
+			"string": "cpp",
+			"new": "cpp"
 		}
 	}
 }

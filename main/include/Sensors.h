@@ -87,8 +87,7 @@ class Sensor_t {
 		bool 							IsInited	= false;
 
 	protected:
-		bool							IsHomeKitEnabled();
-		bool 							IsHomeKitExperimental();
+		bool							IsMatterEnabled();
 };
 
 extern Settings_t 	Settings;

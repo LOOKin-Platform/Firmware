@@ -242,7 +242,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
 
-			if (!HomeKit::IsEnabledForDevice())
+			if (!Matter::IsEnabledForDevice())
 				IPDidntGetTimer->Start();
 
 			return ESP_OK;
@@ -300,7 +300,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
-			if (!HomeKit::IsEnabledForDevice())
+			if (!Matter::IsEnabledForDevice())
 			{
 				esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
 
@@ -373,7 +373,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Wireless.IsEventDrivenStart = false;
 
-			if (!HomeKit::IsEnabledForDevice())
+			if (!Matter::IsEnabledForDevice())
 			{
 			    esp_err_t err = mdns_init();
 			    if (err) {

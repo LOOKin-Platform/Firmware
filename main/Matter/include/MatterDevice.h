@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-class Device
+class MatterDevice
 {
     public:
     static const int kDeviceNameSize     = 32;
@@ -41,7 +41,7 @@ class Device
         kChanged_Name      = 0x08,
     } Changed;
 
-    Device(const char * szDeviceName, const char * szLocation);
+    MatterDevice(const char * szDeviceName, const char * szLocation);
 
     bool IsOn() const;
     bool IsReachable() const;
@@ -54,7 +54,7 @@ class Device
     inline char * GetName() { return mName; };
     inline char * GetLocation() { return mLocation; };
 
-    using DeviceCallback_fn = std::function<void(Device *, Changed_t)>;
+    using DeviceCallback_fn = std::function<void(MatterDevice *, Changed_t)>;
     void SetChangeCallback(DeviceCallback_fn aChanged_CB);
 
 private:

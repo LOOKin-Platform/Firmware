@@ -404,7 +404,7 @@ void DataEndpoint_t::EraseAll() {
     	::esp_partition_erase_range(Partition, 0, Partition->size);
 }
 
-bool DataEndpoint_t::IsHomeKitEnabled() 		{ return HomeKit::IsEnabledForDevice();		}
+bool DataEndpoint_t::IsHomeKitEnabled() 		{ return Matter::IsEnabledForDevice();		}
 
 void DataEndpoint_t::Debug(string Tag) {
     const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);

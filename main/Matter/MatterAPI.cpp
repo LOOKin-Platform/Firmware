@@ -1,27 +1,27 @@
-#include "HomeKitAPI.h"
-#include "HomeKit.h"
+#include "MatterAPI.h"
+#include "Matter.h"
 #include "BootAndRestore.h"
 
-void HomeKitAPI_t::HandleHTTPRequest(WebServer_t::Response &Response, Query_t &Query)
+void MatterAPI_t::HandleHTTPRequest(WebServer_t::Response &Response, Query_t &Query)
 {
 	if (Query.GetURLPartsCount() == 2)
 	{
 		if (Query.Type == QueryType::POST)
 		{
 			if (Query.CheckURLPart("refresh", 1)) {
-				HomeKit::AppServerRestart();
+				Matter::AppServerRestart();
     			Response.SetSuccess();
     			return;
     		}
 
     		if (Query.CheckURLPart("reset", 1)) {
-    			HomeKit::ResetData();
+    			Matter::ResetData();
     			Response.SetSuccess();
     			return;
     		}
 
     		if (Query.CheckURLPart("reset-pairs", 1)) {
-    			HomeKit::ResetPairs();
+    			Matter::ResetPairs();
     			Response.SetSuccess();
     			return;
     		}
@@ -55,9 +55,6 @@ void HomeKitAPI_t::HandleHTTPRequest(WebServer_t::Response &Response, Query_t &Q
     				Response.SetFail();
     				return;
     			}
-
-    			NVS Memory(NVS_HOMEKIT_AREA);
-    			Memory.SetInt8Bit(NVS_HOMEKIT_AREA_MODE, Mode);
 
     			Response.SetSuccess();
 

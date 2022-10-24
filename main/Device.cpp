@@ -403,7 +403,7 @@ void Device_t::OTAStart(string FirmwareURL, WebServer_t::QueryTransportType Tran
 	}
 
 	LocalMQTT.Stop();
-	HomeKit::Stop();
+	Matter::Stop();
 
 	if (NimBLEDevice::getAdvertising()->isAdvertising()) {
 		NimBLEDevice::stopAdvertising();
@@ -443,7 +443,7 @@ void Device_t::OTAFailedCallback() {
 
 	RemoteControl.Start();
 	LocalMQTT.Start();
-	HomeKit::Start();
+	Matter::Start();
 }
 
 bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& Response)
@@ -552,8 +552,7 @@ string Device_t::MRDCToString() {
 }
 
 string Device_t::HomeKitToString() {
-	if (!HomeKit::IsEnabledForDevice()) return "0";
-	return (HomeKit::IsExperimentalMode()) ? "2" : "1";
+	return (Matter::IsEnabledForDevice()) ? "1" : "0";
 }
 
 string Device_t::EcoToString() {

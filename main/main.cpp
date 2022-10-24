@@ -93,7 +93,7 @@ extern "C" void app_main()
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();
 
-	HomeKit::Init();
+	Matter::Init();
 
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
@@ -102,6 +102,8 @@ extern "C" void app_main()
 
 	if (Network.WiFiSettings.size() == 0) // first start for HID devices
 		BLEServer.ForceHIDMode(BASIC);
+
+	WebServer.HTTPStart();
 
 	Pooling_t::Pool();
 

@@ -729,17 +729,15 @@ int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_
     return ret;
 }
 
-hap_cid_t HomeKit::FillAccessories() {
-	hap_acc_t 	*Accessory = NULL;
-
+void Matter::FillAccessories() {
 	hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
 
 	switch (Settings.eFuse.Type) {
 		case Settings_t::Devices_t::Remote:
-			return (Mode == ModeEnum::BASIC) ? FillRemoteACOnly(Accessory) : FillRemoteBridge(Accessory);
+			CreateRemoteBridge();
 			break;
 		case Settings_t::Devices_t::WindowOpener:
-			return FillWindowOpener(Accessory);
+			void CreateWindowOpener();
 			break;
 	}
 

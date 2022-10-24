@@ -15,7 +15,7 @@
  *    limitations under the License.
  */
 
-#include "Device.h"
+#include "MatterDevice.h"
 
 #include <cstdio>
 #include <lib/support/CHIPMemString.h>
@@ -23,7 +23,7 @@
 
 using namespace ::chip::Platform;
 
-Device::Device(const char * szDeviceName, const char * szLocation)
+MatterDevice::MatterDevice(const char * szDeviceName, const char * szLocation)
 {
     CopyString(mName, sizeof(mName), szDeviceName);
     CopyString(mLocation, sizeof(mLocation), szLocation);
@@ -33,17 +33,17 @@ Device::Device(const char * szDeviceName, const char * szLocation)
     mChanged_CB = nullptr;
 }
 
-bool Device::IsOn() const
+bool MatterDevice::IsOn() const
 {
     return mState == kState_On;
 }
 
-bool Device::IsReachable() const
+bool MatterDevice::IsReachable() const
 {
     return mReachable;
 }
 
-void Device::SetOnOff(bool aOn)
+void MatterDevice::SetOnOff(bool aOn)
 {
     bool changed;
 
@@ -66,7 +66,7 @@ void Device::SetOnOff(bool aOn)
     }
 }
 
-void Device::SetReachable(bool aReachable)
+void MatterDevice::SetReachable(bool aReachable)
 {
     bool changed = (mReachable != aReachable);
 
@@ -87,7 +87,7 @@ void Device::SetReachable(bool aReachable)
     }
 }
 
-void Device::SetName(const char * szName)
+void MatterDevice::SetName(const char * szName)
 {
     bool changed = (strncmp(mName, szName, sizeof(mName)) != 0);
 
@@ -101,7 +101,7 @@ void Device::SetName(const char * szName)
     }
 }
 
-void Device::SetLocation(const char * szLocation)
+void MatterDevice::SetLocation(const char * szLocation)
 {
     bool changed = (strncmp(mLocation, szLocation, sizeof(mLocation)) != 0);
 
@@ -115,7 +115,7 @@ void Device::SetLocation(const char * szLocation)
     }
 }
 
-void Device::SetChangeCallback(DeviceCallback_fn aChanged_CB)
+void MatterDevice::SetChangeCallback(DeviceCallback_fn aChanged_CB)
 {
     mChanged_CB = aChanged_CB;
 }

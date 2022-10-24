@@ -3,7 +3,7 @@
 
 extern Device_t	Device;
 
-void HomeKitUpdateCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value) {
+void HomeKitUpdateCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID, uint8_t Value) {
 	/*
     
     HomeKitUpdateCharValue((uint32_t)Converter::UintFromHexString<uint16_t>(StringAID), ServiceUUID, CharUUID, Value);
@@ -11,7 +11,7 @@ void HomeKitUpdateCharValue(string StringAID, const char *ServiceUUID, const cha
     */
 }
 
-void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, hap_val_t Value)
+void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID, uint8_t Value)
 {
     /*
 	hap_acc_t* Accessory = HomeKit::IsExperimentalMode() ? hap_acc_get_by_aid(AID) : hap_get_first_acc();
@@ -28,13 +28,15 @@ void HomeKitUpdateCharValue(uint32_t AID, const char *ServiceUUID, const char *C
     */
 }
 
-const hap_val_t* HomeKitGetCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID) {
+const uint8_t* HomeKitGetCharValue(string StringAID, const char *ServiceUUID, const char *CharUUID) {
+	return {0};
     /*
     	return HomeKitGetCharValue((uint32_t)Converter::UintFromHexString<uint16_t>(StringAID), ServiceUUID, CharUUID);
     */
 }
 
-const hap_val_t* HomeKitGetCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID) {
+const uint8_t* HomeKitGetCharValue(uint32_t AID, const char *ServiceUUID, const char *CharUUID) {
+	return {0};
     /*
 	hap_acc_t* Accessory = HomeKit::IsExperimentalMode() ? hap_acc_get_by_aid(AID) : hap_get_first_acc();
 

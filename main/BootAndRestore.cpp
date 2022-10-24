@@ -167,8 +167,8 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 
 	switch (Operation) {
 		case REBOOT:
-			if (HomeKit::IsEnabledForDevice())
-				hap_reboot_accessory();
+			if (Matter::IsEnabledForDevice())
+				Matter::Reboot();
 			else
 				esp_restart();
 
@@ -211,8 +211,8 @@ void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {
 
 			MemoryAfter.Commit();
 
-			if (HomeKit::IsEnabledForDevice())
-				HomeKit::ResetData();
+			if (Matter::IsEnabledForDevice())
+				Matter::ResetData();
 
 			ExecuteOperationNow(REBOOT);
 

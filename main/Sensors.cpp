@@ -238,6 +238,5 @@ uint32_t Sensor_t::GetValue(string Key) {
 	return Values[Key];
 }
 
-bool Sensor_t::IsHomeKitEnabled() 		{ return HomeKit::IsEnabledForDevice();		}
-bool Sensor_t::IsHomeKitExperimental()	{ return HomeKit::IsExperimentalMode();	}
+bool Sensor_t::IsMatterEnabled() 		{ return Matter::IsEnabledForDevice();		}
 

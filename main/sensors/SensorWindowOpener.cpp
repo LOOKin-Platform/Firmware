@@ -57,12 +57,12 @@ class SensorWindowOpener_t : public Sensor_t {
 			Wireless.SendBroadcastUpdated(ID, "03", Converter::ToHexString(Position,8));
 			Automation.SensorChanged(ID);
 
-			if (IsHomeKitEnabled())
+			if (IsMatterEnabled())
 			{
-				hap_val_t ValueForPosition;
-				ValueForPosition.u = Position;
+				//!hap_val_t ValueForPosition;
+				//!ValueForPosition.u = Position;
 
-				HomeKitUpdateCharValue(0, HAP_SERV_UUID_WINDOW, HAP_CHAR_UUID_CURRENT_POSITION, ValueForPosition);
+				//!HomeKitUpdateCharValue(0, HAP_SERV_UUID_WINDOW, HAP_CHAR_UUID_CURRENT_POSITION, ValueForPosition);
 			}
 		}
 

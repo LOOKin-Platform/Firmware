@@ -54,7 +54,7 @@ void ISR::Install() {
  * @param [in] TimerIndex ESP32 Timer Index.
  * @param [in] Interval	 ESP32 Timer Interval.
  */
-ISR::HardwareTimer::HardwareTimer(timer_group_t TimerGroup, timer_idx_t TimerIndex, uint64_t Interval, TimerCallback Callback, void *Param) {
+ISR::HardwareTimer::HardwareTimer(timer_group_t TimerGroup, timer_idx_t TimerIndex, uint64_t Interval, ISRTimerCallback Callback, void *Param) {
 	this->TimerGroup = TimerGroup;
 	this->TimerIndex = TimerIndex;
 

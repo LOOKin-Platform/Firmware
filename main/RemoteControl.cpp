@@ -310,7 +310,7 @@ RemoteControl_t::Status_t RemoteControl_t::GetStatus() {
 esp_mqtt_client_config_t RemoteControl_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
-	IsSecuredFlag = !(HomeKit::IsEnabledForDevice() || LocalMQTT.GetIsActive());
+	IsSecuredFlag = !(Matter::IsEnabledForDevice() || LocalMQTT.GetIsActive());
 
 	//Config.host			= "mqtt.look-in.club";
 	Config.uri 			= (!IsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();

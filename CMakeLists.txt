@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.5)
 
 #add_definitions(-DBUILD1GEN)
 
+add_definitions(-DCONFIG_RENDEZVOUS_MODE_WIFI=1)
+add_definitions(-DCONFIG_RENDEZVOUS_MODE=1)
+
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/third_party/connectedhomeip/examples/common/cmake/idf_flashing.cmake)
 

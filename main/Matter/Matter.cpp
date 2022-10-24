@@ -1,18 +1,140 @@
 #include "Matter.h"
+#include "MatterDevice.h"
+#include "DeviceCallbacks.h"
+
+#include <app-common/zap-generated/af-structs.h>
+#include <app-common/zap-generated/attribute-id.h>
+#include <app-common/zap-generated/cluster-id.h>
+#include <app/ConcreteAttributePath.h>
+#include <app/clusters/identify-server/identify-server.h>
+#include <app/reporting/reporting.h>
+#include <app/util/attribute-storage.h>
+#include <common/Esp32AppServer.h>
+#include <credentials/DeviceAttestationCredsProvider.h>
+#include <credentials/examples/DeviceAttestationCredsExample.h>
+#include <lib/core/CHIPError.h>
+#include <lib/support/CHIPMem.h>
+#include <lib/support/CHIPMemString.h>
+#include <lib/support/ErrorStr.h>
+#include <lib/support/ZclString.h>
+
+#include <app/server/Dnssd.h>
+
+#include <app/InteractionModelEngine.h>
+#include <app/server/Server.h>
+
+#if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
+#include <platform/ESP32/ESP32FactoryDataProvider.h>
+#endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
+
+#if CONFIG_ENABLE_ESP32_DEVICE_INFO_PROVIDER
+#include <platform/ESP32/ESP32DeviceInfoProvider.h>
+#else
+#include <DeviceInfoProviderImpl.h>
+#endif // CONFIG_ENABLE_ESP32_DEVICE_INFO_PROVIDER
+
+namespace {
+#if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
+chip::DeviceLayer::ESP32FactoryDataProvider sFactoryDataProvider;
+#endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
+
+#if CONFIG_ENABLE_ESP32_DEVICE_INFO_PROVIDER
+chip::DeviceLayer::ESP32DeviceInfoProvider gExampleDeviceInfoProvider;
+#else
+chip::DeviceLayer::DeviceInfoProviderImpl gExampleDeviceInfoProvider;
+#endif // CONFIG_ENABLE_ESP32_DEVICE_INFO_PROVIDER
+} // namespace
+
+
+using namespace ::chip;
+using namespace ::chip::DeviceManager;
+using namespace ::chip::Platform;
+using namespace ::chip::Credentials;
+using namespace ::chip::app::Clusters;
+
+static AppDeviceCallbacks AppCallback;
+
 
 const char *Tag = "Matter";
 
-TaskHandle_t 		HomeKit::TaskHandle = NULL;
+TaskHandle_t 		Matter::TaskHandle = NULL;
 
-bool 				HomeKit::IsRunning 		= false;
-bool 				HomeKit::IsAP 			= false;
-HomeKit::ModeEnum	HomeKit::Mode			= HomeKit::ModeEnum::NONE;
+bool 				Matter::IsRunning 		= false;
+bool 				Matter::IsAP 			= false;
 
-uint64_t			HomeKit::TVHIDLastUpdated = 0;
+uint64_t			Matter::TVHIDLastUpdated = 0;
 
-vector<hap_acc_t*> 	HomeKit::BridgedAccessories = vector<hap_acc_t*>();
+vector<uint8_t*> 	Matter::BridgedAccessories = vector<uint8_t*>();
 
-HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sID) {
+static const int kNodeLabelSize = 32;
+// Current ZCL implementation of Struct uses a max-size array of 254 bytes
+static const int kDescriptorAttributeArraySize = 254;
+
+// Declare On/Off cluster attributes
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
+DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ON_OFF_ATTRIBUTE_ID, BOOLEAN, 1, 0), /* on/off */
+    DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+// Declare Descriptor cluster attributes
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(descriptorAttrs)
+DECLARE_DYNAMIC_ATTRIBUTE(ZCL_DEVICE_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0),     /* device list */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SERVER_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0), /* server list */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLIENT_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0), /* client list */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PARTS_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0),  /* parts list */
+    DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+// Declare Bridged Device Basic information cluster attributes
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(bridgedDeviceBasicAttrs)
+DECLARE_DYNAMIC_ATTRIBUTE(ZCL_NODE_LABEL_ATTRIBUTE_ID, CHAR_STRING, kNodeLabelSize, 0), /* NodeLabel */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_REACHABLE_ATTRIBUTE_ID, BOOLEAN, 1, 0),               /* Reachable */
+    DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+// Declare Cluster List for Bridged Light endpoint
+// TODO: It's not clear whether it would be better to get the command lists from
+// the ZAP config on our last fixed endpoint instead.
+constexpr CommandId onOffIncomingCommands[] = {
+    app::Clusters::OnOff::Commands::Off::Id,
+    app::Clusters::OnOff::Commands::On::Id,
+    app::Clusters::OnOff::Commands::Toggle::Id,
+    app::Clusters::OnOff::Commands::OffWithEffect::Id,
+    app::Clusters::OnOff::Commands::OnWithRecallGlobalScene::Id,
+    app::Clusters::OnOff::Commands::OnWithTimedOff::Id,
+    kInvalidCommandId,
+};
+
+DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedLightClusters)
+DECLARE_DYNAMIC_CLUSTER(ZCL_ON_OFF_CLUSTER_ID, onOffAttrs, onOffIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(ZCL_DESCRIPTOR_CLUSTER_ID, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(ZCL_BRIDGED_DEVICE_BASIC_CLUSTER_ID, bridgedDeviceBasicAttrs, nullptr,
+                            nullptr) DECLARE_DYNAMIC_CLUSTER_LIST_END;
+
+// Declare Bridged Light endpoint
+DECLARE_DYNAMIC_ENDPOINT(bridgedLightEndpoint, bridgedLightClusters);
+
+DataVersion gLightDataVersions[8];
+
+static EndpointId gCurrentEndpointId;
+static EndpointId gFirstDynamicEndpointId;
+
+static MatterDevice * gDevices[8]; // number of dynamic endpoints count
+
+#define DEVICE_TYPE_BRIDGED_NODE 0x0013
+#define DEVICE_TYPE_LO_ON_OFF_LIGHT 0x0100
+
+#define DEVICE_TYPE_ROOT_NODE 0x0016
+#define DEVICE_TYPE_BRIDGE 0x000e
+
+#define DEVICE_VERSION_DEFAULT 1
+
+const EmberAfDeviceType gRootDeviceTypes[] 			= { { DEVICE_TYPE_ROOT_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gAggregateNodeDeviceTypes[] = { { DEVICE_TYPE_BRIDGE, DEVICE_VERSION_DEFAULT } };
+
+const EmberAfDeviceType gBridgedOnOffDeviceTypes[] = { { DEVICE_TYPE_LO_ON_OFF_LIGHT, DEVICE_VERSION_DEFAULT },
+                                                       { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+
+
+/*
+Matter::AccessoryData_t(string sName, string sModel, string sID) {
 	//sName.copy(Name, sName.size(), 0);
 
 	Converter::FindAndRemove(sName, "., ");
@@ -25,172 +147,785 @@ HomeKit::AccessoryData_t::AccessoryData_t(string sName, string sModel, string sI
 	::sprintf(Model	, sModel.c_str());
 	::sprintf(ID	, sID.c_str());
 }
+*/
 
-void HomeKit::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
+void Matter::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
 	IsAP 		= sIsAP;
 }
 
-void HomeKit::Init() {
-	NVS Memory(NVS_HOMEKIT_AREA);
-	uint8_t LoadedMode = Memory.GetInt8Bit(NVS_HOMEKIT_AREA_MODE);
-
-	uint8_t NewMode = 0;
-
-	if (LoadedMode == 0) // check and set if there first start of new device
-	{
-		if (Settings.eFuse.Type == Settings.Devices.Remote && Settings.eFuse.Model > 1)
-			NewMode = 1;
-
-		if (Settings.eFuse.Type == Settings.Devices.WindowOpener)
-			NewMode = 2;
-
-		if (LoadedMode != NewMode) {
-			Memory.SetInt8Bit(NVS_HOMEKIT_AREA_MODE, NewMode);
-			LoadedMode = NewMode;
-		}
-	}
-
-	Mode = static_cast<ModeEnum>(LoadedMode);
-
-	if (Mode != ModeEnum::NONE)
-		HomeKit::Start();
-	else
-		WebServer.HTTPStart();
-
+void Matter::Init() {
+	if (IsEnabledForDevice())
+		Matter::Start();
 }
 
-void HomeKit::Start() {
+void Matter::Start() {
     chip::app::DnssdServer::Instance().StartServer();
 }
 
-void HomeKit::Stop() {
-	if (IsRunning)
-		::hap_stop();
+void Matter::Stop() {
+	//!if (IsRunning)
+	//!	::hap_stop();
 }
 
-void HomeKit::AppServerRestart() {
+void Matter::AppServerRestart() {
 	Stop();
-	FillAccessories();
+	CreateAccessories();
 	Start();
 	return;
 }
 
-void HomeKit::ResetPairs() {
-	::hap_reset_pairings();
+void Matter::ResetPairs() {
+	//!::hap_reset_pairings();
 }
 
-void HomeKit::ResetData() {
-	::hap_reset_homekit_data();
+void Matter::ResetData() {
+	//!::hap_reset_homekit_data();
 }
 
-bool HomeKit::IsEnabledForDevice() {
-	return (Mode != ModeEnum::NONE);
+bool Matter::IsEnabledForDevice() {
+	return true;
+}
+
+void Matter::Reboot() {
+	//!hap_reboot_accessory();
 }
 
 /* Mandatory identify routine for the accessory (bridge)
  * In a real accessory, something like LED blink should be implemented
  * got visual identification
  */
-int HomeKit::BridgeIdentify(hap_acc_t *ha) {
+int Matter::BridgeIdentify() {
     ESP_LOGI(Tag, "Bridge identified");
     Log::Add(Log::Events::Misc::HomeKitIdentify);
-    return HAP_SUCCESS;
+    return 0;
 }
 
 /* Mandatory identify routine for the bridged accessory
  * In a real bridge, the actual accessory must be sent some request to
  * identify itself visually
  */
-int HomeKit::AccessoryIdentify(hap_acc_t *ha)
+int Matter::AccessoryIdentify(uint16_t AID)
 {
-    ESP_LOGI(Tag, "Bridge identified");
-    Log::Add(Log::Events::Misc::HomeKitIdentify);
-    return HAP_SUCCESS;
+	//!ESP_LOGI(Tag, "Bridge identified");
+    //!Log::Add(Log::Events::Misc::HomeKitIdentify);
+    //!return HAP_SUCCESS;
+
+	return 0;
 }
 
-hap_status_t HomeKit::On(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+bool Matter::On(bool Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
+	return 0;
+
+	/*
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	if (Iterator > 0) return HAP_STATUS_SUCCESS;
+
+    	ESP_LOGE("ON", "UUID: %04X, Value: %d, Iterator: %d", AID, Value, Iterator);
+
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.DeviceType == 0x01 && (uint32_t)(Time::UptimeU() - TVHIDLastUpdated) < 500000)
+        	return HAP_STATUS_SUCCESS;
+
+        if (IRDeviceItem.IsEmpty())
+        	return HAP_STATUS_VAL_INVALID;
+
+        if (IRDeviceItem.DeviceType == 0xEF) { // air conditioner
+        	// check service. If fan for ac - skip
+        	if (strcmp(hap_serv_get_type_uuid(hap_char_get_parent(Char)), HAP_SERV_UUID_FAN_V2) == 0)
+        		return HAP_STATUS_SUCCESS;
+
+        	uint8_t NewValue = 0;
+        	uint8_t CurrentMode = ((DataRemote_t*)Data)->DevicesHelper.GetDeviceForType(0xEF)->GetStatusByte(IRDeviceItem.Status , 0);
+
+        	if (Value == 0) { // off
+        		hap_val_t ValueForACFanActive;
+        		ValueForACFanActive.u = 0;
+        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+
+        		hap_val_t ValueForACFanState;
+        		ValueForACFanState.f = 0;
+        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+
+        		hap_val_t ValueForACFanAuto;
+        		ValueForACFanAuto.u = 0;
+        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+
+        		StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 0);
+        	}
+        	else 
+			{
+         		if (IRDeviceItem.Status < 0x1000) {
+                    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+                    if (IRCommand != nullptr) {
+                    	string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
+                    	IRCommand->Execute(0xEF, Operand.c_str());
+                        FreeRTOS::Sleep(1000);
+                    }
+        		}
+        		else
+        			return HAP_STATUS_SUCCESS;
+        	}
+
+        	return HAP_STATUS_SUCCESS;
+        }
+
+        ((DataRemote_t*)Data)->StatusUpdateForDevice(IRDeviceItem.DeviceID, 0xE0, Value);
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(IRDeviceItem.DeviceID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        string Operand = IRDeviceItem.DeviceID;
+
+        if (Functions.count("power") > 0)
+        {
+        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("power"),2);
+        	Operand += (Functions["power"] == "toggle") ? ((Value) ? "00" : "01" ) : "FF";
+        	IRCommand->Execute(0xFE, Operand.c_str());
+
+        	return HAP_STATUS_SUCCESS;
+        }
+        else
+        {
+        	if (Functions.count("poweron") > 0 && Value)
+        	{
+            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweron"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+            	return HAP_STATUS_SUCCESS;
+        	}
+
+        	if (Functions.count("poweroff") > 0 && !Value)
+        	{
+            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweroff"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+            	return HAP_STATUS_SUCCESS;
+        	}
+
+			if (Functions.count("poweron") > 0 || Functions.count("poweroff") > 0)
+            	return HAP_STATUS_SUCCESS;
+        }
+    }
+
     return HAP_STATUS_VAL_INVALID;
+	*/
 }
 
-bool HomeKit::Cursor(uint8_t Value, uint16_t AccessoryID) {
-    return true;
-}
-
-bool HomeKit::ActiveID(uint8_t NewActiveID, uint16_t AccessoryID) {
-
-    return true;
-}
-
-bool HomeKit::Volume(uint8_t Value, uint16_t AccessoryID) {
-
-    return true;
-}
-
-bool HomeKit::HeaterCoolerState(uint8_t Value, uint16_t AID) {
-
-    return true;
-}
-
-bool HomeKit::ThresholdTemperature(float Value, uint16_t AID, bool IsCooling) {
-    return true;
-}
-
-bool HomeKit::RotationSpeed(float Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
-    return true;
-}
-
-bool HomeKit::TargetFanState(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
-    return true;
-}
-
-bool HomeKit::SwingMode(bool Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
-    return true;
-}
-
-bool HomeKit::TargetPosition(uint8_t Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
-    return true;
-}
-
-
-bool HomeKit::GetConfiguredName(char* Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+bool Matter::Cursor(uint8_t Value, uint16_t AccessoryID) {
 	return true;
+
+	/*
+	string UUID = Converter::ToHexString(AccessoryID, 4);
+	ESP_LOGE("Cursor for UUID", "%s Value: %d", UUID.c_str(), Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	TVHIDLastUpdated = Time::UptimeU();
+
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        string Operand = UUID;
+
+        if (Value == 8 || Value == 6 || Value == 4 || Value == 7 || Value == 5) {
+        	if (Functions.count("cursor") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("cursor"),2);
+
+        		switch(Value) {
+    				case 8: Operand += "00"; break; // SELECT
+    				case 6: Operand += "01"; break; // LEFT
+    				case 4: Operand += "02"; break; // UP
+    				case 7: Operand += "03"; break; // RIGTH
+    				case 5: Operand += "04"; break; // DOWN
+    				default:
+    					return false;
+        		}
+
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+
+        if (Value == 15) {
+        	if (Functions.count("menu") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("menu"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+
+        if (Value == 11) {
+        	if (Functions.count("play") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("play"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+
+        if (Value == 9) {
+        	if (Functions.count("back") > 0)
+        	{
+        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("back"), 2) + "FF";
+        		IRCommand->Execute(0xFE, Operand.c_str());
+        		return true;
+        	}
+        }
+    }
+
+    return false;
+	*/
 }
 
-bool HomeKit::SetConfiguredName(char* Value, uint16_t AID, hap_char_t *Char, uint8_t Iterator) {
+bool Matter::ActiveID(uint8_t NewActiveID, uint16_t AccessoryID) {
 	return true;
+
+	/*
+	string UUID = Converter::ToHexString(AccessoryID, 4);
+	ESP_LOGE("ActiveID for UUID", "%s", UUID.c_str());
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        if (Functions.count("mode") > 0)
+        {
+            string Operand = UUID;
+        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("mode"),2);
+        	Operand += Converter::ToHexString(NewActiveID - 1, 2);
+
+        	IRCommand->Execute(0xFE, Operand.c_str());
+        	return true;
+        }
+    }
+
+    return false;
+	*/
 }
 
-void HomeKit::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
+bool Matter::Volume(uint8_t Value, uint16_t AccessoryID) {
+	return false;
+
+	/*
+	string UUID = Converter::ToHexString(AccessoryID, 4);
+	ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	TVHIDLastUpdated = Time::UptimeU();
+
+        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+        if (Value == 0 && Functions.count("volup") > 0)
+        {
+            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("volup"),2) + "FF";
+        	IRCommand->Execute(0xFE, Operand.c_str());
+        	IRCommand->Execute(0xED, "");
+        	IRCommand->Execute(0xED, "");
+
+        	return true;
+        }
+        else if (Value == 1 && Functions.count("voldown") > 0)
+        {
+            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("voldown"),2) + "FF";
+        	IRCommand->Execute(0xFE, Operand.c_str());
+        	IRCommand->Execute(0xED, "");
+        	IRCommand->Execute(0xED, "");
+        	return true;
+        }
+    }
+
+    return false;
+	*/
+}
+
+bool Matter::HeaterCoolerState(uint8_t Value, uint16_t AID) {
+	return false;
+	
+	/*
+	ESP_LOGE("HeaterCoolerState", "UUID: %04X, Value: %d", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	return false;
+
+        switch (Value)
+        {
+        	case 0: Value = 1; break;
+        	case 1:	Value = 3; break;
+        	case 2: Value = 2; break;
+        	default: break;
+        }
+
+        // change temperature because of it may depends on selected mode
+        const hap_val_t* NewTempValue  = HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER,
+        		(Value == 3) ? HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE : HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE);
+
+        if (NewTempValue != NULL)
+            StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra, 0xE1, round(NewTempValue->f), false);
+
+    	if (Value > 0) {
+            // change current heater cooler state
+            hap_val_t CurrentHeaterCoolerState;
+
+
+            CurrentHeaterCoolerState.u = 0;
+            if (Value == 1) CurrentHeaterCoolerState.u = 2;
+            if (Value == 2) CurrentHeaterCoolerState.u = 3;
+
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, CurrentHeaterCoolerState);
+
+    		hap_val_t ValueForACFanActive;
+    		ValueForACFanActive.u = 1;
+    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+
+    		hap_val_t ValueForACFanState;
+    		hap_val_t ValueForACFanAuto;
+
+    		uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
+
+    		ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
+    		ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
+
+    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+    	}
+
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, Value);
+
+        return true;
+    }
+
+    return false;
+	*/
+}
+
+bool Matter::ThresholdTemperature(float Value, uint16_t AID, bool IsCooling) {
+	return false;
+
+	/*
+	ESP_LOGE("TargetTemperature", "UUID: %04X, Value: %f", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	return false;
+
+        if (Value > 30) Value = 30;
+        if (Value < 16) Value = 16;
+
+        hap_val_t HAPValue;
+        HAPValue.f = Value;
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE1, round(Value));
+        return true;
+    }
+
+    return false;
+	*/
+}
+
+bool Matter::RotationSpeed(float Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
+	return false;
+
+	/*
+	ESP_LOGE("RotationSpeed", "UUID: %04X, Value: %f", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+    	if (Iterator > 0 && IRDeviceItem.DeviceType != 0xEF) return true;
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // Air Conditionair
+        	return false;
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value), (IRDeviceItem.Status >= 0x1000));
+
+        return true;
+    }
+
+    return false;
+
+	*/
+}
+
+bool Matter::TargetFanState(bool Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
+	return false;
+
+	/*
+	ESP_LOGE("TargetFanState", "UUID: %04X, Value: %d, Iterator: %d", AID, Value, Iterator);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    	if (Iterator > 0) return true;
+
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditioner
+        	return false;
+
+        // switch on
+        if (Value > 0 && IRDeviceItem.Status < 0x1000)
+        {
+        	hap_val_t ValueForACFanActive;
+        	ValueForACFanActive.u = 1;
+        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+
+        	hap_val_t ValueForACFanState;
+
+        	uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
+        	ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
+
+        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+
+//			hap_val_t ValueForACFanAuto;
+//        	ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
+//        	HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+
+            hap_val_t ValueForACActive;
+            ValueForACActive.u = 1;
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE, ValueForACActive);
+
+            hap_val_t ValueForACState;
+            ValueForACState.u = 3;
+            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, ValueForACState);
+
+            StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 2, false);
+        }
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, (Value) ? 0 : 2);
+
+        return true;
+    }
+
+    return false;
+	*/
+}
+
+bool Matter::SwingMode(bool Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
+	return true;
+
+	/*
+	ESP_LOGE("TargetFanState", "UUID: %04X, Value: %d", AID, Value);
+
+    if (Settings.eFuse.Type == Settings.Devices.Remote) {
+        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	return false;
+
+        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE3, (Value) ? 1 : 0);
+
+        return true;
+    }
+
+    return false;
+	*/
+}
+
+bool Matter::TargetPosition(uint8_t Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
+	return false;
+
+	/*
+	ESP_LOGE("TargetPosition", "UUID: %04X, Value: %d, Iterator: %d", AID, Value, Iterator);
+
+    if (Settings.eFuse.Type == Settings.Devices.WindowOpener) {
+    	if (Iterator > 0) return true;
+
+		hap_val_t ValueForPosition;
+		ValueForPosition.u = Value;
+
+		CommandWindowOpener_t* WindowOpener = (CommandWindowOpener_t *)Command_t::GetCommandByID(0x10);
+
+		if (WindowOpener != nullptr) 
+		{
+			WindowOpener->SetPosition(Value);
+			HomeKitUpdateCharValue(AID, HAP_SERV_UUID_WINDOW, HAP_CHAR_UUID_TARGET_POSITION, ValueForPosition);
+			return true;
+		}
+	}
+
+    return false;
+	*/
+}
+
+
+bool Matter::GetConfiguredName(char* Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
+	return false;
+
+	/*
+	ESP_LOGE("GetConfiguredName", "UUID: %04X, Value: %s", AID, Value);
+	uint32_t IID = hap_serv_get_iid(hap_char_get_parent(Char));
+
+	return true;
+	*/
+}
+
+bool Matter::SetConfiguredName(char* Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
+	return false;
+
+	/*
+	ESP_LOGE("SetConfiguredName", "UUID: %04X, Value: %s", AID, Value);
+	uint32_t IID = hap_serv_get_iid(hap_char_get_parent(Char));
+
+	string KeyName = string(NVS_HOMEKIT_CNPREFIX) + Converter::ToHexString(AID, 4) + Converter::ToHexString(IID, 8);
+
+	ESP_LOGE("!", "%s", KeyName.c_str());
+
+	NVS Memory(NVS_HOMEKIT_AREA);
+	Memory.SetString(Converter::ToLower(KeyName), string(Value));
+	Memory.Commit();
+
+	return true;
+	*/
+}
+
+void Matter::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
+	return;
+
+	/*
+
+	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value, "", false, true);
+
+	ESP_LOGE("RESULT", "StatusACUpdateIRSend %02X %02X %u Result.second %04X", FunctionID, Value, Send, Result.second);
+
+	if (!Send) return;
+
+	if (!Result.first) return;
+	if (Codeset == 0) return;
+
+    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+    if (IRCommand == nullptr) return;
+
+    string Operand = Converter::ToHexString(Codeset,4);
+
+    if (FunctionID == 0xE3 && ACOperand::IsSwingSeparateForCodeset(Codeset))
+    	Operand += ("FFF" + Converter::ToHexString((Value == 0) ? 2 : 1,1));
+    else
+    	Operand += Converter::ToHexString(Result.second,4);
+
+    IRCommand->Execute(0xEF, Operand.c_str());
+	*/
 }
 
 /* A dummy callback for handling a write on the "On" characteristic of Fan.
  * In an actual accessory, this should control the hardware
  */
-int HomeKit::WriteCallback(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv)
+/*
+int Matter::WriteCallback(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv)
 {
-    return 0;
-}
+    int i, ret = HAP_SUCCESS;
 
-hap_cid_t HomeKit::FillAccessories() {
+    uint16_t AID = (uint16_t)((uint32_t)(serv_priv));
+    ESP_LOGE(Tag, "Write called for Accessory with AID %04X", AID);
+
+    hap_write_data_t *write;
+    for (i = 0; i < count; i++) {
+        write = &write_data[i];
+
+        ESP_LOGI(Tag, "Characteristic: %s, i: %d", hap_char_get_type_uuid(write->hc), i);
+
+        if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ON)) {
+        	*(write->status) = On(write->val.b, AID, write->hc, i);
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ACTIVE)) {
+        	*(write->status) = On(write->val.b, AID, write->hc, i);
+
+        	if (Settings.eFuse.Type == Settings.Devices.Remote) {
+                DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+            	if (*(write->status) == HAP_STATUS_SUCCESS) {
+        			static hap_val_t HAPValue;
+
+            		if (IRDeviceItem.DeviceType == 0x01) {
+            			HAPValue.u = (uint8_t)write->val.b;
+            			HomeKitUpdateCharValue(AID, SERVICE_TV_UUID, CHAR_SLEEP_DISCOVERY_UUID, HAPValue);
+            		}
+
+                   	if (IRDeviceItem.DeviceType == 0x05) {
+              //              CurrentPurifierActive.u = (Value > 0) ? 1 : 0;
+                //    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_AIR_PURIFIER, HAP_CHAR_UUID_ACTIVE, CurrentPurifierActive);
+                   		HAPValue.u = ((uint8_t)write->val.b == 1) ? 2 : 0;
+                   		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_AIR_PURIFIER, HAP_CHAR_UUID_CURRENT_AIR_PURIFIER_STATE, HAPValue);
+                    }
+            	}
+        	}
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_REMOTEKEY_UUID)) {
+        	Cursor(write->val.b, AID);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_ACTIVE_IDENTIFIER_UUID)) {
+        	ActiveID(write->val.b, AID);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_VOLUME_SELECTOR_UUID)) {
+        	Volume(write->val.b, AID);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE)) {
+        	HeaterCoolerState(write->val.b, AID);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE)) {
+        	ThresholdTemperature(write->val.f, AID, true);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE)) {
+        	ThresholdTemperature(write->val.f, AID, false);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_ROTATION_SPEED)) {
+        	RotationSpeed(write->val.f, AID, write->hc, i);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_FAN_STATE)) {
+        	TargetFanState(write->val.b, AID, write->hc, i);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_SWING_MODE)) {
+        	SwingMode(write->val.b, AID, write->hc, i);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_CONFIGUREDNAME_UUID)) {
+        	//ConfiguredName(write->val.s, AID, write->hc, i);
+            *(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_IS_CONFIGURED)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_AIR_PURIFIER_STATE)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_MUTE_UUID)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+
+        	if (Settings.eFuse.Type == Settings.Devices.Remote) {
+                DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+            	if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
+        			static hap_val_t HAPValue;
+        			HAPValue.u = (write->val.b == true) ? 0 : 1;
+        			HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValue);
+            	}
+        	}
+        }
+        else if (!strcmp(hap_char_get_type_uuid(write->hc), CHAR_VOLUME_UUID)) {
+        	*(write->status) = HAP_STATUS_SUCCESS;
+
+        	if (Settings.eFuse.Type == Settings.Devices.Remote) {
+                DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+
+                if (*(write->status) == HAP_STATUS_SUCCESS && IRDeviceItem.DeviceType == 0x01) {
+                	static hap_val_t HAPValueMute;
+                	HAPValueMute.b = false;
+                	HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_MUTE_UUID, HAPValueMute);
+
+        			static hap_val_t HAPValueControlType;
+        			HAPValueControlType.u = 1;
+        			HomeKitUpdateCharValue(AID, SERVICE_TELEVISION_SPEAKER_UUID, CHAR_VOLUME_CONTROL_TYPE_UUID, HAPValueControlType);
+                }
+        	}
+        }
+		else if (!strcmp(hap_char_get_type_uuid(write->hc), HAP_CHAR_UUID_TARGET_POSITION)) {
+			TargetPosition(write->val.u, AID, write->hc, i);
+            *(write->status) = HAP_STATUS_SUCCESS;
+		}
+        else {
+            *(write->status) = HAP_STATUS_RES_ABSENT;
+        }
+
+        if (*(write->status) == HAP_STATUS_SUCCESS)
+        	hap_char_update_val(write->hc, &(write->val));
+        else
+            ret = HAP_FAIL;
+    }
+
+    return ret;
+}
+*/
+
+void Matter::CreateAccessories() {
     Esp32AppServer::Init(); // Init ZCL Data Model and CHIP App Server AND Initialize device attestation config
     
-	hap_acc_t 	*Accessory = NULL;
-
-	hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
+	//!hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
 
 	switch (Settings.eFuse.Type) {
 		case Settings_t::Devices_t::Remote:
-			return FillRemoteBridge(Accessory);
+			return CreateRemoteBridge();
 			break;
 		case Settings_t::Devices_t::WindowOpener:
-			return FillWindowOpener(Accessory);
+			return CreateWindowOpener();
 			break;
 	}
-
-	return HAP_CID_NONE;
 }
 
-hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
+int AddDeviceEndpoint(MatterDevice * dev, EmberAfEndpointType * ep, const Span<const EmberAfDeviceType> & deviceTypeList,
+                      const Span<DataVersion> & dataVersionStorage, chip::EndpointId parentEndpointId)
+{
+    uint8_t index = 0;
+    while (index < CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT)
+    {
+        if (NULL == gDevices[index])
+        {
+            gDevices[index] = dev;
+            EmberAfStatus ret;
+            while (1)
+            {
+                dev->SetEndpointId(gCurrentEndpointId);
+                ret =
+                    emberAfSetDynamicEndpoint(index, gCurrentEndpointId, ep, dataVersionStorage, deviceTypeList, parentEndpointId);
+                if (ret == EMBER_ZCL_STATUS_SUCCESS)
+                {
+                    ChipLogProgress(DeviceLayer, "Added device %s to dynamic endpoint %d (index=%d)", dev->GetName(),
+                                    gCurrentEndpointId, index);
+                    return index;
+                }
+                else if (ret != EMBER_ZCL_STATUS_DUPLICATE_EXISTS)
+                {
+                    return -1;
+                }
+                // Handle wrap condition
+                if (++gCurrentEndpointId < gFirstDynamicEndpointId)
+                {
+                    gCurrentEndpointId = gFirstDynamicEndpointId;
+                }
+            }
+        }
+        index++;
+    }
+    ChipLogProgress(DeviceLayer, "Failed to add dynamic endpoint: No endpoints available!");
+    return -1;
+}
+
+CHIP_ERROR RemoveDeviceEndpoint(MatterDevice * dev)
+{
+    for (uint8_t index = 0; index < CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT; index++)
+    {
+        if (gDevices[index] == dev)
+        {
+            EndpointId ep   = emberAfClearDynamicEndpoint(index);
+            gDevices[index] = NULL;
+            ChipLogProgress(DeviceLayer, "Removed device %s from dynamic endpoint %d (index=%d)", dev->GetName(), ep, index);
+            // Silence complaints about unused ep when progress logging
+            // disabled.
+            UNUSED_VAR(ep);
+            return CHIP_NO_ERROR;
+        }
+    }
+    return CHIP_ERROR_INTERNAL;
+}
+
+
+void Matter::CreateRemoteBridge() {
     // Set starting endpoint id where dynamic endpoints will be assigned, which
     // will be the next consecutive endpoint id after the last fixed endpoint.
     gFirstDynamicEndpointId = static_cast<chip::EndpointId>(
@@ -207,14 +942,11 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 
     for (int i=0;i<3;i++) 
     {
-        static Device gLight("Light 1", "Office");
+        static MatterDevice gLight("Light 1", "Office");
 
         AddDeviceEndpoint(&gLight, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
-                      Span<DataVersion>(gLight1DataVersions), 1);
+                      Span<DataVersion>(gLightDataVersions), 1);
     }
-}
-
-
 
     /*
 	if (BridgedAccessories.size() == 0) {
@@ -454,11 +1186,13 @@ hap_cid_t HomeKit::FillRemoteBridge(hap_acc_t *Accessory) {
 		hap_add_bridged_accessory(Accessory, 0xFFFE);
 	}
 
-    */
 	return HAP_CID_BRIDGE;
+	*/
 }
 
-hap_cid_t HomeKit::FillWindowOpener(hap_acc_t *Accessory) {
+void Matter::CreateWindowOpener() {
+
+	/*
 	string 		NameString 	=  "";
 	uint16_t 	UUID 		= 0;
 	uint16_t	Status		= 0;
@@ -520,11 +1254,13 @@ hap_cid_t HomeKit::FillWindowOpener(hap_acc_t *Accessory) {
 	}
 
 	return HAP_CID_WINDOW;
+	*/
 }
 
-void HomeKit::Task(void *) {
+void Matter::Task(void *) {
 	IsRunning = true;
 
+	/*
 	hap_set_debug_level(HAP_DEBUG_LEVEL_INFO);
 
     hap_cfg_t hap_cfg;
@@ -533,7 +1269,6 @@ void HomeKit::Task(void *) {
 
     hap_set_config(&hap_cfg);
 
-	/* Initialize the HAP core */
 	hap_init(HAP_TRANSPORT_WIFI);
 
 	hap_cid_t CID = FillAccessories();
@@ -756,25 +1491,14 @@ void HomeKit::Task(void *) {
 
 	    esp_hap_get_setup_payload("999-55-222", "17AC", false, CID);
 	}
-
-    //::esp_event_handler_register(WIFI_EVENT	, ESP_EVENT_ANY_ID	 , &WiFi.eventHandler, &WiFi);
-    //::esp_event_handler_register(IP_EVENT	, IP_EVENT_STA_GOT_IP, &WiFi.eventHandler, &WiFi);
-
-    //app_wifi_init();
-
-    /* After all the initializations are done, start the HAP core */
-    if (hap_start() == HAP_SUCCESS)
-    {
-        //app_wifi_start(portMAX_DELAY);
-        httpd_handle_t *HAPWebServerHandle = hap_platform_httpd_get_handle();
-        if (HAPWebServerHandle != NULL)
-        	WebServer.RegisterHandlers(*HAPWebServerHandle);
-    }
-    else
-    	WebServer.HTTPStart();
-
-
-    /* The task ends here. The read/write callbacks will be invoked by the HAP Framework */
-
+	*/
     vTaskDelete(NULL);
+}
+
+bool emberAfActionsClusterInstantActionCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
+                                                const Actions::Commands::InstantAction::DecodableType & commandData)
+{
+    // No actions are implemented, just return status NotFound.
+    commandObj->AddStatus(commandPath, Protocols::InteractionModel::Status::NotFound);
+    return true;
 }

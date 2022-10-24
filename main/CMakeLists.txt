@@ -1,25 +1,3 @@
-set(SRC_FILES 
-    "API.cpp"
-	"Automation.cpp"
-	"BLEClient.cpp"
-	"BLEServer.cpp"
-	"Commands.cpp"
-	"Device.cpp"
-	"Log.cpp"
-	"main.cpp"
-	"RemoteControl.cpp"
-	"LocalMQTT.cpp"
-	"Network.cpp"
-	"Query.cpp"
-	"Scenarios.cpp"
-	"Sensors.cpp"
-	"Settings.cpp"
-	"Storage.cpp"
-	"Data.cpp"
-	"WebServer.cpp"
-	"Wireless.cpp"
-	"BootAndRestore.cpp")
-
 idf_component_register(
 	PRIV_INCLUDE_DIRS
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/bridge-app"
@@ -34,11 +12,10 @@ idf_component_register(
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/util"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/nlio/repo/include"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/third_party/nlassert/repo/include"
-	SRCS
-	"${SRC_FILES}"
-	"${CMAKE_SOURCE_DIR}/main"
-	"${CMAKE_SOURCE_DIR}/main/Matter"
-	"${CMAKE_SOURCE_DIR}/main/Matter/Apps"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/platform/esp32"
+	SRC_DIRS
+	"${CMAKE_CURRENT_LIST_DIR}"
+	"${CMAKE_CURRENT_LIST_DIR}/Matter"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/bridge-app/zap-generated"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/app-common/app-common/zap-generated/attributes"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/app-common/app-common/zap-generated"

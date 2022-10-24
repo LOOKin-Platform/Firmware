@@ -15,8 +15,8 @@
  *    limitations under the License.
  */
 
-#include <AppConfig.h>
-#include <WindowAppImpl.h>
+/*
+#include "WindowAppImpl.h"
 #include <app-common/zap-generated/attributes/Accessors.h>
 #include <app/clusters/window-covering-server/window-covering-server.h>
 #include <app/server/OnboardingCodesUtil.h>
@@ -27,19 +27,7 @@
 #ifdef QR_CODE_ENABLED
 #include <qrcodegen.h>
 #endif // QR_CODE_ENABLED
-#include <sl_simple_button_instances.h>
 
-#ifdef ENABLE_WSTK_LEDS
-#include <sl_simple_led_instances.h>
-#endif // ENABLE_WSTK_LEDS
-
-#include <sl_system_kernel.h>
-
-#ifdef SL_WIFI
-#include "wfx_host_events.h"
-#include <app/clusters/network-commissioning/network-commissioning.h>
-#include <platform/EFR32/NetworkCommissioningWiFiDriver.h>
-#endif
 
 #ifdef DISPLAY_ENABLED
 #include <LcdPainter.h>
@@ -59,7 +47,8 @@ using namespace chip::app::Clusters::WindowCovering;
 
 #ifdef SL_WIFI
 chip::app::Clusters::NetworkCommissioning::Instance
-    sWiFiNetworkCommissioningInstance(0 /* Endpoint Id */, &(chip::DeviceLayer::NetworkCommissioning::SlWiFiDriver::GetInstance()));
+    sWiFiNetworkCommissioningInstance(0, &(chip::DeviceLayer::NetworkCommissioning::SlWiFiDriver::GetInstance()));
+    // 0 это Endpoint Id
 #endif
 //------------------------------------------------------------------------------
 // Timers
@@ -91,8 +80,7 @@ void WindowAppImpl::Timer::Start()
     // Timer is not active
     if (xTimerStart(mHandler, 100) != pdPASS)
     {
-        EFR32_LOG("Timer start() failed");
-        appError(CHIP_ERROR_INTERNAL);
+        ESP_LOGI("Timer start() failed");
     }
 
     mIsActive = true;
@@ -156,18 +144,16 @@ WindowAppImpl::WindowAppImpl() {}
 void WindowAppImpl::OnTaskCallback(void * parameter)
 {
 #ifdef SL_WIFI
-    /*
-     * Wait for the WiFi to be initialized
-     */
+    // Wait for the WiFi to be initialized
     EFR32_LOG("APP: Wait WiFi Init");
     while (!wfx_hw_ready())
     {
         vTaskDelay(10);
     }
     EFR32_LOG("APP: Done WiFi Init");
-    /* We will init server when we get IP */
+    // We will init server when we get IP
     sWiFiNetworkCommissioningInstance.Init();
-    /* added for commisioning with wifi */
+    // added for commisioning with wifi
 #endif
 
     sInstance.Run();
@@ -294,25 +280,25 @@ void WindowAppImpl::DispatchEventAttributeChange(chip::EndpointId endpoint, chip
 {
     switch (attribute)
     {
-    /* RO OperationalStatus */
+    // RO OperationalStatus
     case Attributes::OperationalStatus::Id:
         UpdateLEDs();
         break;
-    /* RO Type: not supposed to dynamically change -> Cycling Window Covering Demo */
+    // RO Type: not supposed to dynamically change -> Cycling Window Covering Demo
     case Attributes::Type::Id:
-    /* ============= Positions for Position Aware ============= */
+    // ============= Positions for Position Aware =============
     case Attributes::CurrentPositionLiftPercent100ths::Id:
     case Attributes::CurrentPositionTiltPercent100ths::Id:
         UpdateLCD();
         break;
-    /* ### ATTRIBUTEs CHANGEs IGNORED ### */
-    /* RO EndProductType: not supposed to dynamically change */
+    // ### ATTRIBUTEs CHANGEs IGNORED ### 
+    // RO EndProductType: not supposed to dynamically change 
     case Attributes::EndProductType::Id:
-    /* RO ConfigStatus: set by WC server */
+    // RO ConfigStatus: set by WC server 
     case Attributes::ConfigStatus::Id:
-    /* RO SafetyStatus: set by WC server */
+    // RO SafetyStatus: set by WC server 
     case Attributes::SafetyStatus::Id:
-    /* RW Mode: User can change */
+    // RW Mode: User can change 
     case Attributes::Mode::Id:
     default:
         break;
@@ -502,34 +488,5 @@ void WindowAppImpl::UpdateLCD()
 
 void WindowAppImpl::OnMainLoop()
 {
-#ifdef ENABLE_WSTK_LEDS
-    mStatusLED.Animate();
-    mActionLED.Animate();
-#endif // ENABLE_WSTK_LEDS
 }
-
-//------------------------------------------------------------------------------
-// Buttons
-//------------------------------------------------------------------------------
-WindowAppImpl::Button::Button(WindowApp::Button::Id id, const char * name) : WindowApp::Button(id, name) {}
-
-void WindowAppImpl::OnButtonChange(const sl_button_t * handle)
-{
-    WindowApp::Button * btn = static_cast<Button *>((handle == &sl_button_btn0) ? sInstance.mButtonUp : sInstance.mButtonDown);
-
-    if (sl_button_get_state(handle) == SL_SIMPLE_BUTTON_PRESSED)
-    {
-        btn->Press();
-    }
-    else
-    {
-        btn->Release();
-    }
-}
-
-// Silabs button callback from button event ISR
-void sl_button_on_change(const sl_button_t * handle)
-{
-    WindowAppImpl * app = static_cast<WindowAppImpl *>(&WindowAppImpl::sInstance);
-    app->OnButtonChange(handle);
-}
+*/

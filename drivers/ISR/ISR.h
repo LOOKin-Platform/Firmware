@@ -17,7 +17,7 @@ using namespace std;
 #include "esp_log.h"
 
 typedef void (*ISRCallback)(void *);
-typedef void (*TimerCallback)(void *);
+typedef void (*ISRTimerCallback)(void *);
 
 class ISR {
 	public:
@@ -34,10 +34,10 @@ class ISR {
 
 		class HardwareTimer {
 			public:
-				HardwareTimer(timer_group_t = TIMER_GROUP_MAX, timer_idx_t = TIMER_MAX, uint64_t = 100, TimerCallback = NULL, void *Param = NULL);
+				HardwareTimer(timer_group_t = TIMER_GROUP_MAX, timer_idx_t = TIMER_MAX, uint64_t = 100, ISRTimerCallback = NULL, void *Param = NULL);
 				~HardwareTimer();
 
-				void SetCallback(TimerCallback);
+				void SetCallback(ISRTimerCallback);
 				void Start();
 				void Pause();
 				void Stop();

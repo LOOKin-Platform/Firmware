@@ -6,7 +6,7 @@
 
 #include "Wireless.h"
 #include "Globals.h"
-#include "HomeKit.h"
+#include "Matter.h"
 
 static char tag[] = "Wireless";
 
@@ -33,8 +33,8 @@ void Wireless_t::StopInterfaces(bool ShouldBlockForever) {
 	RemoteControl.Stop();
 	LocalMQTT.Stop();
 
-	if (HomeKit::IsEnabledForDevice())
-		HomeKit::Stop();
+	if (Matter::IsEnabledForDevice())
+		Matter::Stop();
 
 	if (WiFi.IsRunning())
 		Wireless.StopWiFi();
