@@ -18,7 +18,8 @@
 			"algorithm": "cpp",
 			"functional": "cpp",
 			"string": "cpp",
-			"new": "cpp"
+			"new": "cpp",
+			"*.ipp": "cpp"
 		}
 	}
 }

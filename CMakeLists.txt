@@ -6,9 +6,9 @@ add_definitions(-DCONFIG_RENDEZVOUS_MODE_WIFI=1)
 add_definitions(-DCONFIG_RENDEZVOUS_MODE=1)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-include(${CMAKE_CURRENT_LIST_DIR}/third_party/connectedhomeip/examples/common/cmake/idf_flashing.cmake)
+include($ENV{MATTER_PATH}/examples/common/cmake/idf_flashing.cmake)
 
-set(EXTRA_COMPONENT_DIRS ${CMAKE_CURRENT_LIST_DIR}/third_party/connectedhomeip/config/esp32/components ${CMAKE_CURRENT_LIST_DIR}/third_party/connectedhomeip/examples/common/QRCode "drivers libs main drivers/Periphery")
+set(EXTRA_COMPONENT_DIRS $ENV{MATTER_PATH}/config/esp32/components $ENV{MATTER_PATH}/examples/common/QRCode "drivers libs main drivers/Periphery")
 
 project(firmware)
 
