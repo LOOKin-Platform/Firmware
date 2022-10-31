@@ -45,12 +45,8 @@ class CommandBLE_t : public Command_t {
 		void InitSettings() override {
 			NVS Memory(NVSCommandsBLEArea);
 
-			if (Memory.IsKeyExists(NVSBLESeqRepeatCounter))
-			{
-				SequenceRepeatCounter = Memory.GetInt8Bit(NVSBLESeqRepeatCounter);
-				if (SequenceRepeatCounter < 1)
-					SequenceRepeatCounter = 1;
-			}
+			uint8_t Value = Memory.GetInt8Bit(NVSBLESeqRepeatCounter);
+			SequenceRepeatCounter = (Value == 0) : 1 ? Value;
 		}
 
 		string GetSettings() override {

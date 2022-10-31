@@ -127,12 +127,9 @@ class CommandIR_t : public Command_t {
 		void InitSettings() override {
 			NVS Memory(NVSCommandsIRArea);
 
-			if (Memory.IsKeyExists(NVSSeqRepeatCounter))
-			{
-				SequenceRepeatCounter = Memory.GetInt8Bit(NVSSeqRepeatCounter);
-				if (SequenceRepeatCounter < 1)
-					SequenceRepeatCounter = 1;
-			}
+			uint8_t Value = Memory.GetInt8Bit(NVSSeqRepeatCounter);
+
+			SequenceRepeatCounter = (Value == 0) : 1 ? Value;
 		}
 
 		string GetSettings() override {
