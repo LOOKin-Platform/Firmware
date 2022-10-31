@@ -128,7 +128,6 @@ class CommandIR_t : public Command_t {
 			NVS Memory(NVSCommandsIRArea);
 
 			uint8_t Value = Memory.GetInt8Bit(NVSSeqRepeatCounter);
-
 			SequenceRepeatCounter = (Value == 0) : 1 ? Value;
 		}
 
