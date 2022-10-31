@@ -50,6 +50,9 @@ LocalMQTT_t			LocalMQTT;
 
 const char tag[] = "Main";
 
+//#define CHIP_DEVICE_CONFIG_ENABLE_WIFI 0
+//#define CHIP_DEVICE_CONFIG_ENABLE_WIFI_AP 0
+
 extern "C" void app_main() 
 {
 	NVS::Init();
@@ -61,6 +64,9 @@ extern "C" void app_main()
 	//esp_log_level_set("*", ESP_LOG_VERBOSE);    // enable WARN logs from WiFi stack
 	esp_log_level_set("wifi", ESP_LOG_WARN);      // set warning log level for wifi
 
+	//!
+	esp_log_level_set("*", ESP_LOG_INFO);      // set warning log level for wifi
+
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 	Settings.eFuse.ReadDataOrInit();
 
@@ -69,7 +75,12 @@ extern "C" void app_main()
 
 	ESP_LOGI("Current Firmware:", "%s", Settings.Firmware.ToString().c_str());
 
-	Network.WiFiScannedList = WiFi.Scan();
+	if (Matter::IsEnabledForDevice())
+		Matter::Init(); // init Matter and event loop system
+
+	//WiFi.IsExternalInitExists = Matter::IsEnabledForDevice();
+
+	//Network.WiFiScannedList = WiFi.Scan();
 
 	Time::SetTimezone();
 
@@ -93,15 +104,13 @@ extern "C" void app_main()
 	Sensors 		= Sensor_t::GetSensorsForDevice();
 	Commands		= Command_t::GetCommandsForDevice();
 
-	Matter::Init();
-
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
-	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
+	//WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
-	BLEServer.StartAdvertising();
+	//BLEServer.StartAdvertising();
 
-	if (Network.WiFiSettings.size() == 0) // first start for HID devices
-		BLEServer.ForceHIDMode(BASIC);
+	//if (Network.WiFiSettings.size() == 0) // first start for HID devices
+	//	BLEServer.ForceHIDMode(BASIC);
 
 	WebServer.HTTPStart();
 

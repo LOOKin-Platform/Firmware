@@ -27,7 +27,7 @@
 
 #include "DeviceCallbacks.h"
 
-static const char * TAG = "bridge-devicecallbacks";
+static const char * Tag = "bridge-devicecallbacks";
 
 using namespace ::chip;
 using namespace ::chip::app;
@@ -39,12 +39,64 @@ using namespace ::chip::System;
 void AppDeviceCallbacks::PostAttributeChangeCallback(EndpointId endpointId, ClusterId clusterId, AttributeId attributeId,
                                                      uint8_t type, uint16_t size, uint8_t * value)
 {
-    ESP_LOGI(TAG, "PostAttributeChangeCallback - Cluster ID: '0x%04x', EndPoint ID: '0x%02x', Attribute ID: '0x%04x'", clusterId,
+    ESP_LOGI(Tag, "PostAttributeChangeCallback - Cluster ID: '0x%04x', EndPoint ID: '0x%02x', Attribute ID: '0x%04x'", clusterId,
              endpointId, attributeId);
-    ESP_LOGI(TAG, "Current free heap: %d\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
+
+/*
+    switch (clusterId)
+    {
+        case Clusters::OnOff::Id:
+            OnOnOffPostAttributeChangeCallback(endpointId, attributeId, value);
+            break;
+
+        case Clusters::LevelControl::Id:
+            OnLevelControlAttributeChangeCallback(endpointId, attributeId, value);
+            break;
+    #if CONFIG_DEVICE_TYPE_ESP32_C3_DEVKITM
+        case Clusters::ColorControl::Id:
+            OnColorControlAttributeChangeCallback(endpointId, attributeId, value);
+            break;
+    #endif
+        case Clusters::Identify::Id:
+            OnIdentifyPostAttributeChangeCallback(endpointId, attributeId, size, value);
+            break;
+        default:
+            ESP_LOGI(TAG, "Unhandled cluster ID: %d", clusterId);
+            break;
+    }
+*/
+
+    ESP_LOGI(Tag, "Current free heap: %d\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
 }
 
-namespace {
+void AppDeviceCallbacks::OnIdentifyPostAttributeChangeCallback(EndpointId endpointId, AttributeId attributeId, uint8_t * value)
+{
+    ESP_LOGE(Tag, "OnIdentifyPostAttributeChangeCallback");
+}
+
+/*
+bool emberAfBasicClusterMfgSpecificPingCallback(chip::app::CommandHandler * commandObj)
+{
+    emberAfSendDefaultResponse(emberAfCurrentCommand(), EMBER_ZCL_STATUS_SUCCESS);
+    return true;
+}
+*/
+
+void AppDeviceCallbacksDelegate::OnIPv4ConnectivityEstablished()
+{
+    ESP_LOGE(Tag, "OnIPv4ConnectivityEstablished");
+
+//    wifiLED.Set(true);
+}
+void AppDeviceCallbacksDelegate::OnIPv4ConnectivityLost()
+{
+    ESP_LOGE(Tag, "OnIPv4ConnectivityLost");
+
+//    wifiLED.Set(false);
+}
+
+namespace 
+{
 
 class ActionsAttrAccess : public AttributeAccessInterface
 {

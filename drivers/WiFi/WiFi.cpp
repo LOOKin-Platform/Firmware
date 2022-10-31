@@ -117,10 +117,15 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
  * @brief Initialize WiFi.
  */
 void WiFi_t::Init() {
-	if (!m_initCalled) {
+	if (!m_initCalled) 
+	{
 		NVS::Init();
-	    ESP_ERROR_CHECK(::esp_netif_init());
-	    ESP_ERROR_CHECK(::esp_event_loop_create_default());
+
+		if (!IsExternalInitExists) 
+		{
+			ESP_ERROR_CHECK(::esp_netif_init());
+			ESP_ERROR_CHECK(::esp_event_loop_create_default());
+		}
 
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
 		esp_err_t errRc = ::esp_wifi_init(&cfg);
@@ -128,7 +133,8 @@ void WiFi_t::Init() {
 		if (NetIfSTAHandle 	== NULL) NetIfSTAHandle = esp_netif_create_default_wifi_sta();
 		if (NetIfAPHandle 	== NULL) NetIfAPHandle 	= esp_netif_create_default_wifi_ap();
 
-		if (errRc != ESP_OK) {
+		if (errRc != ESP_OK) 
+		{
 			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 			abort();
 		}

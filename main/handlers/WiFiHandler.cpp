@@ -300,58 +300,53 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
-			if (!Matter::IsEnabledForDevice())
-			{
-				esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
+			esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
 
-				IsIPCheckSuccess = false;
-				WiFi.IsIPCheckSuccess = false;
+			IsIPCheckSuccess = false;
+			WiFi.IsIPCheckSuccess = false;
 
-				IsCorrectIPData.Take("CorrectTCPIP");
+			IsCorrectIPData.Take("CorrectTCPIP");
 
-				ip_addr_t ServerIP;
-				ServerIP.u_addr.ip4.addr = StaIPInfo.gw.addr;
-				ServerIP.type = IPADDR_TYPE_V4;
+			ip_addr_t ServerIP;
+			ServerIP.u_addr.ip4.addr = StaIPInfo.gw.addr;
+			ServerIP.type = IPADDR_TYPE_V4;
 
-				esp_ping_config_t ping_config 	= ESP_PING_DEFAULT_CONFIG();
-				ping_config.target_addr 		= ServerIP;          // target IP address
-				ping_config.count 				= Settings.WiFi.PingAfterConnect.Count;    // ping in infinite mode, esp_ping_stop can stop it
-				ping_config.timeout_ms			= Settings.WiFi.PingAfterConnect.Timeout;
-				ping_config.interval_ms			= Settings.WiFi.PingAfterConnect.Delay;
+			esp_ping_config_t ping_config 	= ESP_PING_DEFAULT_CONFIG();
+			ping_config.target_addr 		= ServerIP;          // target IP address
+			ping_config.count 				= Settings.WiFi.PingAfterConnect.Count;    // ping in infinite mode, esp_ping_stop can stop it
+			ping_config.timeout_ms			= Settings.WiFi.PingAfterConnect.Timeout;
+			ping_config.interval_ms			= Settings.WiFi.PingAfterConnect.Delay;
 
-				esp_ping_callbacks_t cbs;
-				cbs.on_ping_success = GatewayPingSuccess;
-				cbs.on_ping_timeout = NULL;
-				cbs.on_ping_end 	= GatewayPingEnd;
-				cbs.cb_args 		= NULL;  // arguments that will feed to all callback functions, can be NULL
+			esp_ping_callbacks_t cbs;
+			cbs.on_ping_success = GatewayPingSuccess;
+			cbs.on_ping_timeout = NULL;
+			cbs.on_ping_end 	= GatewayPingEnd;
+			cbs.cb_args 		= NULL;  // arguments that will feed to all callback functions, can be NULL
 
-				esp_ping_handle_t PingHandler;
-				esp_ping_new_session(&ping_config, &cbs, &PingHandler);
-				esp_ping_start(PingHandler);
+			esp_ping_handle_t PingHandler;
+			esp_ping_new_session(&ping_config, &cbs, &PingHandler);
+			esp_ping_start(PingHandler);
 
-				IsCorrectIPData.Wait("CorrectTCPIP");
+			IsCorrectIPData.Wait("CorrectTCPIP");
 
-				esp_ping_stop(PingHandler);
-				esp_ping_delete_session(PingHandler);
+			esp_ping_stop(PingHandler);
+			esp_ping_delete_session(PingHandler);
 
-				IPDidntGetTimer->Stop();
+			IPDidntGetTimer->Stop();
 
-				if (!IsIPCheckSuccess)
-					return ESP_OK;
+			if (!IsIPCheckSuccess)
+				return ESP_OK;
 
-				PowerManagement::SetWiFiOptions();
+			PowerManagement::SetWiFiOptions();
 
-				WiFi.IsIPCheckSuccess 		= true;
-				Wireless.IsFirstWiFiStart 	= false;
+			WiFi.IsIPCheckSuccess 		= true;
+			Wireless.IsFirstWiFiStart 	= false;
 
-				//WiFi.ClearDNSServers();
-				//WiFi.AddDNSServer("8.8.8.8");
-				//WiFi.AddDNSServer("8.8.4.4");
+			//WiFi.ClearDNSServers();
+			//WiFi.AddDNSServer("8.8.8.8");
+			//WiFi.AddDNSServer("8.8.4.4");
 
-				Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
-			}
-			else
-				WiFi.IsIPCheckSuccess = true;
+			Network.UpdateWiFiIPInfo(WiFi.GetStaSSID(), StaIPInfo);
 
 			//if (!HomeKit::IsEnabledForDevice())
 			//	WebServer.HTTPStart();
@@ -388,18 +383,19 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			    string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
 			    mdns_instance_name_set(InstanceName.c_str());
+
+				mdns_service_add(NULL, "_lookin", "_tcp", Settings.WiFi.MDNSServicePort, NULL, 0);
+
+				string HTTPServiceName = Settings.Bluetooth.DeviceNamePrefix + Device.IDToString();
+				mdns_service_instance_name_set("_lookin", "_tcp", HTTPServiceName.c_str());
+
+				MDNSSetServiceText();
 			}
 			else
 			    mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 
 		    //mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
-		    mdns_service_add(NULL, "_lookin", "_tcp", Settings.WiFi.MDNSServicePort, NULL, 0);
-
-		    string HTTPServiceName = Settings.Bluetooth.DeviceNamePrefix + Device.IDToString();
-		    mdns_service_instance_name_set("_lookin", "_tcp", HTTPServiceName.c_str());
-
-		    MDNSSetServiceText();
-
+			
 			IsConnectedBefore = true;
 
 			Time::ServerSync(Settings.ServerUrls.SyncTime);
@@ -410,6 +406,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
 
 			BLEServer.ForceHIDMode(HID);
+
+			if (Matter::IsEnabledForDevice())
+				Matter::Start();
 
 			return ESP_OK;
 		}

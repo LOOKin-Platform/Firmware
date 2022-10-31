@@ -9,6 +9,8 @@
 #include <string.h>
 #include "Custom.h"
 
+#include "NetworkCommissioningDriver.h"
+
 #define NVS_MATTER_AREA "matter"
 
 class Matter {
@@ -16,6 +18,7 @@ class Matter {
 		static void 			WiFiSetMode(bool, string, string);
 
 		static void				Init();
+		static void				InitServer(intptr_t context);
 
 		static void 			Start();
 		static void 			Stop();
@@ -50,7 +53,7 @@ class Matter {
 
 //		static int 				WriteCallback	(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv);
 
-		static void				CreateAccessories();
+		static void				CreateAccessories(intptr_t context);
 		static void				CreateRemoteBridge();
 		static void				CreateWindowOpener();
 

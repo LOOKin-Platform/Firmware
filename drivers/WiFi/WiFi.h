@@ -161,9 +161,11 @@ class WiFi_t {
 
 	    uint8_t	GetConnectionStatus() 	{ return m_apConnectionStatus; }
 	    bool	IsRunning() 			{ return m_WiFiRunning; }
-	    bool	IsIPCheckSuccess = false;
+	    bool	IsIPCheckSuccess 		= false;
 
 	    bool	IsConnectedSTA();
+
+		bool	IsExternalInitExists 	= false;
 };
 
 #endif /* DRIVERS_WIFI_H_ */

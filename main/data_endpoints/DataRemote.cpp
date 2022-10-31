@@ -24,8 +24,6 @@
 
 #include <IRLib.h>
 
-#include "Custom.h"
-
 extern DataEndpoint_t *Data;
 extern Wireless_t Wireless;
 

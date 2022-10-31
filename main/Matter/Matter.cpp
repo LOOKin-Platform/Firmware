@@ -23,6 +23,8 @@
 #include <app/InteractionModelEngine.h>
 #include <app/server/Server.h>
 
+#include <esp_log.h>
+
 #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 #include <platform/ESP32/ESP32FactoryDataProvider.h>
 #endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
@@ -53,7 +55,7 @@ using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
 
 static AppDeviceCallbacks AppCallback;
-
+static AppDeviceCallbacksDelegate sAppDeviceCallbacksDelegate;
 
 const char *Tag = "Matter";
 
@@ -154,12 +156,37 @@ void Matter::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
 }
 
 void Matter::Init() {
-	if (IsEnabledForDevice())
-		Matter::Start();
+    DeviceLayer::SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
+
+    CHIPDeviceManager & deviceMgr = CHIPDeviceManager::GetInstance();
+
+    CHIP_ERROR chip_err = deviceMgr.Init(&AppCallback);
+    if (chip_err != CHIP_NO_ERROR)
+    {
+        ESP_LOGE(Tag, "device.Init() failed: %s", ErrorStr(chip_err));
+        return;
+    }
+
+#if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
+    SetCommissionableDataProvider(&sFactoryDataProvider);
+    SetDeviceAttestationCredentialsProvider(&sFactoryDataProvider);
+#if CONFIG_ENABLE_ESP32_DEVICE_INSTANCE_INFO_PROVIDER
+    SetDeviceInstanceInfoProvider(&sFactoryDataProvider);
+#endif
+#else
+    SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
+#endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
+
+    chip::DeviceLayer::PlatformMgr().ScheduleWork(Matter::InitServer, reinterpret_cast<intptr_t>(nullptr));
+}
+
+
+void Matter::InitServer(intptr_t context) {
+	Esp32AppServer::Init();
 }
 
 void Matter::Start() {
-    chip::app::DnssdServer::Instance().StartServer();
+    //chip::app::DnssdServer::Instance().StartServer();
 }
 
 void Matter::Stop() {
@@ -169,7 +196,7 @@ void Matter::Stop() {
 
 void Matter::AppServerRestart() {
 	Stop();
-	CreateAccessories();
+	//CreateAccessories();
 	Start();
 	return;
 }
@@ -853,7 +880,7 @@ int Matter::WriteCallback(hap_write_data_t write_data[], int count, void *serv_p
 }
 */
 
-void Matter::CreateAccessories() {
+void Matter::CreateAccessories(intptr_t context) {
     Esp32AppServer::Init(); // Init ZCL Data Model and CHIP App Server AND Initialize device attestation config
     
 	//!hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
