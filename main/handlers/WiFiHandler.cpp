@@ -368,7 +368,16 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Wireless.IsEventDrivenStart = false;
 
-			if (!Matter::IsEnabledForDevice())
+			if (Matter::IsEnabledForDevice())
+			{
+				Matter::GotIPCallback();
+			
+			    mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
+			
+				string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
+			    mdns_instance_name_set(InstanceName.c_str());
+			}
+			else
 			{
 			    esp_err_t err = mdns_init();
 			    if (err) {
@@ -391,8 +400,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 				MDNSSetServiceText();
 			}
-			else
-			    mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 
 		    //mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
 			

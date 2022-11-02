@@ -18,7 +18,7 @@ idf_component_register(
 	SRC_DIRS
 	"${CMAKE_CURRENT_LIST_DIR}"
 	"${CMAKE_CURRENT_LIST_DIR}/Matter"
-	#"${CMAKE_SOURCE_DIR}/main/Matter/Override"
+	"${CMAKE_SOURCE_DIR}/main/Matter/Override"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/bridge-app/zap-generated"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/app-common/app-common/zap-generated/attributes"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/app-common/app-common/zap-generated"
@@ -84,7 +84,7 @@ idf_component_register(
 target_compile_options(${COMPONENT_LIB} PRIVATE "-D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG")
 
 set_property(TARGET ${COMPONENT_LIB} PROPERTY CXX_STANDARD 17)
-target_compile_options(${COMPONENT_LIB} PRIVATE "-DCHIP_HAVE_CONFIG_H")
+target_compile_options(${COMPONENT_LIB} PRIVATE "-D CHIP_HAVE_CONFIG_H")
 target_compile_options(${COMPONENT_LIB} PUBLIC
            "-DCHIP_ADDRESS_RESOLVE_IMPL_INCLUDE_HEADER=<lib/address_resolve/AddressResolve_DefaultImpl.h>")
 

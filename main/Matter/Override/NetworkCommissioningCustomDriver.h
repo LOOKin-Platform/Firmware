@@ -19,23 +19,25 @@
 #include <esp_wifi.h>
 #include <platform/NetworkCommissioning.h>
 
+#include "esp_log.h"
+
 namespace chip {
 namespace DeviceLayer {
 namespace NetworkCommissioning {
 namespace {
-constexpr uint8_t kMaxWiFiNetworks                  = 1;
-constexpr uint8_t kWiFiScanNetworksTimeOutSeconds   = 10;
-constexpr uint8_t kWiFiConnectNetworkTimeoutSeconds = 30;
+//constexpr uint8_t kMaxWiFiNetworks                  = 1;
+//constexpr uint8_t kWiFiScanNetworksTimeOutSeconds   = 10;
+//constexpr uint8_t kWiFiConnectNetworkTimeoutSeconds = 30;
 } // namespace
 
-class ESPScanResponseIterator : public Iterator<WiFiScanResponse>
+class ESPCustomScanResponseIterator : public Iterator<WiFiScanResponse>
 {
 public:
-    ESPScanResponseIterator(const size_t size, const wifi_ap_record_t * scanResults) : mSize(size), mpScanResults(scanResults) {}
+    ESPCustomScanResponseIterator(const size_t size, const wifi_ap_record_t * scanResults) : mSize(size), mpScanResults(scanResults) {}
     size_t Count() override { return mSize; }
     bool Next(WiFiScanResponse & item) override
     {
-        ESP_LOGE("!!!!", "ESPWiFiDriver::ESPScanResponseIterator");
+        ESP_LOGE("!!!!", "ESPCustomWiFiDriver::ESPScanResponseIterator");
 
         if (mIternum >= mSize)
         {
@@ -62,20 +64,20 @@ private:
     size_t mIternum = 0;
 };
 
-class ESPWiFiDriver final : public WiFiDriver
+class ESPCustomWiFiDriver final : public WiFiDriver
 {
 public:
-    class WiFiNetworkIterator final : public NetworkIterator
+    class WiFiNetworkCustomIterator final : public NetworkIterator
     {
     public:
-        WiFiNetworkIterator(ESPWiFiDriver * aDriver) : mDriver(aDriver) {}
+        WiFiNetworkCustomIterator(ESPCustomWiFiDriver * aDriver) : mDriver(aDriver) {}
         size_t Count() override;
         bool Next(Network & item) override;
         void Release() override { delete this; }
-        ~WiFiNetworkIterator() = default;
+        ~WiFiNetworkCustomIterator() = default;
 
     private:
-        ESPWiFiDriver * mDriver;
+        ESPCustomWiFiDriver * mDriver;
         bool mExhausted = false;
     };
 
@@ -88,7 +90,7 @@ public:
     };
 
     // BaseDriver
-    NetworkIterator * GetNetworks() override { return new WiFiNetworkIterator(this); }
+    NetworkIterator * GetNetworks() override { return new ESPCustomWiFiDriver::WiFiNetworkCustomIterator(this); }
     CHIP_ERROR Init(NetworkStatusChangeCallback * networkStatusChangeCallback) override;
     void Shutdown() override;
 
@@ -119,9 +121,9 @@ public:
     CHIP_ERROR SetLastDisconnectReason(const ChipDeviceEvent * event);
     int32_t GetLastDisconnectReason();
 
-    static ESPWiFiDriver & GetInstance()
+    static ESPCustomWiFiDriver & GetInstance()
     {
-        static ESPWiFiDriver instance;
+        static ESPCustomWiFiDriver instance;
         return instance;
     }
 

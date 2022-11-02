@@ -1,12 +1,14 @@
 #include "Matter.h"
 #include "MatterDevice.h"
 #include "DeviceCallbacks.h"
+#include <NetworkCommissioningCustomDriver.h>
 
 #include <app-common/zap-generated/af-structs.h>
 #include <app-common/zap-generated/attribute-id.h>
 #include <app-common/zap-generated/cluster-id.h>
 #include <app/ConcreteAttributePath.h>
 #include <app/clusters/identify-server/identify-server.h>
+#include <app/clusters/network-commissioning/network-commissioning.h>
 #include <app/reporting/reporting.h>
 #include <app/util/attribute-storage.h>
 #include <common/Esp32AppServer.h>
@@ -18,12 +20,15 @@
 #include <lib/support/ErrorStr.h>
 #include <lib/support/ZclString.h>
 
+#include <app/server/OnboardingCodesUtil.h>
+
 #include <app/server/Dnssd.h>
 
 #include <app/InteractionModelEngine.h>
 #include <app/server/Server.h>
 
 #include <esp_log.h>
+
 
 #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 #include <platform/ESP32/ESP32FactoryDataProvider.h>
@@ -50,9 +55,11 @@ chip::DeviceLayer::DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 
 using namespace ::chip;
 using namespace ::chip::DeviceManager;
+using namespace ::chip::DeviceLayer;
 using namespace ::chip::Platform;
 using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
+
 
 static AppDeviceCallbacks AppCallback;
 static AppDeviceCallbacksDelegate sAppDeviceCallbacksDelegate;
@@ -177,13 +184,47 @@ void Matter::Init() {
     SetDeviceAttestationCredentialsProvider(Examples::GetExampleDACProvider());
 #endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 
-    chip::DeviceLayer::PlatformMgr().ScheduleWork(Matter::InitServer, reinterpret_cast<intptr_t>(nullptr));
+//  chip::DeviceLayer::PlatformMgr().ScheduleWork(Matter::InitServer, reinterpret_cast<intptr_t>(nullptr));
+
+	ESP_LOGE(Tag, "QRCODE:");
+    PrintOnboardingCodes(chip::RendezvousInformationFlag(chip::RendezvousInformationFlag::kBLE));
 }
 
+app::Clusters::NetworkCommissioning::Instance
+    sWiFiNetworkCommissioningInstance(0 /* Endpoint Id */, &(chip::DeviceLayer::NetworkCommissioning::ESPCustomWiFiDriver::GetInstance()));
 
-void Matter::InitServer(intptr_t context) {
-	Esp32AppServer::Init();
+void Matter::StartServer() {
+	//Esp32AppServer::Init();
+
+	esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
+	esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
+
+    chip::DeviceLayer::PlatformMgr().ScheduleWork(StartServerInner, reinterpret_cast<intptr_t>(nullptr));
 }
+
+void Matter::StartServerInner(intptr_t context) {
+	// Start IM server
+    static chip::CommonCaseDeviceServerInitParams initParams;
+    (void) initParams.InitializeStaticResourcesBeforeServerInit();
+    chip::Server::GetInstance().Init(initParams);
+
+    // Device Attestation & Onboarding codes
+    chip::Credentials::SetDeviceAttestationCredentialsProvider(chip::Credentials::Examples::GetExampleDACProvider());
+    sWiFiNetworkCommissioningInstance.Init();
+    chip::DeviceLayer::ConfigurationMgr().LogDeviceConfig();
+
+    if (chip::Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow() != CHIP_NO_ERROR)
+    {
+        ChipLogError(Shell, "OpenBasicCommissioningWindow() failed");
+    }
+
+    chip::DeviceLayer::PlatformMgr().AddEventHandler(Matter::DeviceEventCallback, reinterpret_cast<intptr_t>(nullptr));
+
+    // Register a function to receive events from the CHIP device layer.  Note that calls to
+    // this function will happen on the CHIP event loop thread, not the app_main thread.
+    PlatformMgr().AddEventHandler(DeviceEventCallback, reinterpret_cast<intptr_t>(nullptr));
+}
+
 
 void Matter::Start() {
     //chip::app::DnssdServer::Instance().StartServer();
@@ -212,6 +253,11 @@ void Matter::ResetData() {
 bool Matter::IsEnabledForDevice() {
 	return true;
 }
+
+void Matter::GotIPCallback() {
+	chip::app::DnssdServer::Instance().StartServer();
+}
+
 
 void Matter::Reboot() {
 	//!hap_reboot_accessory();
@@ -683,7 +729,6 @@ bool Matter::TargetPosition(uint8_t Value, uint16_t AID, uint8_t *Char, uint8_t 
 	*/
 }
 
-
 bool Matter::GetConfiguredName(char* Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
 	return false;
 
@@ -950,7 +995,6 @@ CHIP_ERROR RemoveDeviceEndpoint(MatterDevice * dev)
     }
     return CHIP_ERROR_INTERNAL;
 }
-
 
 void Matter::CreateRemoteBridge() {
     // Set starting endpoint id where dynamic endpoints will be assigned, which
@@ -1520,6 +1564,60 @@ void Matter::Task(void *) {
 	}
 	*/
     vTaskDelete(NULL);
+}
+
+void Matter::DeviceEventCallback(const ChipDeviceEvent * event, intptr_t arg)
+{
+    switch (event->Type)
+    {
+		case DeviceEventType::kInternetConnectivityChange:
+			if (event->InternetConnectivityChange.IPv4 == kConnectivity_Established)
+			{
+				ChipLogProgress(Shell, "IPv4 Server ready...");
+				chip::app::DnssdServer::Instance().StartServer();
+			}
+			else if (event->InternetConnectivityChange.IPv4 == kConnectivity_Lost)
+			{
+				ChipLogProgress(Shell, "Lost IPv4 connectivity...");
+			}
+			if (event->InternetConnectivityChange.IPv6 == kConnectivity_Established)
+			{
+				ChipLogProgress(Shell, "IPv6 Server ready...");
+				chip::app::DnssdServer::Instance().StartServer();
+			}
+			else if (event->InternetConnectivityChange.IPv6 == kConnectivity_Lost)
+			{
+				ChipLogProgress(Shell, "Lost IPv6 connectivity...");
+			}
+
+			break;
+
+		case DeviceEventType::kCHIPoBLEConnectionEstablished:
+			ChipLogProgress(Shell, "CHIPoBLE connection established");
+			break;
+
+		case DeviceEventType::kCHIPoBLEConnectionClosed:
+			ChipLogProgress(Shell, "CHIPoBLE disconnected");
+			break;
+
+		case DeviceEventType::kCommissioningComplete:
+			ChipLogProgress(Shell, "Commissioning complete");
+			break;
+
+		case DeviceEventType::kInterfaceIpAddressChanged:
+			if ((event->InterfaceIpAddressChanged.Type == InterfaceIpChangeType::kIpV4_Assigned) ||
+				(event->InterfaceIpAddressChanged.Type == InterfaceIpChangeType::kIpV6_Assigned))
+			{
+				// DNSSD server restart on any ip assignment: if link local ipv6 is configured, that
+				// will not trigger a 'internet connectivity change' as there is no internet
+				// connectivity. DNSSD still wants to refresh its listening interfaces to include the
+				// newly selected address.
+				chip::app::DnssdServer::Instance().StartServer();
+			}
+			break;
+    }
+
+    ChipLogProgress(Shell, "Current free heap: %u\n", static_cast<unsigned int>(heap_caps_get_free_size(MALLOC_CAP_8BIT)));
 }
 
 bool emberAfActionsClusterInstantActionCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,

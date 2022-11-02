@@ -75,12 +75,16 @@ extern "C" void app_main()
 
 	ESP_LOGI("Current Firmware:", "%s", Settings.Firmware.ToString().c_str());
 
-	if (Matter::IsEnabledForDevice())
-		Matter::Init(); // init Matter and event loop system
+	if (Matter::IsEnabledForDevice()) 
+	{
+		Matter::Init();
+		WiFi.IsExternalInitExists = true;
+	}
 
-	//WiFi.IsExternalInitExists = Matter::IsEnabledForDevice();
+	Network.WiFiScannedList = WiFi.Scan();
 
-	//Network.WiFiScannedList = WiFi.Scan();
+//	if (Matter::IsEnabledForDevice()) 
+//    	chip::DeviceLayer::PlatformMgr().ScheduleWork(Matter::InitServer, reinterpret_cast<intptr_t>(nullptr));
 
 	Time::SetTimezone();
 
@@ -95,6 +99,9 @@ extern "C" void app_main()
 	Data->Init();
 	Storage.Init();
 
+	if (Matter::IsEnabledForDevice())
+		Matter::StartServer();
+
 	// Remote temporary hack
 	if (Settings.eFuse.Type == Settings.Devices.Remote) {
 		GPIO::Setup(GPIO_NUM_22);
@@ -105,7 +112,7 @@ extern "C" void app_main()
 	Commands		= Command_t::GetCommandsForDevice();
 
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
-	//WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
+	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
 	//BLEServer.StartAdvertising();
 

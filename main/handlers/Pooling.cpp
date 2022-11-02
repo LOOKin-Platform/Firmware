@@ -26,7 +26,7 @@ class Pooling_t {
 					ESP_LOGI("Pooling","RAM left %d", esp_get_free_heap_size());
 
 				OverheatHandler				::Pool();
-				//WiFiUptimeHandler			::Pool();
+				WiFiUptimeHandler			::Pool();
 				//BluetoothPeriodicHandler	::Pool();
 				EnergyPeriodicHandler		::Pool();
 				WirelessPriorityHandler		::Pool();
