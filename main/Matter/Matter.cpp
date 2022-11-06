@@ -256,6 +256,7 @@ bool Matter::IsEnabledForDevice() {
 
 void Matter::GotIPCallback() {
 	chip::app::DnssdServer::Instance().StartServer();
+
 }
 
 
