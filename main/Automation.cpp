@@ -22,7 +22,7 @@ void Automation_t::Init() {
 	Scenario_t::LoadScenarios();
 	LoadVersionMap();
 
-	TimeChangedHandle = FreeRTOS::StartTask(TimeChangedTask, "TimeChangedTask", NULL, 6144);
+	TimeChangedHandle = FreeRTOS::StartTask(TimeChangedTask, "TimeChangedTask", NULL, Settings.Scenarios.TimeChangedTaskSize);
 }
 
 uint32_t Automation_t::CurrentVersion() {

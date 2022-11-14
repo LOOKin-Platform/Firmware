@@ -1,7 +1,8 @@
 #include "Matter.h"
 #include "MatterDevice.h"
 #include "DeviceCallbacks.h"
-#include <NetworkCommissioningCustomDriver.h>
+#include "NetworkCommissioningCustomDriver.h"
+#include "ConnectivityManagerWiFi.h"
 
 #include <app-common/zap-generated/af-structs.h>
 #include <app-common/zap-generated/attribute-id.h>
@@ -59,7 +60,6 @@ using namespace ::chip::DeviceLayer;
 using namespace ::chip::Platform;
 using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
-
 
 static AppDeviceCallbacks AppCallback;
 static AppDeviceCallbacksDelegate sAppDeviceCallbacksDelegate;
@@ -206,6 +206,14 @@ void Matter::StartServerInner(intptr_t context) {
 	// Start IM server
     static chip::CommonCaseDeviceServerInitParams initParams;
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
+
+/*
+    if (sAppDelegate != nullptr)
+    {
+        initParams.appDelegate = sAppDelegate;
+    }
+*/
+
     chip::Server::GetInstance().Init(initParams);
 
     // Device Attestation & Onboarding codes
@@ -218,11 +226,11 @@ void Matter::StartServerInner(intptr_t context) {
         ChipLogError(Shell, "OpenBasicCommissioningWindow() failed");
     }
 
-    chip::DeviceLayer::PlatformMgr().AddEventHandler(Matter::DeviceEventCallback, reinterpret_cast<intptr_t>(nullptr));
-
     // Register a function to receive events from the CHIP device layer.  Note that calls to
     // this function will happen on the CHIP event loop thread, not the app_main thread.
     PlatformMgr().AddEventHandler(DeviceEventCallback, reinterpret_cast<intptr_t>(nullptr));
+
+	CreateAccessories(context);
 }
 
 
@@ -254,9 +262,29 @@ bool Matter::IsEnabledForDevice() {
 	return true;
 }
 
-void Matter::GotIPCallback() {
+void Matter::StationConnected() {
+	ConnectivityManagerWiFi::OnStationConnected();
+}
+
+void Matter::GotIPv4Callback(const ip_event_got_ip_t & got_ip) {
 	chip::app::DnssdServer::Instance().StartServer();
 
+	ChipLogProgress(DeviceLayer, "IP_EVENT_STA_GOT_IP");
+	
+	ConnectivityManagerWiFi::OnStationIPv4AddressAvailable(got_ip);
+}
+
+void Matter::GotIPv6Callback(const ip_event_got_ip6_t & got_ip) {
+	chip::app::DnssdServer::Instance().StartServer();
+
+	ChipLogProgress(DeviceLayer, "IP_EVENT_GOT_IP6");
+
+	ConnectivityManagerWiFi::OnStationIPv6AddressAvailable(got_ip);
+}
+
+void Matter::LostIPCallback() {
+	ChipLogProgress(DeviceLayer, "IP_EVENT_STA_LOST_IP");
+	ConnectivityManagerWiFi::OnStationIPAddressLost();
 }
 
 
@@ -927,7 +955,7 @@ int Matter::WriteCallback(hap_write_data_t write_data[], int count, void *serv_p
 */
 
 void Matter::CreateAccessories(intptr_t context) {
-    Esp32AppServer::Init(); // Init ZCL Data Model and CHIP App Server AND Initialize device attestation config
+    //Esp32AppServer::Init(); // Init ZCL Data Model and CHIP App Server AND Initialize device attestation config
     
 	//!hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
 
@@ -997,8 +1025,61 @@ CHIP_ERROR RemoveDeviceEndpoint(MatterDevice * dev)
     return CHIP_ERROR_INTERNAL;
 }
 
+DataVersion gLight1DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight2DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight3DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight4DataVersions[ArraySize(bridgedLightClusters)];
+
+static MatterDevice gLight1("Light 1", "Office");
+static MatterDevice gLight2("Light 2", "Office");
+static MatterDevice gLight3("Light 3", "Kitchen");
+static MatterDevice gLight4("Light 4", "Den");
+
+namespace {
+void CallReportingCallback(intptr_t closure)
+{
+    auto path = reinterpret_cast<app::ConcreteAttributePath *>(closure);
+    MatterReportingAttributeChangeCallback(*path);
+    Platform::Delete(path);
+}
+
+void ScheduleReportingCallback(MatterDevice * dev, ClusterId cluster, AttributeId attribute)
+{
+    auto * path = Platform::New<app::ConcreteAttributePath>(dev->GetEndpointId(), cluster, attribute);
+    DeviceLayer::PlatformMgr().ScheduleWork(CallReportingCallback, reinterpret_cast<intptr_t>(path));
+}
+} // anonymous namespace
+
+void Matter::HandleDeviceStatusChanged(MatterDevice * dev, MatterDevice::Changed_t itemChangedMask)
+{
+    if (itemChangedMask & MatterDevice::kChanged_Reachable)
+        ScheduleReportingCallback(dev, BridgedDeviceBasic::Id, BridgedDeviceBasic::Attributes::Reachable::Id);
+
+    if (itemChangedMask & MatterDevice::kChanged_State)
+        ScheduleReportingCallback(dev, OnOff::Id, OnOff::Attributes::OnOff::Id);
+
+    if (itemChangedMask & MatterDevice::kChanged_Name)
+        ScheduleReportingCallback(dev, BridgedDeviceBasic::Id, BridgedDeviceBasic::Attributes::NodeLabel::Id);
+}
+
 void Matter::CreateRemoteBridge() {
-    // Set starting endpoint id where dynamic endpoints will be assigned, which
+	ESP_LOGE(Tag, "CreateRemoteBridge");
+
+	memset(gDevices, 0, sizeof(gDevices));
+
+    gLight1.SetReachable(true);
+    gLight2.SetReachable(true);
+    gLight3.SetReachable(true);
+    gLight4.SetReachable(true);
+
+    // Whenever bridged device changes its state
+    gLight1.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+    gLight2.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+    gLight3.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+    gLight4.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+
+
+     // Set starting endpoint id where dynamic endpoints will be assigned, which
     // will be the next consecutive endpoint id after the last fixed endpoint.
     gFirstDynamicEndpointId = static_cast<chip::EndpointId>(
         static_cast<int>(emberAfEndpointFromIndex(static_cast<uint16_t>(emberAfFixedEndpointCount() - 1))) + 1);
@@ -1012,13 +1093,25 @@ void Matter::CreateRemoteBridge() {
     emberAfSetDeviceTypeList(0, Span<const EmberAfDeviceType>(gRootDeviceTypes));
     emberAfSetDeviceTypeList(1, Span<const EmberAfDeviceType>(gAggregateNodeDeviceTypes));
 
-    for (int i=0;i<3;i++) 
-    {
-        static MatterDevice gLight("Light 1", "Office");
+    // Add lights 1..3 --> will be mapped to ZCL endpoints 3, 4, 5
+    AddDeviceEndpoint(&gLight1, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+                      Span<DataVersion>(gLight1DataVersions), 1);
+    AddDeviceEndpoint(&gLight2, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+                      Span<DataVersion>(gLight2DataVersions), 1);
+    AddDeviceEndpoint(&gLight3, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+                      Span<DataVersion>(gLight3DataVersions), 1);
 
-        AddDeviceEndpoint(&gLight, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
-                      Span<DataVersion>(gLightDataVersions), 1);
-    }
+    // Remove Light 2 -- Lights 1 & 3 will remain mapped to endpoints 3 & 5
+    RemoveDeviceEndpoint(&gLight2);
+
+    // Add Light 4 -- > will be mapped to ZCL endpoint 6
+    AddDeviceEndpoint(&gLight4, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+                      Span<DataVersion>(gLight4DataVersions), 1);
+
+    // Re-add Light 2 -- > will be mapped to ZCL endpoint 7
+    AddDeviceEndpoint(&gLight2, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes),
+                      Span<DataVersion>(gLight2DataVersions), 1);
+
 
     /*
 	if (BridgedAccessories.size() == 0) {

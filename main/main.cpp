@@ -22,6 +22,8 @@
 
 #include "handlers/Pooling.cpp"
 
+#include "nimble/nimble_port_freertos.h"
+
 using namespace std;
 
 #define ARP_TABLE_SIZE 256
@@ -83,9 +85,6 @@ extern "C" void app_main()
 
 	Network.WiFiScannedList = WiFi.Scan();
 
-//	if (Matter::IsEnabledForDevice()) 
-//    	chip::DeviceLayer::PlatformMgr().ScheduleWork(Matter::InitServer, reinterpret_cast<intptr_t>(nullptr));
-
 	Time::SetTimezone();
 
 	Device.Init();
@@ -114,10 +113,10 @@ extern "C" void app_main()
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
 	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
-	//BLEServer.StartAdvertising();
+	BLEServer.StartAdvertising();
 
-	//if (Network.WiFiSettings.size() == 0) // first start for HID devices
-	//	BLEServer.ForceHIDMode(BASIC);
+	if (Network.WiFiSettings.size() == 0) // first start for HID devices
+		BLEServer.ForceHIDMode(BASIC);
 
 	WebServer.HTTPStart();
 

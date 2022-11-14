@@ -1,5 +1,5 @@
-#ifndef HOMEKIT_SDK
-#define HOMEKIT_SDK
+#ifndef MATTER
+#define MATTER
 
 #include "FreeRTOSWrapper.h"
 
@@ -14,6 +14,8 @@
 
 #include "NetworkCommissioningDriver.h"
 
+#include "MatterDevice.h"
+
 #define NVS_MATTER_AREA "matter"
 
 class Matter {
@@ -23,6 +25,9 @@ class Matter {
 		static void				Init();
 		static void				StartServer();
 		
+		static void 			HandleDeviceStatusChanged(MatterDevice * dev, MatterDevice::Changed_t itemChangedMask);
+
+
 		static void				Start();
 		static void				Stop();
 
@@ -33,7 +38,10 @@ class Matter {
 
 		static bool				IsEnabledForDevice();
 
-		static void				GotIPCallback();
+		static void				StationConnected();
+		static void				GotIPv4Callback(const ip_event_got_ip_t & got_ip);
+		static void				GotIPv6Callback(const ip_event_got_ip6_t & got_ip);
+		static void 			LostIPCallback();
 
 		static void				Reboot();
 	private:

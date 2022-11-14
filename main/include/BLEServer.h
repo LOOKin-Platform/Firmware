@@ -184,6 +184,9 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		const MediaKeyReport KEY_MEDIA_CC_CONFIGURATION 	= {0	, 0x40}; // Media Selection, KEY_MEDIA_CONSUMER_CONTROL_CONFIGURATION
 		const MediaKeyReport KEY_MEDIA_EMAIL_READER 		= {0	, 0x80};
 		 */
+
+		void		Deinit();
+
 	protected:
 		virtual void		onStarted(NimBLEServer *pServer) { };
 		virtual void		onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override;

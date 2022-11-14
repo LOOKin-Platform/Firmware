@@ -263,7 +263,10 @@ class Settings_t {
 		struct Scenarios_t {
 			static constexpr uint8_t		QueueSize		= 64;
 			static constexpr uint16_t		BlockTicks		= 50;
-			static constexpr uint16_t		TaskStackSize	= 4096;
+
+			//! Обьединить эти таски перед релизом, чтобы сократить занимаемую память
+			static constexpr uint16_t		TaskStackSize	= 2048;
+			static constexpr uint16_t		TimeChangedTaskSize = 2048;
 
 			static constexpr uint16_t		OperandBitLength= 64;
 			static constexpr uint8_t		NameLength		= 64;

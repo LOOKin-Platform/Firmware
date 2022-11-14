@@ -15,6 +15,9 @@
  *    limitations under the License.
  */
 
+#ifndef MATTER_DEVICE
+#define MATTER_DEVICE
+
 // These are the bridged devices
 #include <app/util/attribute-storage.h>
 #include <functional>
@@ -65,3 +68,5 @@ private:
     chip::EndpointId mEndpointId;
     DeviceCallback_fn mChanged_CB;
 };
+
+#endif

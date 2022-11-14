@@ -1,8 +1,6 @@
 #ifndef MATTER_CUSTOM_SDK
 #define MATTER_CUSTOM_SDK
 
-
-
 #include "Converter.h"
 #include "Device.h"
 

@@ -16,7 +16,7 @@ esp_netif_t* 	WiFi_t::NetIfSTAHandle		= NULL;
 esp_netif_t*	WiFi_t::NetIfAPHandle		= NULL;
 
 esp_event_handler_instance_t WiFi_t::instance_any_id = NULL;
-esp_event_handler_instance_t WiFi_t::instance_got_ip = NULL;
+esp_event_handler_instance_t WiFi_t::instance_any_ip = NULL;
 
 
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
@@ -138,9 +138,8 @@ void WiFi_t::Init() {
 			abort();
 		}
 
-		::esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID		, &eventHandler, this, &WiFi_t::instance_any_id);
-		::esp_event_handler_instance_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this, &WiFi_t::instance_got_ip);
-		::esp_event_handler_instance_register(IP_EVENT	, IP_EVENT_GOT_IP6		, &eventHandler, this, &WiFi_t::instance_got_ip);
+		::esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID	, &eventHandler, this, &WiFi_t::instance_any_id);
+		::esp_event_handler_instance_register(IP_EVENT	, ESP_EVENT_ANY_ID	, &eventHandler, this, &WiFi_t::instance_any_ip);
 
 		PowerManagement::SetWiFiOptions();
 
@@ -171,7 +170,7 @@ void WiFi_t::DeInit() {
 	}
 
     ::esp_event_handler_instance_unregister(WIFI_EVENT	, ESP_EVENT_ANY_ID		, instance_any_id);
-    ::esp_event_handler_instance_unregister(IP_EVENT	, IP_EVENT_STA_GOT_IP	, instance_got_ip);
+    ::esp_event_handler_instance_unregister(IP_EVENT	, ESP_EVENT_ANY_ID		, instance_any_ip);
 	::esp_event_loop_delete_default();
 
 	::esp_wifi_restore();

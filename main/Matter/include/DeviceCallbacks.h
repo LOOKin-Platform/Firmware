@@ -46,6 +46,33 @@ private:
     void OnIdentifyPostAttributeChangeCallback(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value);
 
     bool mEndpointOnOffState[2];
+
+    void OnCommissioningSessionStarted()
+    {
+        ESP_LOGE("!","OnCommissioningSessionStarted");
+//        PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningSessionStarted);
+    }
+
+    void OnCommissioningSessionStopped()
+    {
+        ESP_LOGE("!","OnCommissioningSessionStopped");
+        //PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningSessionStopped);
+    }
+
+    void OnCommissioningWindowOpened()
+    {
+        ESP_LOGE("!","OnCommissioningWindowOpened");
+
+        //PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningWindowOpened);
+    }
+
+    void OnCommissioningWindowClosed()
+    {
+        ESP_LOGE("!","OnCommissioningWindowClosed");
+
+        //PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningWindowClosed);
+    }
+
 };
 
 class AppDeviceCallbacksDelegate : public DeviceCallbacksDelegate

@@ -16,6 +16,8 @@
 
 #include "PowerManagement.h"
 
+#include "nimble/nimble_port.h"
+
 extern Device_t 		Device;
 extern WiFi_t			WiFi;
 extern Network_t		Network;
@@ -229,13 +231,28 @@ void BLEServer_t::Init() {
 	}
 }
 
+void BLEServer_t::Deinit() {
+	ESP_LOGE("BLE", "ble_hs_is_enabled");
+
+	if (ble_hs_is_enabled())
+	{
+		ESP_LOGE("BLE", "ENABLED");
+
+		int ret       = nimble_port_stop();
+		esp_err_t err = ESP_OK;
+		if (ret == 0)
+		{
+			nimble_port_deinit();
+		}
+	}
+}
+
 void BLEServer_t::StartAdvertising() {
 	if (IsHIDEnabledForDevice())
 		StartAdvertisingAsHID();
 	else
 		StartAdvertisingAsGenericDevice();
 }
-
 
 void BLEServer_t::StartAdvertisingAsHID()
 {

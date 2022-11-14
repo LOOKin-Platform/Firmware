@@ -44,6 +44,8 @@ class FreeRTOS {
 
 		static void					SetTaskPriority(TaskHandle_t pTask, uint8_t Priority);
 
+		static void					GetRunTimeStats();
+
 		class Semaphore {
 			public:
 				Semaphore(string owner = "<Unknown>");

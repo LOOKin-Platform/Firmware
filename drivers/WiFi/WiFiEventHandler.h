@@ -28,14 +28,16 @@
  * * esp_err_t apStop()
  * * esp_err_t staConnected()
  * * esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo)
- * * esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip)
+ * * esp_err_t staIPv4GotIp(ip_event_got_ip_t event_sta_got_ip);
+ * * esp_err_t staIPv6GotIp(ip_event_got_ip6_t event_sta_got_ip);
+ * * esp_err_t staLostIp();
  * * esp_err_t staStart()
  * * esp_err_t staStop()
  * * esp_err_t wifiReady()
  */
 
-#ifndef MAIN_WIFIEVENTHANDLER_H_
-#define MAIN_WIFIEVENTHANDLER_H_
+#ifndef WIFI_EVENTHANDLER_H_
+#define WIFI_EVENTHANDLER_H_
 #include <esp_event.h>
 
 /**
@@ -81,14 +83,18 @@ class WiFiEventHandler {
 	public:
 		WiFiEventHandler();
 		virtual ~WiFiEventHandler();
+
 		esp_event_handler_t getEventHandler();
+		
 		virtual esp_err_t 	apStaConnected();
 		virtual esp_err_t 	apStaDisconnected();
 		virtual esp_err_t 	apStart();
 		virtual esp_err_t 	apStop();
 		virtual esp_err_t 	staConnected();
 		virtual esp_err_t 	staDisconnected(system_event_sta_disconnected_t DisconnectedInfo);
-		virtual esp_err_t 	staGotIp(system_event_sta_got_ip_t event_sta_got_ip);
+		virtual esp_err_t 	staGotIPv4(ip_event_got_ip_t GotIPv4Info);
+		virtual esp_err_t 	staGotIPv6(ip_event_got_ip6_t GotIPv6Info);
+		virtual esp_err_t	staLostIp();
 		virtual esp_err_t 	staStart();
 		virtual esp_err_t 	staStop();
 		virtual esp_err_t 	wifiReady();
@@ -115,4 +121,4 @@ class WiFiEventHandler {
 		static void EventHandler(void *, esp_event_base_t, int32_t, void *);
 };
 
-#endif /* MAIN_WIFIEVENTHANDLER_H_ */
+#endif /* WIFI_EVENTHANDLER_H_ */

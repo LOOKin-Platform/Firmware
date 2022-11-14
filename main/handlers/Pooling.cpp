@@ -36,6 +36,11 @@ class Pooling_t {
 				NetworkMapHandler			::Pool();
 
 				FreeRTOS::Sleep(Settings.Pooling.Interval);
+
+				/*
+				if (Time::Uptime() % 100 == 0)
+					FreeRTOS::GetRunTimeStats();
+				*/
 			}
 		}
 };

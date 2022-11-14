@@ -10,6 +10,7 @@
 #include <mdns.h>
 
 #include "Matter.h"
+
 #include "API.h"
 
 static char HandlerTag[] = "WiFiHandler";
@@ -209,6 +210,10 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
 
+//        esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
+//        esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
+
+
 			return ESP_OK;
 		}
 
@@ -239,6 +244,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
 			ConnectionTries = 0;
+
+			if (Matter::IsEnabledForDevice())
+				Matter::StationConnected();
 
 			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
 
@@ -299,7 +307,17 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			return ESP_OK;
 		}
 
-		esp_err_t staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
+		esp_err_t staGotIPv6(ip_event_got_ip6_t GotIPv6Info) {
+			if (Matter::IsEnabledForDevice())
+				Matter::GotIPv6Callback(GotIPv6Info);
+
+			return ESP_OK;
+		}
+
+		esp_err_t staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
+			if (Matter::IsEnabledForDevice())
+				Matter::GotIPv4Callback(GotIPv4Info);
+
 			esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
 
 			IsIPCheckSuccess = false;
@@ -353,7 +371,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			WebServer.UDPStart();
 
-			Network.IP = event_sta_got_ip.ip_info;
+			Network.IP = GotIPv4Info.ip_info;
 
 			ESP_LOGI(HandlerTag, "GOT IP %s", Network.IPToString().c_str());
 
@@ -364,18 +382,18 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 				WebServer.UDPSendBroadcastDiscover();
 			}
 
-			Log::Add(Log::Events::WiFi::STAGotIP, Converter::IPToUint32(event_sta_got_ip.ip_info));
+			Log::Add(Log::Events::WiFi::STAGotIP, Converter::IPToUint32(GotIPv4Info.ip_info));
 
 			Wireless.IsEventDrivenStart = false;
 
 			if (Matter::IsEnabledForDevice())
 			{
-				Matter::GotIPCallback();
+				Matter::GotIPv4Callback(GotIPv4Info);
 			
-			    mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
+			    //!mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 			
-				string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
-			    mdns_instance_name_set(InstanceName.c_str());
+				//!string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
+			    //!mdns_instance_name_set(InstanceName.c_str());
 			}
 			else
 			{
@@ -414,8 +432,10 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			BLEServer.ForceHIDMode(HID);
 
-			if (Matter::IsEnabledForDevice())
+			/*
+			//!if (Matter::IsEnabledForDevice())
 				Matter::Start();
+			*/
 
 			return ESP_OK;
 		}

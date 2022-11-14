@@ -118,7 +118,7 @@ class WiFi_t {
 		static esp_netif_t* NetIfAPHandle;
 
 	    static esp_event_handler_instance_t instance_any_id;
-	    static esp_event_handler_instance_t instance_got_ip;
+	    static esp_event_handler_instance_t instance_any_ip;
 
 
 	public:
