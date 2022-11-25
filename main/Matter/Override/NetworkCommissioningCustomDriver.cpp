@@ -44,6 +44,8 @@ CHIP_ERROR ESPCustomWiFiDriver::Init(NetworkStatusChangeCallback * networkStatus
 {
     ESP_LOGE("!!!!","ESPCustomWiFiDriver::Init");
 
+    return CHIP_NO_ERROR;
+
     CHIP_ERROR err;
     size_t ssidLen        = 0;
     size_t credentialsLen = 0;

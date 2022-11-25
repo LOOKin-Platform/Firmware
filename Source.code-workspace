@@ -110,7 +110,10 @@
 			"valarray": "cpp",
 			"variant": "cpp",
 			"iterator": "cpp",
-			"utility": "cpp"
+			"utility": "cpp",
+			"*.inc": "cpp",
+			"filesystem": "cpp",
+			"slist": "cpp"
 		}
 	}
 }

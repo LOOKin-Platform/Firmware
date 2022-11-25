@@ -175,7 +175,6 @@ void WebServer_t::UDPStop() {
 	UDPServerStopFlag 	= true;
 }
 
-
 void WebServer_t::RegisterHandlers(httpd_handle_t ServerHandle) {
 	ESP_LOGE("RegisterHandlers", "start");
 
@@ -449,8 +448,8 @@ string WebServer_t::GetSetupPage() {
 	    if (index != std::string::npos) {
 	    	vector<string> SSIDList;
 
-	    	for (WiFiAPRecord Record : Network.WiFiScannedList)
-	    		SSIDList.push_back("'" + Record.getSSID() + "'");
+	    	for (WiFiScannedAPListItem Record : Network.WiFiScannedList)
+	    		SSIDList.push_back("'" + Record.SSID + "'");
 
 	    	string SSIDListString = Converter::VectorToString(SSIDList, ",");
 	    	SetupPage = SetupPage.substr(0, index) + SSIDListString + SetupPage.substr(index + 11);

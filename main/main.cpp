@@ -64,10 +64,10 @@ extern "C" void app_main()
 	*/
 
 	//esp_log_level_set("*", ESP_LOG_VERBOSE);    // enable WARN logs from WiFi stack
-	esp_log_level_set("wifi", ESP_LOG_WARN);      // set warning log level for wifi
+	esp_log_level_set("wifi", ESP_LOG_DEBUG);      // set warning log level for wifi
 
 	//!
-	esp_log_level_set("*", ESP_LOG_INFO);      // set warning log level for wifi
+	esp_log_level_set("*", ESP_LOG_DEBUG);      // set warning log level for wifi
 
 	::esp_phy_erase_cal_data_in_nvs(); // clear PHY RF data - tried to do this to make wifi work clearear
 	Settings.eFuse.ReadDataOrInit();
@@ -78,12 +78,12 @@ extern "C" void app_main()
 	ESP_LOGI("Current Firmware:", "%s", Settings.Firmware.ToString().c_str());
 
 	if (Matter::IsEnabledForDevice()) 
-	{
-		Matter::Init();
 		WiFi.IsExternalInitExists = true;
-	}
 
-	Network.WiFiScannedList = WiFi.Scan();
+	Network.ImportScannedSSIDList(WiFi.Scan());
+
+	if (Matter::IsEnabledForDevice()) 
+		Matter::Init();
 
 	Time::SetTimezone();
 
@@ -98,8 +98,8 @@ extern "C" void app_main()
 	Data->Init();
 	Storage.Init();
 
-	if (Matter::IsEnabledForDevice())
-		Matter::StartServer();
+	if (!Matter::IsEnabledForDevice())
+		WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
 
 	// Remote temporary hack
 	if (Settings.eFuse.Type == Settings.Devices.Remote) {
@@ -111,7 +111,9 @@ extern "C" void app_main()
 	Commands		= Command_t::GetCommandsForDevice();
 
 	WiFi.SetSTAHostname(Settings.WiFi.APSSID);
-	WiFi.SetWiFiEventHandler(new MyWiFiEventHandler());
+
+	if (Matter::IsEnabledForDevice())
+		Matter::StartServer();
 
 	BLEServer.StartAdvertising();
 

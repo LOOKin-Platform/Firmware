@@ -25,6 +25,9 @@ class Matter {
 		static void				Init();
 		static void				StartServer();
 		
+		static void 			WiFiScan();
+		static void				WiFiConnectToAP(string SSID, string Password);
+
 		static void 			HandleDeviceStatusChanged(MatterDevice * dev, MatterDevice::Changed_t itemChangedMask);
 
 
@@ -44,6 +47,9 @@ class Matter {
 		static void 			LostIPCallback();
 
 		static void				Reboot();
+
+		static inline 
+			FreeRTOS::Semaphore	m_scanFinished = FreeRTOS::Semaphore("MScanFinished");
 	private:
 		static int				BridgeIdentify		();
 		static int				AccessoryIdentify	(uint16_t AID);

@@ -94,7 +94,7 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 				WiFi.Stop();
 				FreeRTOS::Sleep(1000);
 
-				Network.WiFiScannedList = WiFi.Scan();
+				Network.ImportScannedSSIDList(WiFi.Scan());
 				Wireless.StartInterfaces();
 				SetClientModeNextTime(Settings.WiFi.STAModeInterval);
 			}

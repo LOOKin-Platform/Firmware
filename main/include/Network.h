@@ -47,12 +47,22 @@ struct WiFiSettingsItem {
 	uint32_t	Netmask		= 0;
 };
 
+enum NetworkWiFiBandEnum { K2G4, K5 };
+struct WiFiScannedAPListItem {
+	string 				SSID				= "";
+	uint8_t 			BSSID[6]			= {0};
+	wifi_auth_mode_t	SecurityMode		= WIFI_AUTH_MAX;
+	uint8_t				Channel 			= 255;
+	NetworkWiFiBandEnum	Band 				= K2G4;
+	int8_t				RSSI				= 0;
+};
+
 class Network_t {
 	public:
-		vector<WiFiSettingsItem>	WiFiSettings 	= {};
-		vector<WiFiAPRecord>		WiFiScannedList = {};
-		vector<NetworkDevice_t>		Devices			= {};
-		esp_netif_ip_info_t			IP;
+		vector<WiFiSettingsItem>		WiFiSettings 	= {};
+		vector<WiFiScannedAPListItem>	WiFiScannedList = {};
+		vector<NetworkDevice_t>			Devices			= {};
+		esp_netif_ip_info_t				IP;
 
 		Network_t();
 
@@ -83,7 +93,12 @@ class Network_t {
 
 		uint8_t					PoolingNetworkMapReceivedTimer = Settings.Pooling.NetworkMap.DefaultValue;
 
+		void					ImportScannedSSIDList(vector<WiFiAPRecord> ScannedItems);
+		void					ImportScannedSSIDList(vector<WiFiScannedAPListItem> ScannedItems);
+
 	private:
+		void					WiFiConnectToAPInner(string SSID, string Password, const uint8_t& Channel = 0, bool WaitForConnection = true);
+
 		string					ModeToString();
 		string					WiFiCurrentSSIDToString();
 };

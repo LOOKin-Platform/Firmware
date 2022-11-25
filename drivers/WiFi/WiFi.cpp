@@ -113,10 +113,21 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
 	}
 } // eventHandler
 
+bool WiFi_t::IsWiFiInited() {
+	wifi_mode_t *mode = {0};
+	esp_err_t err = esp_wifi_get_mode(mode);
+
+	return !(err == ESP_ERR_WIFI_NOT_INIT);
+}
+
 /**
  * @brief Initialize WiFi.
  */
 void WiFi_t::Init() {
+	ESP_LOGE(tag,"WiFi_t::Init");
+
+	esp_err_t errRc = ESP_OK;
+
 	if (!m_initCalled) 
 	{
 		NVS::Init();
@@ -125,18 +136,29 @@ void WiFi_t::Init() {
 			ESP_ERROR_CHECK(::esp_netif_init());
 			ESP_ERROR_CHECK(::esp_event_loop_create_default());
 		}
-	
-		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-		esp_err_t errRc = ::esp_wifi_init(&cfg);
+		
+		if (!IsWiFiInited()) {
+			wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+			errRc = ::esp_wifi_init(&cfg);
 
-		if (NetIfSTAHandle 	== NULL) NetIfSTAHandle = esp_netif_create_default_wifi_sta();
-		if (NetIfAPHandle 	== NULL) NetIfAPHandle 	= esp_netif_create_default_wifi_ap();
-
-		if (errRc != ESP_OK) 
-		{
-			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-			abort();
+			if (errRc != ESP_OK) 
+			{
+				ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+				abort();
+			}
 		}
+
+		if (!IsExternalInitExists)
+		{
+			if (NetIfSTAHandle 	== NULL) 
+			{
+				NetIfSTAHandle = esp_netif_create_default_wifi_sta();
+			}
+			
+			m_WiFiRunning = true;
+		}
+
+		if (NetIfAPHandle 	== NULL) NetIfAPHandle 	= esp_netif_create_default_wifi_ap();
 
 		::esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID	, &eventHandler, this, &WiFi_t::instance_any_id);
 		::esp_event_handler_instance_register(IP_EVENT	, ESP_EVENT_ANY_ID	, &eventHandler, this, &WiFi_t::instance_any_ip);
@@ -254,7 +276,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	uint16_t apCount = 0;  // Number of access points available.
 	rc = ::esp_wifi_scan_get_ap_num(&apCount);
-	ESP_LOGD(tag, "Count of found access points: %d", apCount);
+	ESP_LOGE(tag, "Count of found access points: %d", apCount);
 
 	wifi_ap_record_t* list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
 	if (list == nullptr) {
@@ -276,6 +298,8 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		wifiAPRecord.m_authMode = list[i].authmode;
 		wifiAPRecord.m_rssi     = list[i].rssi;
 		wifiAPRecord.m_channel	= list[i].primary;
+
+		ESP_LOGE("wifiAPRecord.m_ssid", "%s", wifiAPRecord.m_ssid.c_str());
 
 		if (wifiAPRecord.m_ssid == "")
 			continue;

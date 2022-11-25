@@ -108,8 +108,8 @@ string API::GetSetupPage() {
 	// Prepare index page
 	vector<string> SSIDList;
 
-	for (WiFiAPRecord Record : Network.WiFiScannedList)
-		SSIDList.push_back("'" + Record.getSSID() + "'");
+	for (WiFiScannedAPListItem Record : Network.WiFiScannedList)
+		SSIDList.push_back("'" + Record.SSID + "'");
 
 	string SSIDListString = Converter::VectorToString(SSIDList, ",");
 

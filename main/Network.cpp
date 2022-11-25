@@ -5,6 +5,7 @@
 */
 #include "Globals.h"
 #include "Network.h"
+#include "Matter.h"
 
 const char tag[] 				= "Network_t";
 
@@ -118,16 +119,16 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 		return false;
 
 	if (SSID != "" && IsHidden) {
-		WiFi.ConnectAP(SSID, Password);
+		WiFiConnectToAPInner(SSID, Password);
 		return true;
 	}
 
 	if (SSID != "") // connect to specific WiFi SSID
 		for (auto &WiFiScannedItem : WiFiScannedList) {
-			ESP_LOGI("WiFiConnect", "%s %s", Converter::ToLower(WiFiScannedItem.getSSID()).c_str() , Converter::ToLower(SSID).c_str());
-			if (Converter::ToLower(WiFiScannedItem.getSSID()) == Converter::ToLower(SSID)) {
+			ESP_LOGI("WiFiConnect", "%s %s", Converter::ToLower(WiFiScannedItem.SSID).c_str() , Converter::ToLower(SSID).c_str());
+			if (Converter::ToLower(WiFiScannedItem.SSID) == Converter::ToLower(SSID)) {
 				Log::Add(Log::Events::WiFi::STAConnecting);
-				WiFi.ConnectAP(WiFiScannedItem.getSSID(), Password, WiFiScannedItem.getChannel());
+				WiFiConnectToAPInner(WiFiScannedItem.SSID, Password, WiFiScannedItem.Channel);
 
 				if (!DontUseCache) {
 					uint32_t IP			= 0;
@@ -154,9 +155,9 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 
 	if (SSID == "")
 		for (auto &WiFiScannedItem : WiFiScannedList) {
-			ESP_LOGI(tag, "WiFiScannedItem %s", WiFiScannedItem.getSSID().c_str());
+			ESP_LOGI(tag, "WiFiScannedItem %s", WiFiScannedItem.SSID.c_str());
 				for (auto &item : WiFiSettings)
-					if (item.SSID == WiFiScannedItem.getSSID()) {
+					if (item.SSID == WiFiScannedItem.SSID) {
 
 						if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
 							ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
@@ -165,13 +166,22 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 						}
 
 						Log::Add(Log::Events::WiFi::STAConnecting);
-						WiFi.ConnectAP(WiFiScannedItem.getSSID(), item.Password, WiFiScannedItem.getChannel());
+						WiFiConnectToAPInner(WiFiScannedItem.SSID, item.Password, WiFiScannedItem.Channel);
 						return true;
 					}
 		}
 
 	return false;
 }
+
+void Network_t::WiFiConnectToAPInner(string SSID, string Password,const uint8_t& Channel, bool WaitForConnection) 
+{
+	if (Matter::IsEnabledForDevice()) 
+		Matter::WiFiConnectToAP(SSID, Password);
+	else
+		WiFi.ConnectAP(SSID, Password, Channel, WaitForConnection);
+}
+
 
 void Network_t::UpdateWiFiIPInfo(string SSID, esp_netif_ip_info_t Data) {
 	if (Data.ip.addr != 0 && Data.gw.addr != 0 && Data.netmask.addr != 0)
@@ -345,7 +355,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 				vector<string> SSIDList = vector<string>();
 
 				for (auto &WiFiScannedItem : WiFiScannedList)
-					SSIDList.push_back(WiFiScannedItem.getSSID());
+					SSIDList.push_back(WiFiScannedItem.SSID);
 
 				Result.Body = JSON::CreateStringFromVector(SSIDList);
 				Result.ContentType = WebServer_t::Response::TYPE::JSON;
@@ -615,6 +625,30 @@ string Network_t::WiFiCurrentSSIDToString() {
 	return WiFi_t::GetSSID();
 }
 
+void Network_t::ImportScannedSSIDList(vector<WiFiAPRecord> ScannedItems) {
+	WiFiScannedList.clear();
+
+	for(auto& ScannedItem : ScannedItems) {
+		WiFiScannedAPListItem Item;
+		Item.SSID 			= ScannedItem.getSSID();
+		Item.SecurityMode 	= ScannedItem.getAuthMode();
+		Item.Channel		= ScannedItem.getChannel();
+		Item.Band			= K2G4;
+		Item.RSSI			= ScannedItem.getRSSI();
+
+		WiFiScannedList.push_back(Item);
+	}
+}
+
+void Network_t::ImportScannedSSIDList(vector<WiFiScannedAPListItem> ScannedItems) {
+	WiFiScannedList.clear();
+
+	for(auto& ScannedItem : ScannedItems) {
+		WiFiScannedList.push_back(ScannedItem);
+	}
+}
+
+
 /*
  *
  * NetworkSync class implementation
@@ -736,6 +770,7 @@ void NetworkSync::StorageAborted(const char *IP) {
 	StorageHistoryQuery();
 
 	ESP_LOGE("Network_t::StorageAborted", "");
-
 }
+
+
 

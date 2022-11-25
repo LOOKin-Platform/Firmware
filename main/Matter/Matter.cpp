@@ -30,6 +30,7 @@
 
 #include <esp_log.h>
 
+#include "MatterWiFi.h"
 
 #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 #include <platform/ESP32/ESP32FactoryDataProvider.h>
@@ -162,8 +163,31 @@ void Matter::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
 	IsAP 		= sIsAP;
 }
 
+DataVersion gLight1DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight2DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight3DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight4DataVersions[ArraySize(bridgedLightClusters)];
+
+static MatterDevice gLight1("Light 1", "Office");
+static MatterDevice gLight2("Light 2", "Office");
+static MatterDevice gLight3("Light 3", "Kitchen");
+static MatterDevice gLight4("Light 4", "Den");
+
 void Matter::Init() {
-    DeviceLayer::SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
+	memset(gDevices, 0, sizeof(gDevices));
+
+    gLight1.SetReachable(true);
+    gLight2.SetReachable(true);
+    gLight3.SetReachable(true);
+    gLight4.SetReachable(true);
+
+    // Whenever bridged device changes its state
+    gLight1.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+    gLight2.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+    gLight3.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+    gLight4.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
+
+	DeviceLayer::SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
 
     CHIPDeviceManager & deviceMgr = CHIPDeviceManager::GetInstance();
 
@@ -186,39 +210,78 @@ void Matter::Init() {
 
 //  chip::DeviceLayer::PlatformMgr().ScheduleWork(Matter::InitServer, reinterpret_cast<intptr_t>(nullptr));
 
-	ESP_LOGE(Tag, "QRCODE:");
-    PrintOnboardingCodes(chip::RendezvousInformationFlag(chip::RendezvousInformationFlag::kBLE));
+	//ESP_LOGE(Tag, "QRCODE:");
+    //PrintOnboardingCodes(chip::RendezvousInformationFlag(chip::RendezvousInformationFlag::kOnNetwork));
 }
 
 app::Clusters::NetworkCommissioning::Instance
     sWiFiNetworkCommissioningInstance(0 /* Endpoint Id */, &(chip::DeviceLayer::NetworkCommissioning::ESPCustomWiFiDriver::GetInstance()));
 
-void Matter::StartServer() {
-	//Esp32AppServer::Init();
+//app::Clusters::NetworkCommissioning::Instance
+//    sWiFiNetworkCommissioningInstance(0 /* Endpoint Id */, &(chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance()));
 
-	esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
-	esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
+void Matter::StartServer() {
+	//esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
+	//esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
 
     chip::DeviceLayer::PlatformMgr().ScheduleWork(StartServerInner, reinterpret_cast<intptr_t>(nullptr));
 }
 
+void Matter::WiFiScan() {
+	wifi_mode_t *mode = {0};
+	esp_err_t err = esp_wifi_get_mode(mode);
+
+	bool IsWiFiInited = !(err == ESP_ERR_WIFI_NOT_INIT);
+
+	if (!IsWiFiInited) {
+		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+		::esp_wifi_init(&cfg);
+	}
+
+	chip::ByteSpan Param = {};
+
+	//! hack, но без него сразу же начинает коннектится
+	::esp_wifi_disconnect();
+
+	m_scanFinished.Take("MScanFinished");
+	ESP_LOGE("WiFiScan", "MScanFinished TAKE");
+
+	//! перенести параметры скана из Wifi.h - сейчас сделано через хардкод в Matter
+	chip::DeviceLayer::NetworkCommissioning::WiFiDriver::ScanCallback *Callback = new AppScanCallback();
+	chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().ScanNetworks(Param, Callback);
+
+	if (!IsWiFiInited) {
+		::esp_wifi_deinit();
+	}
+
+	m_scanFinished.Wait();
+}
+
+void Matter::WiFiConnectToAP(string SSID, string Password) {
+	chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().ConnectWiFiNetwork(SSID.c_str(), SSID.size(), Password.c_str(), Password.size());
+}
+
 void Matter::StartServerInner(intptr_t context) {
+	Esp32AppServer::Init();
+
+	/*
 	// Start IM server
     static chip::CommonCaseDeviceServerInitParams initParams;
     (void) initParams.InitializeStaticResourcesBeforeServerInit();
 
-/*
     if (sAppDelegate != nullptr)
     {
         initParams.appDelegate = sAppDelegate;
     }
-*/
 
     chip::Server::GetInstance().Init(initParams);
 
+	sWiFiNetworkCommissioningInstance.Init();
+	*/
+	/*
+
     // Device Attestation & Onboarding codes
     chip::Credentials::SetDeviceAttestationCredentialsProvider(chip::Credentials::Examples::GetExampleDACProvider());
-    sWiFiNetworkCommissioningInstance.Init();
     chip::DeviceLayer::ConfigurationMgr().LogDeviceConfig();
 
     if (chip::Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow() != CHIP_NO_ERROR)
@@ -229,6 +292,7 @@ void Matter::StartServerInner(intptr_t context) {
     // Register a function to receive events from the CHIP device layer.  Note that calls to
     // this function will happen on the CHIP event loop thread, not the app_main thread.
     PlatformMgr().AddEventHandler(DeviceEventCallback, reinterpret_cast<intptr_t>(nullptr));
+	*/
 
 	CreateAccessories(context);
 }
@@ -1025,16 +1089,6 @@ CHIP_ERROR RemoveDeviceEndpoint(MatterDevice * dev)
     return CHIP_ERROR_INTERNAL;
 }
 
-DataVersion gLight1DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight2DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight3DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight4DataVersions[ArraySize(bridgedLightClusters)];
-
-static MatterDevice gLight1("Light 1", "Office");
-static MatterDevice gLight2("Light 2", "Office");
-static MatterDevice gLight3("Light 3", "Kitchen");
-static MatterDevice gLight4("Light 4", "Den");
-
 namespace {
 void CallReportingCallback(intptr_t closure)
 {
@@ -1064,19 +1118,6 @@ void Matter::HandleDeviceStatusChanged(MatterDevice * dev, MatterDevice::Changed
 
 void Matter::CreateRemoteBridge() {
 	ESP_LOGE(Tag, "CreateRemoteBridge");
-
-	memset(gDevices, 0, sizeof(gDevices));
-
-    gLight1.SetReachable(true);
-    gLight2.SetReachable(true);
-    gLight3.SetReachable(true);
-    gLight4.SetReachable(true);
-
-    // Whenever bridged device changes its state
-    gLight1.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
-    gLight2.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
-    gLight3.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
-    gLight4.SetChangeCallback(&Matter::HandleDeviceStatusChanged);
 
 
      // Set starting endpoint id where dynamic endpoints will be assigned, which
@@ -1662,6 +1703,8 @@ void Matter::Task(void *) {
 
 void Matter::DeviceEventCallback(const ChipDeviceEvent * event, intptr_t arg)
 {
+	ESP_LOGE("!", "Matter::DeviceEventCallback");
+
     switch (event->Type)
     {
 		case DeviceEventType::kInternetConnectivityChange:
@@ -1699,6 +1742,8 @@ void Matter::DeviceEventCallback(const ChipDeviceEvent * event, intptr_t arg)
 			break;
 
 		case DeviceEventType::kInterfaceIpAddressChanged:
+			ChipLogProgress(Shell, "DeviceEventType::kInterfaceIpAddressChanged");
+
 			if ((event->InterfaceIpAddressChanged.Type == InterfaceIpChangeType::kIpV4_Assigned) ||
 				(event->InterfaceIpAddressChanged.Type == InterfaceIpChangeType::kIpV6_Assigned))
 			{
