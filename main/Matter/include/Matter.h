@@ -41,11 +41,6 @@ class Matter {
 
 		static bool				IsEnabledForDevice();
 
-		static void				StationConnected();
-		static void				GotIPv4Callback(const ip_event_got_ip_t & got_ip);
-		static void				GotIPv6Callback(const ip_event_got_ip6_t & got_ip);
-		static void 			LostIPCallback();
-
 		static void				Reboot();
 
 		static inline 

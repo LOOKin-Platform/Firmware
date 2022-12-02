@@ -124,40 +124,23 @@ bool WiFi_t::IsWiFiInited() {
  * @brief Initialize WiFi.
  */
 void WiFi_t::Init() {
-	ESP_LOGE(tag,"WiFi_t::Init");
-
 	esp_err_t errRc = ESP_OK;
 
 	if (!m_initCalled) 
 	{
-		NVS::Init();
-
-		if (!IsExternalInitExists) {
-			ESP_ERROR_CHECK(::esp_netif_init());
-			ESP_ERROR_CHECK(::esp_event_loop_create_default());
-		}
+		ESP_ERROR_CHECK(::esp_netif_init());
+		ESP_ERROR_CHECK(::esp_event_loop_create_default());
 		
-		if (!IsWiFiInited()) {
-			wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-			errRc = ::esp_wifi_init(&cfg);
+		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+		errRc = ::esp_wifi_init(&cfg);
 
-			if (errRc != ESP_OK) 
-			{
-				ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
-				abort();
-			}
-		}
-
-		if (!IsExternalInitExists)
+		if (errRc != ESP_OK) 
 		{
-			if (NetIfSTAHandle 	== NULL) 
-			{
-				NetIfSTAHandle = esp_netif_create_default_wifi_sta();
-			}
-			
-			m_WiFiRunning = true;
+			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+			abort();
 		}
 
+		if (NetIfSTAHandle 	== NULL) NetIfSTAHandle = esp_netif_create_default_wifi_sta();
 		if (NetIfAPHandle 	== NULL) NetIfAPHandle 	= esp_netif_create_default_wifi_ap();
 
 		::esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID	, &eventHandler, this, &WiFi_t::instance_any_id);
@@ -299,7 +282,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		wifiAPRecord.m_rssi     = list[i].rssi;
 		wifiAPRecord.m_channel	= list[i].primary;
 
-		ESP_LOGE("wifiAPRecord.m_ssid", "%s", wifiAPRecord.m_ssid.c_str());
+		ESP_LOGD("Founded AP", "%s, RSSI: %d", wifiAPRecord.m_ssid.c_str(), wifiAPRecord.getRSSI());
 
 		if (wifiAPRecord.m_ssid == "")
 			continue;

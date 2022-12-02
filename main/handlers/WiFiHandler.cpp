@@ -10,6 +10,7 @@
 #include <mdns.h>
 
 #include "Matter.h"
+#include "MatterWiFi.h"
 
 #include "API.h"
 
@@ -65,7 +66,6 @@ void WiFiUptimeHandler::Start() {
 	::esp_timer_create(&TimerArgs, &RemoteControlStartTimer);
 
 	if (!WiFi.IsRunning()) {
-	//if (Device.PowerMode == DevicePowerMode::CONST && !WiFi.IsRunning()) {
 		WiFiStartedTime = 0;
 		Network.KeepWiFiTimer = 0;
 		BatteryUptime = Settings.WiFi.BatteryUptime;
@@ -192,7 +192,10 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 	private:
 		esp_err_t apStart() {
 			Log::Add(Log::Events::WiFi::APStart);
-			//WebServer.HTTPStart();
+
+			if (Matter::IsEnabledForDevice())
+				MatterWiFi::OnAPStart();
+
 			WebServer.UDPStart();
 
 			ConnectionTries = 0;
@@ -220,6 +223,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t apStop() {
 			Log::Add(Log::Events::WiFi::APStop);
 
+			if (Matter::IsEnabledForDevice())
+				MatterWiFi::OnAPStop();
+
 			//WebServer.HTTPStop();
 			WebServer.UDPStop();
 
@@ -233,6 +239,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staStart() {
 			Log::Add(Log::Events::WiFi::STAStarted);
 
+			if (!Matter::IsEnabledForDevice())
+				MatterWiFi::OnSTAStart();
+
 			Wireless.IsFirstWiFiStart = false;
 
 			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
@@ -243,10 +252,11 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
-			ConnectionTries = 0;
 
-			if (Matter::IsEnabledForDevice())
-				Matter::StationConnected();
+			if (!Matter::IsEnabledForDevice())
+				MatterWiFi::OnSTAConnected();
+
+			ConnectionTries = 0;
 
 			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
 
@@ -265,6 +275,9 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
 
 			::esp_timer_stop(RemoteControlStartTimer);
+
+			if (!Matter::IsEnabledForDevice())
+				MatterWiFi::OnSTADisconnected();
 
 			//WebServer.HTTPStop();
 			WebServer.UDPStop();
@@ -309,14 +322,14 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 		esp_err_t staGotIPv6(ip_event_got_ip6_t GotIPv6Info) {
 			if (Matter::IsEnabledForDevice())
-				Matter::GotIPv6Callback(GotIPv6Info);
+				MatterWiFi::STAGotIPv6(GotIPv6Info);
 
 			return ESP_OK;
 		}
 
 		esp_err_t staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
 			if (Matter::IsEnabledForDevice())
-				Matter::GotIPv4Callback(GotIPv4Info);
+				MatterWiFi::STAGotIP(GotIPv4Info);
 
 			esp_netif_ip_info_t StaIPInfo = WiFi.GetIPInfo();
 
@@ -386,16 +399,14 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			Wireless.IsEventDrivenStart = false;
 
-			if (Matter::IsEnabledForDevice())
-			{
-				Matter::GotIPv4Callback(GotIPv4Info);
-			
+			if (!Matter::IsEnabledForDevice())
+			{			
 			    //!mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 			
 				//!string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
 			    //!mdns_instance_name_set(InstanceName.c_str());
 			}
-			else
+			else if (0)
 			{
 			    esp_err_t err = mdns_init();
 			    if (err) {
@@ -431,11 +442,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
 
 			BLEServer.ForceHIDMode(HID);
-
-			/*
-			//!if (Matter::IsEnabledForDevice())
-				Matter::Start();
-			*/
 
 			return ESP_OK;
 		}

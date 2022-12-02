@@ -155,20 +155,19 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 
 	if (SSID == "")
 		for (auto &WiFiScannedItem : WiFiScannedList) {
-			ESP_LOGI(tag, "WiFiScannedItem %s", WiFiScannedItem.SSID.c_str());
-				for (auto &item : WiFiSettings)
-					if (item.SSID == WiFiScannedItem.SSID) {
+			for (auto &item : WiFiSettings)
+				if (item.SSID == WiFiScannedItem.SSID) {
 
-						if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
-							ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
-							WiFi.SetIPInfo(item.IP, item.Gateway, item.Netmask);
-							//!WiFi.AddDNSServer(inet_ntoa(item.Gateway));
-						}
-
-						Log::Add(Log::Events::WiFi::STAConnecting);
-						WiFiConnectToAPInner(WiFiScannedItem.SSID, item.Password, WiFiScannedItem.Channel);
-						return true;
+					if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
+						ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
+						WiFi.SetIPInfo(item.IP, item.Gateway, item.Netmask);
+						//!WiFi.AddDNSServer(inet_ntoa(item.Gateway));
 					}
+
+					Log::Add(Log::Events::WiFi::STAConnecting);
+					WiFiConnectToAPInner(WiFiScannedItem.SSID, item.Password, WiFiScannedItem.Channel);
+					return true;
+				}
 		}
 
 	return false;
@@ -176,9 +175,9 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 
 void Network_t::WiFiConnectToAPInner(string SSID, string Password,const uint8_t& Channel, bool WaitForConnection) 
 {
-	if (Matter::IsEnabledForDevice()) 
-		Matter::WiFiConnectToAP(SSID, Password);
-	else
+	//!if (Matter::IsEnabledForDevice()) 
+	//!	Matter::WiFiConnectToAP(SSID, Password);
+	//!else
 		WiFi.ConnectAP(SSID, Password, Channel, WaitForConnection);
 }
 

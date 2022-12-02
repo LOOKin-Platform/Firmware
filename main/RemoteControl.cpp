@@ -28,6 +28,8 @@ void RemoteControl_t::Init() {
 
 	Username = Memory.GetString(NVSMQTTClientID);
 	Password = Memory.GetString(NVSMQTTClientSecret);
+
+	ESP_LOGE("MQTT","%s", Username.c_str());
 }
 
 void RemoteControl_t::Start() {

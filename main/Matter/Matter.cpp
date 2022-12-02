@@ -2,7 +2,7 @@
 #include "MatterDevice.h"
 #include "DeviceCallbacks.h"
 #include "NetworkCommissioningCustomDriver.h"
-#include "ConnectivityManagerWiFi.h"
+#include "MatterWiFi.h"
 
 #include <app-common/zap-generated/af-structs.h>
 #include <app-common/zap-generated/attribute-id.h>
@@ -209,9 +209,6 @@ void Matter::Init() {
 #endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 
 //  chip::DeviceLayer::PlatformMgr().ScheduleWork(Matter::InitServer, reinterpret_cast<intptr_t>(nullptr));
-
-	//ESP_LOGE(Tag, "QRCODE:");
-    //PrintOnboardingCodes(chip::RendezvousInformationFlag(chip::RendezvousInformationFlag::kOnNetwork));
 }
 
 app::Clusters::NetworkCommissioning::Instance
@@ -247,7 +244,7 @@ void Matter::WiFiScan() {
 	ESP_LOGE("WiFiScan", "MScanFinished TAKE");
 
 	//! перенести параметры скана из Wifi.h - сейчас сделано через хардкод в Matter
-	chip::DeviceLayer::NetworkCommissioning::WiFiDriver::ScanCallback *Callback = new AppScanCallback();
+	chip::DeviceLayer::NetworkCommissioning::WiFiDriver::ScanCallback *Callback = new MatterWiFi();
 	chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().ScanNetworks(Param, Callback);
 
 	if (!IsWiFiInited) {
@@ -288,11 +285,10 @@ void Matter::StartServerInner(intptr_t context) {
     {
         ChipLogError(Shell, "OpenBasicCommissioningWindow() failed");
     }
-
+	*/
     // Register a function to receive events from the CHIP device layer.  Note that calls to
     // this function will happen on the CHIP event loop thread, not the app_main thread.
     PlatformMgr().AddEventHandler(DeviceEventCallback, reinterpret_cast<intptr_t>(nullptr));
-	*/
 
 	CreateAccessories(context);
 }
@@ -325,32 +321,6 @@ void Matter::ResetData() {
 bool Matter::IsEnabledForDevice() {
 	return true;
 }
-
-void Matter::StationConnected() {
-	ConnectivityManagerWiFi::OnStationConnected();
-}
-
-void Matter::GotIPv4Callback(const ip_event_got_ip_t & got_ip) {
-	chip::app::DnssdServer::Instance().StartServer();
-
-	ChipLogProgress(DeviceLayer, "IP_EVENT_STA_GOT_IP");
-	
-	ConnectivityManagerWiFi::OnStationIPv4AddressAvailable(got_ip);
-}
-
-void Matter::GotIPv6Callback(const ip_event_got_ip6_t & got_ip) {
-	chip::app::DnssdServer::Instance().StartServer();
-
-	ChipLogProgress(DeviceLayer, "IP_EVENT_GOT_IP6");
-
-	ConnectivityManagerWiFi::OnStationIPv6AddressAvailable(got_ip);
-}
-
-void Matter::LostIPCallback() {
-	ChipLogProgress(DeviceLayer, "IP_EVENT_STA_LOST_IP");
-	ConnectivityManagerWiFi::OnStationIPAddressLost();
-}
-
 
 void Matter::Reboot() {
 	//!hap_reboot_accessory();
@@ -1703,8 +1673,6 @@ void Matter::Task(void *) {
 
 void Matter::DeviceEventCallback(const ChipDeviceEvent * event, intptr_t arg)
 {
-	ESP_LOGE("!", "Matter::DeviceEventCallback");
-
     switch (event->Type)
     {
 		case DeviceEventType::kInternetConnectivityChange:
