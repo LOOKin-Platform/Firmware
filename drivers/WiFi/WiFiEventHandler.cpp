@@ -81,6 +81,8 @@ void WiFiEventHandler::EventHandler(void *event_handler_arg, esp_event_base_t ev
 	} else {
 		//printf("NOT Found a next handler\n");
 	}
+
+	pWiFiEventHandler->Generic(event_handler_arg, event_base, event_id, event_data);
 }
 
 WiFiEventHandler::WiFiEventHandler() {}
@@ -182,6 +184,11 @@ esp_err_t WiFiEventHandler::staLostIp() {
 	ESP_LOGD(tag, "default staLostIp");
 	return ESP_OK;
 } // staLostIp
+
+
+void WiFiEventHandler::Generic(void * arg, esp_event_base_t eventBase, int32_t eventId, void * eventData) {
+}
+
 
 WiFiEventHandler::~WiFiEventHandler() {
 	if (nextHandler != nullptr) {

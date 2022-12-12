@@ -41,6 +41,9 @@ class MatterWiFi : public chip::DeviceLayer::NetworkCommissioning::WiFiDriver::S
         static void         STAGotIPv6(const ip_event_got_ip6_t & got_ip_event);
         static void         STALostIP();
 
+        static void         GenericHandler(void * arg, esp_event_base_t eventBase, int32_t eventId, void * eventData);
+
+
     private:
         static inline ConnectivityManager::WiFiStationMode     mWiFiStationMode = ConnectivityManager::kWiFiStationMode_NotSupported;
         static inline ConnectivityManager::WiFiStationState    mWiFiStationState= ConnectivityManager::kWiFiStationState_NotConnected;
@@ -83,7 +86,7 @@ class MatterWiFi : public chip::DeviceLayer::NetworkCommissioning::WiFiDriver::S
         static uint16_t         MapFrequency(const uint16_t inBand, const uint8_t inChannel);
         //static CHIP_ERROR       InitWiFi();
         //static void             _OnWiFiStationProvisionChange();
-        static void         DriveStationState(::chip::System::Layer * aLayer, void * aAppState);
+        static void             DriveStationState(::chip::System::Layer * aLayer, void * aAppState);
 
         //static void             ChangeWiFiStationState(ConnectivityManager::WiFiStationState newState);
 };

@@ -100,6 +100,8 @@ class WiFiEventHandler {
 		virtual esp_err_t 	wifiReady();
 		virtual esp_err_t 	ConnectionTimeout();
 
+		virtual void 		Generic(void * arg, esp_event_base_t eventBase, int32_t eventId, void * eventData);
+
 		/**
 		 * Get the next WiFi event handler in the chain, if there is one.
 		 * @return The next WiFi event handler in the chain or nullptr if there is none.

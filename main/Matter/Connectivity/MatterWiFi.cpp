@@ -34,6 +34,8 @@ using chip::DeviceLayer::Internal::ESP32Utils;
 using MyStatus                  = chip::DeviceLayer::NetworkCommissioning::Status;
 using MyScanResponseIterator    = chip::DeviceLayer::NetworkCommissioning::WiFiScanResponseIterator;
 
+extern WiFi_t					WiFi;
+
 void MatterWiFi::OnFinished(MyStatus status, chip::CharSpan debugText, MyScanResponseIterator * NetworksIterator)
 {
     if (NetworksIterator != nullptr)
@@ -75,22 +77,20 @@ void MatterWiFi::OnScanDone() {
 }
 
 void MatterWiFi::OnSTAStart() {
-    return;
     ChipLogProgress(DeviceLayer, "WIFI_EVENT_STA_START");
     DriveStationState();
 }
 
 void MatterWiFi::OnSTAStop() {
-    return;
     ChipLogProgress(DeviceLayer, "WIFI_EVENT_STA_STOP");
     DriveStationState();
 }
 
 void MatterWiFi::OnSTAConnected() {
-    return;
     ChipLogProgress(DeviceLayer, "WIFI_EVENT_STA_CONNECTED");
     if (mWiFiStationState == ConnectivityManager::kWiFiStationState_Connecting)
     {
+        ESP_LOGE("MatterWiFi::OnSTAConnected", "!");
         ChangeWiFiStationState(ConnectivityManager::kWiFiStationState_Connecting_Succeeded);
     }
     
@@ -275,16 +275,6 @@ void MatterWiFi::DriveStationState()
     // kWiFiStationMode_Disabled.
     //!GetWiFiStationMode();
 
-    // If the station interface is NOT under application control...
-    if (mWiFiStationMode != ConnectivityManager::kWiFiStationMode_ApplicationControlled)
-    {
-        // Ensure that the ESP WiFi layer is started.
-        ReturnOnFailure(ESP32Utils::StartWiFiLayer());
-
-        // Ensure that station mode is enabled in the ESP WiFi layer.
-        ReturnOnFailure(ESP32Utils::EnableStationMode());
-    }
-
     // Determine if the ESP WiFi layer thinks the station interface is currently connected.
     ReturnOnFailure(ESP32Utils::IsStationConnected(stationConnected));
 
@@ -328,7 +318,6 @@ void MatterWiFi::DriveStationState()
 
 void MatterWiFi::OnStationConnected()
 {
-    ESP_LOGE("!","MatterWiFi::OnStationConnected");
 
     // Assign an IPv6 link local address to the station interface.
     esp_err_t err = esp_netif_create_ip6_linklocal(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"));
@@ -400,6 +389,7 @@ void MatterWiFi::OnIPv6AddressAvailable(const ip_event_got_ip6_t & got_ip)
     ChipDeviceEvent event;
     event.Type                           = DeviceEventType::kInterfaceIpAddressChanged;
     event.InterfaceIpAddressChanged.Type = InterfaceIpChangeType::kIpV6_Assigned;
+
     PlatformMgr().PostEventOrDie(&event);
 }
 
@@ -518,29 +508,48 @@ void MatterWiFi::UpdateInternetConnectivityState(void)
                     }
                 }
 
+                //! fix
+                //!haveIPv6Conn = true;
+
                 // Search among the IPv6 addresses assigned to the interface for a Global Unicast
                 // address (2000::/3) that is in the valid state.  If such an address is found...
                 for (uint8_t i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++)
                 {
+                    ESP_LOGE("UpdateInternetConnectivityState", "5");
+
+                    ESP_LOGE("ip6_addr_isglobal(netif_ip6_addr(netif, i))", "%d", (ip6_addr_isglobal(netif_ip6_addr(netif, i))) ? 1 : 0);
+                    ESP_LOGE("ip6_addr_isvalid(netif_ip6_addr_state(netif, i))", "%d", (ip6_addr_isvalid(netif_ip6_addr_state(netif, i))) ? 1 : 0);
+
                     if (ip6_addr_isglobal(netif_ip6_addr(netif, i)) && ip6_addr_isvalid(netif_ip6_addr_state(netif, i)))
                     {
+                        ESP_LOGE("UpdateInternetConnectivityState", "6");
+
                         // Determine if there is a default IPv6 router that is currently reachable
                         // via the station interface.  If so, presume for now that the device has
                         // IPv6 connectivity.
                         struct netif * found_if = nd6_find_route(IP6_ADDR_ANY6);
                         if (found_if && netif->num == found_if->num)
                         {
+                            ESP_LOGE("UpdateInternetConnectivityState", "6.1");
+
                             haveIPv6Conn = true;
                         }
                     }
                 }
             }
         }
+
+        ESP_LOGE("UpdateInternetConnectivityState", "7");
     }
 
+    ESP_LOGE("haveIPv4Conn", "%d hadIPv4Conn %d", haveIPv4Conn ? 1 : 0, hadIPv4Conn ? 1 : 0);
+    ESP_LOGE("haveIPv6Conn", "%d hadIPv6Conn %d", haveIPv6Conn ? 1 : 0, hadIPv6Conn ? 1 : 0);
+
     // If the internet connectivity state has changed...
-    if (haveIPv4Conn != hadIPv4Conn || haveIPv6Conn != hadIPv6Conn)
+    if (haveIPv4Conn != hadIPv4Conn)//! || haveIPv6Conn != hadIPv6Conn)
     {
+        ESP_LOGE("UpdateInternetConnectivityState", "8");
+
         // Update the current state.
         FlagHaveIPv4Conn = haveIPv4Conn;
         FlagHaveIPv6Conn = haveIPv6Conn;
@@ -565,3 +574,8 @@ void MatterWiFi::UpdateInternetConnectivityState(void)
         }
     }
 }
+
+void MatterWiFi::GenericHandler(void * arg, esp_event_base_t eventBase, int32_t eventId, void * eventData) {
+//    chip::DeviceLayer::PlatformMgr().HandleESPSystemEvent(arg, eventBase, eventId, eventData);
+}
+

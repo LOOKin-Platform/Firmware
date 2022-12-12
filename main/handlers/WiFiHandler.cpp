@@ -190,6 +190,11 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		}
 
 	private:
+		void Generic(void * arg, esp_event_base_t eventBase, int32_t eventId, void * eventData) {
+			if (Matter::IsEnabledForDevice())
+				MatterWiFi::GenericHandler(arg, eventBase, eventId, eventData);
+		}
+
 		esp_err_t apStart() {
 			Log::Add(Log::Events::WiFi::APStart);
 
@@ -212,10 +217,6 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 			BLEServer.ForceHIDMode(BASIC);
 
 			PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
-
-//        esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
-//        esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
-
 
 			return ESP_OK;
 		}
@@ -253,7 +254,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staConnected() {
 			Log::Add(Log::Events::WiFi::STAConnected);
 
-			if (!Matter::IsEnabledForDevice())
+			if (Matter::IsEnabledForDevice())
 				MatterWiFi::OnSTAConnected();
 
 			ConnectionTries = 0;
@@ -276,7 +277,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 
 			::esp_timer_stop(RemoteControlStartTimer);
 
-			if (!Matter::IsEnabledForDevice())
+			if (Matter::IsEnabledForDevice())
 				MatterWiFi::OnSTADisconnected();
 
 			//WebServer.HTTPStop();
