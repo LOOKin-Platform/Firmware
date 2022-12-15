@@ -30,6 +30,7 @@
 
 #include <esp_log.h>
 
+
 class AppDeviceCallbacks : public CommonDeviceCallbacks
 {
 public:
@@ -37,47 +38,5 @@ public:
                                              uint8_t type, uint16_t size, uint8_t * value);
 
 private:
-    void OnOnOffPostAttributeChangeCallback(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value);
-    void OnLevelControlAttributeChangeCallback(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value);
-#if CONFIG_DEVICE_TYPE_ESP32_C3_DEVKITM
-    void OnColorControlAttributeChangeCallback(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value);
-#endif
-
     void OnIdentifyPostAttributeChangeCallback(chip::EndpointId endpointId, chip::AttributeId attributeId, uint8_t * value);
-
-    bool mEndpointOnOffState[2];
-
-    void OnCommissioningSessionStarted()
-    {
-        ESP_LOGE("!","OnCommissioningSessionStarted");
-//        PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningSessionStarted);
-    }
-
-    void OnCommissioningSessionStopped()
-    {
-        ESP_LOGE("!","OnCommissioningSessionStopped");
-        //PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningSessionStopped);
-    }
-
-    void OnCommissioningWindowOpened()
-    {
-        ESP_LOGE("!","OnCommissioningWindowOpened");
-
-        //PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningWindowOpened);
-    }
-
-    void OnCommissioningWindowClosed()
-    {
-        ESP_LOGE("!","OnCommissioningWindowClosed");
-
-        //PostEvent(chip::DeviceLayer::DeviceEventType::kCommissioningWindowClosed);
-    }
-
-};
-
-class AppDeviceCallbacksDelegate : public DeviceCallbacksDelegate
-{
-public:
-    void OnIPv4ConnectivityEstablished(void) override;
-    void OnIPv4ConnectivityLost(void) override;
 };

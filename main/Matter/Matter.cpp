@@ -63,7 +63,7 @@ using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
 
 static AppDeviceCallbacks AppCallback;
-static AppDeviceCallbacksDelegate sAppDeviceCallbacksDelegate;
+//static AppDeviceCallbacksDelegate sAppDeviceCallbacksDelegate;
 
 const char *Tag = "Matter";
 
@@ -75,6 +75,9 @@ bool 				Matter::IsAP 			= false;
 uint64_t			Matter::TVHIDLastUpdated = 0;
 
 vector<uint8_t*> 	Matter::BridgedAccessories = vector<uint8_t*>();
+
+
+#define CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT 4
 
 static const int kNodeLabelSize = 32;
 // Current ZCL implementation of Struct uses a max-size array of 254 bytes
@@ -163,15 +166,15 @@ void Matter::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
 	IsAP 		= sIsAP;
 }
 
-DataVersion gLight1DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight2DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight3DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight4DataVersions[ArraySize(bridgedLightClusters)];
-
 static MatterDevice gLight1("Light 1", "Office");
 static MatterDevice gLight2("Light 2", "Office");
 static MatterDevice gLight3("Light 3", "Kitchen");
 static MatterDevice gLight4("Light 4", "Den");
+
+DataVersion gLight1DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight2DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight3DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight4DataVersions[ArraySize(bridgedLightClusters)];
 
 void Matter::Init() {
 	memset(gDevices, 0, sizeof(gDevices));
@@ -261,33 +264,6 @@ void Matter::WiFiConnectToAP(string SSID, string Password) {
 void Matter::StartServerInner(intptr_t context) {
 	Esp32AppServer::Init();
 
-	/*
-	// Start IM server
-    static chip::CommonCaseDeviceServerInitParams initParams;
-    (void) initParams.InitializeStaticResourcesBeforeServerInit();
-
-    if (sAppDelegate != nullptr)
-    {
-        initParams.appDelegate = sAppDelegate;
-    }
-
-    chip::Server::GetInstance().Init(initParams);
-
-	sWiFiNetworkCommissioningInstance.Init();
-	*/
-	/*
-
-    // Device Attestation & Onboarding codes
-    chip::Credentials::SetDeviceAttestationCredentialsProvider(chip::Credentials::Examples::GetExampleDACProvider());
-    chip::DeviceLayer::ConfigurationMgr().LogDeviceConfig();
-
-    if (chip::Server::GetInstance().GetCommissioningWindowManager().OpenBasicCommissioningWindow() != CHIP_NO_ERROR)
-    {
-        ChipLogError(Shell, "OpenBasicCommissioningWindow() failed");
-    }
-	*/
-    // Register a function to receive events from the CHIP device layer.  Note that calls to
-    // this function will happen on the CHIP event loop thread, not the app_main thread.
     PlatformMgr().AddEventHandler(DeviceEventCallback, reinterpret_cast<intptr_t>(nullptr));
 
 	CreateAccessories(context);
