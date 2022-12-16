@@ -259,7 +259,7 @@ void BLEServer_t::StartAdvertisingAsHID()
 	HIDDevice->deviceInfo()->addCharacteristic(WiFiSetupCharacteristic);
 	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
-	BLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
+	BLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);//BLE_HS_IO_NO_INPUT_OUTPUT);
 	BLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
 	BLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
 	//BLEDevice::setSecurityAuth(BLE_SM_PAIR_AUTHREQ_BOND);
