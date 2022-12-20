@@ -18,7 +18,7 @@ set(EXTRA_COMPONENT_DIRS
 
 project(firmware)
 
-idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_H" APPEND) 
+idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_H;-DCHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT=16" APPEND) 
 
 idf_build_set_property(C_COMPILE_OPTIONS "-Os" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-format-nonliteral;-Wno-format-security" APPEND)

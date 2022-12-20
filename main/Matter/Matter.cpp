@@ -76,9 +76,6 @@ uint64_t			Matter::TVHIDLastUpdated = 0;
 
 vector<uint8_t*> 	Matter::BridgedAccessories = vector<uint8_t*>();
 
-
-#define CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT 4
-
 static const int kNodeLabelSize = 32;
 // Current ZCL implementation of Struct uses a max-size array of 254 bytes
 static const int kDescriptorAttributeArraySize = 254;
@@ -124,12 +121,16 @@ DECLARE_DYNAMIC_CLUSTER(ZCL_ON_OFF_CLUSTER_ID, onOffAttrs, onOffIncomingCommands
 // Declare Bridged Light endpoint
 DECLARE_DYNAMIC_ENDPOINT(bridgedLightEndpoint, bridgedLightClusters);
 
-DataVersion gLightDataVersions[8];
+
+DataVersion gLight1DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight2DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight3DataVersions[ArraySize(bridgedLightClusters)];
+DataVersion gLight4DataVersions[ArraySize(bridgedLightClusters)];
 
 static EndpointId gCurrentEndpointId;
 static EndpointId gFirstDynamicEndpointId;
 
-static MatterDevice * gDevices[8]; // number of dynamic endpoints count
+static MatterDevice * gDevices[CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT]; // number of dynamic endpoints count
 
 #define DEVICE_TYPE_BRIDGED_NODE 0x0013
 #define DEVICE_TYPE_LO_ON_OFF_LIGHT 0x0100
@@ -170,11 +171,6 @@ static MatterDevice gLight1("Light 1", "Office");
 static MatterDevice gLight2("Light 2", "Office");
 static MatterDevice gLight3("Light 3", "Kitchen");
 static MatterDevice gLight4("Light 4", "Den");
-
-DataVersion gLight1DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight2DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight3DataVersions[ArraySize(bridgedLightClusters)];
-DataVersion gLight4DataVersions[ArraySize(bridgedLightClusters)];
 
 void Matter::Init() {
 	memset(gDevices, 0, sizeof(gDevices));
