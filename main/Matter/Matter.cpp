@@ -1061,7 +1061,6 @@ void Matter::HandleDeviceStatusChanged(MatterDevice * dev, MatterDevice::Changed
 void Matter::CreateRemoteBridge() {
 	ESP_LOGE(Tag, "CreateRemoteBridge");
 
-
      // Set starting endpoint id where dynamic endpoints will be assigned, which
     // will be the next consecutive endpoint id after the last fixed endpoint.
     gFirstDynamicEndpointId = static_cast<chip::EndpointId>(

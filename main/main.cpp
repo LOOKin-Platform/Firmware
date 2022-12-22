@@ -63,6 +63,17 @@ extern "C" void app_main()
 	FreeRTOS::Sleep(5000);
 	*/
 
+	/*
+	NVS Memory1("chip-factory");
+	Memory1.EraseNamespace();
+
+	NVS Memory2("chip-config");
+	Memory2.EraseNamespace();
+
+	NVS Memory3("chip-counters");
+	Memory3.EraseNamespace();
+	*/
+
 	//esp_log_level_set("*", ESP_LOG_VERBOSE);    // enable WARN logs from WiFi stack
 	esp_log_level_set("wifi", ESP_LOG_DEBUG);      // set warning log level for wifi
 
