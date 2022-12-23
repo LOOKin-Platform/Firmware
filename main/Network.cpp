@@ -110,10 +110,10 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 			break;
 		}
 
-	ESP_LOGI("WiFiConnect", "SSID: %s", SSID.c_str());
-
-	if (SSID != "" && Password == "")
-		return false;
+	if (SSID == "")
+		ESP_LOGI("WiFiConnect", "to ANY suitable matched SSID");
+	else
+		ESP_LOGI("WiFiConnect", "SSID: %s", SSID.c_str());
 
 	if (SSID != "" && Converter::ToLower(SSID) == Converter::ToLower(WiFi.GetSSID()))
 		return false;
@@ -153,11 +153,10 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 			}
 		}
 
-	if (SSID == "")
+	if (SSID == "") // connect to any suitable AP	
 		for (auto &WiFiScannedItem : WiFiScannedList) {
 			for (auto &item : WiFiSettings)
 				if (item.SSID == WiFiScannedItem.SSID) {
-
 					if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
 						ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
 						WiFi.SetIPInfo(item.IP, item.Gateway, item.Netmask);
@@ -202,7 +201,7 @@ void Network_t::UpdateWiFiIPInfo(string SSID, esp_netif_ip_info_t Data) {
 
 
 void Network_t::AddWiFiNetwork(string SSID, string Password) {
-	if (SSID == "" || Password == "")
+	if (SSID == "")
 		return;
 
 	bool IsExist = false;
@@ -458,7 +457,7 @@ void Network_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query)
 		if (Query.GetURLPartsCount() == 1) {
 			map<string, string> Params = JSON(Query.GetBody()).GetItems();
 
-			if (Params["wifissid"] == "" || Params["wifipassword"] == "") {
+			if (Params["wifissid"] == "") {
 				Result.SetFail();
 				return;
 			}
