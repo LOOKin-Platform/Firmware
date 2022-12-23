@@ -287,7 +287,7 @@ void Matter::ResetPairs() {
 }
 
 void Matter::ResetData() {
-	//!::hap_reset_homekit_data();
+	chip::Server::GetInstance().ScheduleFactoryReset();
 }
 
 bool Matter::IsEnabledForDevice() {

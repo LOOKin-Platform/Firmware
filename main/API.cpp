@@ -87,7 +87,7 @@ void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 		if (Query.CheckURLPart("sensors"	, 0))	Sensor_t	::HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("commands"	, 0))	Command_t	::HandleHTTPRequest	(Response, Query);
 		if (Query.CheckURLPart("log"		, 0))	Log			::HandleHTTPRequest	(Response, Query);
-		if (Query.CheckURLPart("homekit"	, 0))	MatterAPI_t	::HandleHTTPRequest	(Response, Query);
+		if (Query.CheckURLPart("matter"		, 0))	MatterAPI_t	::HandleHTTPRequest	(Response, Query);
 
 		// Fixes null string at some APIs
 		if (Query.GetURLPartsCount() == 2 && (Query.CheckURLPart("device", 0)) && (Query.CheckURLPart("name", 1)))
