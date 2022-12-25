@@ -29,7 +29,7 @@ idf_component_register(
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/reporting"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/access-control-server"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/administrator-commissioning-server"
-	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/basic"
+	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/basic-information"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/bridged-device-basic-information-server"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/level-control"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/identify-server"
@@ -83,11 +83,14 @@ idf_component_register(
 	"ds18b20-wrapper"
 	"ws2812")
 
+
+get_filename_component(CHIP_ROOT ${CMAKE_SOURCE_DIR}/third_party/connectedhomeip REALPATH)
+include("${CHIP_ROOT}/build/chip/esp32/esp32_codegen.cmake")
+chip_app_component_codegen("${CHIP_ROOT}/examples/bridge-app/bridge-common/bridge-app.matter")
+
 target_compile_options(${COMPONENT_LIB} PRIVATE "-D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG")
 
 set_property(TARGET ${COMPONENT_LIB} PROPERTY CXX_STANDARD 17)
 target_compile_options(${COMPONENT_LIB} PRIVATE "-D CHIP_HAVE_CONFIG_H")
 target_compile_options(${COMPONENT_LIB} PUBLIC
            "-DCHIP_ADDRESS_RESOLVE_IMPL_INCLUDE_HEADER=<lib/address_resolve/AddressResolve_DefaultImpl.h>")
-
-#flashing_script()

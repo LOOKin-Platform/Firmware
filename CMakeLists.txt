@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.5)
 
 #add_definitions(-DBUILD1GEN)
 
-add_definitions(-DCONFIG_RENDEZVOUS_MODE_WIFI=1)
-add_definitions(-DCONFIG_RENDEZVOUS_MODE=1)
-
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/third_party/connectedhomeip/examples/common/cmake/idf_flashing.cmake)
 
@@ -18,7 +15,7 @@ set(EXTRA_COMPONENT_DIRS
 
 project(firmware)
 
-idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_H;-DCHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT=16" APPEND) 
+idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_H;-DCHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT=16;" APPEND) 
 
 idf_build_set_property(C_COMPILE_OPTIONS "-Os" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-format-nonliteral;-Wno-format-security" APPEND)
