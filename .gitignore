@@ -16,3 +16,8 @@ Doxyfile
 remote_factory.bin
 remote_factory.csv
 TestFactoryNVS
+
+#CLion
+
+.idea/
+make-build-debug/

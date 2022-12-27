@@ -20,6 +20,11 @@
 
 class Matter {
 	public:
+		struct DeviceItem {
+    		MatterDevice    	*ControlledDevice;
+    		chip::DataVersion   DataVersionsInfo[3];
+		};
+
 		static void				WiFiSetMode(bool, string, string);
 
 		static void				Init();
@@ -46,6 +51,9 @@ class Matter {
 		static inline 
 			FreeRTOS::Semaphore	m_scanFinished = FreeRTOS::Semaphore("MScanFinished");
 	private:
+		inline static 			vector<DeviceItem>	MatterDevices = vector<DeviceItem>();
+
+
 		static int				BridgeIdentify		();
 		static int				AccessoryIdentify	(uint16_t AID);
 

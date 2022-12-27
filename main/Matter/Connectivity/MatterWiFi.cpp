@@ -515,41 +515,25 @@ void MatterWiFi::UpdateInternetConnectivityState(void)
                 // address (2000::/3) that is in the valid state.  If such an address is found...
                 for (uint8_t i = 0; i < LWIP_IPV6_NUM_ADDRESSES; i++)
                 {
-                    ESP_LOGE("UpdateInternetConnectivityState", "5");
-
-                    ESP_LOGE("ip6_addr_isglobal(netif_ip6_addr(netif, i))", "%d", (ip6_addr_isglobal(netif_ip6_addr(netif, i))) ? 1 : 0);
-                    ESP_LOGE("ip6_addr_isvalid(netif_ip6_addr_state(netif, i))", "%d", (ip6_addr_isvalid(netif_ip6_addr_state(netif, i))) ? 1 : 0);
-
                     if (ip6_addr_isglobal(netif_ip6_addr(netif, i)) && ip6_addr_isvalid(netif_ip6_addr_state(netif, i)))
                     {
-                        ESP_LOGE("UpdateInternetConnectivityState", "6");
-
                         // Determine if there is a default IPv6 router that is currently reachable
                         // via the station interface.  If so, presume for now that the device has
                         // IPv6 connectivity.
                         struct netif * found_if = nd6_find_route(IP6_ADDR_ANY6);
                         if (found_if && netif->num == found_if->num)
                         {
-                            ESP_LOGE("UpdateInternetConnectivityState", "6.1");
-
                             haveIPv6Conn = true;
                         }
                     }
                 }
             }
         }
-
-        ESP_LOGE("UpdateInternetConnectivityState", "7");
     }
-
-    ESP_LOGE("haveIPv4Conn", "%d hadIPv4Conn %d", haveIPv4Conn ? 1 : 0, hadIPv4Conn ? 1 : 0);
-    ESP_LOGE("haveIPv6Conn", "%d hadIPv6Conn %d", haveIPv6Conn ? 1 : 0, hadIPv6Conn ? 1 : 0);
 
     // If the internet connectivity state has changed...
     if (haveIPv4Conn != hadIPv4Conn)//! || haveIPv6Conn != hadIPv6Conn)
     {
-        ESP_LOGE("UpdateInternetConnectivityState", "8");
-
         // Update the current state.
         FlagHaveIPv4Conn = haveIPv4Conn;
         FlagHaveIPv6Conn = haveIPv6Conn;
