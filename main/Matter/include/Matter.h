@@ -20,10 +20,22 @@
 
 class Matter {
 	public:
-		struct DeviceItem {
-    		MatterGenericDevice *ControlledDevice;
-    		chip::DataVersion   DataVersionsInfo[3];
+		class DeviceItem {
+			public:
+				MatterGenericDevice *ControlledDevice = nullptr;
+				chip::DataVersion   DataVersionsInfo[3];
+				uint8_t 			Index;
+
+				DeviceItem(MatterGenericDevice* ControlledDeviceItem, uint8_t sIndex = 0xFF) {
+					memset(DataVersionsInfo, 0, sizeof(DataVersionsInfo));
+					Index = sIndex;
+					ControlledDevice = ControlledDeviceItem;
+				}
 		};
+
+		static inline FreeRTOS::Semaphore	
+								m_scanFinished = FreeRTOS::Semaphore("MScanFinished");
+
 
 		static void				WiFiSetMode(bool, string, string);
 
@@ -48,11 +60,14 @@ class Matter {
 
 		static void				Reboot();
 
-		static inline 
-			FreeRTOS::Semaphore	m_scanFinished = FreeRTOS::Semaphore("MScanFinished");
+        static MatterGenericDevice*
+                                GetDeviceByDynamicIndex(uint16_t EndpointIndex);
+
 	private:
 		inline static 			vector<DeviceItem>	MatterDevices = vector<DeviceItem>();
 
+		static int 				AddDeviceEndpoint(MatterGenericDevice *, EmberAfEndpointType *, const chip::Span<const EmberAfDeviceType> & ,const chip::Span<chip::DataVersion> & , chip::EndpointId);
+		static CHIP_ERROR 		RemoveDeviceEndpoint(MatterGenericDevice * dev);
 
 		static int				BridgeIdentify		();
 		static int				AccessoryIdentify	(uint16_t AID);

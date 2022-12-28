@@ -15,16 +15,23 @@
  *    limitations under the License.
  */
 
-#ifndef MATTER_GENERIC_DEVICE
-#define MATTER_GENERIC_DEVICE
+#ifndef MATTER_DEVICES
+#define MATTER_DEVICES
 
 // These are the bridged devices
+#include <app-common/zap-generated/af-structs.h>
+#include <app-common/zap-generated/attribute-id.h>
+#include <app-common/zap-generated/cluster-id.h>
+
 #include <app/util/attribute-storage.h>
 #include <functional>
 #include <stdbool.h>
 #include <stdint.h>
 
-using namespace ::chip::Platform;
+static const int kNodeLabelSize = 32;
+static const int kDescriptorAttributeArraySize = 254;
+
+using namespace chip::Platform;
 
 class MatterGenericDevice
 {
@@ -45,7 +52,7 @@ public:
         CopyString(mName, sizeof(mName), szDeviceName);
         CopyString(mLocation, sizeof(mLocation), szLocation);
         mReachable  = false;
-        mEndpointId = 0;
+        mEndpointId = 0xFFFF;
         mChanged_CB = nullptr;
     }
 
@@ -99,8 +106,8 @@ public:
         }
     }
 
-    inline void SetEndpointId(chip::EndpointId id)  { mEndpointId = id; };
-    inline chip::EndpointId GetEndpointId()         { return mEndpointId; };
+    inline void SetEndpointID(chip::EndpointId id)  { mEndpointId = id; };
+    inline chip::EndpointId GetEndpointID()         { return mEndpointId; };
     inline char * GetName()                         { return mName; };
     inline char * GetLocation()                     { return mLocation; };
 
@@ -108,6 +115,23 @@ public:
     void SetChangeCallback(DeviceCallback_fn aChanged_CB) {
         mChanged_CB = aChanged_CB;
     }
+
+    EmberAfStatus HandleWriteAttribute(chip::AttributeId attributeId, uint8_t * Value) {
+        ChipLogProgress(DeviceLayer, "HandleWriteOnOffAttribute: attrId=%d", attributeId);
+
+        ESP_LOGE("HandleWriteAttribute", "1");
+        ESP_LOGE("attributeId", "%d", attributeId);
+
+        ReturnErrorCodeIf((attributeId != ZCL_ON_OFF_ATTRIBUTE_ID) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
+        
+        ESP_LOGE("HandleWriteAttribute", "2");
+        
+        SetOnOff(*Value == 1);
+        return EMBER_ZCL_STATUS_SUCCESS;
+    }
+
+    virtual bool GetOnOff()             { ESP_LOGE("GetOnOff Generic", "Invoked"); return false;}
+    virtual void SetOnOff(bool Value)   { ESP_LOGE("SetOnOff Generic", "Invoked"); }
 
 protected:
     char mLocation[kDeviceLocationSize];

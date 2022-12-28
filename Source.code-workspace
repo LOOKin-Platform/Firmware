@@ -113,7 +113,9 @@
 			"utility": "cpp",
 			"*.inc": "cpp",
 			"filesystem": "cpp",
-			"slist": "cpp"
+			"slist": "cpp",
+			"rope": "cpp",
+			"mstd_iterator": "cpp"
 		}
 	}
 }

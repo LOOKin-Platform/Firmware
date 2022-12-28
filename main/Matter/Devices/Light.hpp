@@ -21,8 +21,6 @@
 #include <lib/support/CHIPMemString.h>
 #include <platform/CHIPDeviceLayer.h>
 
-using namespace ::chip::Platform;
-
 class MatterLight : public MatterGenericDevice {
     public:
         enum State_t
@@ -31,14 +29,14 @@ class MatterLight : public MatterGenericDevice {
             kState_Off,
         } State;
 
-        MatterLight(const char * szDeviceName, const char * szLocation) : MatterGenericDevice(szDeviceName, szLocation) {
-        };
+        MatterLight(const char * szDeviceName, const char * szLocation) : MatterGenericDevice(szDeviceName, szLocation) {};
 
-        bool IsOn() const {
-            return mState == kState_On;
+        bool GetOnOff()  override  { 
+            ESP_LOGE("Light device GetOnOff", "Invoked"); 
+            return (mState == kState_On);
         }
 
-        void SetOnOff(bool aOn) {
+        void SetOnOff(bool aOn) override {
             bool changed;
 
             if (aOn)
