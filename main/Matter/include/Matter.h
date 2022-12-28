@@ -14,14 +14,14 @@
 
 #include "NetworkCommissioningDriver.h"
 
-#include "MatterDevice.h"
+#include "GenericDevice.hpp"
 
 #define NVS_MATTER_AREA "matter"
 
 class Matter {
 	public:
 		struct DeviceItem {
-    		MatterDevice    	*ControlledDevice;
+    		MatterGenericDevice *ControlledDevice;
     		chip::DataVersion   DataVersionsInfo[3];
 		};
 
@@ -33,7 +33,7 @@ class Matter {
 		static void 			WiFiScan();
 		static void				WiFiConnectToAP(string SSID, string Password);
 
-		static void 			HandleDeviceStatusChanged(MatterDevice * dev, MatterDevice::Changed_t itemChangedMask);
+		static void 			HandleDeviceStatusChanged(MatterGenericDevice * dev, MatterGenericDevice::Changed_t itemChangedMask);
 
 
 		static void				Start();

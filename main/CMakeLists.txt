@@ -8,6 +8,7 @@ idf_component_register(
 	"${CMAKE_CURRENT_LIST_DIR}/include"
 	"${CMAKE_SOURCE_DIR}/main/Matter/include"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Apps"
+	"${CMAKE_SOURCE_DIR}/main/Matter/Devices"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Override"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Connectivity"
 	"$ENV{MATTER_PATH}/src"
