@@ -37,6 +37,8 @@ class MatterLight : public MatterGenericDevice {
         using DeviceCallback_fn = std::function<void(MatterLight *, MatterLight::Changed_t)>;
 
         MatterLight(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation) {
+            ClassName = MatterGenericDevice::Light;
+
             SetReachable(true);
             mChanged_CB = &MatterLight::HandleStatusChanged;
         };

@@ -29,6 +29,9 @@
 #include "Storage.h"
 #include "Log.h"
 
+#include "Matter.h"
+#include "GenericDevice.hpp"
+
 using namespace std;
 
 class Sensor_t {
@@ -82,7 +85,8 @@ class Sensor_t {
 		static void						LocalMQTTSend(string Payload, string Topic);
 
 		static void 					HandleHTTPRequest(WebServer_t::Response &, Query_t &);
-
+		
+		static MatterGenericDevice*		GetBridgedAccessoryByType(string ClassName);
 	private:
 		bool 							IsInited	= false;
 

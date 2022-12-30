@@ -33,10 +33,12 @@ class MatterTempSensor : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterTempSensor *, MatterTempSensor::Changed_t)>;
 
-        MatterTempSensor(string szDeviceName, string szLocation, int16_t min = -100, int16_t max = 100, int16_t measuredValue = 0) :
+        MatterTempSensor(string szDeviceName, string szLocation, int16_t min = -1000, int16_t max = 1000, int16_t measuredValue = 0) :
             MatterGenericDevice(szDeviceName, szLocation),
             mMin(min), mMax(max), mMeasurement(measuredValue)
         {
+            ClassName = MatterGenericDevice::Temperature;
+
             SetReachable(true);
             mChanged_CB = &MatterTempSensor::HandleStatusChanged;
         }
@@ -47,7 +49,7 @@ class MatterTempSensor : public MatterGenericDevice {
         } 
 
         void SetTemperature (float Value) override {
-            ESP_LOGE("SetTemperature TempSensor", "Invoked");
+            ESP_LOGE("SetTemperature TempSensor", "Invoked with value %f", Value);
 
             int16_t NormalizedValue = round(Value * 10);
 
@@ -70,27 +72,24 @@ class MatterTempSensor : public MatterGenericDevice {
             }
         }
 
+        int16_t GetMin() { return mMin; }
+        int16_t GetMax() { return mMax; }
+
         static void HandleStatusChanged(MatterTempSensor * dev, MatterTempSensor::Changed_t itemChangedMask)
         {
             ESP_LOGE("TempSensor", "HandleStatusChanged");
 
             if (itemChangedMask & (MatterTempSensor::kChanged_Reachable | MatterTempSensor::kChanged_Name | MatterTempSensor::kChanged_Location))
-            {
                 HandleDeviceStatusChanged(static_cast<MatterGenericDevice *>(dev), (MatterGenericDevice::Changed_t) itemChangedMask);
-            }
-            if (itemChangedMask & MatterTempSensor::kChanged_MeasurementValue)
-            {
-                ScheduleReportingCallback(dev, chip::app::Clusters::TemperatureMeasurement::Id, chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Id);
-            }
-        }
 
-        const int16_t   mMin;
-        const int16_t   mMax;
+            if (itemChangedMask & MatterTempSensor::kChanged_MeasurementValue)
+                ScheduleReportingCallback(dev, chip::app::Clusters::TemperatureMeasurement::Id, chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Id);
+        }
 
 
     private:
-//        const int16_t   mMin;
-//        const int16_t   mMax;
+        const int16_t   mMin;
+        const int16_t   mMax;
         int16_t         mMeasurement = 0;
 
         DeviceCallback_fn mChanged_CB;

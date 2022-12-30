@@ -32,6 +32,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include <typeinfo>
+
 static const int kNodeLabelSize = 32;
 static const int kDescriptorAttributeArraySize = 254;
 
@@ -40,6 +42,9 @@ using namespace chip::Platform;
 class MatterGenericDevice
 {
     public:
+        static inline string Light          = "Light";
+        static inline string Temperature    = "Temperature";
+
         static const int    kDeviceNameSize     = 32;
         static const int    kDeviceLocationSize = 32;
 
@@ -124,6 +129,7 @@ class MatterGenericDevice
         inline chip::EndpointId GetEndpointID()         { return mEndpointId; };
         inline char * GetName()                         { return mName; };
         inline char * GetLocation()                     { return mLocation; };
+        inline string GetClassName()                    { return ClassName; };
 
         using DeviceCallback_fn = std::function<void(MatterGenericDevice *, Changed_t)>;
         void SetChangeCallback(DeviceCallback_fn aChanged_CB) {
@@ -155,6 +161,7 @@ class MatterGenericDevice
         char mName[kDeviceNameSize];
         DeviceCallback_fn mChanged_CB;
 
+        string ClassName;
 
         static void HandleDeviceStatusChanged(MatterGenericDevice * dev, MatterGenericDevice::Changed_t itemChangedMask)
         {
@@ -189,6 +196,8 @@ class MatterGenericDevice
         }
 
 };
+
+#include "GenericDevice.hpp"
 
 #include "Light.hpp"
 #include "TempSensor.hpp"

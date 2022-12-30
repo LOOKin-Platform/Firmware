@@ -46,6 +46,9 @@ class Matter {
         static MatterGenericDevice*
                                 GetDeviceByDynamicIndex(uint16_t EndpointIndex);
 
+		static MatterGenericDevice*
+								GetBridgedAccessoryByType(string ClassName);
+
 	private:
 		inline static 			vector<MatterGenericDevice *>	MatterDevices = vector<MatterGenericDevice *>();
 

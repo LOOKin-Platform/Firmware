@@ -163,6 +163,11 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 	}
 }
 
+MatterGenericDevice* Sensor_t::GetBridgedAccessoryByType(string ClassName) {
+	return Matter::GetBridgedAccessoryByType(ClassName);
+}
+
+
 // возвращаемое значение - было ли изменено значение в памяти
 bool Sensor_t::SetValue(uint32_t Value, string Key, uint32_t UpdatedTime) {
 	bool IsChanged = SetValue(Value, Key);
