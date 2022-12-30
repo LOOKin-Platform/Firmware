@@ -29,7 +29,17 @@ class MatterLight : public MatterGenericDevice {
             kState_Off,
         } State;
 
-        MatterLight(const char * szDeviceName, const char * szLocation) : MatterGenericDevice(szDeviceName, szLocation) {};
+        enum Changed_t
+        {
+            kChanged_OnOff = kChanged_Last << 1,
+        } Changed;
+
+        using DeviceCallback_fn = std::function<void(MatterLight *, MatterLight::Changed_t)>;
+
+        MatterLight(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation) {
+            SetReachable(true);
+            mChanged_CB = &MatterLight::HandleStatusChanged;
+        };
 
         bool GetOnOff()  override  { 
             ESP_LOGE("Light device GetOnOff", "Invoked"); 
@@ -54,10 +64,32 @@ class MatterLight : public MatterGenericDevice {
 
             if (changed && mChanged_CB)
             {
-                mChanged_CB(this, kChanged_State);
+                mChanged_CB(this, kChanged_OnOff);
             }
+        }
+
+        static void HandleStatusChanged(MatterLight * dev, MatterLight::Changed_t itemChangedMask)
+        {
+            if (itemChangedMask & MatterGenericDevice::kChanged_Reachable)
+                ScheduleReportingCallback(dev, chip::app::Clusters::BridgedDeviceBasic::Id, chip::app::Clusters::BridgedDeviceBasic::Attributes::Reachable::Id);
+
+            if (itemChangedMask & MatterGenericDevice::kChanged_State)
+                ScheduleReportingCallback(dev, chip::app::Clusters::OnOff::Id, chip::app::Clusters::OnOff::Attributes::OnOff::Id);
+
+            if (itemChangedMask & MatterGenericDevice::kChanged_Name)
+                ScheduleReportingCallback(dev, chip::app::Clusters::BridgedDeviceBasic::Id, chip::app::Clusters::BridgedDeviceBasic::Attributes::NodeLabel::Id);
         }
 
     private:
         State_t mState = kState_Off;
+
+        DeviceCallback_fn mChanged_CB;
+
+        void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override
+        {
+            if (mChanged_CB)
+            {
+                mChanged_CB(this, (MatterLight::Changed_t) changeMask);
+            }
+        }
 };

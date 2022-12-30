@@ -115,7 +115,9 @@
 			"filesystem": "cpp",
 			"slist": "cpp",
 			"rope": "cpp",
-			"mstd_iterator": "cpp"
+			"mstd_iterator": "cpp",
+			"memory_resource": "cpp",
+			"__assert": "cpp"
 		}
 	}
 }

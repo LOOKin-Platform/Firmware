@@ -1,5 +1,5 @@
-#ifndef MATTER
-#define MATTER
+#ifndef MATTER_MAIN
+#define MATTER_MAIN
 
 #include "FreeRTOSWrapper.h"
 
@@ -17,22 +17,8 @@
 #include "GenericDevice.hpp"
 
 #define NVS_MATTER_AREA "matter"
-
 class Matter {
 	public:
-		class DeviceItem {
-			public:
-				MatterGenericDevice *ControlledDevice = nullptr;
-				chip::DataVersion   DataVersionsInfo[3];
-				uint8_t 			Index;
-
-				DeviceItem(MatterGenericDevice* ControlledDeviceItem, uint8_t sIndex = 0xFF) {
-					memset(DataVersionsInfo, 0, sizeof(DataVersionsInfo));
-					Index = sIndex;
-					ControlledDevice = ControlledDeviceItem;
-				}
-		};
-
 		static inline FreeRTOS::Semaphore	
 								m_scanFinished = FreeRTOS::Semaphore("MScanFinished");
 
@@ -44,9 +30,6 @@ class Matter {
 		
 		static void 			WiFiScan();
 		static void				WiFiConnectToAP(string SSID, string Password);
-
-		static void 			HandleDeviceStatusChanged(MatterGenericDevice * dev, MatterGenericDevice::Changed_t itemChangedMask);
-
 
 		static void				Start();
 		static void				Stop();
@@ -64,9 +47,9 @@ class Matter {
                                 GetDeviceByDynamicIndex(uint16_t EndpointIndex);
 
 	private:
-		inline static 			vector<DeviceItem>	MatterDevices = vector<DeviceItem>();
+		inline static 			vector<MatterGenericDevice *>	MatterDevices = vector<MatterGenericDevice *>();
 
-		static int 				AddDeviceEndpoint(MatterGenericDevice *, EmberAfEndpointType *, const chip::Span<const EmberAfDeviceType> & ,const chip::Span<chip::DataVersion> & , chip::EndpointId);
+		static int 				AddDeviceEndpoint(MatterGenericDevice *, EmberAfEndpointType *, const chip::Span<const EmberAfDeviceType> &, chip::EndpointId);
 		static CHIP_ERROR 		RemoveDeviceEndpoint(MatterGenericDevice * dev);
 
 		static int				BridgeIdentify		();

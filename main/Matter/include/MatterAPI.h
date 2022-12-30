@@ -4,8 +4,8 @@
 *
 */
 
-#ifndef HOMEKIT_HTTP_HANDLER_H
-#define HOMEKIT_HTTP_HANDLER_H
+#ifndef MATTER_HTTP_HANDLER_H
+#define MATTER_HTTP_HANDLER_H
 
 #include "Globals.h"
 
