@@ -134,7 +134,7 @@ httpd_uri_t uri_put 				= { .uri = "/*"				, .method = HTTP_PUT		, .handler  = W
 httpd_uri_t uri_delete 				= { .uri = "/*"				, .method = HTTP_DELETE		, .handler  = WebServer_t::DELETEHandler, .user_ctx = NULL};
 
 void WebServer_t::HTTPStart() {
-	return;
+	//return;
 	ESP_LOGD(tag, "HTTPServer -> Start");
 
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
