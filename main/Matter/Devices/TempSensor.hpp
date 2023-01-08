@@ -33,7 +33,7 @@ class MatterTempSensor : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterTempSensor *, MatterTempSensor::Changed_t)>;
 
-        MatterTempSensor(string szDeviceName, string szLocation, int16_t min = -1000, int16_t max = 1000, int16_t measuredValue = 0) :
+        MatterTempSensor(string szDeviceName, string szLocation, int16_t min = -10000, int16_t max = 10000, int16_t measuredValue = 0) :
             MatterGenericDevice(szDeviceName, szLocation),
             mMin(min), mMax(max), mMeasurement(measuredValue)
         {
@@ -51,7 +51,7 @@ class MatterTempSensor : public MatterGenericDevice {
         void SetTemperature (float Value) override {
             ESP_LOGE("SetTemperature TempSensor", "Invoked with value %f", Value);
 
-            int16_t NormalizedValue = round(Value * 10);
+            int16_t NormalizedValue = round(Value * 100);
 
             // Limit measurement based on the min and max.
             if (NormalizedValue < mMin)

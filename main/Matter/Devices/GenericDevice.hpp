@@ -44,6 +44,7 @@ class MatterGenericDevice
     public:
         static inline string Light          = "Light";
         static inline string Temperature    = "Temperature";
+        static inline string Humidity       = "Humidity";
 
         static const int    kDeviceNameSize     = 32;
         static const int    kDeviceLocationSize = 32;
@@ -201,5 +202,6 @@ class MatterGenericDevice
 
 #include "Light.hpp"
 #include "TempSensor.hpp"
+#include "HumiditySensor.hpp"
 
 #endif

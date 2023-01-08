@@ -80,6 +80,7 @@ static EndpointId gFirstDynamicEndpointId;
 #define DEVICE_TYPE_BRIDGED_NODE 0x0013
 #define DEVICE_TYPE_LO_ON_OFF_LIGHT 0x0100
 #define DEVICE_TYPE_TEMP_SENSOR 0x0302
+#define DEVICE_TYPE_HUMIDITY_SENSOR 0x0307
 
 
 #define DEVICE_TYPE_ROOT_NODE 0x0016
@@ -98,14 +99,17 @@ static EndpointId gFirstDynamicEndpointId;
 #define ZCL_TEMPERATURE_SENSOR_FEATURE_MAP (0u)
 
 
-const EmberAfDeviceType gRootDeviceTypes[] 				= { { DEVICE_TYPE_ROOT_NODE, DEVICE_VERSION_DEFAULT } };
-const EmberAfDeviceType gAggregateNodeDeviceTypes[] 	= { { DEVICE_TYPE_BRIDGE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gRootDeviceTypes[] 					= { { DEVICE_TYPE_ROOT_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gAggregateNodeDeviceTypes[] 		= { { DEVICE_TYPE_BRIDGE, DEVICE_VERSION_DEFAULT } };
 
-const EmberAfDeviceType gBridgedOnOffDeviceTypes[] 		= { { DEVICE_TYPE_LO_ON_OFF_LIGHT, DEVICE_VERSION_DEFAULT },
-                                                       		{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedOnOffDeviceTypes[] 			= { { DEVICE_TYPE_LO_ON_OFF_LIGHT, DEVICE_VERSION_DEFAULT },
+                                                       			{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
 
-const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] = { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_VERSION_DEFAULT },
-                                                            { DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] 	= { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_VERSION_DEFAULT },
+                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+
+const EmberAfDeviceType gBridgedHumiditySensorDeviceTypes[] = { { DEVICE_TYPE_HUMIDITY_SENSOR, DEVICE_VERSION_DEFAULT },
+                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
 
 // ---------------------------------------------------------------------------
 //
@@ -173,10 +177,30 @@ DECLARE_DYNAMIC_CLUSTER(TemperatureMeasurement::Id, tempSensorAttrs, nullptr, nu
     DECLARE_DYNAMIC_CLUSTER(Descriptor::Id, descriptorAttrs, nullptr, nullptr),
     DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasic::Id, bridgedDeviceBasicAttrs, nullptr, nullptr), DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
-// Declare Bridged Light endpoint
+// Declare Bridged Temp sensor endpoint
 DECLARE_DYNAMIC_ENDPOINT(bridgedTempSensorEndpoint, bridgedTempSensorClusters);
-DataVersion gTempSensor1DataVersions[ArraySize(bridgedTempSensorClusters)];
-DataVersion gTempSensor2DataVersions[ArraySize(bridgedTempSensorClusters)];
+
+// ---------------------------------------------------------------------------
+//
+// RELATIVE HUMIDITY SENSOR ENDPOINT: contains the following clusters:
+//   - Relative humidity measurement
+//   - Descriptor
+//   - Bridged Device Basic
+
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(humiditySensorAttrs)
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_RELATIVE_HUMIDITY_MEASURED_VALUE_ATTRIBUTE_ID, INT16U, 2, 0),     /* Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_RELATIVE_HUMIDITY_MIN_MEASURED_VALUE_ATTRIBUTE_ID, INT16U, 2, 0), /* Min Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_RELATIVE_HUMIDITY_MAX_MEASURED_VALUE_ATTRIBUTE_ID, INT16U, 2, 0), /* Max Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID, BITMAP32, 4, 0),    				/* FeatureMap */
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedHumiditySensorClusters)
+DECLARE_DYNAMIC_CLUSTER(RelativeHumidityMeasurement::Id, humiditySensorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasic::Id, bridgedDeviceBasicAttrs, nullptr, nullptr), DECLARE_DYNAMIC_CLUSTER_LIST_END;
+
+// Declare Bridged Temp sensor endpoint
+DECLARE_DYNAMIC_ENDPOINT(bridgedHumiditySensorEndpoint, bridgedHumiditySensorClusters);
 
 /*
 Matter::AccessoryData_t(string sName, string sModel, string sID) {
@@ -194,7 +218,151 @@ Matter::AccessoryData_t(string sName, string sModel, string sID) {
 }
 */
 
-#include "EmberHandler.cpp"
+/* Ember Handlers */
+
+EmberAfStatus HandleReadTempMeasurementAttribute(MatterTempSensor * dev, chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength)
+{
+    if ((attributeId == ZCL_TEMP_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+    {
+        int16_t measuredValue = dev->GetTemperature();
+        memcpy(buffer, &measuredValue, sizeof(measuredValue));
+    }
+    else if ((attributeId == ZCL_TEMP_MIN_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+    {
+        int16_t minValue = dev->GetMin();
+        memcpy(buffer, &minValue, sizeof(minValue));
+    }
+    else if ((attributeId == ZCL_TEMP_MAX_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+    {
+        int16_t maxValue = dev->GetMax();
+        memcpy(buffer, &maxValue, sizeof(maxValue));
+    }
+    else if ((attributeId == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
+    {
+        uint32_t featureMap = ZCL_TEMPERATURE_SENSOR_FEATURE_MAP;
+        memcpy(buffer, &featureMap, sizeof(featureMap));
+    }
+    else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+    {
+        uint16_t clusterRevision = ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION;
+        memcpy(buffer, &clusterRevision, sizeof(clusterRevision));
+    }
+    else
+    {
+        return EMBER_ZCL_STATUS_FAILURE;
+    }
+
+    return EMBER_ZCL_STATUS_SUCCESS;
+}
+
+EmberAfStatus HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, chip::AttributeId attributeId, uint8_t * buffer,
+                                                    uint16_t maxReadLength)
+{
+    ChipLogProgress(DeviceLayer, "HandleReadBridgedDeviceBasicAttribute: attrId=%d, maxReadLength=%d", attributeId, maxReadLength);
+
+    if ((attributeId == ZCL_REACHABLE_ATTRIBUTE_ID) && (maxReadLength == 1))
+    {
+        *buffer = dev->IsReachable() ? 1 : 0;
+    }
+    else if ((attributeId == ZCL_NODE_LABEL_ATTRIBUTE_ID) && (maxReadLength == 32))
+    {
+        MutableByteSpan zclNameSpan(buffer, maxReadLength);
+        MakeZclCharString(zclNameSpan, dev->GetName());
+    }
+    else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+    {
+        *buffer = (uint16_t) ZCL_BRIDGED_DEVICE_BASIC_CLUSTER_REVISION;
+    }
+    else
+    {
+        return EMBER_ZCL_STATUS_FAILURE;
+    }
+
+    return EMBER_ZCL_STATUS_SUCCESS;
+}
+
+EmberAfStatus HandleReadOnOffAttribute(MatterGenericDevice * dev, chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength)
+{
+    ChipLogProgress(DeviceLayer, "HandleReadOnOffAttribute: attrId=%d, maxReadLength=%d", attributeId, maxReadLength);
+
+    if ((attributeId == ZCL_ON_OFF_ATTRIBUTE_ID) && (maxReadLength == 1))
+    {
+        *buffer = (dev)->GetOnOff() ? 1 : 0;
+    }
+    else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+    {
+        *buffer = (uint16_t) ZCL_ON_OFF_CLUSTER_REVISION;
+    }
+    else
+    {
+        return EMBER_ZCL_STATUS_FAILURE;
+    }
+
+    return EMBER_ZCL_STATUS_SUCCESS;
+}
+
+
+EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterId clusterId,
+                                                   const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer,
+                                                   uint16_t maxReadLength)
+{
+	ESP_LOGE(Tag, "emberAfExternalAttributeReadCallback");
+
+    uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
+
+    MatterGenericDevice* FindedDevice = Matter::GetDeviceByDynamicIndex(endpointIndex);
+
+    if (FindedDevice != nullptr)
+    {
+        if (clusterId == BridgedDeviceBasic::Id)
+        {
+            return HandleReadBridgedDeviceBasicAttribute(FindedDevice, attributeMetadata->attributeId, buffer, maxReadLength);
+        }
+        else if (clusterId == OnOff::Id)
+        {
+            return HandleReadOnOffAttribute(FindedDevice, attributeMetadata->attributeId, buffer, maxReadLength);
+        }
+		else if (clusterId == TemperatureMeasurement::Id)
+        {
+            return HandleReadTempMeasurementAttribute(static_cast<MatterTempSensor *>(FindedDevice), attributeMetadata->attributeId, buffer, maxReadLength);
+        }
+		else if (clusterId == RelativeHumidityMeasurement::Id)
+        {
+            return ((MatterHumiditySensor *)FindedDevice)->HandleReadAttribute(attributeMetadata->attributeId, buffer, maxReadLength);
+        }
+    }
+
+    return EMBER_ZCL_STATUS_FAILURE;
+}
+
+EmberAfStatus emberAfExternalAttributeWriteCallback(EndpointId endpoint, ClusterId clusterId,
+                                                    const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer)
+{
+	ESP_LOGE(Tag, "emberAfExternalAttributeWriteCallback");
+
+    uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
+
+	ESP_LOGE("Endpoint INdex", "%d", endpointIndex);
+
+    if (endpointIndex < CHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT)
+    {
+        MatterGenericDevice * dev = Matter::GetDeviceByDynamicIndex(endpointIndex);
+
+        if (dev != nullptr)
+            if ((dev->IsReachable()) && (clusterId == OnOff::Id))
+				return dev->HandleWriteAttribute(attributeMetadata->attributeId, buffer);
+    }
+
+    return EMBER_ZCL_STATUS_FAILURE;
+}
+
+bool emberAfActionsClusterInstantActionCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
+                                                const Actions::Commands::InstantAction::DecodableType & commandData)
+{
+    // No actions are implemented, just return status NotFound.
+    commandObj->AddStatus(commandPath, Protocols::InteractionModel::Status::NotFound);
+    return true;
+}
 
 void Matter::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
 	IsAP 		= sIsAP;
@@ -1074,10 +1242,13 @@ void Matter::CreateRemoteBridge() {
     emberAfSetDeviceTypeList(0, Span<const EmberAfDeviceType>(gRootDeviceTypes));
     emberAfSetDeviceTypeList(1, Span<const EmberAfDeviceType>(gAggregateNodeDeviceTypes));
 
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 2; i++)
 	{
-		static string DeviceName = string("Light");
-		DeviceName = DeviceName + Converter::ToString(i+1);
+		static string DeviceName = "";
+		while (DeviceName.size() < MatterGenericDevice::kDeviceNameSize)
+			DeviceName = DeviceName + " ";
+
+		DeviceName = "Light " + Converter::ToString(i+1);
 
 		MatterLight *DeviceToAdd = new MatterLight(DeviceName, "Bedroom");
 
@@ -1086,6 +1257,9 @@ void Matter::CreateRemoteBridge() {
 
 	MatterGenericDevice* TempSensorToAdd = new MatterTempSensor("Example temp", "Bedroom");
 	AddDeviceEndpoint(TempSensorToAdd, &bridgedTempSensorEndpoint, Span<const EmberAfDeviceType>(gBridgedTempSensorDeviceTypes), 1);
+
+	MatterGenericDevice* HumiditySensorToAdd = new MatterHumiditySensor("Example humidity", "Bedroom");
+	AddDeviceEndpoint(HumiditySensorToAdd, &bridgedHumiditySensorEndpoint, Span<const EmberAfDeviceType>(gBridgedHumiditySensorDeviceTypes), 1);
 
     // Remove Light 2 -- Lights 1 & 3 will remain mapped to endpoints 3 & 5
     //!RemoveDeviceEndpoint(MatterDevices[1].ControlledDevice);

@@ -162,6 +162,11 @@ class SensorMeteo_t : public Sensor_t {
 
 					//!if (IsEmptyAC)
 					//!	HomeKitUpdateCharValue(0, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
+				
+					MatterHumiditySensor* HumiditySensor = (MatterHumiditySensor*)GetBridgedAccessoryByType(MatterGenericDevice::Humidity);
+					if (HumiditySensor != nullptr)
+						HumiditySensor->SetHumidity(Value);
+
 				}
 			}
 			else
