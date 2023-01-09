@@ -305,7 +305,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	free(list);   // Release the storage allocated to hold the records.
 
-	if (CurrentMode != WIFI_MODE_AP) {
+	if (CurrentMode != WIFI_MODE_APSTA) {
 		::esp_wifi_disconnect();
 		::esp_wifi_stop();
 		m_WiFiRunning = false;
@@ -315,7 +315,6 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		apRecords.end(),
 		[](const WiFiAPRecord& lhs,const WiFiAPRecord& rhs){ return lhs.m_rssi> rhs.m_rssi;});
 	return apRecords;
-
 } // scan
 
 /**
@@ -446,7 +445,7 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 	if (errRc != ESP_OK)
 		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 
-	errRc = ::esp_wifi_set_mode(WIFI_MODE_AP);
+	errRc = ::esp_wifi_set_mode(WIFI_MODE_APSTA);
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
@@ -467,7 +466,15 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 
 	errRc = ::esp_wifi_set_config(WIFI_IF_AP, &apConfig);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "esp_wifi_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		ESP_LOGE(tag, "esp_wifi_apsta_ap_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
+
+	wifi_config_t sta_config;
+	::memset(&sta_config, 0, sizeof(sta_config));
+	errRc = ::esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_apsta_sta_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
 	}
 

@@ -79,23 +79,20 @@ void IRAM_ATTR WiFiUptimeHandler::Pool() {
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
 
-		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_AP_STR && ClientModeNextTime > 0)
+		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_APSTA_STR && ClientModeNextTime > 0)
 		{
 			IsConnectedBefore = false;
 			ClientModeNextTime = 0;
 
-			bool APClientsFound = false;
-			if (API::LastAPQueryTime > 0 && ((Time::Unixtime() - API::LastAPQueryTime) < 300))
-				APClientsFound = true;
+			ESP_LOGE("Try to find wifi", "timer fired");
 
-			ESP_LOGE("Should reconnect", "to wifi, Clients: %s", (APClientsFound) ? "exists" : "not exists");
-
-			if (!APClientsFound && Network.WiFiSettings.size() > 0) {
-				WiFi.Stop();
-				FreeRTOS::Sleep(1000);
+			if (Network.WiFiSettings.size() > 0) 
+			{
+				//WiFi.Stop();
+				//FreeRTOS::Sleep(1000);
 
 				Network.ImportScannedSSIDList(WiFi.Scan());
-				Wireless.StartInterfaces();
+				Network.WiFiConnect();
 				SetClientModeNextTime(Settings.WiFi.STAModeInterval);
 			}
 			else
