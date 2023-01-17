@@ -43,6 +43,7 @@ class MatterGenericDevice
 {
     public:
         static inline string Light          = "Light";
+        static inline string Thermostat     = "Thermostat";
         static inline string Temperature    = "Temperature";
         static inline string Humidity       = "Humidity";
 
@@ -51,7 +52,7 @@ class MatterGenericDevice
 
         //chip::Span<chip::DataVersion> dataVersions;
         //vector<chip::DataVersion> dataVersions = vector<chip::DataVersion>();
-        chip::DataVersion dataVersions[3] = {0};
+        chip::DataVersion dataVersions[5] = {0};
 
         uint16_t DynamicIndex               = 0;
 
@@ -137,25 +138,12 @@ class MatterGenericDevice
             mChanged_CB = aChanged_CB;
         }
 
-        EmberAfStatus HandleWriteAttribute(chip::AttributeId attributeId, uint8_t * Value) {
-            ChipLogProgress(DeviceLayer, "HandleWriteOnOffAttribute: attrId=%d", attributeId);
-
-            ESP_LOGE("HandleWriteAttribute", "1");
-            ESP_LOGE("attributeId", "%d", attributeId);
-
-            ReturnErrorCodeIf((attributeId != ZCL_ON_OFF_ATTRIBUTE_ID) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
-            
-            ESP_LOGE("HandleWriteAttribute", "2");
-            
-            SetOnOff(*Value == 1);
+        virtual EmberAfStatus HandleWriteAttribute(chip::EndpointId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) {
             return EMBER_ZCL_STATUS_SUCCESS;
         }
 
         virtual bool    GetOnOff()                          { ESP_LOGE("GetOnOff Generic", "Invoked"); return false;}
         virtual void    SetOnOff(bool Value)                { ESP_LOGE("SetOnOff Generic", "Invoked"); }
-
-        virtual int16_t GetTemperature()                    { ESP_LOGE("GetTemperature Generic", "Invoked"); return 0; } 
-        virtual void    SetTemperature (float Temperature)  { ESP_LOGE("SetTemperature Generic", "Invoked"); }
 
     protected:
         char mLocation[kDeviceLocationSize];
@@ -201,6 +189,8 @@ class MatterGenericDevice
 #include "GenericDevice.hpp"
 
 #include "Light.hpp"
+#include "Thermostat.hpp"
+
 #include "TempSensor.hpp"
 #include "HumiditySensor.hpp"
 

@@ -43,6 +43,15 @@ class MatterLight : public MatterGenericDevice {
             mChanged_CB = &MatterLight::HandleStatusChanged;
         };
 
+        EmberAfStatus HandleWriteAttribute(chip::EndpointId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override {
+            ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=%d attrId=%d", ClusterID, AttributeID);
+
+            ReturnErrorCodeIf((AttributeID != ZCL_ON_OFF_ATTRIBUTE_ID) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
+                        
+            SetOnOff(*Value == 1);
+            return EMBER_ZCL_STATUS_SUCCESS;
+        }
+
         bool GetOnOff()  override  { 
             ESP_LOGE("Light device GetOnOff", "Invoked"); 
             return (mState == kState_On);

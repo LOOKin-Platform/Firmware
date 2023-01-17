@@ -7,14 +7,11 @@ idf_component_register(
 	"${CMAKE_CURRENT_LIST_DIR}"
 	"${CMAKE_CURRENT_LIST_DIR}/include"
 	"${CMAKE_SOURCE_DIR}/main/Matter/include"
-	"${CMAKE_SOURCE_DIR}/main/Matter/Apps"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Devices"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Override"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Connectivity"
 	"$ENV{MATTER_PATH}/src"
 	"$ENV{MATTER_PATH}/src/app/util"
-	"$ENV{MATTER_PATH}/third_party/nlio/repo/include"
-	"$ENV{MATTER_PATH}/third_party/nlassert/repo/include"
 	"$ENV{MATTER_PATH}/examples/platform/esp32"
 	"$ENV{IDF_PATH}/components/bt/host/nimble/nimble/nimble/host/include"
 	SRC_DIRS
@@ -51,7 +48,6 @@ idf_component_register(
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/on-off-server"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/operational-credentials-server"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/src/app/clusters/general-commissioning-server"
-	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/platform/esp32/route_hook"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/platform/esp32/common"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/providers"
 	PRIV_REQUIRES 

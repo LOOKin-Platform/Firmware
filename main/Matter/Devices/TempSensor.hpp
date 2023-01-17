@@ -43,14 +43,11 @@ class MatterTempSensor : public MatterGenericDevice {
             mChanged_CB = &MatterTempSensor::HandleStatusChanged;
         }
 
-        int16_t GetTemperature() override { 
-            ESP_LOGE("GetTemperature TempSensor", "Invoked"); 
+        int16_t GetTemperature() { 
             return mMeasurement;
         } 
 
-        void SetTemperature (float Value) override {
-            ESP_LOGE("SetTemperature TempSensor", "Invoked with value %f", Value);
-
+        void SetTemperature (float Value) {
             int16_t NormalizedValue = round(Value * 100);
 
             // Limit measurement based on the min and max.
@@ -61,8 +58,6 @@ class MatterTempSensor : public MatterGenericDevice {
                 NormalizedValue = mMax;
 
             bool changed = mMeasurement != NormalizedValue;
-
-            ChipLogProgress(DeviceLayer, "TempSensorDevice[%s]: New measurement=\"%d\"", mName, NormalizedValue);
 
             mMeasurement = NormalizedValue;
 
@@ -77,8 +72,6 @@ class MatterTempSensor : public MatterGenericDevice {
 
         static void HandleStatusChanged(MatterTempSensor * dev, MatterTempSensor::Changed_t itemChangedMask)
         {
-            ESP_LOGE("TempSensor", "HandleStatusChanged");
-
             if (itemChangedMask & (MatterTempSensor::kChanged_Reachable | MatterTempSensor::kChanged_Name | MatterTempSensor::kChanged_Location))
                 HandleDeviceStatusChanged(static_cast<MatterGenericDevice *>(dev), (MatterGenericDevice::Changed_t) itemChangedMask);
 

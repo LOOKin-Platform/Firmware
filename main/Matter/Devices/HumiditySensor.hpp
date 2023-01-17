@@ -48,13 +48,10 @@ class MatterHumiditySensor : public MatterGenericDevice {
         }
 
         int16_t GetHumidity() { 
-            ESP_LOGE("GetHumidity HumiditySensor", "Invoked"); 
             return mMeasurement;
         } 
 
         void SetHumidity (float Value) {
-            ESP_LOGE("SetHumidity HumiditySensor", "Invoked with value %f", Value);
-
             if (Value < 0)
                 Value = 0;
 
@@ -69,8 +66,6 @@ class MatterHumiditySensor : public MatterGenericDevice {
 
             bool changed = mMeasurement != NormalizedValue;
 
-            ChipLogProgress(DeviceLayer, "HumiditySensorDevice[%s]: New measurement=\"%d\"", mName, NormalizedValue);
-
             mMeasurement = NormalizedValue;
 
             if (changed && mChanged_CB)
@@ -84,8 +79,6 @@ class MatterHumiditySensor : public MatterGenericDevice {
 
         static void HandleStatusChanged(MatterHumiditySensor * dev, MatterHumiditySensor::Changed_t itemChangedMask)
         {
-            ESP_LOGE("HumiditySensor", "HandleStatusChanged");
-
             if (itemChangedMask & (MatterHumiditySensor::kChanged_Reachable | MatterHumiditySensor::kChanged_Name | MatterHumiditySensor::kChanged_Location))
                 HandleDeviceStatusChanged(static_cast<MatterGenericDevice *>(dev), (MatterGenericDevice::Changed_t) itemChangedMask);
 

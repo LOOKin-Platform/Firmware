@@ -28,7 +28,6 @@ class Matter {
 		static void				Init();
 		static void				StartServer();
 		
-		static void 			WiFiScan();
 		static void				WiFiConnectToAP(string SSID, string Password);
 
 		static void				Start();
