@@ -6,7 +6,8 @@
 
 #include <app-common/zap-generated/af-structs.h>
 #include <app-common/zap-generated/attribute-id.h>
-#include <app-common/zap-generated/cluster-id.h>
+#include <app-common/zap-generated/ids/Clusters.h>
+
 #include <app/ConcreteAttributePath.h>
 #include <app/clusters/identify-server/identify-server.h>
 #include <app/clusters/network-commissioning/network-commissioning.h>
@@ -77,52 +78,70 @@ static AppDeviceCallbacks AppCallback;
 static EndpointId gCurrentEndpointId;
 static EndpointId gFirstDynamicEndpointId;
 
-#define DEVICE_TYPE_BRIDGED_NODE 	0x0013
-#define DEVICE_TYPE_LO_ON_OFF_LIGHT 0x0100
-#define DEVICE_TYPE_TEMP_SENSOR 	0x0302
-#define DEVICE_TYPE_HUMIDITY_SENSOR 0x0307
-#define DEVICE_TYPE_HEAT_COOL 		0x0301
-#define DEVICE_TYPE_FANCONTROL 		0x002B
+#define DEVICE_TYPE_BRIDGED_NODE 			0x0013
+#define DEVICE_TYPE_ROOT_NODE 				0x0016
+#define DEVICE_TYPE_BRIDGE 					0x000E
+#define DEVICE_REVISION_DEFAULT 			1
 
-#define DEVICE_TYPE_ROOT_NODE 0x0016
-#define DEVICE_TYPE_BRIDGE 0x000e
+#define DEVICE_TYPE_LO_ON_OFF_LIGHT 		0x0100
+#define DEVICE_REVISION_LO_ON_OFF_LIGHT		2
 
-#define DEVICE_VERSION_DEFAULT 1
+#define DEVICE_TYPE_ON_OFF_OUTLET 			0x010A
+#define DEVICE_REVISION_ON_OFF_OUTLET 		2
+
+#define DEVICE_TYPE_TEMP_SENSOR 			0x0302
+#define DEVICE_REVISION_TEMP_SENSOR			2
+
+#define DEVICE_TYPE_HUMIDITY_SENSOR 		0x0307
+#define DEVICE_REVISION_HUMIDITY_SENSOR		2
+
+#define DEVICE_TYPE_THERMOSTAT 				0x0301
+#define DEVICE_REVISION_THERMOSTAT			2
+
+#define DEVICE_TYPE_FANCONTROL 				0x002B
+#define DEVICE_REVISION_FANCONTROL 			1
+
+#define DEVICE_TYPE_VIDEOPLAYER 			0x0028 
+#define DEVICE_REVISION_VIDEOPLAYER 		1
+
 
 /* REVISION definitions:
  */
 
-#define ZCL_DESCRIPTOR_CLUSTER_REVISION (1u)
-#define ZCL_BRIDGED_DEVICE_BASIC_CLUSTER_REVISION (1u)
-#define ZCL_FIXED_LABEL_CLUSTER_REVISION (1u)
-#define ZCL_ON_OFF_CLUSTER_REVISION (4u)
-#define ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION (1u)
-#define ZCL_TEMPERATURE_SENSOR_FEATURE_MAP (0u)
+#define ZCL_DESCRIPTOR_CLUSTER_REVISION 			(1u)
+#define ZCL_BRIDGED_DEVICE_BASIC_CLUSTER_REVISION 	(1u)
+#define ZCL_FIXED_LABEL_CLUSTER_REVISION 			(1u)
 
+const EmberAfDeviceType gRootDeviceTypes[] 					= { { DEVICE_TYPE_ROOT_NODE, DEVICE_REVISION_DEFAULT } };
+const EmberAfDeviceType gAggregateNodeDeviceTypes[] 		= { { DEVICE_TYPE_BRIDGE, DEVICE_REVISION_DEFAULT } };
 
-const EmberAfDeviceType gRootDeviceTypes[] 					= { { DEVICE_TYPE_ROOT_NODE, DEVICE_VERSION_DEFAULT } };
-const EmberAfDeviceType gAggregateNodeDeviceTypes[] 		= { { DEVICE_TYPE_BRIDGE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedOnOffLightDeviceTypes[] 	= { { DEVICE_TYPE_LO_ON_OFF_LIGHT, DEVICE_REVISION_LO_ON_OFF_LIGHT },
+                                                       			{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_REVISION_DEFAULT } };
 
-const EmberAfDeviceType gBridgedOnOffDeviceTypes[] 			= { { DEVICE_TYPE_LO_ON_OFF_LIGHT, DEVICE_VERSION_DEFAULT },
-                                                       			{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedOnOffOutletDeviceTypes[] 	= { { DEVICE_TYPE_ON_OFF_OUTLET, DEVICE_REVISION_ON_OFF_OUTLET },
+                                                       			{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_REVISION_DEFAULT } };
 
-const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] 	= { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_VERSION_DEFAULT },
-                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedTempSensorDeviceTypes[] 	= { { DEVICE_TYPE_TEMP_SENSOR, DEVICE_REVISION_TEMP_SENSOR },
+                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_REVISION_DEFAULT } };
 
-const EmberAfDeviceType gBridgedHumiditySensorDeviceTypes[] = { { DEVICE_TYPE_HUMIDITY_SENSOR, DEVICE_VERSION_DEFAULT },
-                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedHumiditySensorDeviceTypes[] = { { DEVICE_TYPE_HUMIDITY_SENSOR, DEVICE_REVISION_HUMIDITY_SENSOR },
+                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_REVISION_DEFAULT } };
 
-const EmberAfDeviceType gBridgedThermostatDeviceTypes[] 	= { { DEVICE_TYPE_HEAT_COOL, DEVICE_VERSION_DEFAULT },
-																//{ DEVICE_TYPE_FANCONTROL, DEVICE_VERSION_DEFAULT },
-                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_VERSION_DEFAULT } };
+const EmberAfDeviceType gBridgedThermostatDeviceTypes[] 	= { { DEVICE_TYPE_THERMOSTAT, DEVICE_REVISION_THERMOSTAT },
+                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_REVISION_DEFAULT } };
 
+const EmberAfDeviceType gBridgedFanDeviceTypes[] 			= { { DEVICE_TYPE_FANCONTROL, DEVICE_REVISION_FANCONTROL },
+                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_REVISION_DEFAULT } };
+
+const EmberAfDeviceType gBridgedVideoPLayer[] 				= { { DEVICE_TYPE_VIDEOPLAYER, DEVICE_REVISION_VIDEOPLAYER },
+                                                            	{ DEVICE_TYPE_BRIDGED_NODE, DEVICE_REVISION_DEFAULT } };
 
 // Declare Descriptor cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(descriptorAttrs)
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_DEVICE_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0),	/* device list */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SERVER_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0), 	/* server list */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLIENT_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0), 	/* client list */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PARTS_LIST_ATTRIBUTE_ID, ARRAY, kDescriptorAttributeArraySize, 0),  	/* parts list */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_DEVICE_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0),	/* device list */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SERVER_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0), 	/* server list */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLIENT_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0), 	/* client list */
+    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PARTS_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0),  	/* parts list */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // Declare Bridged Device Basic information cluster attributes
@@ -158,13 +177,30 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedLightClusters)
-    DECLARE_DYNAMIC_CLUSTER(chip::app::Clusters::OnOff::Id, onOffAttrs, onOffIncomingCommands, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(chip::app::Clusters::Descriptor::Id, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(chip::app::Clusters::BridgedDeviceBasic::Id, bridgedDeviceBasicAttrs, nullptr, nullptr)
+    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs, onOffIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Light endpoint
 DECLARE_DYNAMIC_ENDPOINT(bridgedLightEndpoint, bridgedLightClusters);
+
+// ---------------------------------------------------------------------------
+//
+// OUTLET ENDPOINT: contains the following clusters:
+//   - On/Off
+//   - Descriptor
+//   - Bridged Device Basic
+
+DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedOutletClusters)
+    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs, onOffIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+DECLARE_DYNAMIC_CLUSTER_LIST_END;
+
+// Declare Bridged Light endpoint
+DECLARE_DYNAMIC_ENDPOINT(bridgedOutletEndpoint, bridgedOutletClusters);
+
 
 // ---------------------------------------------------------------------------
 //
@@ -181,9 +217,9 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(tempSensorAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedTempSensorClusters)
-	DECLARE_DYNAMIC_CLUSTER(TemperatureMeasurement::Id, tempSensorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasic::Id, bridgedDeviceBasicAttrs, nullptr, nullptr)
+	DECLARE_DYNAMIC_CLUSTER(TemperatureMeasurement::Id			, tempSensorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Temp sensor endpoint
@@ -204,9 +240,9 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(humiditySensorAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedHumiditySensorClusters)
-	DECLARE_DYNAMIC_CLUSTER(RelativeHumidityMeasurement::Id, humiditySensorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasic::Id, bridgedDeviceBasicAttrs, nullptr, nullptr)
+	DECLARE_DYNAMIC_CLUSTER(RelativeHumidityMeasurement::Id		, humiditySensorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Temp sensor endpoint
@@ -228,26 +264,14 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(thermostatAttrs)
 	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
 	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MIN_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
 	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-//	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MIN_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
-//	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
-//	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MIN_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
-//	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MIN_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MIN_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
 	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MIN_SETPOINT_DEAD_BAND_ATTRIBUTE_ID		, INT8S, 	1, 	ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
 	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE_ID, ENUM8, 	1, 	ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
 	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SYSTEM_MODE_ATTRIBUTE_ID					, ENUM8, 	1,	ZAP_ATTRIBUTE_MASK(WRITABLE)),
 //	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_THERMOSTAT_RUNNING_MODE_ATTRIBUTE_ID, INT8U, 1, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID			, BITMAP32, 4, 0),
-//	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID		, INT16U, 	2, 0),
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
-
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(fanControlAttrs)
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FAN_MODE_ATTRIBUTE_ID						, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FAN_MODE_SEQUENCE_ATTRIBUTE_ID			, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_SETTING_ATTRIBUTE_ID				, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_CURRENT_ATTRIBUTE_ID				, INT8U, 	1, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SPEED_SETTING_ATTRIBUTE_ID				, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ROCK_SUPPORT_ATTRIBUTE_ID					, BITMAP8, 	1, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ROCK_SETTING_ATTRIBUTE_ID					, BITMAP8, 	1, ZAP_ATTRIBUTE_MASK(WRITABLE)),
 	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID			, BITMAP32, 4, 0),
 //	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID		, INT16U, 	2, 0),
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
@@ -258,15 +282,71 @@ constexpr chip::CommandId ThermostatIncomingCommands[] = {
 };
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedThermostatClusters)
-    DECLARE_DYNAMIC_CLUSTER(OnOff::Id		, onOffAttrs, onOffIncomingCommands, nullptr),
-	DECLARE_DYNAMIC_CLUSTER(Thermostat::Id	, thermostatAttrs, ThermostatIncomingCommands, nullptr),
-	//DECLARE_DYNAMIC_CLUSTER(FanControl::Id	, fanControlAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id	, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasic::Id, bridgedDeviceBasicAttrs, nullptr, nullptr)
+	DECLARE_DYNAMIC_CLUSTER(Thermostat::Id						, thermostatAttrs, ThermostatIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Thermostat endpoint
 DECLARE_DYNAMIC_ENDPOINT(bridgedThermostatEndpoint, bridgedThermostatClusters);
+
+// ---------------------------------------------------------------------------
+//
+// Fan control ENDPOINT: contains the following clusters:
+//   - FanControl
+//   - Descriptor
+//   - Bridged Device Basic
+
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(fanControlAttrs)
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FAN_MODE_ATTRIBUTE_ID						, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FAN_MODE_SEQUENCE_ATTRIBUTE_ID			, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_SETTING_ATTRIBUTE_ID				, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_CURRENT_ATTRIBUTE_ID				, INT8U, 	1, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_CURRENT_ATTRIBUTE_ID				, INT8U, 	1, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SPEED_SETTING_ATTRIBUTE_ID				, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ROCK_SUPPORT_ATTRIBUTE_ID					, BITMAP8, 	1, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ROCK_SETTING_ATTRIBUTE_ID					, BITMAP8, 	1, ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID			, BITMAP32, 4, 0),
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedFanClusters)
+	DECLARE_DYNAMIC_CLUSTER(FanControl::Id						, fanControlAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+DECLARE_DYNAMIC_CLUSTER_LIST_END;
+
+// Declare Bridged Thermostat endpoint
+DECLARE_DYNAMIC_ENDPOINT(bridgedFanEndpoint, bridgedFanClusters);
+
+// ---------------------------------------------------------------------------
+//
+// Basic video player ENDPOINT: contains the following clusters:
+//   - OnOff
+//   - Keypad Input
+//   - Descriptor
+//   - Bridged Device Basic
+
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(KeypadInputAttrs)
+	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID			, BITMAP32, 4, 0),
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
+
+
+constexpr chip::CommandId KeypadInputIncomingCommands[] = {
+	KeypadInput::Commands::SendKey::Id,
+	KeypadInput::Commands::SendKeyResponse::Id,
+	chip::kInvalidCommandId,
+};
+
+DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedVideoPlayerClusters)
+    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs				, onOffIncomingCommands			, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(KeypadInput::Id						, KeypadInputAttrs			, KeypadInputIncomingCommands	, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs			, nullptr						, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs	, nullptr						, nullptr)
+DECLARE_DYNAMIC_CLUSTER_LIST_END;
+
+// Declare Bridged Thermostat endpoint
+DECLARE_DYNAMIC_ENDPOINT(bridgedVideoPlayerEndpoint, bridgedVideoPlayerClusters);
+
 
 /*
 Matter::AccessoryData_t(string sName, string sModel, string sID) {
@@ -285,41 +365,6 @@ Matter::AccessoryData_t(string sName, string sModel, string sID) {
 */
 
 /* Ember Handlers */
-
-EmberAfStatus HandleReadTempMeasurementAttribute(MatterTempSensor * dev, chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength)
-{
-    if ((attributeId == ZCL_TEMP_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
-    {
-        int16_t measuredValue = dev->GetTemperature();
-        memcpy(buffer, &measuredValue, sizeof(measuredValue));
-    }
-    else if ((attributeId == ZCL_TEMP_MIN_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
-    {
-        int16_t minValue = dev->GetMin();
-        memcpy(buffer, &minValue, sizeof(minValue));
-    }
-    else if ((attributeId == ZCL_TEMP_MAX_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
-    {
-        int16_t maxValue = dev->GetMax();
-        memcpy(buffer, &maxValue, sizeof(maxValue));
-    }
-    else if ((attributeId == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
-    {
-        uint32_t featureMap = ZCL_TEMPERATURE_SENSOR_FEATURE_MAP;
-        memcpy(buffer, &featureMap, sizeof(featureMap));
-    }
-    else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
-    {
-        uint16_t clusterRevision = ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION;
-        memcpy(buffer, &clusterRevision, sizeof(clusterRevision));
-    }
-    else
-    {
-        return EMBER_ZCL_STATUS_FAILURE;
-    }
-
-    return EMBER_ZCL_STATUS_SUCCESS;
-}
 
 EmberAfStatus HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, chip::AttributeId attributeId, uint8_t * buffer,
                                                     uint16_t maxReadLength)
@@ -347,32 +392,11 @@ EmberAfStatus HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, c
     return EMBER_ZCL_STATUS_SUCCESS;
 }
 
-EmberAfStatus HandleReadOnOffAttribute(MatterGenericDevice * dev, chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength)
-{
-    ChipLogProgress(DeviceLayer, "HandleReadOnOffAttribute: attrId=%d, maxReadLength=%d", attributeId, maxReadLength);
-
-    if ((attributeId == ZCL_ON_OFF_ATTRIBUTE_ID) && (maxReadLength == 1))
-    {
-        *buffer = (dev)->GetOnOff() ? 1 : 0;
-    }
-    else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
-    {
-        *buffer = (uint16_t) ZCL_ON_OFF_CLUSTER_REVISION;
-    }
-    else
-    {
-        return EMBER_ZCL_STATUS_FAILURE;
-    }
-
-    return EMBER_ZCL_STATUS_SUCCESS;
-}
-
-
 EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterId clusterId,
                                                    const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer,
                                                    uint16_t maxReadLength)
 {
-	ESP_LOGE(Tag, "emberAfExternalAttributeReadCallback, EndpointID %d, ClusterID %d", endpoint, clusterId);
+	ESP_LOGE(Tag, "emberAfExternalAttributeReadCallback, EndpointID %d, ClusterID 0x%0X", endpoint, clusterId);
 
     uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
 
@@ -380,26 +404,12 @@ EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterI
 
     if (FindedDevice != nullptr)
     {
-        if (clusterId == BridgedDeviceBasic::Id)
+        if (clusterId == BridgedDeviceBasicInformation::Id)
         {
             return HandleReadBridgedDeviceBasicAttribute(FindedDevice, attributeMetadata->attributeId, buffer, maxReadLength);
         }
-        else if (clusterId == OnOff::Id)
-        {
-            return HandleReadOnOffAttribute(FindedDevice, attributeMetadata->attributeId, buffer, maxReadLength);
-        }
-		else if (clusterId == TemperatureMeasurement::Id)
-        {
-            return HandleReadTempMeasurementAttribute(static_cast<MatterTempSensor *>(FindedDevice), attributeMetadata->attributeId, buffer, maxReadLength);
-        }
-		else if (clusterId == RelativeHumidityMeasurement::Id)
-        {
-            return ((MatterHumiditySensor *)FindedDevice)->HandleReadAttribute(attributeMetadata->attributeId, buffer, maxReadLength);
-        }
-		else if (clusterId == Thermostat::Id || clusterId == FanControl::Id)
-		{
-            return ((MatterThermostat *)FindedDevice)->HandleReadAttribute(clusterId, attributeMetadata->attributeId, buffer, maxReadLength);
-		}
+
+		return FindedDevice->HandleReadAttribute(clusterId, attributeMetadata->attributeId, buffer, maxReadLength);
     }
 
     return EMBER_ZCL_STATUS_FAILURE;
@@ -1283,7 +1293,7 @@ void Matter::CreateRemoteBridge() {
 
 		MatterLight *DeviceToAdd = new MatterLight(DeviceName, "Bedroom");
 
-		AddDeviceEndpoint(DeviceToAdd, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffDeviceTypes), 1);
+		AddDeviceEndpoint(DeviceToAdd, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffLightDeviceTypes), 1);
 	}
 
 	//MatterGenericDevice* TempSensorToAdd = new MatterTempSensor("Example temp", "Bedroom");
@@ -1295,6 +1305,14 @@ void Matter::CreateRemoteBridge() {
 	MatterGenericDevice* ThermostatToAdd = new MatterThermostat("Example Thermostat", "Bedroom");
 	AddDeviceEndpoint(ThermostatToAdd, &bridgedThermostatEndpoint, Span<const EmberAfDeviceType>(gBridgedThermostatDeviceTypes), 1);
 
+//	MatterGenericDevice* ThermostatFanToAdd = new MatterThermostat("Example Thermostat", "Bedroom");
+//	AddDeviceEndpoint(ThermostatFanToAdd, &bridgedFanEndpoint, Span<const EmberAfDeviceType>(gBridgedFanDeviceTypes), 1);
+
+	MatterGenericDevice* VideoPlayerToAdd = new MatterVideoPlayer("Example video player", "Bedroom");
+	AddDeviceEndpoint(VideoPlayerToAdd, &bridgedVideoPlayerEndpoint, Span<const EmberAfDeviceType>(gBridgedVideoPLayer), 1);
+
+	MatterGenericDevice* OutletToAdd = new MatterOutlet("test outlet", "Bedroom");
+	AddDeviceEndpoint(OutletToAdd, &bridgedOutletEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffOutletDeviceTypes), 1);
 
     // Remove Light 2 -- Lights 1 & 3 will remain mapped to endpoints 3 & 5
     //!RemoveDeviceEndpoint(MatterDevices[1].ControlledDevice);
@@ -1737,9 +1755,9 @@ MatterGenericDevice* Matter::GetDeviceByDynamicIndex(uint16_t Index) {
     return nullptr;
 }
 
-MatterGenericDevice* Matter::GetBridgedAccessoryByType(string ClassName) {
+MatterGenericDevice* Matter::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type) {
     for (auto& DeviceItem : MatterDevices)
-		if (DeviceItem->GetClassName() == ClassName)
+		if (DeviceItem->GetTypeName() == Type)
 			return DeviceItem;
 
 	return nullptr;

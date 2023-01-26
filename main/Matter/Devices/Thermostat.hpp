@@ -38,7 +38,7 @@
 #define FANCONTROL_FEATURE_ROCKING          0x04
 #define FANCONTROL_FEATURE_WIND_SUPPORTED   0x08
 
-#define ZCL_FANCONTROL_FEATURE_MAP FANCONTROL_FEATURE_AUTO_SUPPORTED | FANCONTROL_FEATURE_ROCKING
+#define ZCL_FANCONTROL_FEATURE_MAP FANCONTROL_FEATURE_MULTISPEED | FANCONTROL_FEATURE_AUTO_SUPPORTED | FANCONTROL_FEATURE_ROCKING
 #define ZCL_FANCONTROL_CLUSTER_REVISION (2u)
 
 class MatterThermostat : public MatterGenericDevice {
@@ -53,7 +53,7 @@ class MatterThermostat : public MatterGenericDevice {
         MatterThermostat(string szDeviceName, string szLocation) :
             MatterGenericDevice(szDeviceName, szLocation)
         {
-            ClassName = MatterGenericDevice::Thermostat;
+            DeviceType = DeviceTypeEnum::Thermostat;
 
             SetReachable(true);
             mChanged_CB = &MatterThermostat::HandleStatusChanged;
@@ -64,12 +64,14 @@ class MatterThermostat : public MatterGenericDevice {
             ESP_LOGE("MatterThermostat", "MatterThermostat");
         }
 
+/*
         EmberAfStatus HandleWriteAttribute(chip::EndpointId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override {
             ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Thermostat Device cluster: clusterID=%d attrId=%d", ClusterID, AttributeID);
             return EMBER_ZCL_STATUS_SUCCESS;
         }
+*/
 
-        EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength)
+        EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength) override
         {
             ESP_LOGE("MatterThermostat", "HandleReadAttribute, ClusterID: %d, attributeID: %04X, MaxReadLength: %d", ClusterID, attributeId, maxReadLength);
 
@@ -105,7 +107,7 @@ class MatterThermostat : public MatterGenericDevice {
                             || attributeId == ZCL_ABS_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID
                             || attributeId == ZCL_ABS_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID) 
                             && (maxReadLength == 2))                {
-                    int16_t MaxValue = 30000;
+                    int16_t MaxValue = 3000;
                     memcpy(buffer, &MaxValue, sizeof(MaxValue));
                 }
                 else if ((attributeId == ZCL_OCCUPIED_COOLING_SETPOINT_ATTRIBUTE_ID || attributeId == ZCL_OCCUPIED_HEATING_SETPOINT_ATTRIBUTE_ID) && (maxReadLength == 2))
@@ -135,7 +137,7 @@ class MatterThermostat : public MatterGenericDevice {
 
                 if ((attributeId == ZCL_FAN_MODE_ATTRIBUTE_ID) && (maxReadLength == 1))
                 {
-                    uint8_t CurrentFanMode = 0; // Off                
+                    uint8_t CurrentFanMode = 5; // Auto                
                     *buffer = CurrentFanMode;
                 }
                 else if ((attributeId == ZCL_CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE_ID) && (maxReadLength == 1)) 
@@ -158,9 +160,9 @@ class MatterThermostat : public MatterGenericDevice {
                     uint16_t ClusterRevision = ZCL_FANCONTROL_CLUSTER_REVISION;
                     memcpy(buffer, &ClusterRevision, sizeof(ClusterRevision));
                 }
-                else if ((attributeId == ZCL_ROCK_SETTING_ATTRIBUTE_ID) && (maxReadLength == 1))
+                else if (((attributeId == ZCL_ROCK_SUPPORT_ATTRIBUTE_ID) || (attributeId == ZCL_ROCK_SETTING_ATTRIBUTE_ID)) && (maxReadLength == 1))
                 {
-                    uint8_t RockSettings = 0x2;  // Vertical Swing              
+                    uint8_t RockSettings = 0x2;  // Rock setting             
                     *buffer = RockSettings;
                 }
                 else if ((attributeId == ZCL_FAN_MODE_SEQUENCE_ATTRIBUTE_ID) && (maxReadLength == 1))
@@ -173,6 +175,11 @@ class MatterThermostat : public MatterGenericDevice {
                     uint8_t SpeedSetting = 0x0;  // Vertical Swing              
                     *buffer = SpeedSetting;
                 }
+                else if ((attributeId == ZCL_PERCENT_CURRENT_ATTRIBUTE_ID) && (maxReadLength == 1))
+                {
+                    uint8_t SpeedSetting = 0x4;             
+                    *buffer = SpeedSetting;
+                }                
                 else
                 {
                     return EMBER_ZCL_STATUS_FAILURE; 

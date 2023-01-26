@@ -1,0 +1,185 @@
+diff --git a/src/platform/ESP32/ConfigurationManagerImpl.cpp b/src/platform/ESP32/ConfigurationManagerImpl.cpp
+index 88005bda3..57d525719 100644
+--- a/src/platform/ESP32/ConfigurationManagerImpl.cpp
++++ b/src/platform/ESP32/ConfigurationManagerImpl.cpp
+@@ -361,11 +361,13 @@ void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
+ 
+     // Restore WiFi persistent settings to default values.
+ #if CHIP_DEVICE_CONFIG_ENABLE_WIFI
++    #ifndef MATTER_WIFI_OVERRIDE
+     esp_err_t error = esp_wifi_restore();
+     if (error != ESP_OK)
+     {
+         ChipLogError(DeviceLayer, "esp_wifi_restore() failed: %s", esp_err_to_name(error));
+     }
++    #endif
+ #elif CHIP_DEVICE_CONFIG_ENABLE_THREAD
+     ThreadStackMgr().ErasePersistentInfo();
+ #endif
+diff --git a/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp b/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
+index 831775ef5..316ac05ca 100644
+--- a/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
++++ b/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
+@@ -103,6 +103,7 @@ bool ConnectivityManagerImpl::_IsWiFiStationProvisioned(void)
+ 
+ void ConnectivityManagerImpl::_ClearWiFiStationProvision(void)
+ {
++#ifndef MATTER_WIFI_OVERRIDE
+     if (mWiFiStationMode != kWiFiStationMode_ApplicationControlled)
+     {
+         DeviceLayer::SystemLayer().ScheduleWork(DriveStationState, NULL);
+@@ -110,11 +111,16 @@ void ConnectivityManagerImpl::_ClearWiFiStationProvision(void)
+         DeviceLayer::SystemLayer().ScheduleWork(DriveAPState, NULL);
+ #endif // CHIP_DEVICE_CONFIG_ENABLE_WIFI_AP
+     }
++#endif
+ }
+ 
+ #if CHIP_DEVICE_CONFIG_ENABLE_WIFI_AP
+ CHIP_ERROR ConnectivityManagerImpl::_SetWiFiAPMode(WiFiAPMode val)
+ {
++#ifdef MATTER_WIFI_OVERRIDE
++    return CHIP_NO_ERROR;
++#endif
++
+     CHIP_ERROR err = CHIP_NO_ERROR;
+ 
+     VerifyOrExit(val != kWiFiAPMode_NotSupported, err = CHIP_ERROR_INVALID_ARGUMENT);
+@@ -134,6 +140,10 @@ exit:
+ 
+ void ConnectivityManagerImpl::_DemandStartWiFiAP(void)
+ {
++#ifdef MATTER_WIFI_OVERRIDE
++    return;
++#endif
++
+     if (mWiFiAPMode == kWiFiAPMode_OnDemand || mWiFiAPMode == kWiFiAPMode_OnDemand_NoStationProvision)
+     {
+         mLastAPDemandTime = System::SystemClock().GetMonotonicTimestamp();
+@@ -143,6 +153,10 @@ void ConnectivityManagerImpl::_DemandStartWiFiAP(void)
+ 
+ void ConnectivityManagerImpl::_StopOnDemandWiFiAP(void)
+ {
++#ifdef MATTER_WIFI_OVERRIDE
++    return;
++#endif
++
+     if (mWiFiAPMode == kWiFiAPMode_OnDemand || mWiFiAPMode == kWiFiAPMode_OnDemand_NoStationProvision)
+     {
+         mLastAPDemandTime = System::Clock::kZero;
+@@ -152,6 +166,10 @@ void ConnectivityManagerImpl::_StopOnDemandWiFiAP(void)
+ 
+ void ConnectivityManagerImpl::_MaintainOnDemandWiFiAP(void)
+ {
++#ifdef MATTER_WIFI_OVERRIDE
++    return;
++#endif
++
+     if (mWiFiAPMode == kWiFiAPMode_OnDemand || mWiFiAPMode == kWiFiAPMode_OnDemand_NoStationProvision)
+     {
+         if (mWiFiAPState == kWiFiAPState_Activating || mWiFiAPState == kWiFiAPState_Active)
+@@ -163,6 +181,10 @@ void ConnectivityManagerImpl::_MaintainOnDemandWiFiAP(void)
+ 
+ void ConnectivityManagerImpl::_SetWiFiAPIdleTimeout(System::Clock::Timeout val)
+ {
++#ifdef MATTER_WIFI_OVERRIDE
++    return;
++#endif
++
+     mWiFiAPIdleTimeout = val;
+     DeviceLayer::SystemLayer().ScheduleWork(DriveAPState, NULL);
+ }
+@@ -400,6 +422,7 @@ CHIP_ERROR ConnectivityManagerImpl::InitWiFi()
+     // Ensure that ESP station mode is enabled.
+     ReturnErrorOnFailure(Internal::ESP32Utils::EnableStationMode());
+ 
++#ifdef MATTER_WIFI_OVERRIDE
+     // If there is no persistent station provision...
+     if (!IsWiFiStationProvisioned())
+     {
+@@ -443,6 +466,7 @@ CHIP_ERROR ConnectivityManagerImpl::InitWiFi()
+ #if CHIP_DEVICE_CONFIG_ENABLE_WIFI_AP
+     ReturnErrorOnFailure(DeviceLayer::SystemLayer().ScheduleWork(DriveAPState, NULL));
+ #endif // CHIP_DEVICE_CONFIG_ENABLE_WIFI_AP
++#endif
+ 
+     return CHIP_NO_ERROR;
+ }
+@@ -456,10 +480,12 @@ void ConnectivityManagerImpl::OnWiFiPlatformEvent(const ChipDeviceEvent * event)
+         {
+             switch (event->Platform.ESPSystemEvent.Id)
+             {
++#ifndef MATTER_WIFI_OVERRIDE
+             case WIFI_EVENT_SCAN_DONE:
+                 ChipLogProgress(DeviceLayer, "WIFI_EVENT_SCAN_DONE");
+                 NetworkCommissioning::ESPWiFiDriver::GetInstance().OnScanWiFiNetworkDone();
+                 break;
++#endif
+             case WIFI_EVENT_STA_START:
+                 ChipLogProgress(DeviceLayer, "WIFI_EVENT_STA_START");
+                 DriveStationState();
+@@ -551,6 +577,7 @@ void ConnectivityManagerImpl::DriveStationState()
+     // kWiFiStationMode_Disabled.
+     GetWiFiStationMode();
+ 
++#ifndef MATTER_WIFI_OVERRIDE
+     // If the station interface is NOT under application control...
+     if (mWiFiStationMode != kWiFiStationMode_ApplicationControlled)
+     {
+@@ -560,6 +587,7 @@ void ConnectivityManagerImpl::DriveStationState()
+         // Ensure that station mode is enabled in the ESP WiFi layer.
+         ReturnOnFailure(Internal::ESP32Utils::EnableStationMode());
+     }
++#endif
+ 
+     // Determine if the ESP WiFi layer thinks the station interface is currently connected.
+     ReturnOnFailure(Internal::ESP32Utils::IsStationConnected(stationConnected));
+@@ -764,6 +792,11 @@ void ConnectivityManagerImpl::OnStationDisconnected()
+ 
+ void ConnectivityManagerImpl::ChangeWiFiStationState(WiFiStationState newState)
+ {
++#ifdef MATTER_WIFI_OVERRIDE
++    mWiFiStationState = newState;
++    return;
++#endif
++
+     if (mWiFiStationState != newState)
+     {
+         ChipLogProgress(DeviceLayer, "WiFi station state change: %s -> %s", WiFiStationStateToStr(mWiFiStationState),
+@@ -920,6 +953,10 @@ exit:
+ 
+ CHIP_ERROR ConnectivityManagerImpl::ConfigureWiFiAP()
+ {
++#ifdef MATTER_WIFI_OVERRIDE
++    return CHIP_NO_ERROR;
++#endif
++
+     wifi_config_t wifiConfig;
+ 
+     memset(&wifiConfig, 0, sizeof(wifiConfig));
+diff --git a/src/platform/ESP32/PlatformManagerImpl.cpp b/src/platform/ESP32/PlatformManagerImpl.cpp
+index 074750654..5418750d5 100644
+--- a/src/platform/ESP32/PlatformManagerImpl.cpp
++++ b/src/platform/ESP32/PlatformManagerImpl.cpp
+@@ -70,6 +70,7 @@ CHIP_ERROR PlatformManagerImpl::_InitChipStack(void)
+     // Make sure the LwIP core lock has been initialized
+     ReturnErrorOnFailure(Internal::InitLwIPCoreLock());
+ 
++#ifndef MATTER_WIFI_OVERRIDE
+     err = esp_netif_init();
+     if (err != ESP_OK)
+     {
+@@ -120,6 +121,13 @@ CHIP_ERROR PlatformManagerImpl::_InitChipStack(void)
+     }
+ #endif // CHIP_DEVICE_CONFIG_ENABLE_WIFI
+ 
++#endif // MATTER_WIFI_OVERRIDE
++
++#ifdef MATTER_WIFI_OVERRIDE
++    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
++    esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
++#endif
++
+     ReturnErrorOnFailure(chip::Crypto::add_entropy_source(app_entropy_source, NULL, 16));
+ 
+     // Call _InitChipStack() on the generic implementation base class

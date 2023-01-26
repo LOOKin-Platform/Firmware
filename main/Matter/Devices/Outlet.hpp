@@ -21,9 +21,7 @@
 #include <lib/support/CHIPMemString.h>
 #include <platform/CHIPDeviceLayer.h>
 
-#define ZCL_ON_OFF_CLUSTER_REVISION (4u)
-
-class MatterLight : public MatterGenericDevice {
+class MatterOutlet : public MatterGenericDevice {
     public:
         enum State_t
         {
@@ -36,13 +34,13 @@ class MatterLight : public MatterGenericDevice {
             kChanged_OnOff = kChanged_Last << 1,
         } Changed;
 
-        using DeviceCallback_fn = std::function<void(MatterLight *, MatterLight::Changed_t)>;
+        using DeviceCallback_fn = std::function<void(MatterOutlet *, MatterOutlet::Changed_t)>;
 
-        MatterLight(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation) {
+        MatterOutlet(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation) {
             DeviceType = MatterGenericDevice::Light;
 
             SetReachable(true);
-            mChanged_CB = &MatterLight::HandleStatusChanged;
+            mChanged_CB = &MatterOutlet::HandleStatusChanged;
         };
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
@@ -101,7 +99,7 @@ class MatterLight : public MatterGenericDevice {
             }
         }
 
-        static void HandleStatusChanged(MatterLight * dev, MatterLight::Changed_t itemChangedMask)
+        static void HandleStatusChanged(MatterOutlet * dev, MatterOutlet::Changed_t itemChangedMask)
         {
             if (itemChangedMask & MatterGenericDevice::kChanged_Reachable)
                 ScheduleReportingCallback(dev, chip::app::Clusters::BridgedDeviceBasicInformation::Id, chip::app::Clusters::BridgedDeviceBasicInformation::Attributes::Reachable::Id);
@@ -122,7 +120,7 @@ class MatterLight : public MatterGenericDevice {
         {
             if (mChanged_CB)
             {
-                mChanged_CB(this, (MatterLight::Changed_t) changeMask);
+                mChanged_CB(this, (MatterOutlet::Changed_t) changeMask);
             }
         }
 };

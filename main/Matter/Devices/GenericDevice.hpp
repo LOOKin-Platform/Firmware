@@ -21,11 +21,15 @@
 // These are the bridged devices
 #include <app-common/zap-generated/af-structs.h>
 #include <app-common/zap-generated/attribute-id.h>
-#include <app-common/zap-generated/cluster-id.h>
+#include <app-common/zap-generated/ids/Clusters.h>
 
 #include "Matter.h"
 
 #include <app/util/attribute-storage.h>
+
+#include <platform/CHIPDeviceLayer.h>
+#include <lib/support/CHIPMemString.h>
+
 #include <app/reporting/reporting.h>
 
 #include <functional>
@@ -38,14 +42,17 @@ static const int kNodeLabelSize = 32;
 static const int kDescriptorAttributeArraySize = 254;
 
 using namespace chip::Platform;
-
 class MatterGenericDevice
 {
     public:
-        static inline string Light          = "Light";
-        static inline string Thermostat     = "Thermostat";
-        static inline string Temperature    = "Temperature";
-        static inline string Humidity       = "Humidity";
+        enum DeviceTypeEnum {
+            Undefined   = 0x0,
+            Light,
+            Thermostat,
+            Temperature,
+            Humidity,
+            MediaPlayer 
+        };
 
         static const int    kDeviceNameSize     = 32;
         static const int    kDeviceLocationSize = 32;
@@ -127,18 +134,24 @@ class MatterGenericDevice
             }
         }
 
-        inline void SetEndpointID(chip::EndpointId id)  { mEndpointId = id; };
-        inline chip::EndpointId GetEndpointID()         { return mEndpointId; };
-        inline char * GetName()                         { return mName; };
-        inline char * GetLocation()                     { return mLocation; };
-        inline string GetClassName()                    { return ClassName; };
+        inline void             SetEndpointID(chip::EndpointId id)  { mEndpointId = id; };
+        inline chip::EndpointId GetEndpointID()                     { return mEndpointId; };
+        inline char *           GetName()                           { return mName; };
+        inline char *           GetLocation()                       { return mLocation; };
+        inline DeviceTypeEnum   GetTypeName()                       { return DeviceType; };
 
         using DeviceCallback_fn = std::function<void(MatterGenericDevice *, Changed_t)>;
         void SetChangeCallback(DeviceCallback_fn aChanged_CB) {
             mChanged_CB = aChanged_CB;
         }
 
-        virtual EmberAfStatus HandleWriteAttribute(chip::EndpointId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) {
+        virtual EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
+        {
+            return EMBER_ZCL_STATUS_FAILURE;
+        }
+
+        virtual EmberAfStatus HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
+        {
             return EMBER_ZCL_STATUS_SUCCESS;
         }
 
@@ -146,21 +159,22 @@ class MatterGenericDevice
         virtual void    SetOnOff(bool Value)                { ESP_LOGE("SetOnOff Generic", "Invoked"); }
 
     protected:
+        static inline DeviceTypeEnum DeviceType = Undefined;
+
+
         char mLocation[kDeviceLocationSize];
         char mName[kDeviceNameSize];
         DeviceCallback_fn mChanged_CB;
-
-        string ClassName;
 
         static void HandleDeviceStatusChanged(MatterGenericDevice * dev, MatterGenericDevice::Changed_t itemChangedMask)
         {
             ESP_LOGE("MatterDevice", "HandleDeviceStatusChanged");
 
             if (itemChangedMask & MatterGenericDevice::kChanged_Reachable)
-                ScheduleReportingCallback(dev, chip::app::Clusters::BridgedDeviceBasic::Id, chip::app::Clusters:: BridgedDeviceBasic::Attributes::Reachable::Id);
+                ScheduleReportingCallback(dev, chip::app::Clusters::BridgedDeviceBasicInformation::Id, chip::app::Clusters:: BridgedDeviceBasicInformation::Attributes::Reachable::Id);
 
             if (itemChangedMask & MatterGenericDevice::kChanged_Name)
-                ScheduleReportingCallback(dev, chip::app::Clusters::BridgedDeviceBasic::Id, chip::app::Clusters::BridgedDeviceBasic::Attributes::NodeLabel::Id);
+                ScheduleReportingCallback(dev, chip::app::Clusters::BridgedDeviceBasicInformation::Id, chip::app::Clusters::BridgedDeviceBasicInformation::Attributes::NodeLabel::Id);
         }
 
         static void ScheduleReportingCallback(MatterGenericDevice * dev, chip::ClusterId cluster, chip::AttributeId attribute)
@@ -186,12 +200,13 @@ class MatterGenericDevice
 
 };
 
-#include "GenericDevice.hpp"
+//#include "GenericDevice.hpp"
 
 #include "Light.hpp"
-#include "Thermostat.hpp"
-
+#include "Outlet.hpp"
 #include "TempSensor.hpp"
 #include "HumiditySensor.hpp"
+#include "Thermostat.hpp"
+#include "VideoPlayer.hpp"
 
 #endif

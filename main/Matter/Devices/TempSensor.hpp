@@ -24,6 +24,9 @@
 
 #include <math.h>
 
+#define ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION 	(1u)
+#define ZCL_TEMPERATURE_SENSOR_FEATURE_MAP 			(0u)
+
 class MatterTempSensor : public MatterGenericDevice {
     public:
         enum Changed_t
@@ -37,7 +40,7 @@ class MatterTempSensor : public MatterGenericDevice {
             MatterGenericDevice(szDeviceName, szLocation),
             mMin(min), mMax(max), mMeasurement(measuredValue)
         {
-            ClassName = MatterGenericDevice::Temperature;
+            DeviceType = DeviceTypeEnum::Temperature;
 
             SetReachable(true);
             mChanged_CB = &MatterTempSensor::HandleStatusChanged;
@@ -79,6 +82,41 @@ class MatterTempSensor : public MatterGenericDevice {
                 ScheduleReportingCallback(dev, chip::app::Clusters::TemperatureMeasurement::Id, chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Id);
         }
 
+
+        EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
+        {
+            if ((AttributeID == ZCL_TEMP_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            {
+                int16_t measuredValue = GetTemperature();
+                memcpy(Buffer, &measuredValue, sizeof(measuredValue));
+            }
+            else if ((AttributeID == ZCL_TEMP_MIN_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            {
+                int16_t minValue = GetMin();
+                memcpy(Buffer, &minValue, sizeof(minValue));
+            }
+            else if ((AttributeID == ZCL_TEMP_MAX_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            {
+                int16_t maxValue = GetMax();
+                memcpy(Buffer, &maxValue, sizeof(maxValue));
+            }
+            else if ((AttributeID == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
+            {
+                uint32_t featureMap = ZCL_TEMPERATURE_SENSOR_FEATURE_MAP;
+                memcpy(Buffer, &featureMap, sizeof(featureMap));
+            }
+            else if ((AttributeID == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+            {
+                uint16_t clusterRevision = ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION;
+                memcpy(Buffer, &clusterRevision, sizeof(clusterRevision));
+            }
+            else
+            {
+                return EMBER_ZCL_STATUS_FAILURE;
+            }
+
+            return EMBER_ZCL_STATUS_SUCCESS;
+        }
 
     private:
         const int16_t   mMin;
