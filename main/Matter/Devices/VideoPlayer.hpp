@@ -40,7 +40,7 @@ class MatterVideoPlayer : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterVideoPlayer *, MatterVideoPlayer::Changed_t)>;
 
-        MatterVideoPlayer(string szDeviceName, string szLocation) :
+        MatterVideoPlayer(string szDeviceName, string szLocation = "") :
             MatterGenericDevice(szDeviceName, szLocation)
         {
             DeviceType = DeviceTypeEnum::MediaPlayer;
@@ -69,11 +69,11 @@ class MatterVideoPlayer : public MatterGenericDevice {
             {
                 ESP_LOGE("OnOff handler", "handler");
 
-                if ((AttributeID == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+                if ((AttributeID == ClusterRevision::Id) && (maxReadLength == 2))
                 {
                     *Buffer = (uint16_t) ZCL_ON_OFF_CLUSTER_REVISION;
                 }
-                else if ((AttributeID == ZCL_ON_OFF_ATTRIBUTE_ID) && (maxReadLength == 1))
+                else if ((AttributeID == OnOff::Attributes::OnOff::Id) && (maxReadLength == 1))
                 {
                     *Buffer = 0;
                 }
@@ -87,11 +87,11 @@ class MatterVideoPlayer : public MatterGenericDevice {
             {
                 ESP_LOGE("KeypadInput", "handler");
 
-                if ((AttributeID == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+                if ((AttributeID == ClusterRevision::Id) && (maxReadLength == 2))
                 {
                     *Buffer = (uint16_t) KEYPAD_CLUSTER_REVISION;
                 }
-                else if ((AttributeID == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
+                else if ((AttributeID == FeatureMap::Id) && (maxReadLength == 4))
                 {
                     uint32_t FeatureMap = KEYPAD_FEATURE_MAP;
                     memcpy(Buffer, &FeatureMap, sizeof(FeatureMap));

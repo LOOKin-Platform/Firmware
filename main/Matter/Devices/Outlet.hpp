@@ -21,6 +21,9 @@
 #include <lib/support/CHIPMemString.h>
 #include <platform/CHIPDeviceLayer.h>
 
+using namespace ::chip::app::Clusters;
+using namespace ::chip::app::Clusters::Globals::Attributes;
+
 class MatterOutlet : public MatterGenericDevice {
     public:
         enum State_t
@@ -36,7 +39,7 @@ class MatterOutlet : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterOutlet *, MatterOutlet::Changed_t)>;
 
-        MatterOutlet(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation) {
+        MatterOutlet(string szDeviceName, string szLocation = "") : MatterGenericDevice(szDeviceName, szLocation) {
             DeviceType = MatterGenericDevice::Light;
 
             SetReachable(true);
@@ -47,11 +50,11 @@ class MatterOutlet : public MatterGenericDevice {
         {
             ESP_LOGE("Light", "HandleReadOnOffAttribute: attrId=%d, maxReadLength=%d", AttributeID, maxReadLength);
 
-            if ((AttributeID == ZCL_ON_OFF_ATTRIBUTE_ID) && (maxReadLength == 1))
+            if ((AttributeID == OnOff::Attributes::OnOff::Id) && (maxReadLength == 1))
             {
                 *Buffer = GetOnOff() ? 1 : 0;
             }
-            else if ((AttributeID == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+            else if ((AttributeID == ClusterRevision::Id) && (maxReadLength == 2))
             {
                 *Buffer = (uint16_t) ZCL_ON_OFF_CLUSTER_REVISION;
             }
@@ -66,7 +69,7 @@ class MatterOutlet : public MatterGenericDevice {
         EmberAfStatus HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override {
             ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=%d attrId=%d", ClusterID, AttributeID);
 
-            ReturnErrorCodeIf((AttributeID != ZCL_ON_OFF_ATTRIBUTE_ID) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
+            ReturnErrorCodeIf((AttributeID != OnOff::Attributes::OnOff::Id) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
                         
             SetOnOff(*Value == 1);
             return EMBER_ZCL_STATUS_SUCCESS;

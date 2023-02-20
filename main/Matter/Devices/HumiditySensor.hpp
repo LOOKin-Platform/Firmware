@@ -37,7 +37,7 @@ class MatterHumiditySensor : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterHumiditySensor *, MatterHumiditySensor::Changed_t)>;
 
-        MatterHumiditySensor(string szDeviceName, string szLocation, uint16_t min = 0, uint16_t max = 65535, uint16_t measuredValue = 0) :
+        MatterHumiditySensor(string szDeviceName, string szLocation = "", uint16_t min = 0, uint16_t max = 65535, uint16_t measuredValue = 0) :
             MatterGenericDevice(szDeviceName, szLocation),
             mMin(min), mMax(max), mMeasurement(measuredValue)
         {
@@ -89,27 +89,27 @@ class MatterHumiditySensor : public MatterGenericDevice {
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
         {
-            if ((AttributeID == ZCL_RELATIVE_HUMIDITY_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            if ((AttributeID == RelativeHumidityMeasurement::Attributes::MeasuredValue::Id) && (maxReadLength == 2))
             {
                 uint16_t measuredValue = GetHumidity();
                 memcpy(Buffer, &measuredValue, sizeof(measuredValue));
             }
-            else if ((AttributeID == ZCL_RELATIVE_HUMIDITY_MIN_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            else if ((AttributeID == RelativeHumidityMeasurement::Attributes::MinMeasuredValue::Id) && (maxReadLength == 2))
             {
                 uint16_t minValue = GetMin();
                 memcpy(Buffer, &minValue, sizeof(minValue));
             }
-            else if ((AttributeID == ZCL_RELATIVE_HUMIDITY_MAX_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            else if ((AttributeID == RelativeHumidityMeasurement::Attributes::MaxMeasuredValue::Id) && (maxReadLength == 2))
             {
                 uint16_t maxValue = GetMax();
                 memcpy(Buffer, &maxValue, sizeof(maxValue));
             }
-            else if ((AttributeID == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
+            else if ((AttributeID == RelativeHumidityMeasurement::Attributes::FeatureMap::Id) && (maxReadLength == 4))
             {
                 uint32_t featureMap = ZCL_RELATIVE_HUMIDITY_SENSOR_FEATURE_MAP;
                 memcpy(Buffer, &featureMap, sizeof(featureMap));
             }
-            else if ((AttributeID == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+            else if ((AttributeID == ClusterRevision::Id) && (maxReadLength == 2))
             {
                 uint16_t ClusterRevision = ZCL_RELATIVE_HUMIDITY_SENSOR_CLUSTER_REVISION;
                 memcpy(Buffer, &ClusterRevision, sizeof(ClusterRevision));

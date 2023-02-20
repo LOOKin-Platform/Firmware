@@ -4,8 +4,7 @@
 #include "NetworkCommissioningCustomDriver.h"
 #include "MatterWiFi.h"
 
-#include <app-common/zap-generated/af-structs.h>
-#include <app-common/zap-generated/attribute-id.h>
+#include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 
 #include <app/ConcreteAttributePath.h>
@@ -138,16 +137,16 @@ const EmberAfDeviceType gBridgedVideoPLayer[] 				= { { DEVICE_TYPE_VIDEOPLAYER,
 
 // Declare Descriptor cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(descriptorAttrs)
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_DEVICE_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0),	/* device list */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SERVER_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0), 	/* server list */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLIENT_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0), 	/* client list */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PARTS_LIST_ATTRIBUTE_ID	, ARRAY, kDescriptorAttributeArraySize, 0),  	/* parts list */
+    DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::DeviceTypeList::Id	, ARRAY, kDescriptorAttributeArraySize, 0),	/* device list */
+    DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::ServerList::Id		, ARRAY, kDescriptorAttributeArraySize, 0), 	/* server list */
+    DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::ClientList::Id		, ARRAY, kDescriptorAttributeArraySize, 0), 	/* client list */
+    DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::PartsList::Id			, ARRAY, kDescriptorAttributeArraySize, 0),  	/* parts list */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // Declare Bridged Device Basic information cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(bridgedDeviceBasicAttrs)
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_NODE_LABEL_ATTRIBUTE_ID, CHAR_STRING, kNodeLabelSize, 0), /* NodeLabel */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_REACHABLE_ATTRIBUTE_ID, BOOLEAN, 1, 0),               /* Reachable */
+    DECLARE_DYNAMIC_ATTRIBUTE(BridgedDeviceBasicInformation::Attributes::NodeLabel::Id, CHAR_STRING, kNodeLabelSize, 0), /* NodeLabel */
+    DECLARE_DYNAMIC_ATTRIBUTE(BridgedDeviceBasicInformation::Attributes::Reachable::Id, BOOLEAN, 1, 0),               /* Reachable */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 // ---------------------------------------------------------------------------
@@ -172,8 +171,7 @@ constexpr chip::CommandId onOffIncomingCommands[] = {
 
 // Declare On/Off cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ON_OFF_ATTRIBUTE_ID						, BOOLEAN, 	1, 0), /* on/off */
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID		, INT16U, 	2, 0),
+    DECLARE_DYNAMIC_ATTRIBUTE(OnOff::Attributes::OnOff::Id					, BOOLEAN, 	1, 0), /* on/off */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedLightClusters)
@@ -210,10 +208,10 @@ DECLARE_DYNAMIC_ENDPOINT(bridgedOutletEndpoint, bridgedOutletClusters);
 //   - Bridged Device Basic
 
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(tempSensorAttrs)
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_TEMP_MEASURED_VALUE_ATTRIBUTE_ID, INT16S, 2, 0),         /* Measured Value */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_TEMP_MIN_MEASURED_VALUE_ATTRIBUTE_ID, INT16S, 2, 0), /* Min Measured Value */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_TEMP_MAX_MEASURED_VALUE_ATTRIBUTE_ID, INT16S, 2, 0), /* Max Measured Value */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID, BITMAP32, 4, 0),    /* FeatureMap */
+	DECLARE_DYNAMIC_ATTRIBUTE(TemperatureMeasurement::Attributes::MeasuredValue::Id		, INT16S	, 2, 0), /* Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(TemperatureMeasurement::Attributes::MinMeasuredValue::Id	, INT16S	, 2, 0), /* Min Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(TemperatureMeasurement::Attributes::MaxMeasuredValue::Id	, INT16S	, 2, 0), /* Max Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(TemperatureMeasurement::Attributes::FeatureMap::Id		, BITMAP32	, 4, 0), /* FeatureMap */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedTempSensorClusters)
@@ -233,10 +231,10 @@ DECLARE_DYNAMIC_ENDPOINT(bridgedTempSensorEndpoint, bridgedTempSensorClusters);
 //   - Bridged Device Basic
 
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(humiditySensorAttrs)
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_RELATIVE_HUMIDITY_MEASURED_VALUE_ATTRIBUTE_ID, INT16U, 2, 0),     /* Measured Value */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_RELATIVE_HUMIDITY_MIN_MEASURED_VALUE_ATTRIBUTE_ID, INT16U, 2, 0), /* Min Measured Value */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_RELATIVE_HUMIDITY_MAX_MEASURED_VALUE_ATTRIBUTE_ID, INT16U, 2, 0), /* Max Measured Value */
-    DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID, BITMAP32, 4, 0),    				/* FeatureMap */
+	DECLARE_DYNAMIC_ATTRIBUTE(RelativeHumidityMeasurement::Attributes::MeasuredValue::Id	, INT16U	, 2, 0), /* Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(RelativeHumidityMeasurement::Attributes::MinMeasuredValue::Id	, INT16U	, 2, 0), /* Min Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(RelativeHumidityMeasurement::Attributes::MaxMeasuredValue::Id	, INT16U	, 2, 0), /* Max Measured Value */
+    DECLARE_DYNAMIC_ATTRIBUTE(RelativeHumidityMeasurement::Attributes::FeatureMap::Id		, BITMAP32	, 4, 0), /* FeatureMap */
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedHumiditySensorClusters)
@@ -257,23 +255,21 @@ DECLARE_DYNAMIC_ENDPOINT(bridgedHumiditySensorEndpoint, bridgedHumiditySensorClu
 //   - Bridged Device Basic
 
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(thermostatAttrs)
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_LOCAL_TEMPERATURE_ATTRIBUTE_ID			, INT16S, 	2, ZAP_ATTRIBUTE_MASK(NULLABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_OCCUPIED_COOLING_SETPOINT_ATTRIBUTE_ID	, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_OCCUPIED_HEATING_SETPOINT_ATTRIBUTE_ID	, INT16S,	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MIN_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MIN_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MIN_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MIN_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ABS_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID	, INT16S, 2, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_MIN_SETPOINT_DEAD_BAND_ATTRIBUTE_ID		, INT8S, 	1, 	ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE_ID, ENUM8, 	1, 	ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SYSTEM_MODE_ATTRIBUTE_ID					, ENUM8, 	1,	ZAP_ATTRIBUTE_MASK(WRITABLE)),
-//	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_THERMOSTAT_RUNNING_MODE_ATTRIBUTE_ID, INT8U, 1, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID			, BITMAP32, 4, 0),
-//	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID		, INT16U, 	2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::LocalTemperature::Id			, INT16S, 	2, ZAP_ATTRIBUTE_MASK(NULLABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::OccupiedCoolingSetpoint::Id	, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::OccupiedHeatingSetpoint::Id	, INT16S,	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MinHeatSetpointLimit::Id		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MaxHeatSetpointLimit::Id		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MinCoolSetpointLimit::Id		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MaxCoolSetpointLimit::Id		, INT16S, 	2, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMinHeatSetpointLimit::Id	, INT16S, 	2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMaxHeatSetpointLimit::Id	, INT16S, 	2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMinCoolSetpointLimit::Id	, INT16S, 	2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::AbsMaxCoolSetpointLimit::Id	, INT16S, 	2, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::MinSetpointDeadBand::Id		, INT8S, 	1, 	ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::ControlSequenceOfOperation::Id, ENUM8, 	1, 	ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::SystemMode::Id				, ENUM8, 	1,	ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::FeatureMap::Id				, BITMAP32, 4, 0),
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 constexpr chip::CommandId ThermostatIncomingCommands[] = {
@@ -298,15 +294,14 @@ DECLARE_DYNAMIC_ENDPOINT(bridgedThermostatEndpoint, bridgedThermostatClusters);
 //   - Bridged Device Basic
 
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(fanControlAttrs)
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FAN_MODE_ATTRIBUTE_ID						, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FAN_MODE_SEQUENCE_ATTRIBUTE_ID			, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_SETTING_ATTRIBUTE_ID				, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_CURRENT_ATTRIBUTE_ID				, INT8U, 	1, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_PERCENT_CURRENT_ATTRIBUTE_ID				, INT8U, 	1, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_SPEED_SETTING_ATTRIBUTE_ID				, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ROCK_SUPPORT_ATTRIBUTE_ID					, BITMAP8, 	1, 0),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_ROCK_SETTING_ATTRIBUTE_ID					, BITMAP8, 	1, ZAP_ATTRIBUTE_MASK(WRITABLE)),
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID			, BITMAP32, 4, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FanMode::Id					, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FanModeSequence::Id			, ENUM8, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::PercentSetting::Id			, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::PercentCurrent::Id			, INT8U, 	1, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::SpeedSetting::Id				, INT8U, 	1, ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE) | ZAP_ATTRIBUTE_MASK(NULLABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::RockSupport::Id				, BITMAP8, 	1, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::RockSetting::Id				, BITMAP8, 	1, ZAP_ATTRIBUTE_MASK(WRITABLE)),
+	DECLARE_DYNAMIC_ATTRIBUTE(FanControl::Attributes::FeatureMap::Id				, BITMAP32, 4, 0),
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedFanClusters)
@@ -327,7 +322,7 @@ DECLARE_DYNAMIC_ENDPOINT(bridgedFanEndpoint, bridgedFanClusters);
 //   - Bridged Device Basic
 
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(KeypadInputAttrs)
-	DECLARE_DYNAMIC_ATTRIBUTE(ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID			, BITMAP32, 4, 0),
+	DECLARE_DYNAMIC_ATTRIBUTE(KeypadInput::Attributes::FeatureMap::Id			, BITMAP32, 4, 0),
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 
@@ -371,16 +366,16 @@ EmberAfStatus HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, c
 {
     ChipLogProgress(DeviceLayer, "HandleReadBridgedDeviceBasicAttribute: attrId=%d, maxReadLength=%d", attributeId, maxReadLength);
 
-    if ((attributeId == ZCL_REACHABLE_ATTRIBUTE_ID) && (maxReadLength == 1))
+    if ((attributeId == BridgedDeviceBasicInformation::Attributes::Reachable::Id) && (maxReadLength == 1))
     {
         *buffer = dev->IsReachable() ? 1 : 0;
     }
-    else if ((attributeId == ZCL_NODE_LABEL_ATTRIBUTE_ID) && (maxReadLength == 32))
+    else if ((attributeId == BridgedDeviceBasicInformation::Attributes::NodeLabel::Id) && (maxReadLength == 32))
     {
         MutableByteSpan zclNameSpan(buffer, maxReadLength);
         MakeZclCharString(zclNameSpan, dev->GetName());
     }
-    else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+    else if ((attributeId == Globals::Attributes::ClusterRevision::Id) && (maxReadLength == 2))
     {
         *buffer = (uint16_t) ZCL_BRIDGED_DEVICE_BASIC_CLUSTER_REVISION;
     }
@@ -988,36 +983,6 @@ bool Matter::TargetPosition(uint8_t Value, uint16_t AID, uint8_t *Char, uint8_t 
 	*/
 }
 
-bool Matter::GetConfiguredName(char* Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
-	return false;
-
-	/*
-	ESP_LOGE("GetConfiguredName", "UUID: %04X, Value: %s", AID, Value);
-	uint32_t IID = hap_serv_get_iid(hap_char_get_parent(Char));
-
-	return true;
-	*/
-}
-
-bool Matter::SetConfiguredName(char* Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
-	return false;
-
-	/*
-	ESP_LOGE("SetConfiguredName", "UUID: %04X, Value: %s", AID, Value);
-	uint32_t IID = hap_serv_get_iid(hap_char_get_parent(Char));
-
-	string KeyName = string(NVS_HOMEKIT_CNPREFIX) + Converter::ToHexString(AID, 4) + Converter::ToHexString(IID, 8);
-
-	ESP_LOGE("!", "%s", KeyName.c_str());
-
-	NVS Memory(NVS_HOMEKIT_AREA);
-	Memory.SetString(Converter::ToLower(KeyName), string(Value));
-	Memory.Commit();
-
-	return true;
-	*/
-}
-
 void Matter::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
 	return;
 
@@ -1185,9 +1150,6 @@ int Matter::WriteCallback(hap_write_data_t write_data[], int count, void *serv_p
 */
 
 void Matter::CreateAccessories(intptr_t context) {
-    //Esp32AppServer::Init(); // Init ZCL Data Model and CHIP App Server AND Initialize device attestation config
-    
-	//!hap_set_debug_level(HAP_DEBUG_LEVEL_WARN);
 
 	switch (Settings.eFuse.Type) {
 		case Settings_t::Devices_t::Remote:
@@ -1283,166 +1245,38 @@ void Matter::CreateRemoteBridge() {
     emberAfSetDeviceTypeList(0, Span<const EmberAfDeviceType>(gRootDeviceTypes));
     emberAfSetDeviceTypeList(1, Span<const EmberAfDeviceType>(gAggregateNodeDeviceTypes));
 
-	for (int i = 0; i < 1; i++)
-	{
-		static string DeviceName = "";
-		while (DeviceName.size() < MatterGenericDevice::kDeviceNameSize)
-			DeviceName = DeviceName + " ";
-
-		DeviceName = "Light " + Converter::ToString(i+1);
-
-		MatterLight *DeviceToAdd = new MatterLight(DeviceName, "Bedroom");
-
-		AddDeviceEndpoint(DeviceToAdd, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffLightDeviceTypes), 1);
-	}
-
-	//MatterGenericDevice* TempSensorToAdd = new MatterTempSensor("Example temp", "Bedroom");
-	//AddDeviceEndpoint(TempSensorToAdd, &bridgedTempSensorEndpoint, Span<const EmberAfDeviceType>(gBridgedTempSensorDeviceTypes), 1);
-
-	MatterGenericDevice* HumiditySensorToAdd = new MatterHumiditySensor("Example humidity", "Bedroom");
-	AddDeviceEndpoint(HumiditySensorToAdd, &bridgedHumiditySensorEndpoint, Span<const EmberAfDeviceType>(gBridgedHumiditySensorDeviceTypes), 1);
-
-	MatterGenericDevice* ThermostatToAdd = new MatterThermostat("Example Thermostat", "Bedroom");
-	AddDeviceEndpoint(ThermostatToAdd, &bridgedThermostatEndpoint, Span<const EmberAfDeviceType>(gBridgedThermostatDeviceTypes), 1);
-
-//	MatterGenericDevice* ThermostatFanToAdd = new MatterThermostat("Example Thermostat", "Bedroom");
-//	AddDeviceEndpoint(ThermostatFanToAdd, &bridgedFanEndpoint, Span<const EmberAfDeviceType>(gBridgedFanDeviceTypes), 1);
-
-	MatterGenericDevice* VideoPlayerToAdd = new MatterVideoPlayer("Example video player", "Bedroom");
-	AddDeviceEndpoint(VideoPlayerToAdd, &bridgedVideoPlayerEndpoint, Span<const EmberAfDeviceType>(gBridgedVideoPLayer), 1);
-
-	MatterGenericDevice* OutletToAdd = new MatterOutlet("test outlet", "Bedroom");
-	AddDeviceEndpoint(OutletToAdd, &bridgedOutletEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffOutletDeviceTypes), 1);
-
-    // Remove Light 2 -- Lights 1 & 3 will remain mapped to endpoints 3 & 5
-    //!RemoveDeviceEndpoint(MatterDevices[1].ControlledDevice);
-
-    /*
-	if (BridgedAccessories.size() == 0) {
-		string BridgeNameString = Device.GetName();
-
-		BridgeNameString = Converter::CutMultibyteString(BridgeNameString, 16);
-		if (BridgeNameString == "") BridgeNameString = Device.TypeToString() + " " + Device.IDToString();
-
-		static AccessoryData_t AccessoryData(BridgeNameString, Device.ModelToString(), Device.IDToString());
-
-		hap_acc_cfg_t cfg = {
-			.name 				= AccessoryData.Name,
-			.model 				= AccessoryData.Model,
-			.manufacturer 		= "LOOKin",
-			.serial_num 		= AccessoryData.ID,
-			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
-			.hw_rev 			= NULL,
-			.pv 				= "1.1.0",
-			.cid 				= HAP_CID_BRIDGE,
-			.identify_routine 	= BridgeIdentify,
-		};
-
-		Accessory = hap_acc_create(&cfg);
-
-		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
-		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
-
-		hap_acc_add_wifi_transport_service(Accessory, 0);
-
-		hap_add_accessory(Accessory);
-	}
-
-	for(auto& BridgeAccessory : BridgedAccessories) {
-		hap_remove_bridged_accessory(BridgeAccessory);
-		hap_acc_delete(BridgeAccessory);
-	}
-
-	BridgedAccessories.clear();
-
+	
+	MatterDevices.clear();
+	
 	for (auto &IRCachedDevice : ((DataRemote_t *)Data)->IRDevicesCache)
 	{
 		DataRemote_t::IRDevice IRDevice = ((DataRemote_t *)Data)->GetDevice(IRCachedDevice.DeviceID);
 
-		char accessory_name[16] = {0};
-		string Name = Converter::CutMultibyteString(IRDevice.Name, 16);
+		static string Name = "";
+		Name = IRDevice.Name;
 
-		sprintf(accessory_name, "%s", (Name != "") ? Name.c_str() : "Accessory\0");
-
-		hap_acc_cfg_t bridge_cfg = {
-			.name 				= accessory_name,
-			.model 				= "n/a",
-			.manufacturer 		= "n/a",
-			.serial_num 		= "n/a",
-			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
-            .hw_rev 			= NULL,
-			.pv 				= "1.1.0",
-			.cid 				= HAP_CID_BRIDGE,
-			.identify_routine 	= AccessoryIdentify,
-		};
-
-		uint16_t AID = Converter::UintFromHexString<uint16_t>(IRDevice.UUID);
-
-		Accessory = hap_acc_create(&bridge_cfg);
-
-		bool IsCreated = true;
-
-		switch (IRDevice.Type) {
+		switch (IRDevice.Type) 
+		{
 			case 0x01: // TV
 			case 0x02: // Media
 			{
-				hap_serv_t *ServiceTV;
-
-				uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
-				uint8_t ModeStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 1);
-
-				if (PowerStatus > 1) PowerStatus = 1;
-
-				ServiceTV = hap_serv_tv_create(PowerStatus, ModeStatus + 1, &accessory_name[0]);
-				hap_serv_add_char		(ServiceTV, hap_char_name_create(accessory_name));
-
-				hap_serv_set_priv		(ServiceTV, (void *)(uint32_t)AID);
-				hap_serv_set_write_cb	(ServiceTV, WriteCallback);
-				//hap_serv_set_read_cb	(ServiceTC, ReadCallback)
-				hap_acc_add_serv		(Accessory, ServiceTV);
-
-				if (IRDevice.Functions.count("volup") > 0 || IRDevice.Functions.count("voldown") > 0) {
-					hap_serv_t *ServiceSpeaker;
-					ServiceSpeaker = hap_serv_tv_speaker_create(false);
-					hap_serv_add_char		(ServiceSpeaker, hap_char_name_create(accessory_name));
-
-					hap_serv_set_priv		(ServiceSpeaker, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb	(ServiceSpeaker, WriteCallback);
-					//hap_serv_set_read_cb	(ServiceTC, ReadCallback);
-
-					hap_serv_link_serv		(ServiceTV, ServiceSpeaker);
-					hap_acc_add_serv		(Accessory, ServiceSpeaker);
-				}
-
-				for (uint8_t i = 0; i < ((DataRemote_t *)Data)->LoadAllFunctionSignals(IRDevice.UUID, "mode", IRDevice).size(); i++)
-				{
-					char InputSourceName[17];
-				    sprintf(InputSourceName, "Input source %d", i+1);
-
-					hap_serv_t *ServiceInput;
-					ServiceInput = hap_serv_input_source_create(&InputSourceName[0], i+1);
-
-					hap_serv_set_priv(ServiceInput, (void *)(uint32_t)AID);
-					hap_serv_set_write_cb(ServiceInput, WriteCallback);
-					//hap_serv_set_read_cb	(ServiceTC, ReadCallback)
-
-					hap_serv_link_serv(ServiceTV, ServiceInput);
-					hap_acc_add_serv(Accessory, ServiceInput);
-				}
-
+				MatterGenericDevice* VideoPlayerToAdd = new MatterVideoPlayer(IRDevice.Name);
+				VideoPlayerToAdd->IsBridgedDevice = true;
+				VideoPlayerToAdd->BridgedUUID = IRDevice.UUID;
+				AddDeviceEndpoint(VideoPlayerToAdd, &bridgedVideoPlayerEndpoint, Span<const EmberAfDeviceType>(gBridgedVideoPLayer), 1);
 				break;
 			}
 			case 0x03: // light
-				hap_serv_t *ServiceLight;
-				ServiceLight = hap_serv_lightbulb_create(false);
-				hap_serv_add_char(ServiceLight, hap_char_name_create(accessory_name));
-
-				hap_serv_set_priv(ServiceLight, (void *)(uint32_t)AID);
-				hap_serv_set_write_cb(ServiceLight, WriteCallback);
-				hap_acc_add_serv(Accessory, ServiceLight);
-
+			{
+				MatterLight *LightToAdd = new MatterLight(IRDevice.Name);
+				LightToAdd->IsBridgedDevice = true;
+				LightToAdd->BridgedUUID = IRDevice.UUID;
+				AddDeviceEndpoint(LightToAdd, &bridgedLightEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffLightDeviceTypes), 1);
 				break;
-			case 0x05: { // Purifier
+			}
+			case 0x05: 
+			{ // Purifier
+			/*
 				uint8_t PowerStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
 				if (PowerStatus > 0) PowerStatus = 1;
 
@@ -1453,25 +1287,23 @@ void Matter::CreateRemoteBridge() {
 				hap_serv_set_priv(ServicePurifier, (void *)(uint32_t)AID);
 				hap_serv_set_write_cb(ServicePurifier, WriteCallback);
 				hap_acc_add_serv(Accessory, ServicePurifier);
+				*/
+
 				break;
 			}
-
 			case 0x06: // Vacuum cleaner
 			{
-				hap_serv_t *ServiceVacuumCleaner;
+				MatterGenericDevice* OutletToAdd = new MatterOutlet(IRDevice.Name);
 
-				uint8_t PowerStatus = DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
+				OutletToAdd->IsBridgedDevice = true;
+				OutletToAdd->BridgedUUID = IRDevice.UUID;
 
-				ServiceVacuumCleaner = hap_serv_switch_create((bool)(PowerStatus > 0));
-				hap_serv_add_char(ServiceVacuumCleaner, hap_char_name_create(accessory_name));
-
-				hap_serv_set_priv(ServiceVacuumCleaner, (void *)(uint32_t)AID);
-				hap_serv_set_write_cb(ServiceVacuumCleaner, WriteCallback);
-				hap_acc_add_serv(Accessory, ServiceVacuumCleaner);
+				AddDeviceEndpoint(OutletToAdd, &bridgedOutletEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffOutletDeviceTypes), 1);
 				break;
 			}
 			case 0x07: // Fan
 			{
+				/*
 				uint8_t PowerStatus 	= DataDeviceItem_t::GetStatusByte(IRDevice.Status, 0);
 
 				hap_serv_t *ServiceFan;
@@ -1482,81 +1314,39 @@ void Matter::CreateRemoteBridge() {
 				hap_serv_set_write_cb(ServiceFan, WriteCallback);
 				hap_acc_add_serv(Accessory, ServiceFan);
 				break;
+				*/
 			}
-			case 0xEF: { // AC
-				ACOperand Operand((uint32_t)IRDevice.Status);
+			case 0xEF: // AC
+			{
+				MatterGenericDevice* ThermostatToAdd = new MatterThermostat(IRDevice.Name);
+				
+				ThermostatToAdd->IsBridgedDevice = true;
+				ThermostatToAdd->BridgedUUID = IRDevice.UUID;
 
-				hap_serv_t *ServiceAC;
-				ServiceAC = hap_serv_ac_create((Operand.Mode==0) ? 0 : 3, Operand.Temperature, Operand.Temperature, 0);
-				hap_serv_add_char(ServiceAC, hap_char_name_create("Air Conditioner"));
-				hap_serv_set_priv(ServiceAC, (void *)(uint32_t)AID);
-				hap_serv_set_write_cb(ServiceAC, WriteCallback);
-				hap_acc_add_serv(Accessory, ServiceAC);
+				AddDeviceEndpoint(ThermostatToAdd, &bridgedThermostatEndpoint, Span<const EmberAfDeviceType>(gBridgedThermostatDeviceTypes), 1);
 
-				hap_serv_t *ServiceACFan;
-				ServiceACFan = hap_serv_ac_fan_create((Operand.Mode == 0) ? false : true, (Operand.FanMode == 0) ? 1 : 0, Operand.SwingMode, Operand.FanMode);
-				hap_serv_add_char(ServiceACFan, hap_char_name_create("Swing & Ventillation"));
-
-				hap_serv_set_priv(ServiceACFan, (void *)(uint32_t)AID);
-				hap_serv_set_write_cb(ServiceACFan, WriteCallback);
-				//hap_serv_link_serv(ServiceAC, ServiceACFan);
-				hap_acc_add_serv(Accessory, ServiceACFan);
 				break;
 			}
 			default:
-				IsCreated = false;
-				hap_acc_delete(Accessory);
-			}
-
-		if (IsCreated) {
-			BridgedAccessories.push_back(Accessory);
-			hap_add_bridged_accessory(Accessory, AID);
+			break;
 		}
 	}
 
 	SensorMeteo_t *Meteo = (SensorMeteo_t *)Sensor_t::GetSensorByID(0xFE);
 
-	if (Meteo != nullptr && Meteo->GetSIEFlag()) {
-		hap_acc_cfg_t hsensor_cfg = {
-			.name 				= "Humidity Sensor",
-			.model 				= "n/a",
-			.manufacturer 		= "LOOKin",
-			.serial_num 		= "n/a",
-			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
-            .hw_rev 			= NULL,
-			.pv 				= "1.1.0",
-			.cid 				= HAP_CID_BRIDGE,
-			.identify_routine 	= AccessoryIdentify,
-		};
+	if (Meteo != nullptr && Meteo->GetSIEFlag()) 
+	{
+		MatterGenericDevice* HumiditySensorToAdd = new MatterHumiditySensor("Humidity sensor");
+		HumiditySensorToAdd->IsBridgedDevice = true;
+		//HumiditySensorToAdd->BridgedUUID = "FFFF";
+		AddDeviceEndpoint(HumiditySensorToAdd, &bridgedHumiditySensorEndpoint, Span<const EmberAfDeviceType>(gBridgedHumiditySensorDeviceTypes), 1);
 
-		Accessory = hap_acc_create(&hsensor_cfg);
 
-		hap_serv_t *HumiditySensor = hap_serv_humidity_sensor_create(Meteo->ConvertToFloat(Meteo->ReceiveValue("Humidity")));
-		hap_acc_add_serv(Accessory, HumiditySensor);
-		hap_add_bridged_accessory(Accessory, 0xFFFF);
-
-		hap_acc_cfg_t tsensor_cfg = {
-			.name 				= "Temp sensor",
-			.model 				= "n/a",
-			.manufacturer 		= "LOOKin",
-			.serial_num 		= "n/a",
-			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
-            .hw_rev 			= NULL,
-			.pv 				= "1.1.0",
-			.cid 				= HAP_CID_BRIDGE,
-			.identify_routine 	= AccessoryIdentify,
-		};
-
-		Accessory = hap_acc_create(&tsensor_cfg);
-
-		hap_serv_t *TemperatureSensor = hap_serv_temperature_sensor_create(Meteo->ConvertToFloat(Meteo->ReceiveValue("Temperature")));
-		hap_acc_add_serv(Accessory, TemperatureSensor);
-
-		hap_add_bridged_accessory(Accessory, 0xFFFE);
+		MatterGenericDevice* TempSensorToAdd = new MatterTempSensor("Temperature sensor");
+		TempSensorToAdd->IsBridgedDevice = true;
+		//TempSensorToAdd->BridgedUUID = "FFFE";
+		AddDeviceEndpoint(TempSensorToAdd, &bridgedTempSensorEndpoint, Span<const EmberAfDeviceType>(gBridgedTempSensorDeviceTypes), 1);
 	}
-
-	return HAP_CID_BRIDGE;
-	*/
 }
 
 void Matter::CreateWindowOpener() {

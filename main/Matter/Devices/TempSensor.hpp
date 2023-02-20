@@ -24,6 +24,8 @@
 
 #include <math.h>
 
+using namespace ::chip::app::Clusters;
+
 #define ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION 	(1u)
 #define ZCL_TEMPERATURE_SENSOR_FEATURE_MAP 			(0u)
 
@@ -36,7 +38,7 @@ class MatterTempSensor : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterTempSensor *, MatterTempSensor::Changed_t)>;
 
-        MatterTempSensor(string szDeviceName, string szLocation, int16_t min = -10000, int16_t max = 10000, int16_t measuredValue = 0) :
+        MatterTempSensor(string szDeviceName, string szLocation = "", int16_t min = -10000, int16_t max = 10000, int16_t measuredValue = 0) :
             MatterGenericDevice(szDeviceName, szLocation),
             mMin(min), mMax(max), mMeasurement(measuredValue)
         {
@@ -51,23 +53,30 @@ class MatterTempSensor : public MatterGenericDevice {
         } 
 
         void SetTemperature (float Value) {
+            ESP_LOGE("LOG", "5");
             int16_t NormalizedValue = round(Value * 100);
+            ESP_LOGE("LOG", "6");
 
             // Limit measurement based on the min and max.
             if (NormalizedValue < mMin)
                 NormalizedValue = mMin;
-        
             else if (NormalizedValue > mMax)
                 NormalizedValue = mMax;
+
+            ESP_LOGE("LOG", "7");
 
             bool changed = mMeasurement != NormalizedValue;
 
             mMeasurement = NormalizedValue;
 
-            if (changed && mChanged_CB)
-            {
+            ESP_LOGE("LOG", "8");
+
+            if (changed && mChanged_CB) {
+                ESP_LOGE("LOG", "8.1");
                 mChanged_CB(this, kChanged_MeasurementValue);
             }
+
+            ESP_LOGE("LOG", "9");
         }
 
         int16_t GetMin() { return mMin; }
@@ -75,37 +84,39 @@ class MatterTempSensor : public MatterGenericDevice {
 
         static void HandleStatusChanged(MatterTempSensor * dev, MatterTempSensor::Changed_t itemChangedMask)
         {
+            ESP_LOGE("HandleStatusChanged", "1");
+
             if (itemChangedMask & (MatterTempSensor::kChanged_Reachable | MatterTempSensor::kChanged_Name | MatterTempSensor::kChanged_Location))
                 HandleDeviceStatusChanged(static_cast<MatterGenericDevice *>(dev), (MatterGenericDevice::Changed_t) itemChangedMask);
-
+            ESP_LOGE("HandleStatusChanged", "2");
             if (itemChangedMask & MatterTempSensor::kChanged_MeasurementValue)
                 ScheduleReportingCallback(dev, chip::app::Clusters::TemperatureMeasurement::Id, chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Id);
+            ESP_LOGE("HandleStatusChanged", "3");
         }
-
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
         {
-            if ((AttributeID == ZCL_TEMP_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            if ((AttributeID == TemperatureMeasurement::Attributes::MeasuredValue::Id) && (maxReadLength == 2))
             {
                 int16_t measuredValue = GetTemperature();
                 memcpy(Buffer, &measuredValue, sizeof(measuredValue));
             }
-            else if ((AttributeID == ZCL_TEMP_MIN_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            else if ((AttributeID == TemperatureMeasurement::Attributes::MinMeasuredValue::Id) && (maxReadLength == 2))
             {
                 int16_t minValue = GetMin();
                 memcpy(Buffer, &minValue, sizeof(minValue));
             }
-            else if ((AttributeID == ZCL_TEMP_MAX_MEASURED_VALUE_ATTRIBUTE_ID) && (maxReadLength == 2))
+            else if ((AttributeID == TemperatureMeasurement::Attributes::MaxMeasuredValue::Id) && (maxReadLength == 2))
             {
                 int16_t maxValue = GetMax();
                 memcpy(Buffer, &maxValue, sizeof(maxValue));
             }
-            else if ((AttributeID == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
+            else if ((AttributeID == TemperatureMeasurement::Attributes::FeatureMap::Id) && (maxReadLength == 4))
             {
                 uint32_t featureMap = ZCL_TEMPERATURE_SENSOR_FEATURE_MAP;
                 memcpy(Buffer, &featureMap, sizeof(featureMap));
             }
-            else if ((AttributeID == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+            else if ((AttributeID == ClusterRevision::Id) && (maxReadLength == 2))
             {
                 uint16_t clusterRevision = ZCL_TEMPERATURE_SENSOR_CLUSTER_REVISION;
                 memcpy(Buffer, &clusterRevision, sizeof(clusterRevision));

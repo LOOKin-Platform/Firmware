@@ -73,7 +73,7 @@ void MatterWiFi::OnFinished(MyStatus status, chip::CharSpan debugText, MyScanRes
 void MatterWiFi::OnScanDone() {
     return;
     ChipLogProgress(DeviceLayer, "WIFI_EVENT_SCAN_DONE");
-    NetworkCommissioning::ESPWiFiDriver::GetInstance().OnScanWiFiNetworkDone();
+    chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().OnScanWiFiNetworkDone();
 }
 
 void MatterWiFi::OnSTAStart() {
@@ -99,7 +99,7 @@ void MatterWiFi::OnSTAConnected() {
 
 void MatterWiFi::OnSTADisconnected() {
     ChipLogProgress(DeviceLayer, "WIFI_EVENT_STA_DISCONNECTED");
-    //!NetworkCommissioning::ESPWiFiDriver::GetInstance().SetLastDisconnectReason(event);
+    //!chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().SetLastDisconnectReason(event);
     if (mWiFiStationState == ConnectivityManager::kWiFiStationState_Connecting)
     {
         ChangeWiFiStationState(ConnectivityManager::kWiFiStationState_Connecting_Failed);
@@ -150,7 +150,7 @@ void MatterWiFi::ChangeWiFiStationState(ConnectivityManager::WiFiStationState ne
         //!ChipLogProgress(DeviceLayer, "WiFi station state change: %s -> %s", ConnectivityManager::WiFiStationStateToStr(mWiFiStationState),
         //!                ConnectivityManager::WiFiStationStateToStr(newState));
         mWiFiStationState = newState;
-        SystemLayer().ScheduleLambda([]() { NetworkCommissioning::ESPWiFiDriver::GetInstance().OnNetworkStatusChange(); });
+        SystemLayer().ScheduleLambda([]() { chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().OnNetworkStatusChange(); });
     }
 }
 
@@ -325,7 +325,8 @@ void MatterWiFi::OnStationConnected()
     {
         ChipLogError(DeviceLayer, "esp_netif_create_ip6_linklocal() failed for WIFI_STA_DEF interface: %s", esp_err_to_name(err));
     }
-    NetworkCommissioning::ESPWiFiDriver::GetInstance().OnConnectWiFiNetwork();
+    
+    chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().OnConnectWiFiNetwork();
     // TODO Invoke WARM to perform actions that occur when the WiFi station interface comes up.
 
     // Alert other components of the new state.
@@ -403,7 +404,7 @@ void MatterWiFi::OnStationDisconnected()
     event.WiFiConnectivityChange.Result = kConnectivity_Lost;
     PlatformMgr().PostEventOrDie(&event);
     WiFiDiagnosticsDelegate * delegate = GetDiagnosticDataProvider().GetWiFiDiagnosticsDelegate();
-    uint16_t reason                    = NetworkCommissioning::ESPWiFiDriver::GetInstance().GetLastDisconnectReason();
+    uint16_t reason                    = chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().GetLastDisconnectReason();
     uint8_t associationFailureCause =
         chip::to_underlying(chip::app::Clusters::WiFiNetworkDiagnostics::AssociationFailureCause::kUnknown);
 

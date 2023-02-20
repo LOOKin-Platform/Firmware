@@ -50,7 +50,7 @@ class MatterThermostat : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterThermostat *, MatterThermostat::Changed_t)>;
 
-        MatterThermostat(string szDeviceName, string szLocation) :
+        MatterThermostat(string szDeviceName, string szLocation = "") :
             MatterGenericDevice(szDeviceName, szLocation)
         {
             DeviceType = DeviceTypeEnum::Thermostat;
@@ -78,49 +78,49 @@ class MatterThermostat : public MatterGenericDevice {
             if (ClusterID == chip::app::Clusters::Thermostat::Id)
             {
                 ESP_LOGE("THERMOSTAT", "handler");
-                if ((attributeId == ZCL_LOCAL_TEMPERATURE_ATTRIBUTE_ID) && (maxReadLength == 2))
+                if ((attributeId == Thermostat::Attributes::LocalTemperature::Id) && (maxReadLength == 2))
                 {
                     int16_t measuredValue = 1700;
                     memcpy(buffer, &measuredValue, sizeof(measuredValue));
                 }
-                else if ((attributeId == ZCL_SYSTEM_MODE_ATTRIBUTE_ID) && (maxReadLength == 1))
+                else if ((attributeId == Thermostat::Attributes::SystemMode::Id) && (maxReadLength == 1))
                 {
                     uint8_t CurrentMode = static_cast<uint8_t>(chip::app::Clusters::Thermostat::ThermostatSystemMode::kCool);                
                     *buffer = CurrentMode;
                 }
-                else if ((attributeId == ZCL_THERMOSTAT_RUNNING_MODE_ATTRIBUTE_ID) && (maxReadLength == 1))
+                else if ((attributeId == Thermostat::Attributes::ThermostatRunningMode::Id) && (maxReadLength == 1))
                 {
                     uint8_t CurrentMode = static_cast<uint8_t>(chip::app::Clusters::Thermostat::ThermostatSystemMode::kCool);
                     *buffer = CurrentMode;
                 }
-                else if ((     attributeId == ZCL_MIN_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID 
-                            || attributeId == ZCL_MIN_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID
-                            || attributeId == ZCL_ABS_MIN_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID
-                            || attributeId == ZCL_ABS_MIN_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID) 
+                else if ((     attributeId == Thermostat::Attributes::MinCoolSetpointLimit::Id 
+                            || attributeId == Thermostat::Attributes::MinHeatSetpointLimit::Id
+                            || attributeId == Thermostat::Attributes::AbsMinHeatSetpointLimit::Id
+                            || attributeId == Thermostat::Attributes::AbsMinCoolSetpointLimit::Id) 
                             && (maxReadLength == 2))
                 {
                     int16_t MinValue = 1600;
                     memcpy(buffer, &MinValue, sizeof(MinValue));
                 }
-                else if ((     attributeId == ZCL_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID 
-                            || attributeId == ZCL_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID
-                            || attributeId == ZCL_ABS_MAX_HEAT_SETPOINT_LIMIT_ATTRIBUTE_ID
-                            || attributeId == ZCL_ABS_MAX_COOL_SETPOINT_LIMIT_ATTRIBUTE_ID) 
+                else if ((     attributeId == Thermostat::Attributes::MaxCoolSetpointLimit::Id 
+                            || attributeId == Thermostat::Attributes::MaxHeatSetpointLimit::Id
+                            || attributeId == Thermostat::Attributes::AbsMaxHeatSetpointLimit::Id
+                            || attributeId == Thermostat::Attributes::AbsMaxCoolSetpointLimit::Id) 
                             && (maxReadLength == 2))                {
                     int16_t MaxValue = 3000;
                     memcpy(buffer, &MaxValue, sizeof(MaxValue));
                 }
-                else if ((attributeId == ZCL_OCCUPIED_COOLING_SETPOINT_ATTRIBUTE_ID || attributeId == ZCL_OCCUPIED_HEATING_SETPOINT_ATTRIBUTE_ID) && (maxReadLength == 2))
+                else if ((attributeId == Thermostat::Attributes::OccupiedCoolingSetpoint::Id || attributeId == Thermostat::Attributes::OccupiedHeatingSetpoint::Id) && (maxReadLength == 2))
                 {
                     int16_t CurValue = 2100;
                     memcpy(buffer, &CurValue, sizeof(CurValue));
                 }
-                else if ((attributeId == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
+                else if ((attributeId == Thermostat::Attributes::FeatureMap::Id) && (maxReadLength == 4))
                 {
                     uint32_t FeatureMap = ZCL_THERMOSTAT_FEATURE_MAP;
                     memcpy(buffer, &FeatureMap, sizeof(FeatureMap));
                 }
-                else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+                else if ((attributeId == ClusterRevision::Id) && (maxReadLength == 2))
                 {
                     uint16_t ClusterRevision = ZCL_THERMOSTAT_CLUSTER_REVISION;
                     memcpy(buffer, &ClusterRevision, sizeof(ClusterRevision));
@@ -135,47 +135,47 @@ class MatterThermostat : public MatterGenericDevice {
             {
                 ESP_LOGE("FAN", "handler");
 
-                if ((attributeId == ZCL_FAN_MODE_ATTRIBUTE_ID) && (maxReadLength == 1))
+                if ((attributeId == FanControl::Attributes::FanMode::Id) && (maxReadLength == 1))
                 {
                     uint8_t CurrentFanMode = 5; // Auto                
                     *buffer = CurrentFanMode;
                 }
-                else if ((attributeId == ZCL_CONTROL_SEQUENCE_OF_OPERATION_ATTRIBUTE_ID) && (maxReadLength == 1)) 
+                else if ((attributeId == Thermostat::Attributes::ControlSequenceOfOperation::Id) && (maxReadLength == 1)) 
                 {
                     uint8_t ControlSequence = 0x4;
                     *buffer = ControlSequence;
                 }
-                else if ((attributeId == ZCL_PERCENT_SETTING_ATTRIBUTE_ID || attributeId == ZCL_PERCENT_CURRENT_ATTRIBUTE_ID) && (maxReadLength == 1)) 
+                else if ((attributeId == FanControl::Attributes::PercentSetting::Id || attributeId == FanControl::Attributes::PercentCurrent::Id) && (maxReadLength == 1)) 
                 {
                     uint8_t CurrentValue = 0x1;
                     *buffer = CurrentValue;
                 }
-                else if ((attributeId == ZCL_FEATURE_MAP_SERVER_ATTRIBUTE_ID) && (maxReadLength == 4))
+                else if ((attributeId == FanControl::Attributes::FeatureMap::Id) && (maxReadLength == 4))
                 {
                     uint32_t FanFeatureMap = ZCL_FANCONTROL_FEATURE_MAP;
                     memcpy(buffer, &FanFeatureMap, sizeof(FanFeatureMap));
                 }
-                else if ((attributeId == ZCL_CLUSTER_REVISION_SERVER_ATTRIBUTE_ID) && (maxReadLength == 2))
+                else if ((attributeId == ClusterRevision::Id) && (maxReadLength == 2))
                 {
                     uint16_t ClusterRevision = ZCL_FANCONTROL_CLUSTER_REVISION;
                     memcpy(buffer, &ClusterRevision, sizeof(ClusterRevision));
                 }
-                else if (((attributeId == ZCL_ROCK_SUPPORT_ATTRIBUTE_ID) || (attributeId == ZCL_ROCK_SETTING_ATTRIBUTE_ID)) && (maxReadLength == 1))
+                else if (((attributeId == FanControl::Attributes::RockSupport::Id) || (attributeId == FanControl::Attributes::RockSetting::Id)) && (maxReadLength == 1))
                 {
                     uint8_t RockSettings = 0x2;  // Rock setting             
                     *buffer = RockSettings;
                 }
-                else if ((attributeId == ZCL_FAN_MODE_SEQUENCE_ATTRIBUTE_ID) && (maxReadLength == 1))
+                else if ((attributeId == FanControl::Attributes::FanModeSequence::Id) && (maxReadLength == 1))
                 {
                     uint8_t FanModeSequence = 2; // Off/Low/Med/High/Auto         
                     *buffer = FanModeSequence;
                 }
-                else if ((attributeId == ZCL_SPEED_SETTING_ATTRIBUTE_ID) && (maxReadLength == 1))
+                else if ((attributeId == FanControl::Attributes::SpeedSetting::Id) && (maxReadLength == 1))
                 {
                     uint8_t SpeedSetting = 0x0;  // Vertical Swing              
                     *buffer = SpeedSetting;
                 }
-                else if ((attributeId == ZCL_PERCENT_CURRENT_ATTRIBUTE_ID) && (maxReadLength == 1))
+                else if ((attributeId == FanControl::Attributes::PercentCurrent::Id) && (maxReadLength == 1))
                 {
                     uint8_t SpeedSetting = 0x4;             
                     *buffer = SpeedSetting;

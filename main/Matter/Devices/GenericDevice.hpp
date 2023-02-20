@@ -19,8 +19,7 @@
 #define MATTER_DEVICES
 
 // These are the bridged devices
-#include <app-common/zap-generated/af-structs.h>
-#include <app-common/zap-generated/attribute-id.h>
+#include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 
 #include "Matter.h"
@@ -54,8 +53,12 @@ class MatterGenericDevice
             MediaPlayer 
         };
 
-        static const int    kDeviceNameSize     = 32;
-        static const int    kDeviceLocationSize = 32;
+        static const int        kDeviceNameSize     = 32;
+        static const int        kDeviceLocationSize = 32;
+
+        static inline bool      IsBridgedDevice = false;
+        static inline string    BridgedUUID = "";
+        static inline uint8_t   BridgedMisc = 0x0;
 
         //chip::Span<chip::DataVersion> dataVersions;
         //vector<chip::DataVersion> dataVersions = vector<chip::DataVersion>();

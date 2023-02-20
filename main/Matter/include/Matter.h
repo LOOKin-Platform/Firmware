@@ -9,19 +9,16 @@
 #include <string.h>
 #include "Custom.h"
 
-#include <common/CHIPDeviceManager.h>
-#include <common/CommonDeviceCallbacks.h>
-
 #include "NetworkCommissioningDriver.h"
 
 #include "GenericDevice.hpp"
 
 #define NVS_MATTER_AREA "matter"
+
 class Matter {
 	public:
 		static inline FreeRTOS::Semaphore	
 								m_scanFinished = FreeRTOS::Semaphore("MScanFinished");
-
 
 		static void				WiFiSetMode(bool, string, string);
 
@@ -46,7 +43,7 @@ class Matter {
                                 GetDeviceByDynamicIndex(uint16_t EndpointIndex);
 
 		static MatterGenericDevice*
-								GetBridgedAccessoryByType(string ClassName);
+								GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum);
 
 	private:
 		inline static 			vector<MatterGenericDevice *>	MatterDevices = vector<MatterGenericDevice *>();
