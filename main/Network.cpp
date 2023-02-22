@@ -693,7 +693,7 @@ void NetworkSync::StorageHistoryQuery() {
 	ESP_LOGE("StorageHistoryQuery", "%s", QueryURL.c_str());
 
 	ToVersionUpgrade 	= 0;
-	HTTPClient::Query(QueryURL, QueryType::GET, true, false, &ReadStorageStarted, &ReadStorageBody, &ReadStorageFinished, &StorageAborted);
+	HTTPClient::Query(QueryURL, QueryType::GET, true, true, &ReadStorageStarted, &ReadStorageBody, &ReadStorageFinished, &StorageAborted);
 }
 
 void NetworkSync::ReadStorageStarted (const char *IP) {}

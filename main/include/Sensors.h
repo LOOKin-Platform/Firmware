@@ -86,7 +86,7 @@ class Sensor_t {
 
 		static void 					HandleHTTPRequest(WebServer_t::Response &, Query_t &);
 		
-		static MatterGenericDevice*		GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type);
+		static MatterGenericDevice*		GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID = "");
 	private:
 		bool 							IsInited	= false;
 

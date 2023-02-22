@@ -43,7 +43,7 @@ class Matter {
                                 GetDeviceByDynamicIndex(uint16_t EndpointIndex);
 
 		static MatterGenericDevice*
-								GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum);
+								GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum, string UUID = "");
 
 	private:
 		inline static 			vector<MatterGenericDevice *>	MatterDevices = vector<MatterGenericDevice *>();

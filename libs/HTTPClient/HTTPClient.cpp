@@ -76,11 +76,13 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront, bool IsSystem) {
 	if (ThreadsCounter <= 0) {
 		ThreadsCounter = 1;
 		FreeRTOS::StartTask(HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.SystemThreadStackSize);
+		ESP_LOGE("HTTPClientTask","System task started");
 	}
 
 	if (!IsSystem && FreeRTOS::Queue::Count(Queue) >= Settings.HTTPClient.NewThreadStep && ThreadsCounter < Settings.HTTPClient.ThreadsMax) {
 		ThreadsCounter++;
 		FreeRTOS::StartTask(HTTPClient::HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.ThreadStackSize);
+		ESP_LOGE("HTTPClientTask","Not system task started");
 	}
 }
 

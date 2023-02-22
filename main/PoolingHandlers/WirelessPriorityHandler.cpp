@@ -1,14 +1,6 @@
-#ifndef WIRELESSPRIORITY_HANDLER
-#define WIRELESSPRIORITY_HANDLER
+#include "HandlersPooling.h"
 
-#include "Globals.h"
-
-class WirelessPriorityHandler {
-	public:
-		static void 	Pool();
-};
-
-void WirelessPriorityHandler::Pool() {
+void HandlersPooling_t::WirelessPriorityHandler::Pool() {
 	if (WiFi.GetMode() != WIFI_MODE_STA_STR)
 		return;
 
@@ -20,5 +12,3 @@ void WirelessPriorityHandler::Pool() {
 		PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
 	}
 }
-
-#endif

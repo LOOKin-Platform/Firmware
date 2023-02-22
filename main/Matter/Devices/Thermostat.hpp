@@ -56,12 +56,38 @@ class MatterThermostat : public MatterGenericDevice {
             DeviceType = DeviceTypeEnum::Thermostat;
 
             SetReachable(true);
-            mChanged_CB = &MatterThermostat::HandleStatusChanged;
+        }
+
+        int16_t GetLocalTemperature() { 
+            return mLocalTempMeasurement;
+        } 
+
+        void SetLocalTemperature (float Value) {
+            int16_t NormalizedValue = round(Value * 100);
+
+            // Limit measurement based on the min and max.
+            if (NormalizedValue < mLocalTempMin)
+                NormalizedValue = mLocalTempMin;
+            else if (NormalizedValue > mLocalTempMax)
+                NormalizedValue = mLocalTempMax;
+
+            bool changed = mLocalTempMeasurement != NormalizedValue;
+
+            mLocalTempMeasurement = NormalizedValue;
+
+            if (changed)
+                HandleStatusChanged(this, kChanged_MeasurementValue);
         }
 
         static void HandleStatusChanged(MatterThermostat * dev, MatterThermostat::Changed_t itemChangedMask)
         {
             ESP_LOGE("MatterThermostat", "MatterThermostat");
+
+            if (itemChangedMask & (MatterTempSensor::kChanged_Reachable | MatterTempSensor::kChanged_Name | MatterTempSensor::kChanged_Location))
+                HandleDeviceStatusChanged(static_cast<MatterGenericDevice *>(dev), (MatterGenericDevice::Changed_t) itemChangedMask);
+
+            if (itemChangedMask & MatterTempSensor::kChanged_MeasurementValue)
+                ScheduleReportingCallback(dev, chip::app::Clusters::Thermostat::Id, chip::app::Clusters::Thermostat::Attributes::LocalTemperature::Id);
         }
 
 /*
@@ -71,7 +97,7 @@ class MatterThermostat : public MatterGenericDevice {
         }
 */
 
-        EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * buffer, uint16_t maxReadLength) override
+        EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * Buffer, uint16_t maxReadLength) override
         {
             ESP_LOGE("MatterThermostat", "HandleReadAttribute, ClusterID: %d, attributeID: %04X, MaxReadLength: %d", ClusterID, attributeId, maxReadLength);
 
@@ -80,18 +106,18 @@ class MatterThermostat : public MatterGenericDevice {
                 ESP_LOGE("THERMOSTAT", "handler");
                 if ((attributeId == Thermostat::Attributes::LocalTemperature::Id) && (maxReadLength == 2))
                 {
-                    int16_t measuredValue = 1700;
-                    memcpy(buffer, &measuredValue, sizeof(measuredValue));
+                    int16_t measuredValue = GetLocalTemperature();
+                    memcpy(Buffer, &measuredValue, sizeof(measuredValue));
                 }
                 else if ((attributeId == Thermostat::Attributes::SystemMode::Id) && (maxReadLength == 1))
                 {
                     uint8_t CurrentMode = static_cast<uint8_t>(chip::app::Clusters::Thermostat::ThermostatSystemMode::kCool);                
-                    *buffer = CurrentMode;
+                    *Buffer = CurrentMode;
                 }
                 else if ((attributeId == Thermostat::Attributes::ThermostatRunningMode::Id) && (maxReadLength == 1))
                 {
                     uint8_t CurrentMode = static_cast<uint8_t>(chip::app::Clusters::Thermostat::ThermostatSystemMode::kCool);
-                    *buffer = CurrentMode;
+                    *Buffer = CurrentMode;
                 }
                 else if ((     attributeId == Thermostat::Attributes::MinCoolSetpointLimit::Id 
                             || attributeId == Thermostat::Attributes::MinHeatSetpointLimit::Id
@@ -100,7 +126,7 @@ class MatterThermostat : public MatterGenericDevice {
                             && (maxReadLength == 2))
                 {
                     int16_t MinValue = 1600;
-                    memcpy(buffer, &MinValue, sizeof(MinValue));
+                    memcpy(Buffer, &MinValue, sizeof(MinValue));
                 }
                 else if ((     attributeId == Thermostat::Attributes::MaxCoolSetpointLimit::Id 
                             || attributeId == Thermostat::Attributes::MaxHeatSetpointLimit::Id
@@ -108,22 +134,22 @@ class MatterThermostat : public MatterGenericDevice {
                             || attributeId == Thermostat::Attributes::AbsMaxCoolSetpointLimit::Id) 
                             && (maxReadLength == 2))                {
                     int16_t MaxValue = 3000;
-                    memcpy(buffer, &MaxValue, sizeof(MaxValue));
+                    memcpy(Buffer, &MaxValue, sizeof(MaxValue));
                 }
                 else if ((attributeId == Thermostat::Attributes::OccupiedCoolingSetpoint::Id || attributeId == Thermostat::Attributes::OccupiedHeatingSetpoint::Id) && (maxReadLength == 2))
                 {
                     int16_t CurValue = 2100;
-                    memcpy(buffer, &CurValue, sizeof(CurValue));
+                    memcpy(Buffer, &CurValue, sizeof(CurValue));
                 }
                 else if ((attributeId == Thermostat::Attributes::FeatureMap::Id) && (maxReadLength == 4))
                 {
                     uint32_t FeatureMap = ZCL_THERMOSTAT_FEATURE_MAP;
-                    memcpy(buffer, &FeatureMap, sizeof(FeatureMap));
+                    memcpy(Buffer, &FeatureMap, sizeof(FeatureMap));
                 }
                 else if ((attributeId == ClusterRevision::Id) && (maxReadLength == 2))
                 {
                     uint16_t ClusterRevision = ZCL_THERMOSTAT_CLUSTER_REVISION;
-                    memcpy(buffer, &ClusterRevision, sizeof(ClusterRevision));
+                    memcpy(Buffer, &ClusterRevision, sizeof(ClusterRevision));
                 }
                 else
                 {
@@ -138,47 +164,47 @@ class MatterThermostat : public MatterGenericDevice {
                 if ((attributeId == FanControl::Attributes::FanMode::Id) && (maxReadLength == 1))
                 {
                     uint8_t CurrentFanMode = 5; // Auto                
-                    *buffer = CurrentFanMode;
+                    *Buffer = CurrentFanMode;
                 }
                 else if ((attributeId == Thermostat::Attributes::ControlSequenceOfOperation::Id) && (maxReadLength == 1)) 
                 {
                     uint8_t ControlSequence = 0x4;
-                    *buffer = ControlSequence;
+                    *Buffer = ControlSequence;
                 }
                 else if ((attributeId == FanControl::Attributes::PercentSetting::Id || attributeId == FanControl::Attributes::PercentCurrent::Id) && (maxReadLength == 1)) 
                 {
                     uint8_t CurrentValue = 0x1;
-                    *buffer = CurrentValue;
+                    *Buffer = CurrentValue;
                 }
                 else if ((attributeId == FanControl::Attributes::FeatureMap::Id) && (maxReadLength == 4))
                 {
                     uint32_t FanFeatureMap = ZCL_FANCONTROL_FEATURE_MAP;
-                    memcpy(buffer, &FanFeatureMap, sizeof(FanFeatureMap));
+                    memcpy(Buffer, &FanFeatureMap, sizeof(FanFeatureMap));
                 }
                 else if ((attributeId == ClusterRevision::Id) && (maxReadLength == 2))
                 {
                     uint16_t ClusterRevision = ZCL_FANCONTROL_CLUSTER_REVISION;
-                    memcpy(buffer, &ClusterRevision, sizeof(ClusterRevision));
+                    memcpy(Buffer, &ClusterRevision, sizeof(ClusterRevision));
                 }
                 else if (((attributeId == FanControl::Attributes::RockSupport::Id) || (attributeId == FanControl::Attributes::RockSetting::Id)) && (maxReadLength == 1))
                 {
                     uint8_t RockSettings = 0x2;  // Rock setting             
-                    *buffer = RockSettings;
+                    *Buffer = RockSettings;
                 }
                 else if ((attributeId == FanControl::Attributes::FanModeSequence::Id) && (maxReadLength == 1))
                 {
                     uint8_t FanModeSequence = 2; // Off/Low/Med/High/Auto         
-                    *buffer = FanModeSequence;
+                    *Buffer = FanModeSequence;
                 }
                 else if ((attributeId == FanControl::Attributes::SpeedSetting::Id) && (maxReadLength == 1))
                 {
                     uint8_t SpeedSetting = 0x0;  // Vertical Swing              
-                    *buffer = SpeedSetting;
+                    *Buffer = SpeedSetting;
                 }
                 else if ((attributeId == FanControl::Attributes::PercentCurrent::Id) && (maxReadLength == 1))
                 {
                     uint8_t SpeedSetting = 0x4;             
-                    *buffer = SpeedSetting;
+                    *Buffer = SpeedSetting;
                 }                
                 else
                 {
@@ -191,14 +217,14 @@ class MatterThermostat : public MatterGenericDevice {
         }
 
     private:
-        DeviceCallback_fn mChanged_CB;
+        const int16_t   mLocalTempMin           = 10000;
+        const int16_t   mLocalTempMax           = -10000;
+
+        int16_t         mLocalTempMeasurement   = 1600;
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override {
             ESP_LOGE("MatterThermostat", "HandleDeviceChange");
 
-            if (mChanged_CB)
-            {
-                mChanged_CB(this, (MatterThermostat::Changed_t) changeMask);
-            }
+            HandleStatusChanged(this, (MatterThermostat::Changed_t) changeMask);
         }
 };

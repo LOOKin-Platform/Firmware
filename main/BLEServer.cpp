@@ -125,7 +125,8 @@ bool BLEServer_t::IsHIDEnabledForDevice() {
 }
 
 void BLEServer_t::CheckHIDMode() {
-	if (!IsHIDEnabledForDevice()) return;
+	if (!IsHIDEnabledForDevice()) 
+		return;
 
 	/*
 	if (WiFi.IsConnectedSTA() && CurrentMode == BASIC) {
@@ -141,6 +142,8 @@ void BLEServer_t::CheckHIDMode() {
 }
 
 void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
+	return;
+
 	if (!IsHIDEnabledForDevice()) return;
 
 	if (CurrentMode == Mode) return;
@@ -248,6 +251,7 @@ void BLEServer_t::Deinit() {
 }
 
 void BLEServer_t::StartAdvertising() {
+	return;
 	if (IsHIDEnabledForDevice())
 		StartAdvertisingAsHID();
 	else

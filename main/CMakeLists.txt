@@ -5,7 +5,7 @@ idf_component_register(
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/providers"
 	INCLUDE_DIRS
 	"${CMAKE_CURRENT_LIST_DIR}"
-	"${CMAKE_CURRENT_LIST_DIR}/include"
+	"${CMAKE_CURRENT_LIST_DIR}/Include"
 	"${CMAKE_SOURCE_DIR}/main/Matter/include"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Devices"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Override"
@@ -16,6 +16,7 @@ idf_component_register(
 	"$ENV{IDF_PATH}/components/bt/host/nimble/nimble/nimble/host/include"
 	SRC_DIRS
 	"${CMAKE_CURRENT_LIST_DIR}"
+	"${CMAKE_CURRENT_LIST_DIR}/PoolingHandlers"
 	"${CMAKE_CURRENT_LIST_DIR}/Matter"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Override"
 	"${CMAKE_SOURCE_DIR}/main/Matter/Connectivity"

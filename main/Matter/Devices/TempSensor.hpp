@@ -38,24 +38,23 @@ class MatterTempSensor : public MatterGenericDevice {
 
         using DeviceCallback_fn = std::function<void(MatterTempSensor *, MatterTempSensor::Changed_t)>;
 
-        MatterTempSensor(string szDeviceName, string szLocation = "", int16_t min = -10000, int16_t max = 10000, int16_t measuredValue = 0) :
+        MatterTempSensor(string szDeviceName, string szLocation = "", int16_t measuredValue = 0, int16_t min = -10000, int16_t max = 10000) :
             MatterGenericDevice(szDeviceName, szLocation),
-            mMin(min), mMax(max), mMeasurement(measuredValue)
+            mMeasurement(measuredValue), mMin(min), mMax(max)
         {
             DeviceType = DeviceTypeEnum::Temperature;
 
             SetReachable(true);
-            mChanged_CB = &MatterTempSensor::HandleStatusChanged;
         }
 
         int16_t GetTemperature() { 
             return mMeasurement;
         } 
 
-        void SetTemperature (float Value) {
-            ESP_LOGE("LOG", "5");
+        void SetTemperature (float Value, bool ShouldInvokeStatusChanged = true) {
+            ESP_LOGE("TEMP VALUE", "%f", Value);
+
             int16_t NormalizedValue = round(Value * 100);
-            ESP_LOGE("LOG", "6");
 
             // Limit measurement based on the min and max.
             if (NormalizedValue < mMin)
@@ -63,20 +62,14 @@ class MatterTempSensor : public MatterGenericDevice {
             else if (NormalizedValue > mMax)
                 NormalizedValue = mMax;
 
-            ESP_LOGE("LOG", "7");
-
             bool changed = mMeasurement != NormalizedValue;
 
             mMeasurement = NormalizedValue;
 
-            ESP_LOGE("LOG", "8");
+            ESP_LOGE("mMeasurement = ", "%d", mMeasurement);
 
-            if (changed && mChanged_CB) {
-                ESP_LOGE("LOG", "8.1");
-                mChanged_CB(this, kChanged_MeasurementValue);
-            }
-
-            ESP_LOGE("LOG", "9");
+            if (changed && ShouldInvokeStatusChanged)
+                HandleStatusChanged(this, kChanged_MeasurementValue);
         }
 
         int16_t GetMin() { return mMin; }
@@ -84,21 +77,23 @@ class MatterTempSensor : public MatterGenericDevice {
 
         static void HandleStatusChanged(MatterTempSensor * dev, MatterTempSensor::Changed_t itemChangedMask)
         {
-            ESP_LOGE("HandleStatusChanged", "1");
-
             if (itemChangedMask & (MatterTempSensor::kChanged_Reachable | MatterTempSensor::kChanged_Name | MatterTempSensor::kChanged_Location))
                 HandleDeviceStatusChanged(static_cast<MatterGenericDevice *>(dev), (MatterGenericDevice::Changed_t) itemChangedMask);
-            ESP_LOGE("HandleStatusChanged", "2");
+
             if (itemChangedMask & MatterTempSensor::kChanged_MeasurementValue)
                 ScheduleReportingCallback(dev, chip::app::Clusters::TemperatureMeasurement::Id, chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Id);
-            ESP_LOGE("HandleStatusChanged", "3");
         }
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
         {
+            ESP_LOGE("HandleReadAttribute TEMP SENSOR", "%d %d %d", ClusterID, AttributeID, maxReadLength);
+
             if ((AttributeID == TemperatureMeasurement::Attributes::MeasuredValue::Id) && (maxReadLength == 2))
-            {
+            {             
                 int16_t measuredValue = GetTemperature();
+             
+                ESP_LOGE("MEASURED VALUE", "%d", measuredValue);
+
                 memcpy(Buffer, &measuredValue, sizeof(measuredValue));
             }
             else if ((AttributeID == TemperatureMeasurement::Attributes::MinMeasuredValue::Id) && (maxReadLength == 2))
@@ -130,16 +125,12 @@ class MatterTempSensor : public MatterGenericDevice {
         }
 
     private:
-        const int16_t   mMin;
-        const int16_t   mMax;
         int16_t         mMeasurement = 0;
 
-        DeviceCallback_fn mChanged_CB;
+        const int16_t   mMin;
+        const int16_t   mMax;
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override {
-            if (mChanged_CB)
-            {
-                mChanged_CB(this, (MatterTempSensor::Changed_t) changeMask);
-            }
+            HandleStatusChanged(this, (MatterTempSensor::Changed_t) changeMask);
         }
 };

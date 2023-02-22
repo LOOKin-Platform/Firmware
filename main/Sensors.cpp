@@ -163,8 +163,8 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 	}
 }
 
-MatterGenericDevice* Sensor_t::GetBridgedAccessoryByType(string ClassName) {
-	return Matter::GetBridgedAccessoryByType(ClassName);
+MatterGenericDevice* Sensor_t::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID) {
+	return Matter::GetBridgedAccessoryByType(Type, UUID);
 }
 
 

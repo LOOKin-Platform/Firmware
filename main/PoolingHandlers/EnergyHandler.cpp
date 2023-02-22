@@ -1,19 +1,6 @@
-#ifndef ENERGY_HANDLER
-#define ENERGY_HANDLER
+#include "HandlersPooling.h"
 
-class EnergyPeriodicHandler {
-	public:
-		static void Init();
-		static void Pool(bool SkipTimeCheck = false);
-	private:
-		static bool IsInited;
-		static bool IsPowerTypeSet;
-};
-
-
-bool EnergyPeriodicHandler::IsInited = false;
-
-void EnergyPeriodicHandler::Init() {
+void HandlersPooling_t::EnergyPeriodicHandler::Init() {
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_11db);
     adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_11db);
@@ -21,7 +8,11 @@ void EnergyPeriodicHandler::Init() {
     IsInited = true;
 }
 
-void EnergyPeriodicHandler::Pool(bool SkipTimeCheck) {
+void HandlersPooling_t::EnergyPeriodicHandler::Pool() {
+	InnerHandler();
+}
+
+void HandlersPooling_t::EnergyPeriodicHandler::InnerHandler(bool SkipTimeCheck) {
 	if (!IsInited)
 		Init();
 
@@ -59,5 +50,3 @@ void EnergyPeriodicHandler::Pool(bool SkipTimeCheck) {
 		Device.CurrentVoltage = (Device.PowerMode == DevicePowerMode::CONST) ? ConstValue : BatteryValue;
 	}
 }
-
-#endif

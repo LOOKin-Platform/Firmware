@@ -89,7 +89,8 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 
 			for (ScenesCommandItem_t Command : Scenario.Commands)
 				if (Scenario.Data->IsCommandNeedToExecute(Command)) {
-					if (Command.DeviceID == Settings.eFuse.DeviceID) {
+					if (Command.DeviceID == Settings.eFuse.DeviceID) 
+					{
 						// выполнить локальную команду
 						Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
 						if (CommandToExecute!=nullptr) {
@@ -97,7 +98,8 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 							CommandToExecute->Execute(Command.EventCode, Operand.c_str());
 						}
 					}
-					else {
+					else 
+					{
 						// отправить команду по HTTP
 						NetworkDevice_t NetworkDevice = Network.GetNetworkDeviceByID(Command.DeviceID);
 
@@ -106,7 +108,7 @@ void Scenario_t::ExecuteCommandsTask(void *TaskData) {
 								"&action=" + Converter::ToHexString(Command.EventCode,2) +
 								"&operand=" + Converter::ToHexString(Command.Operand, 8);
 
-							HTTPClient::Query("http://" + NetworkDevice.IP + URL, QueryType::GET, false, false, NULL, NULL, &ReadFinished, &Aborted);
+							HTTPClient::Query("http://" + NetworkDevice.IP + URL, QueryType::GET, false, true, NULL, NULL, &ReadFinished, &Aborted);
 						}
 					}
 				}

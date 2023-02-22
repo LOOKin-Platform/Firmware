@@ -82,7 +82,6 @@ class MatterGenericDevice
 
             mReachable  = false;
             mEndpointId = 0xFFFF;
-            mChanged_CB = nullptr;
 
             //dataVersions.reserve(3);
         }
@@ -105,10 +104,8 @@ class MatterGenericDevice
                 ChipLogProgress(DeviceLayer, "Device[%s]: OFFLINE", mName);
             }
 
-            if (changed && mChanged_CB)
-            {
-                mChanged_CB(this, kChanged_Reachable);
-            }   
+            if (changed)
+                HandleDeviceChange(this, kChanged_Reachable);
         }
 
         void SetName(const char * szDeviceName) {
@@ -118,10 +115,8 @@ class MatterGenericDevice
 
             CopyString(mName, sizeof(mName), szDeviceName);
 
-            if (changed && mChanged_CB)
-            {
-                mChanged_CB(this, kChanged_Name);
-            }
+            if (changed)
+                HandleDeviceChange(this, kChanged_Name);
         }
 
         void SetLocation(const char * szLocation) {
@@ -131,10 +126,8 @@ class MatterGenericDevice
 
             ChipLogProgress(DeviceLayer, "Device[%s]: Location=\"%s\"", mName, mLocation);
 
-            if (changed && mChanged_CB)
-            {
-                mChanged_CB(this, kChanged_Location);
-            }
+            if (changed)
+                HandleDeviceChange(this, kChanged_Location);
         }
 
         inline void             SetEndpointID(chip::EndpointId id)  { mEndpointId = id; };
@@ -142,11 +135,6 @@ class MatterGenericDevice
         inline char *           GetName()                           { return mName; };
         inline char *           GetLocation()                       { return mLocation; };
         inline DeviceTypeEnum   GetTypeName()                       { return DeviceType; };
-
-        using DeviceCallback_fn = std::function<void(MatterGenericDevice *, Changed_t)>;
-        void SetChangeCallback(DeviceCallback_fn aChanged_CB) {
-            mChanged_CB = aChanged_CB;
-        }
 
         virtual EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
         {
@@ -167,7 +155,6 @@ class MatterGenericDevice
 
         char mLocation[kDeviceLocationSize];
         char mName[kDeviceNameSize];
-        DeviceCallback_fn mChanged_CB;
 
         static void HandleDeviceStatusChanged(MatterGenericDevice * dev, MatterGenericDevice::Changed_t itemChangedMask)
         {

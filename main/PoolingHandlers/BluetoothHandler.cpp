@@ -1,5 +1,6 @@
-#ifndef BLUETOOTH_HANDLER
-#define BLUETOOTH_HANDLER
+/*
+#ifndef POOLINGHANDLERS_BLUETOOTH
+#define POOLINGHANDLERS_BLUETOOTH
 
 class BluetoothPeriodicHandler {
 	public:
@@ -55,15 +56,14 @@ void BluetoothPeriodicHandler::Pool() {
 							+ Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second;
 
 			BLEServer.StartAdvertisingAsGenericDevice();
-			/*
-			BLEServer.StartAdvertising("0" +
-					Converter::ToHexString(Settings.Wireless.IntervalID,1) +
-					Converter::ToHexString(Automation.CurrentVersion(),4) +
-					Converter::ToHexString(Storage.CurrentVersion(),3) +
-					((Time::Offset == 0) ? "0" : "1") +
-					Converter::ToHexString(Settings.eFuse.Type, 2) +
-					(Device.Type.IsBattery() ? "0" : "1"));
-			*/
+			
+			//BLEServer.StartAdvertising("0" +
+			//		Converter::ToHexString(Settings.Wireless.IntervalID,1) +
+			//		Converter::ToHexString(Automation.CurrentVersion(),4) +
+			//		Converter::ToHexString(Storage.CurrentVersion(),3) +
+			//		((Time::Offset == 0) ? "0" : "1") +
+			//		Converter::ToHexString(Settings.eFuse.Type, 2) +
+			//		(Device.Type.IsBattery() ? "0" : "1"));
 		}
 	}
 
@@ -89,7 +89,8 @@ void BluetoothPeriodicHandler::Pool() {
 		}
 	}
 
-	#endif /* Bluetooth enabled */
+	#endif
 }
 
 #endif
+*/

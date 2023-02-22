@@ -44,14 +44,13 @@ class MatterHumiditySensor : public MatterGenericDevice {
             DeviceType = DeviceTypeEnum::Humidity;
 
             SetReachable(true);
-            mChanged_CB = &MatterHumiditySensor::HandleStatusChanged;
         }
 
         int16_t GetHumidity() { 
             return mMeasurement;
         } 
 
-        void SetHumidity (float Value) {
+        void SetHumidity (float Value, bool ShouldInvokeStatusChanged = true) {
             if (Value < 0)
                 Value = 0;
 
@@ -68,10 +67,8 @@ class MatterHumiditySensor : public MatterGenericDevice {
 
             mMeasurement = NormalizedValue;
 
-            if (changed && mChanged_CB)
-            {
-                mChanged_CB(this, kChanged_MeasurementValue);
-            }
+            if (changed && ShouldInvokeStatusChanged)
+                HandleStatusChanged(this, kChanged_MeasurementValue);
         }
 
         uint16_t GetMin() { return mMin; }
@@ -128,12 +125,7 @@ class MatterHumiditySensor : public MatterGenericDevice {
         const uint16_t   mMax;
         uint16_t         mMeasurement = 0;
 
-        DeviceCallback_fn mChanged_CB;
-
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override {
-            if (mChanged_CB)
-            {
-                mChanged_CB(this, (MatterHumiditySensor::Changed_t) changeMask);
-            }
+            HandleStatusChanged(this, (MatterHumiditySensor::Changed_t) changeMask);
         }
 };

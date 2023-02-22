@@ -124,21 +124,19 @@ class SensorMeteo_t : public Sensor_t {
 
 				if (IsMatterEnabled() && Settings.eFuse.Type == Settings.Devices.Remote)
 				{
-					bool IsEmptyAC = true;
-
 					for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
 						if (IRDevice.DeviceType == 0xEF)
 						{
-							//!HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
-							IsEmptyAC = false;
-						}
+							MatterThermostat* Thermostat = (MatterThermostat*)GetBridgedAccessoryByType(MatterGenericDevice::Thermostat, IRDevice.DeviceID);
 
+							if (Thermostat != nullptr)
+								Thermostat->SetLocalTemperature(Value);
+						}
+	
 					MatterTempSensor* TempSensor = (MatterTempSensor*)GetBridgedAccessoryByType(MatterGenericDevice::Temperature);
+					
 					if (TempSensor != nullptr)
 						TempSensor->SetTemperature(Value);
-
-					//!if (IsEmptyAC)
-					//!	HomeKitUpdateCharValue(0, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_TEMPERATURE, CurrentTempValue);
 				}
 			}
 			else if (Type == "Humidity") {
@@ -146,27 +144,15 @@ class SensorMeteo_t : public Sensor_t {
 
 				if (IsMatterEnabled() && Settings.eFuse.Type == Settings.Devices.Remote)
 				{
-					bool IsEmptyAC = true;
-
-					//!hap_val_t CurrentHumidityValue;
-					//!CurrentHumidityValue.f = Value;
-
 					for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
 						if (IRDevice.DeviceType == 0xEF)
 						{
 							//!HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
-							IsEmptyAC = false;
 						}
-
-					//!HomeKitUpdateCharValue(0xFFFF, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
-
-					//!if (IsEmptyAC)
-					//!	HomeKitUpdateCharValue(0, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
 				
 					MatterHumiditySensor* HumiditySensor = (MatterHumiditySensor*)GetBridgedAccessoryByType(MatterGenericDevice::Humidity);
 					if (HumiditySensor != nullptr)
 						HumiditySensor->SetHumidity(Value);
-
 				}
 			}
 			else

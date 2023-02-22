@@ -1,37 +1,10 @@
-#ifndef PING_HANDLER
-#define PING_HANDLER
+#include "HandlersPooling.h"
 
-class PingPeriodicHandler {
-	public:
-		static void Pool();
-
-		static void FirmwareCheckStarted(const char *IP);
-		static bool FirmwareCheckReadBody(char Data[], int DataLen, const char *IP);
-		static void FirmwareCheckFinished(const char *IP);
-		static void FirmwareCheckFailed(const char *IP);
-
-	private:
-		static FreeRTOS::Semaphore IsRouterPingFinished;
-		static void PerformLocalPing();
-		static void RouterPingFinished(esp_ping_handle_t hdl, void *args);
-		static void CheckForPeriodicalyReboot();
-
-		static uint32_t 	RemotePingRestartCounter;
-		static uint32_t 	RouterPingRestartCounter;
-		static string		FirmwareUpdateURL;
-};
-
-uint32_t 			PingPeriodicHandler::RemotePingRestartCounter 	= 0;
-uint32_t 			PingPeriodicHandler::RouterPingRestartCounter 	= 0;
-string 				PingPeriodicHandler::FirmwareUpdateURL 			= "";
-FreeRTOS::Semaphore	PingPeriodicHandler::IsRouterPingFinished 		= FreeRTOS::Semaphore("IsRouterPingFinished");
-
-
-void PingPeriodicHandler::FirmwareCheckStarted(const char *IP) {
+void HandlersPooling_t::PingPeriodicHandler::FirmwareCheckStarted(const char *IP) {
 	FirmwareUpdateURL = "";
 }
 
-bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, const char *IP) {
+bool HandlersPooling_t::PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, const char *IP) {
 	const uint8_t MaxFirmwareUpdate = 255;
 
 	if ((DataLen + FirmwareUpdateURL.size()) > MaxFirmwareUpdate)
@@ -42,7 +15,7 @@ bool PingPeriodicHandler::FirmwareCheckReadBody(char Data[], int DataLen, const 
 	return true;
 }
 
-void PingPeriodicHandler::FirmwareCheckFinished(const char *IP) {
+void HandlersPooling_t::PingPeriodicHandler::FirmwareCheckFinished(const char *IP) {
 	bool ShouldCheckForReboot = true;
 
 	if (FirmwareUpdateURL.size() > 10) {
@@ -56,17 +29,17 @@ void PingPeriodicHandler::FirmwareCheckFinished(const char *IP) {
 		CheckForPeriodicalyReboot();
 }
 
-void PingPeriodicHandler::FirmwareCheckFailed(const char *IP) {
+void HandlersPooling_t::PingPeriodicHandler::FirmwareCheckFailed(const char *IP) {
 	CheckForPeriodicalyReboot();
 }
 
-void PingPeriodicHandler::CheckForPeriodicalyReboot() {
+void HandlersPooling_t::PingPeriodicHandler::CheckForPeriodicalyReboot() {
 	if (Time::Uptime() > 26*60*60)
 		BootAndRestore::Reboot(false);
 }
 
 
-void PingPeriodicHandler::Pool() {
+void HandlersPooling_t::PingPeriodicHandler::Pool() {
 	if (Device.Type.IsBattery() && Device.SensorMode == true)
 		return;
 
@@ -77,7 +50,7 @@ void PingPeriodicHandler::Pool() {
 		return;
 
 	/*
-	ESP_LOGE("PingPeriodicHandler", "%s", (Time::IsUptime(Time::Unixtime())) ? "Uptime" : "None");
+	ESP_LOGE("HandlersPooling_t::PingPeriodicHandler", "%s", (Time::IsUptime(Time::Unixtime())) ? "Uptime" : "None");
 	if (Time::Uptime() == 40) {
 		ESP_LOGE("UPTIME", "%d", Time::Uptime());
 		Time::TimezoneOffset+=2;
@@ -99,7 +72,7 @@ void PingPeriodicHandler::Pool() {
 			DateTime_t CurrentTime = Time::DateTime();
 
 			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000) && Device_t::IsAutoUpdate == true)
-				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, false, &PingPeriodicHandler::FirmwareCheckStarted, &PingPeriodicHandler::FirmwareCheckReadBody, &PingPeriodicHandler::FirmwareCheckFinished, &PingPeriodicHandler::FirmwareCheckFailed);
+				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, true, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckStarted, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckReadBody, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckFinished, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckFailed);
 			else
 			{
 				JSON TelemetryData;
@@ -129,7 +102,7 @@ void PingPeriodicHandler::Pool() {
 				QueryData.Method 	= QueryType::POST;
 				QueryData.POSTData 	= TelemetryData.ToString();
 
-				HTTPClient::Query(QueryData, true);
+				HTTPClient::Query(QueryData, true, true);
 			}
 		}
 	}
@@ -140,7 +113,7 @@ void PingPeriodicHandler::Pool() {
 	}
 }
 
-void PingPeriodicHandler::PerformLocalPing() {
+void HandlersPooling_t::PingPeriodicHandler::PerformLocalPing() {
 	IsRouterPingFinished.Take("IsRouterPingFinished");
 
 	ip_addr_t RouterServerIP;
@@ -157,7 +130,7 @@ void PingPeriodicHandler::PerformLocalPing() {
 	esp_ping_callbacks_t cbs;
 	cbs.on_ping_success = NULL;
 	cbs.on_ping_timeout = NULL;
-	cbs.on_ping_end 	= PingPeriodicHandler::RouterPingFinished;
+	cbs.on_ping_end 	= HandlersPooling_t::PingPeriodicHandler::RouterPingFinished;
 	cbs.cb_args 		= NULL;  // arguments that will feed to all callback functions, can be NULL
 
 	esp_ping_handle_t PingHandler;
@@ -170,7 +143,7 @@ void PingPeriodicHandler::PerformLocalPing() {
 	esp_ping_delete_session(PingHandler);
 }
 
-void PingPeriodicHandler::RouterPingFinished(esp_ping_handle_t hdl, void *args)
+void HandlersPooling_t::PingPeriodicHandler::RouterPingFinished(esp_ping_handle_t hdl, void *args)
 {
     uint32_t transmitted;
     uint32_t received;
@@ -183,5 +156,3 @@ void PingPeriodicHandler::RouterPingFinished(esp_ping_handle_t hdl, void *args)
 
     IsRouterPingFinished.Give();
 }
-
-#endif

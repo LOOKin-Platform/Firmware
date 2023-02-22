@@ -137,7 +137,7 @@ const EmberAfDeviceType gBridgedVideoPLayer[] 				= { { DEVICE_TYPE_VIDEOPLAYER,
 
 // Declare Descriptor cluster attributes
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(descriptorAttrs)
-    DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::DeviceTypeList::Id	, ARRAY, kDescriptorAttributeArraySize, 0),	/* device list */
+    DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::DeviceTypeList::Id	, ARRAY, kDescriptorAttributeArraySize, 0),		/* device list */
     DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::ServerList::Id		, ARRAY, kDescriptorAttributeArraySize, 0), 	/* server list */
     DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::ClientList::Id		, ARRAY, kDescriptorAttributeArraySize, 0), 	/* client list */
     DECLARE_DYNAMIC_ATTRIBUTE(Descriptor::Attributes::PartsList::Id			, ARRAY, kDescriptorAttributeArraySize, 0),  	/* parts list */
@@ -1336,16 +1336,19 @@ void Matter::CreateRemoteBridge() {
 
 	if (Meteo != nullptr && Meteo->GetSIEFlag()) 
 	{
-		MatterGenericDevice* HumiditySensorToAdd = new MatterHumiditySensor("Humidity sensor");
-		HumiditySensorToAdd->IsBridgedDevice = true;
-		//HumiditySensorToAdd->BridgedUUID = "FFFF";
-		AddDeviceEndpoint(HumiditySensorToAdd, &bridgedHumiditySensorEndpoint, Span<const EmberAfDeviceType>(gBridgedHumiditySensorDeviceTypes), 1);
-
+		SensorMeteo_t::SensorData MeteoSensorData = Meteo->GetValueFromSensor();
 
 		MatterGenericDevice* TempSensorToAdd = new MatterTempSensor("Temperature sensor");
 		TempSensorToAdd->IsBridgedDevice = true;
-		//TempSensorToAdd->BridgedUUID = "FFFE";
+		TempSensorToAdd->BridgedUUID = "FFFE";
+		((MatterTempSensor *)TempSensorToAdd)->SetTemperature(MeteoSensorData.Temperature, false);
 		AddDeviceEndpoint(TempSensorToAdd, &bridgedTempSensorEndpoint, Span<const EmberAfDeviceType>(gBridgedTempSensorDeviceTypes), 1);
+
+		MatterGenericDevice* HumiditySensorToAdd = new MatterHumiditySensor("Humidity sensor");
+		HumiditySensorToAdd->IsBridgedDevice = true;
+		HumiditySensorToAdd->BridgedUUID = "FFFF";
+		((MatterHumiditySensor *)HumiditySensorToAdd)->SetHumidity(MeteoSensorData.Humidity, false);
+		AddDeviceEndpoint(HumiditySensorToAdd, &bridgedHumiditySensorEndpoint, Span<const EmberAfDeviceType>(gBridgedHumiditySensorDeviceTypes), 1);
 	}
 }
 
@@ -1504,7 +1507,6 @@ void Matter::DeviceEventCallback(const ChipDeviceEvent * event, intptr_t arg)
 			{
 				ChipLogProgress(Shell, "Lost IPv6 connectivity...");
 			}
-
 			break;
 
 		case DeviceEventType::kCHIPoBLEConnectionEstablished:
@@ -1545,10 +1547,12 @@ MatterGenericDevice* Matter::GetDeviceByDynamicIndex(uint16_t Index) {
     return nullptr;
 }
 
-MatterGenericDevice* Matter::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type) {
+MatterGenericDevice* Matter::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID) {
     for (auto& DeviceItem : MatterDevices)
-		if (DeviceItem->GetTypeName() == Type)
-			return DeviceItem;
+		if (DeviceItem->GetTypeName() == Type) {
+			if (UUID == "" || (UUID != "" && Converter::ToUpper(DeviceItem->BridgedUUID) == Converter::ToUpper(UUID)))
+				return DeviceItem;
+		}
 
 	return nullptr;
 }

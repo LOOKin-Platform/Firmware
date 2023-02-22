@@ -118,7 +118,8 @@
 			"mstd_iterator": "cpp",
 			"memory_resource": "cpp",
 			"__assert": "cpp",
-			"__memory": "cpp"
+			"__memory": "cpp",
+			"*.tcc": "cpp"
 		}
 	}
 }

@@ -1,15 +1,6 @@
-#ifndef NETWORKMAP_HANDLER
-#define NETWORKMAP_HANDLER
+#include "HandlersPooling.h"
 
-#include "Globals.h"
-
-class NetworkMapHandler {
-	public:
-		static void 	Pool();
-		static void 	SetLastInfoReceivedTimer();
-};
-
-void NetworkMapHandler::Pool() {
+void HandlersPooling_t::NetworkMapHandler::Pool() {
 	if (Network.PoolingNetworkMapReceivedTimer == Settings.Pooling.NetworkMap.DefaultValue)
 		return;
 
@@ -24,5 +15,3 @@ void NetworkMapHandler::Pool() {
 		return;
 	}
 }
-
-#endif
