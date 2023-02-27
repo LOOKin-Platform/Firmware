@@ -7,7 +7,7 @@
 #include "BLEClient.h"
 #include "Globals.h"
 
-static char tag[] = "BLEClient";
+//static char tag[] = "BLEClient";
 
 BLEClient_t::BLEClient_t() {
 }

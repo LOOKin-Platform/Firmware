@@ -54,19 +54,8 @@ void HandlersPooling_t::CheckHandlers() {
 	LastHandlerFired = UptimeU;
 }
 
-void HandlersPooling_t::Test1() {
-	ESP_LOGE("Test1", "Fired");
-}
-
-void HandlersPooling_t::Test2() {
-	ESP_LOGE("Test2", "Fired");
-}
-
 void HandlersPooling_t::Pool () {
 	WiFiUptimeHandler::Start();
-
-	RegisterHandler(&Test1, 1000);
-	RegisterHandler(&Test2, 2000);
 
 	RegisterHandler(&HandlersPooling_t::OverheatHandler::Pool				, 900);
 	RegisterHandler(&HandlersPooling_t::WiFiUptimeHandler::Pool				, 950);
@@ -76,9 +65,14 @@ void HandlersPooling_t::Pool () {
 	RegisterHandler(&HandlersPooling_t::RemoteControlPeriodicHandler::Pool	, 500);
 	RegisterHandler(&HandlersPooling_t::PingPeriodicHandler::Pool			, 1000); // Once a second
 	RegisterHandler(&HandlersPooling_t::NetworkMapHandler::Pool				, 2000); // Once a 2 seconds
+
+	RegisterHandler(&Automation_t::TimeChangedPool							, 1000); // Once a second
+	RegisterHandler(&Scenario_t::ExecuteCommandsPool						, 76); 
+	
 	// Bluetooth handler switched off
 
-	while (1) {
+	while (1) 
+	{
 		if (Time::Uptime() % 10 == 0)
 			ESP_LOGI("Pooling","RAM left %d", esp_get_free_heap_size());
 

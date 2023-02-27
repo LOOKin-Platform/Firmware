@@ -16,12 +16,13 @@ static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
 
 static IRLib 				LastSignal;
-static uint32_t             SignalDetectedTime     = 0;
+static uint32_t             SignalDetectedTime     			= 0;
 
-static esp_timer_handle_t 	SignalReceivedTimer = NULL;
+static IRAM_ATTR esp_timer_handle_t 	
+							SignalReceivedTimer 			= NULL;
 
-static string 				SensorIRACCheckBuffer 		= "";
-static char 				SensorIRSignalCRCBuffer[96] = "\0";
+static string 				SensorIRACCheckBuffer 			= "";
+static char 				SensorIRSignalCRCBuffer[96] 	= "\0";
 
 class SensorIR_t : public Sensor_t {
 	public:
@@ -36,16 +37,6 @@ class SensorIR_t : public Sensor_t {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
 				RMT::ReceiveStart(RMT_CHANNEL_2);
 			}
-
-			const esp_timer_create_args_t TimerArgs = {
-				.callback 			= &SignalReceivedCallback,
-				.arg 				= NULL,
-				.dispatch_method 	= ESP_TIMER_TASK,
-				.name				= "SignalReceivedTimer",
-				.skip_unhandled_events = false
-			};
-
-			::esp_timer_create(&TimerArgs, &SignalReceivedTimer);
 
 			SetValue(0, "Protocol");
 			SetValue(0, "Signal");
@@ -67,6 +58,9 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		void Update() override {
+
+			ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
+
 			Values.clear();
 
 			uint32_t SignalDetectionTime = Time::UptimeToUnixTime(SignalDetectedTime);
@@ -190,8 +184,7 @@ class SensorIR_t : public Sensor_t {
 				LastSignal.RawData = SensorIRCurrentMessage;
 				LastSignal.ExternFillPostOperations();
 			}
-
-			/*
+/*
 			if (Settings.eFuse.DeviceID == 0x00000003 || Settings.eFuse.DeviceID == 0x00000004) {
 				string Output = "";
 				for (auto &Item : SensorIRCurrentMessage)
@@ -199,30 +192,46 @@ class SensorIR_t : public Sensor_t {
 
 				ESP_LOGI("Received", "%s", Output.c_str());
 			}
-			*/
-
+*/
 			SensorIRCurrentMessage.empty();
 
 			if (LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
 				Log::Add(Log::Events::Sensors::IRReceived);
 
-			::esp_timer_stop(SignalReceivedTimer);
-			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);
-		};
+			ESP_LOGE("Timer", "Before");
 
+			if (SignalReceivedTimer == NULL) {
+				const esp_timer_create_args_t TimerArgs = {
+					.callback 			= &SignalReceivedCallback,
+					.name				= "SignalReceivedTimer"
+				};
+
+				::esp_timer_create(&TimerArgs, &SignalReceivedTimer);
+			}
+
+			::esp_timer_stop(SignalReceivedTimer);
+			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);		
+		};
 
 		static void SignalReceivedCallback(void *Param) {
 			if (LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
 				return;
 
+			ESP_LOGE("1>> IR Signal size", "%d", LastSignal.RawData.size());
+
+
 			Sensor_t* Sensor = Sensor_t::GetSensorByID(SensorIRID);
 			Sensor->Update();
+
+			ESP_LOGE("2>> IR Signal size", "%d", LastSignal.RawData.size());
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
 
 			if (Settings.eFuse.Type == Settings.Devices.Remote)
 				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(LastSignal);
+
+			ESP_LOGE("3>> IR Signal size", "%d", LastSignal.RawData.size());
 
 			if (LastSignal.Protocol == 0xFF) {
 				string URL = Settings.ServerUrls.BaseURL + "/ac/match";
@@ -254,6 +263,9 @@ class SensorIR_t : public Sensor_t {
 
 		static bool ACCheckBody(char Data[], int DataLen, const char *IP) {
 			SensorIRACCheckBuffer += string(Data, DataLen);
+
+						ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
+
 			return true;
 		};
 
@@ -262,6 +274,9 @@ class SensorIR_t : public Sensor_t {
 				return;
 
 			vector<string> Codesets = JSON(SensorIRACCheckBuffer).GetStringArray();
+
+
+			ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
 
 			SensorIRACCheckBuffer = "";
 
@@ -288,6 +303,8 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		static void ACReadAborted(const char *IP) {
+			ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
+
 			SensorIRACCheckBuffer = "";
 		}
 

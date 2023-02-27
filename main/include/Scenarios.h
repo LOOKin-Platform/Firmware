@@ -39,51 +39,50 @@ struct ScenesCommandItem_t {
 class Data_t;
 
 class Scenario_t {
-	public:
-		const char*	PartitionName 	= "scenarios";
+  public:
+    const char*	PartitionName 	= "scenarios";
 
-		uint8_t     Type;
-		uint32_t    ID;
-		uint16_t	Name[Settings.Scenarios.NameLength] = { 0 };
-		Data_t      *Data;
+    uint8_t     Type;
+    uint32_t    ID;
+    uint16_t	Name[Settings.Scenarios.NameLength] = { 0 };
+    Data_t      *Data;
 
-		vector<ScenesCommandItem_t> Commands;
+    vector<ScenesCommandItem_t> Commands;
 
-		Scenario_t(uint8_t TypeHex = Settings.Scenarios.Types.EmptyHex);
-		~Scenario_t();
+    Scenario_t(uint8_t TypeHex = Settings.Scenarios.Types.EmptyHex);
+    ~Scenario_t();
 
-		void				SetType			(uint8_t TypeHex);
-		uint64_t  			GetDataUint64	();
-		string  			GetDataHexString();
-		void    			SetData			(uint64_t);
-		void    			SetData			(string);
+    void            SetType			(uint8_t TypeHex);
+    uint64_t        GetDataUint64	();
+    string  			  GetDataHexString();
+    void    			  SetData			(uint64_t);
+    void    			  SetData			(string);
 
-		bool    			IsEmpty();
+    bool            IsEmpty();
 
-		static void			ExecuteScenario(uint32_t ScenarioID);
-		static void			ExecuteCommandsTask(void *);
+    static void			ExecuteScenario(uint32_t ScenarioID);
+    static void			ExecuteCommandsPool();
 
-		static void			LoadScenarios();
-		static void			LoadScenario(Scenario_t &, uint32_t ScenarioID);
-		static void			LoadScenarioByAddress(Scenario_t &, uint32_t Address);
+    static void			LoadScenarios();
+    static void			LoadScenario(Scenario_t &, uint32_t ScenarioID);
+    static void			LoadScenarioByAddress(Scenario_t &, uint32_t Address);
 
-		static bool			SaveScenario	(Scenario_t);
-		static void			RemoveScenario	(uint32_t ScenarioID);
+    static bool			SaveScenario	(Scenario_t);
+    static void			RemoveScenario	(uint32_t ScenarioID);
 
-		static string		SerializeScene	(uint32_t ScanarioID);
-		static string		SerializeScene	(Scenario_t);
-		static Scenario_t	DeserializeScene(const char*);
+    static string		SerializeScene	(uint32_t ScanarioID);
+    static string		SerializeScene	(Scenario_t);
+    static Scenario_t	DeserializeScene(const char*);
 
-		template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<Settings_t::Scenarios_t::OperandBitLength>, size_t Start, size_t Length);
-		template <size_t SrcSize>     static void AddRangeTo(bitset<Settings_t::Scenarios_t::OperandBitLength> &, bitset<SrcSize>, size_t Position);
+    template <size_t ResultSize>  static bitset<ResultSize> Range(bitset<Settings_t::Scenarios_t::OperandBitLength>, size_t Start, size_t Length);
+    template <size_t SrcSize>     static void AddRangeTo(bitset<Settings_t::Scenarios_t::OperandBitLength> &, bitset<SrcSize>, size_t Position);
 
-		// HTTP Callbacks
-		static void ReadFinished(const char *);
-		static void Aborted(const char *);
+    // HTTP Callbacks
+    static void ReadFinished(const char *);
+    static void Aborted(const char *);
 
 	private:
 		static QueueHandle_t  Queue;
-		static uint8_t        ThreadsCounter;
 };
 
 class Data_t {
@@ -103,19 +102,19 @@ class Data_t {
 
 class EventData_t : public Data_t {
   public:
-	uint32_t			DeviceID          = 0;
-	uint8_t				SensorIdentifier  = 0;
+    uint32_t      DeviceID          = 0;
+    uint8_t				SensorIdentifier  = 0;
     uint8_t				EventCode         = 0;
     uint8_t				EventOperand      = 0;
 
-    bool				IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
-    void				SetData(bitset<Settings.Scenarios.OperandBitLength>) override;
+    bool          IsLinked(uint32_t, const vector<ScenesCommandItem_t>& = vector<ScenesCommandItem_t>())  override;
+    void          SetData(bitset<Settings.Scenarios.OperandBitLength>) override;
 
     uint64_t			ToUint64() override;
     string				ToString() override;
 
-    void				ExecuteCommands(uint32_t ScenarioID)  override;
-    bool				SensorUpdatedIsTriggered(uint8_t SensorID) override;
+    void          ExecuteCommands(uint32_t ScenarioID)  override;
+    bool          SensorUpdatedIsTriggered(uint8_t SensorID) override;
 
     ~EventData_t() 		{ ESP_LOGI("DESTRUCTOR", "EventDATA_t"); };
 };

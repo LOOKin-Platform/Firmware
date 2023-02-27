@@ -142,8 +142,6 @@ void BLEServer_t::CheckHIDMode() {
 }
 
 void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
-	return;
-
 	if (!IsHIDEnabledForDevice()) return;
 
 	if (CurrentMode == Mode) return;
@@ -251,7 +249,6 @@ void BLEServer_t::Deinit() {
 }
 
 void BLEServer_t::StartAdvertising() {
-	return;
 	if (IsHIDEnabledForDevice())
 		StartAdvertisingAsHID();
 	else

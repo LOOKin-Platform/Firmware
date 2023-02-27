@@ -38,7 +38,7 @@ class Automation_t {
 		uint32_t		CurrentVersion();
 
 		void			SensorChanged(uint8_t SensorID);
-		static void		TimeChangedTask(void *);
+		static void		TimeChangedPool();
 
 		uint8_t			ScenarioCacheItemCount();
 		void			AddScenarioCacheItem    	(Scenario_t);
@@ -52,8 +52,6 @@ class Automation_t {
 		JSON 			RootInfo();
 
 	private:
-		TaskHandle_t 	TimeChangedHandle;
-
 		vector<ScenarioCacheItem_t> ScenariosCache;
 		map<string, uint32_t>       VersionMap;
 

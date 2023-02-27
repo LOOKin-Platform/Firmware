@@ -335,7 +335,8 @@ void WebServer_t::UDPListenerTask(void *data) {
     int 	addr_family;
     int 	ip_protocol;
 
-    do {
+    do 
+	{
     	struct sockaddr_in dest_addr;
     	dest_addr.sin_addr.s_addr 	= htonl(INADDR_ANY);
     	dest_addr.sin_family 		= AF_INET;

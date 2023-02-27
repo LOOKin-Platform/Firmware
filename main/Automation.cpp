@@ -11,7 +11,6 @@ const char tag[] 				= "Automation";
 const char NVSAutomationArea[] 	= "Automation";
 
 Automation_t::Automation_t() {
-	TimeChangedHandle = NULL;
 	ScenariosCache  = vector<ScenarioCacheItem_t>();
 	VersionMap      = map<string, uint32_t>();
 }
@@ -21,8 +20,6 @@ void Automation_t::Init() {
 
 	Scenario_t::LoadScenarios();
 	LoadVersionMap();
-
-	TimeChangedHandle = FreeRTOS::StartTask(TimeChangedTask, "TimeChangedTask", NULL, Settings.Scenarios.TimeChangedTaskSize);
 }
 
 uint32_t Automation_t::CurrentVersion() {
@@ -51,25 +48,17 @@ void Automation_t::SensorChanged(uint8_t SensorID) {
 	}
 }
 
-void Automation_t::TimeChangedTask(void *) {
-	while (1) {
-		while (Time::Unixtime()%Settings.Scenarios.TimePoolInterval != 0)
-			FreeRTOS::Sleep(1000);
+void Automation_t::TimeChangedPool() {
+	for (auto& ScenarioCacheItem : Automation.ScenariosCache)
+		if (ScenarioCacheItem.IsLinked == true && ScenarioCacheItem.ScenarioType == 0x02) {
+			Scenario_t *Scenario = new Scenario_t(ScenarioCacheItem.ScenarioType);
+			Scenario->SetData(ScenarioCacheItem.Operand);
 
-		for (auto& ScenarioCacheItem : Automation.ScenariosCache)
-			if (ScenarioCacheItem.IsLinked == true && ScenarioCacheItem.ScenarioType == 0x02) {
-				Scenario_t *Scenario = new Scenario_t(ScenarioCacheItem.ScenarioType);
-				Scenario->SetData(ScenarioCacheItem.Operand);
+			if (Scenario->Data->TimeUpdatedIsTriggered())
+				Scenario->Data->ExecuteCommands(ScenarioCacheItem.ScenarioID);
 
-				if (Scenario->Data->TimeUpdatedIsTriggered())
-					Scenario->Data->ExecuteCommands(ScenarioCacheItem.ScenarioID);
-
-				delete Scenario;
-			}
-
-		if (Settings.Scenarios.TimePoolInterval > 1)
-			FreeRTOS::Sleep(1000);
-	}
+			delete Scenario;
+		}
 }
 
 void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) {

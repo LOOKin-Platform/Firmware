@@ -264,15 +264,11 @@ class Settings_t {
 			static constexpr uint8_t		QueueSize		= 64;
 			static constexpr uint16_t		BlockTicks		= 50;
 
-			//! Обьединить эти таски перед релизом, чтобы сократить занимаемую память
-			static constexpr uint16_t		TaskStackSize	= 2048;
-			static constexpr uint16_t		TimeChangedTaskSize = 2048;
-
 			static constexpr uint16_t		OperandBitLength= 64;
 			static constexpr uint8_t		NameLength		= 64;
 			static constexpr uint8_t		CacheBitLength	= 32;
 
-			static constexpr uint8_t		TimePoolInterval= 5;
+			//static constexpr uint8_t		TimePoolInterval= 5;
 
 			struct Types_t {
 				static constexpr uint8_t	EventHex		= 0x00;

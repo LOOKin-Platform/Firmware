@@ -9,7 +9,6 @@
 static char tag[] = "Scenarios";
 
 QueueHandle_t Scenario_t::Queue = FreeRTOS::Queue::Create(Settings.Scenarios.QueueSize, sizeof( uint32_t ));
-uint8_t       Scenario_t::ThreadsCounter = 0;
 
 Scenario_t::Scenario_t(uint8_t TypeHex) {
 	this->ID		= 0;
@@ -67,58 +66,56 @@ bool Scenario_t::IsEmpty() {
 
 void Scenario_t::ExecuteScenario(uint32_t ScenarioID) {
 	FreeRTOS::Queue::SendToBack(Scenario_t::Queue, &ScenarioID, (TickType_t) Settings.Scenarios.BlockTicks );
-
-	if (ThreadsCounter <= 0 && FreeRTOS::Queue::Count(Scenario_t::Queue)) {
-		ThreadsCounter = 1;
-		FreeRTOS::StartTask(ExecuteCommandsTask, "ExecuteCommandsTask", ( void * )(uint32_t)ThreadsCounter, Settings.Scenarios.TaskStackSize);
-	}
 }
 
-void Scenario_t::ExecuteCommandsTask(void *TaskData) {
-	ESP_LOGD(tag, "Scenario executed task %u created", (uint32_t) TaskData);
+void Scenario_t::ExecuteCommandsPool() {
+	if (Queue == 0)
+		return;
+
+	if (FreeRTOS::Queue::Count(Scenario_t::Queue) == 0)
+		return;
 
 	uint32_t ScenarioID = 0;
 
+	ESP_LOGD(tag, "Scenario executed task executed");
+
 	PowerManagement::AddLock("AutomationTask");
 
-	if (Queue != 0)
-		while (FreeRTOS::Queue::Receive(Scenario_t::Queue, &ScenarioID, (TickType_t) Settings.Scenarios.TaskStackSize)) {
-			Scenario_t Scenario;
+	while (FreeRTOS::Queue::Receive(Scenario_t::Queue, &ScenarioID)) 
+	{
+		Scenario_t Scenario;
 
-			LoadScenario(Scenario,ScenarioID);
+		LoadScenario(Scenario,ScenarioID);
 
-			for (ScenesCommandItem_t Command : Scenario.Commands)
-				if (Scenario.Data->IsCommandNeedToExecute(Command)) {
-					if (Command.DeviceID == Settings.eFuse.DeviceID) 
-					{
-						// выполнить локальную команду
-						Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
-						if (CommandToExecute!=nullptr) {
-							string Operand =  Converter::ToString((uint32_t)Command.Operand);
-							CommandToExecute->Execute(Command.EventCode, Operand.c_str());
-						}
+		for (ScenesCommandItem_t Command : Scenario.Commands) {
+			if (Scenario.Data->IsCommandNeedToExecute(Command)) {
+				if (Command.DeviceID == Settings.eFuse.DeviceID) 
+				{
+					// выполнить локальную команду
+					Command_t *CommandToExecute = Command_t::GetCommandByID(Command.CommandID);
+					if (CommandToExecute!=nullptr) {
+						string Operand =  Converter::ToString((uint32_t)Command.Operand);
+						CommandToExecute->Execute(Command.EventCode, Operand.c_str());
 					}
-					else 
-					{
-						// отправить команду по HTTP
-						NetworkDevice_t NetworkDevice = Network.GetNetworkDeviceByID(Command.DeviceID);
+				}
+				else 
+				{
+					// отправить команду по HTTP
+					NetworkDevice_t NetworkDevice = Network.GetNetworkDeviceByID(Command.DeviceID);
 
-						if (!NetworkDevice.IP.empty() && NetworkDevice.IsActive) {
-							string URL = "/commands?command=" + Converter::ToHexString(Command.CommandID,2) +
-								"&action=" + Converter::ToHexString(Command.EventCode,2) +
-								"&operand=" + Converter::ToHexString(Command.Operand, 8);
+					if (!NetworkDevice.IP.empty() && NetworkDevice.IsActive) {
+						string URL = "/commands?command=" + Converter::ToHexString(Command.CommandID,2) +
+							"&action=" + Converter::ToHexString(Command.EventCode,2) +
+							"&operand=" + Converter::ToHexString(Command.Operand, 8);
 
-							HTTPClient::Query("http://" + NetworkDevice.IP + URL, QueryType::GET, false, true, NULL, NULL, &ReadFinished, &Aborted);
-						}
+						HTTPClient::Query("http://" + NetworkDevice.IP + URL, QueryType::GET, false, true, NULL, NULL, &ReadFinished, &Aborted);
 					}
 				}
 			}
+		}
+	}
 
 	PowerManagement::ReleaseLock("AutomationTask");
-
-	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
-	Scenario_t::ThreadsCounter--;
-	FreeRTOS::DeleteTask();
 }
 
 void Scenario_t::LoadScenarios() {

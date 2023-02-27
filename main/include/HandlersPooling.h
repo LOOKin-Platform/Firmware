@@ -29,9 +29,6 @@ class HandlersPooling_t {
 
 		static void CheckHandlers();
 
-		static void Test1();
-		static void Test2();
-
 		static void Pool ();
 
 		class PingPeriodicHandler {
