@@ -12,12 +12,11 @@ using namespace std;
 #include <map>
 #include <vector>
 
-#include "driver/timer.h"
+#include "driver/gptimer.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 
 typedef void (*ISRCallback)(void *);
-typedef void (*ISRTimerCallback)(void *);
 
 class ISR {
 	public:
@@ -34,20 +33,16 @@ class ISR {
 
 		class HardwareTimer {
 			public:
-				HardwareTimer(timer_group_t = TIMER_GROUP_MAX, timer_idx_t = TIMER_MAX, uint64_t = 100, ISRTimerCallback = NULL, void *Param = NULL);
+				HardwareTimer(uint64_t = 100, gptimer_alarm_cb_t Callback = NULL, void *Param = NULL);
 				~HardwareTimer();
 
-				void SetCallback(ISRTimerCallback);
+				void SetCallback(gptimer_alarm_cb_t Callback);
 				void Start();
 				void Pause();
 				void Stop();
 
-				static void CallbackPrefix(timer_group_t, timer_idx_t);
-
 			private:
-				intr_handle_t 	s_timer_handle;
-				timer_group_t 	TimerGroup;
-				timer_idx_t		TimerIndex;
+				gptimer_handle_t TimerHandle;
 		};
 
 	private:

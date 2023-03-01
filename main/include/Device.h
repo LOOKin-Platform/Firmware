@@ -20,6 +20,8 @@
 #include <esp_wifi.h>
 #include <esp_log.h>
 
+#include "esp_mac.h"
+
 #include "Settings.h"
 #include "WebServer.h"
 #include "JSON.h"

@@ -22,6 +22,8 @@
 #include "WiFi.h"
 #include "Wireless.h"
 
+#include "esp_timer.h"
+
 #include <IRLib.h>
 
 extern DataEndpoint_t *Data;
@@ -545,17 +547,23 @@ class DataRemote_t : public DataEndpoint_t {
 			nvs_handle handle;
 			nvs_open(DataEndpoint_t::NVSArea.c_str(), NVS_READONLY, &handle);
 
-			nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY);
-			while (it != NULL) {
+			nvs_iterator_t it = nullptr;
+			
+			esp_err_t res = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY, &it);
+			
+			while (res == ESP_OK) 
+			{
 				nvs_entry_info_t info;
 				nvs_entry_info(it, &info);
-				it = nvs_entry_next(it);
+				res = nvs_entry_next(&it);
 
 				string Key(info.key);
 
 				if (Key.size() == 4)
 					AddOrUpdateDeviceToCache(LoadDevice(Key));
 			}
+
+			nvs_release_iterator(it);
 		}
 
 		void RemoveDeviceFromCache(string UUID) {
@@ -1696,7 +1704,7 @@ class DataRemote_t : public DataEndpoint_t {
 						ESP_LOGE("-->"		, "%02X %s"	, MapItem.first, MapItem.second.first.c_str());
 
 						for (auto& MapFunctionItem : MapItem.second.second)
-							ESP_LOGE("---->", "%02X %08X %04X", get<0>(MapFunctionItem), get<1>(MapFunctionItem), get<2>(MapFunctionItem));
+							ESP_LOGE("---->", "%02X %lX %04X", get<0>(MapFunctionItem), get<1>(MapFunctionItem), get<2>(MapFunctionItem));
 					}
 				}
 			}

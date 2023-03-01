@@ -2,8 +2,8 @@
 
 void HandlersPooling_t::EnergyPeriodicHandler::Init() {
     adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_11db);
-    adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_11db);
+    adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11);
+    adc1_config_channel_atten(ADC1_CHANNEL_5, ADC_ATTEN_DB_11);
 
     IsInited = true;
 }

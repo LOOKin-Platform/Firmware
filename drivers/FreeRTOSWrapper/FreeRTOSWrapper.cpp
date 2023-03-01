@@ -352,7 +352,7 @@ void FreeRTOS::Timer::ChangePeriod(TickType_t newPeriod, TickType_t blockTime) {
  * @return The name of the timer.
  */
 const char *FreeRTOS::Timer::GetName() {
-	return ::pcTimerGetTimerName(timerHandle);
+	return ::pcTimerGetName(timerHandle);
 } // getName
 
 
@@ -500,19 +500,19 @@ void FreeRTOS::GetRunTimeStats()
 				ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
 
 				if( ulStatsAsPercentage > 0UL )
-					printf("> %30s %d %10lu%% %5d %5d\n",
+					printf("> %30s %" PRIu32 " %10lu%% %5d %5d\n",
                                  fuckit->pcTaskName,
                                  fuckit->ulRunTimeCounter,
                                  ulStatsAsPercentage,
                                 *((int *)(&fuckit->usStackHighWaterMark)+1),
                                 fuckit->uxBasePriority);
 				else
-					printf("> %30s %d %10s  %5d %5d\n",
+					printf("> %30s %" PRIu32 " %10s %" PRIu32 " %" PRIu32 "\n",
                                  fuckit->pcTaskName,
                                  fuckit->ulRunTimeCounter,
                                  "<1%",
                                  *((uint32_t *)(&fuckit->usStackHighWaterMark)+1),
-                                 fuckit->uxBasePriority);
+                                 (uint32_t)fuckit->uxBasePriority);
 			}
 		}
 

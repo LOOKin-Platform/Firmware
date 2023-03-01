@@ -5,6 +5,8 @@
 */
 
 #include "ISR.h"
+#include <string.h>
+
 
 map<gpio_num_t, ISR::InterruptData_t> ISR::Interrupts = {};
 
@@ -54,72 +56,51 @@ void ISR::Install() {
  * @param [in] TimerIndex ESP32 Timer Index.
  * @param [in] Interval	 ESP32 Timer Interval.
  */
-ISR::HardwareTimer::HardwareTimer(timer_group_t TimerGroup, timer_idx_t TimerIndex, uint64_t Interval, ISRTimerCallback Callback, void *Param) {
-	this->TimerGroup = TimerGroup;
-	this->TimerIndex = TimerIndex;
+ISR::HardwareTimer::HardwareTimer(uint64_t Interval, gptimer_alarm_cb_t Callback, void *Param) {
+	this->TimerHandle = NULL;
 
-	if (TimerGroup == TIMER_GROUP_MAX || TimerIndex == TIMER_MAX)
-		return;
+	gptimer_config_t timer_config;
+	memset(&timer_config, 0, sizeof(timer_config));
 
-	timer_config_t config = {
-            .alarm_en 		= TIMER_ALARM_EN,
-            .counter_en 	= TIMER_PAUSE,
-            .intr_type 		= TIMER_INTR_LEVEL,
-            .counter_dir 	= TIMER_COUNT_UP,
-            .auto_reload 	= TIMER_AUTORELOAD_EN,
-            .divider 		= 80   /* 1 us per tick */
-    };
+	timer_config.clk_src = GPTIMER_CLK_SRC_DEFAULT;
+	timer_config.direction = GPTIMER_COUNT_UP;
+	timer_config.resolution_hz = 1 * 1000 * 1000; // 1MHz, 1 tick = 1us
+	timer_config.flags.intr_shared  = 1;
 
-    timer_init(TimerGroup, TimerIndex, &config);
-    timer_pause(TimerGroup, TimerIndex);
-    timer_set_counter_value(TimerGroup, TimerIndex, 0x00000000ULL);
-    timer_set_alarm_value(TimerGroup, TimerIndex, Interval);
-    timer_enable_intr(TimerGroup, TimerIndex);
-    timer_isr_register(TimerGroup, TimerIndex, Callback, Param, 0, &s_timer_handle);
+	gptimer_new_timer(&timer_config, &TimerHandle);
+	gptimer_stop(TimerHandle);
+	gptimer_set_raw_count(TimerHandle, 0x00000000ULL);
+
+	gptimer_alarm_config_t alarm_config;
+	memset(&alarm_config, 0, sizeof(alarm_config));
+	alarm_config.alarm_count = Interval;
+	alarm_config.flags.auto_reload_on_alarm = true;
+		
+	gptimer_set_alarm_action(TimerHandle, &alarm_config);
+
+	gptimer_event_callbacks_t CallbacksStruct;
+	memset(&CallbacksStruct, 0, sizeof(CallbacksStruct));
+	CallbacksStruct.on_alarm = Callback;
+
+	gptimer_register_event_callbacks(TimerHandle, &CallbacksStruct, Param);
 }
 
 ISR::HardwareTimer::~HardwareTimer() {
 }
 
 void ISR::HardwareTimer::Start() {
-	if (TimerGroup != TIMER_GROUP_MAX && TimerIndex != TIMER_MAX)
-		timer_start(TimerGroup, TimerIndex);
+	if (TimerHandle != NULL)
+		gptimer_start(TimerHandle);
 }
 
 void ISR::HardwareTimer::Pause() {
-	if (TimerGroup != TIMER_GROUP_MAX && TimerIndex != TIMER_MAX)
-		timer_pause(TimerGroup, TimerIndex);
+	if (TimerHandle != NULL)
+		gptimer_stop(TimerHandle);
 }
 
 void ISR::HardwareTimer::Stop() {
-	if (TimerGroup != TIMER_GROUP_MAX && TimerIndex != TIMER_MAX) {
-		timer_pause(TimerGroup, TimerIndex);
-		timer_disable_intr(TimerGroup, TimerIndex);
-	}
-}
-
-void ISR::HardwareTimer::CallbackPrefix(timer_group_t TimerGroup, timer_idx_t Timer) {
-	if (TimerGroup == TIMER_GROUP_0) {
-		if (Timer == TIMER_0) {
-			TIMERG0.int_clr_timers.t0 = 1;
-			TIMERG0.hw_timer[0].config.alarm_en = 1;
-		}
-
-		if (Timer == TIMER_1) {
-			TIMERG0.int_clr_timers.t1 = 1;
-			TIMERG0.hw_timer[1].config.alarm_en = 1;
-		}
-	}
-
-	if (TimerGroup == TIMER_GROUP_1) {
-		if (Timer == TIMER_0) {
-			TIMERG1.int_clr_timers.t0 = 1;
-			TIMERG1.hw_timer[0].config.alarm_en = 1;
-		}
-
-		if (Timer == TIMER_1) {
-			TIMERG1.int_clr_timers.t1 = 1;
-			TIMERG1.hw_timer[1].config.alarm_en = 1;
-		}
+	if (TimerHandle != NULL) {
+		gptimer_stop(TimerHandle);
+		gptimer_disable(TimerHandle);
 	}
 }

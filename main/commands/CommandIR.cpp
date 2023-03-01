@@ -596,7 +596,7 @@ class CommandIR_t : public Command_t {
 			CommandIRTXDataMap[HashID] = TXPause;
 
 			if (SendToCommandIRQueue(HashID))
-				ESP_LOGD("RMT", "Added to queue PAUSE with length: %d", PauseLength);
+				ESP_LOGD("RMT", "Added to queue PAUSE with length: %lu", PauseLength);
 		}
 
 		static bool TXSend(vector<int32_t> &TXItemData, uint16_t Frequency = 38000, bool ShouldFree = true) {
@@ -769,7 +769,7 @@ class CommandIR_t : public Command_t {
 
 		        		if (CommandIRTXDataMap[HashID].NVSItem == CommandIRTXPause)
 		        		{
-		        			ESP_LOGD("RMT TX TASK", "Pause for: %d ms", CommandIRTXDataMap[HashID].Frequency);
+		        			ESP_LOGD("RMT TX TASK", "Pause for: %lu ms", CommandIRTXDataMap[HashID].Frequency);
 		        			FreeRTOS::Sleep(CommandIRTXDataMap[HashID].Frequency);
 		        		}
 		        		else if (CommandIRTXDataMap[HashID].NVSItem.size() > 4 && (CommandIRTXDataMap[HashID].NVSItem.rfind(Settings.CommandsConfig.BLE.DataPrefix, 0) == 0)) {
@@ -807,7 +807,7 @@ class CommandIR_t : public Command_t {
 
 		        			RMT::TXSend(TXChannel);
 
-		        			ESP_LOGI("RMT TX TASK", "Sended signal with frequency %u", CommandIRTXDataMap[HashID].Frequency);
+		        			ESP_LOGI("RMT TX TASK", "Sended signal with frequency %lu", CommandIRTXDataMap[HashID].Frequency);
 
 		        			LastFrequency = CommandIRTXDataMap[HashID].Frequency;
 

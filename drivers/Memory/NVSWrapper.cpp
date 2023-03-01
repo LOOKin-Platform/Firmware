@@ -75,45 +75,63 @@ void NVS::Erase(string key) {
 } // erase
 
 void NVS::EraseStartedWith(string Key) {
-	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY);
-	while (it != NULL) {
+	nvs_iterator_t it = nullptr;
+	esp_err_t res = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY, &it);
+
+	while (res == ESP_OK) 
+	{
 		nvs_entry_info_t info;
 		nvs_entry_info(it, &info);
-		it = nvs_entry_next(it);
+		res = nvs_entry_next(&it);
 
 		string ItemKey(info.key);
 		string ItemKeyForComprasion  = Converter::ToLower(ItemKey);
 
 		if (Converter::StartsWith(ItemKeyForComprasion, Converter::ToLower(Key)))
 			Erase(ItemKey);
-	};
+	}
+
+	nvs_release_iterator(it);
 }
 
 bool NVS::IsKeyExists(string Key) {
-	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY);
-	while (it != NULL) {
+	nvs_iterator_t it = nullptr;
+
+	esp_err_t res = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY, &it);
+	
+	while (res == ESP_OK)
+	{
 		nvs_entry_info_t info;
 		nvs_entry_info(it, &info);
-		it = nvs_entry_next(it);
+		res = nvs_entry_next(&it);
 
 		string ItemKey(info.key);
 
-		if (Converter::ToLower(ItemKey) == Converter::ToLower(Key))
+		if (Converter::ToLower(ItemKey) == Converter::ToLower(Key)) {
+			nvs_release_iterator(it);
 			return true;
-	};
+		}
+	}
+
+	nvs_release_iterator(it);
 
 	return false;
 }
 
 void NVS::EraseNamespace() {
-	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY);
-	while (it != NULL) {
+	nvs_iterator_t it = nullptr;
+	esp_err_t res = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY, &it);
+
+	while (res == ESP_OK) 
+	{
 		nvs_entry_info_t info;
 		nvs_entry_info(it, &info);
-		it = nvs_entry_next(it);
+		res = nvs_entry_next(&it);
 
 		Erase(info.key);
 	};
+
+	nvs_release_iterator(it);
 }
 
 void NVS::ClearAll() {
@@ -137,11 +155,13 @@ esp_err_t NVS::GetLastError() {
 vector<string> NVS::FindAllStartedWith(string Key) {
 	vector<string> Result = vector<string>();
 
-	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY);
-	while (it != NULL) {
+	nvs_iterator_t it = nullptr;
+	esp_err_t res = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, m_name.c_str(), NVS_TYPE_ANY, &it);
+
+	while (res == ESP_OK) {
 		nvs_entry_info_t info;
 		nvs_entry_info(it, &info);
-		it = nvs_entry_next(it);
+		res = nvs_entry_next(&it);
 
 		string ItemKey(info.key);
 		string ItemKeyForComprasion  = Converter::ToLower(ItemKey);
@@ -149,6 +169,8 @@ vector<string> NVS::FindAllStartedWith(string Key) {
 		if (Converter::StartsWith(ItemKeyForComprasion, Converter::ToLower(Key)))
 			Result.push_back(ItemKey);
 	}
+
+	nvs_release_iterator(it);
 
 	return Result;
 }

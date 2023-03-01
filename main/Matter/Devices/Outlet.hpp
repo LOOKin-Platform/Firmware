@@ -48,7 +48,7 @@ class MatterOutlet : public MatterGenericDevice {
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
         {
-            ESP_LOGE("Light", "HandleReadOnOffAttribute: attrId=%d, maxReadLength=%d", AttributeID, maxReadLength);
+            ESP_LOGE("Light", "HandleReadOnOffAttribute: attrId=%lu, maxReadLength=%d", AttributeID, maxReadLength);
 
             if ((AttributeID == OnOff::Attributes::OnOff::Id) && (maxReadLength == 1))
             {
@@ -67,7 +67,7 @@ class MatterOutlet : public MatterGenericDevice {
         }
 
         EmberAfStatus HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override {
-            ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=%d attrId=%d", ClusterID, AttributeID);
+            ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=0x%lx attrId=0x%lx", ClusterID, AttributeID);
 
             ReturnErrorCodeIf((AttributeID != OnOff::Attributes::OnOff::Id) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
                         

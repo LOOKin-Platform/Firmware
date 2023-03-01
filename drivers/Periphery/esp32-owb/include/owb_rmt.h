@@ -39,6 +39,7 @@
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
 #include "driver/rmt.h"
+#include "soc/gpio_periph.h"
 
 #ifdef __cplusplus
 extern "C" {

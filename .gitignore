@@ -11,6 +11,7 @@ snippets
 zconf.hash.i
 zconf.hash.s
 docs/
+managed_components/
 Doxyfile
 
 remote_factory.bin

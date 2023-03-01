@@ -37,7 +37,8 @@
 #ifndef OWB_GPIO_H
 #define OWB_GPIO_H
 
-#include "../../../periphery/esp32-owb/include/owb.h"
+#include "owb.h"
+#include "rom/ets_sys.h"
 
 #ifdef __cplusplus
 extern "C" {

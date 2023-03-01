@@ -39,6 +39,8 @@
 #ifndef WIFI_EVENTHANDLER_H_
 #define WIFI_EVENTHANDLER_H_
 #include <esp_event.h>
+#include "esp_netif_types.h"
+#include "esp_wifi_types.h"
 
 /**
  * @brief %WiFi state event handler.
@@ -91,7 +93,7 @@ class WiFiEventHandler {
 		virtual esp_err_t 	apStart();
 		virtual esp_err_t 	apStop();
 		virtual esp_err_t 	staConnected();
-		virtual esp_err_t 	staDisconnected(system_event_sta_disconnected_t DisconnectedInfo);
+		virtual esp_err_t 	staDisconnected(wifi_event_sta_disconnected_t DisconnectedInfo);
 		virtual esp_err_t 	staGotIPv4(ip_event_got_ip_t GotIPv4Info);
 		virtual esp_err_t 	staGotIPv6(ip_event_got_ip6_t GotIPv6Info);
 		virtual esp_err_t	staLostIp();

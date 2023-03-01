@@ -57,7 +57,7 @@ void WiFiEventHandler::EventHandler(void *event_handler_arg, esp_event_base_t ev
 		pWiFiEventHandler->staLostIp();
 	}
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
 		wifi_event_sta_disconnected_t* DisconnectedInfo = (wifi_event_sta_disconnected_t*) event_data;
 		pWiFiEventHandler->staDisconnected(*DisconnectedInfo);
 	}
@@ -160,7 +160,7 @@ esp_err_t WiFiEventHandler::staConnected() {
 	return ESP_OK;
 } // staConnected
 
-esp_err_t WiFiEventHandler::staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
+esp_err_t WiFiEventHandler::staDisconnected(wifi_event_sta_disconnected_t DisconnectedInfo) {
 	ESP_LOGD(tag, "default staDisconnected");
 	return ESP_OK;
 } // staDisconnected

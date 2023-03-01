@@ -37,7 +37,7 @@ typedef void (*IRChannelCallbackEnd)();
 class RMT {
 	public:
 		struct IRChannelInfo {
-			TaskHandle_t			Handle 			= 0;
+			TaskHandle_t			Handle 			= NULL;
 			gpio_num_t				Pin				= GPIO_NUM_0;
 			uint16_t				Frequency		= 0;
 			IRChannelCallbackStart 	CallbackStart 	= nullptr;

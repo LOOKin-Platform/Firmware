@@ -423,7 +423,7 @@ void Device_t::ExecuteOTATask(void*) {
 
 	RemoteControl.Stop();
 
-	ESP_LOGI("Pooling","RAM left %d", esp_get_free_heap_size());
+	ESP_LOGI("Pooling","RAM left %lu", esp_get_free_heap_size());
 
 	OTA::Update(FirmwareURLForOTA, OTAStartedCallback, OTAFailedCallback);
 

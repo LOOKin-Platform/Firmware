@@ -31,7 +31,7 @@
  *
  */
 
-#include "../../Periphery/esp32-ds18b20/include/ds18b20.h"
+#include "ds18b20.h"
 
 #include <stddef.h>
 #include <string.h>
@@ -40,13 +40,14 @@
 #include <stdint.h>
 #include <math.h>
 
-#include "../../periphery/esp32-owb/include/owb.h"
+#include "owb.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
 #include "esp_system.h"
 #include "esp_log.h"
 
+#include "esp_timer.h"
 
 static const char * TAG = "ds18b20";
 static const int T_CONV = 750;   // maximum conversion time at 12-bit resolution in milliseconds

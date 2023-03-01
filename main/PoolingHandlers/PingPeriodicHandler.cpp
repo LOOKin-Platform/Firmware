@@ -152,7 +152,7 @@ void HandlersPooling_t::PingPeriodicHandler::RouterPingFinished(esp_ping_handle_
     esp_ping_get_profile(hdl, ESP_PING_PROF_REQUEST, &transmitted, sizeof(transmitted));
     esp_ping_get_profile(hdl, ESP_PING_PROF_REPLY, &received, sizeof(received));
     esp_ping_get_profile(hdl, ESP_PING_PROF_DURATION, &total_time_ms, sizeof(total_time_ms));
-    printf("%d packets transmitted, %d received, time %dms\n", transmitted, received, total_time_ms);
+    printf("%lu packets transmitted, %lu received, time %lums\n", transmitted, received, total_time_ms);
 
     IsRouterPingFinished.Give();
 }

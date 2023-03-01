@@ -57,10 +57,10 @@ void Log::Add(uint16_t Code, uint32_t Data) {
 			Items.erase(Items.begin());
 
 		if (GetItemType(Code) == ERROR)
-			ESP_LOGE(tag, "Error code %04X(%08X)", Code, Data);
+			ESP_LOGE(tag, "Error code %04X(%lX)", Code, Data);
 
 		if (GetItemType(Code) == INFO)
-			ESP_LOGE(tag, "Info code %04X(%08X)", Code, Data);
+			ESP_LOGE(tag, "Info code %04X(%lX)", Code, Data);
 	}
 
 	Indicator_t::Display(Code);
@@ -399,7 +399,6 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
  */
 void Log::Indicator_t::IndicatorCallback(void *Param) {
 	Settings_t::GPIOData_t::Indicator_t GPIOSettings = Settings.GPIOData.GetCurrent().Indicator;
-	ISR::HardwareTimer::CallbackPrefix(GPIOSettings.ISRTimerGroup, GPIOSettings.ISRTimerIndex);
 
 	if (tBlinking == NONE) {
 		::esp_timer_stop(IndicatorTimer);

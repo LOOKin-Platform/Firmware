@@ -10,6 +10,8 @@
 
 #include "Data.h"
 
+#include "esp_timer.h"
+
 extern DataEndpoint_t *Data;
 
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
@@ -59,7 +61,7 @@ class SensorIR_t : public Sensor_t {
 
 		void Update() override {
 
-			ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
+			ESP_LOGE("IR Signal size from Update", "%d", LastSignal.RawData.size());
 
 			Values.clear();
 
@@ -217,21 +219,14 @@ class SensorIR_t : public Sensor_t {
 			if (LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
 				return;
 
-			ESP_LOGE("1>> IR Signal size", "%d", LastSignal.RawData.size());
-
-
 			Sensor_t* Sensor = Sensor_t::GetSensorByID(SensorIRID);
 			Sensor->Update();
-
-			ESP_LOGE("2>> IR Signal size", "%d", LastSignal.RawData.size());
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
 
 			if (Settings.eFuse.Type == Settings.Devices.Remote)
 				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(LastSignal);
-
-			ESP_LOGE("3>> IR Signal size", "%d", LastSignal.RawData.size());
 
 			if (LastSignal.Protocol == 0xFF) {
 				string URL = Settings.ServerUrls.BaseURL + "/ac/match";
@@ -264,8 +259,6 @@ class SensorIR_t : public Sensor_t {
 		static bool ACCheckBody(char Data[], int DataLen, const char *IP) {
 			SensorIRACCheckBuffer += string(Data, DataLen);
 
-						ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
-
 			return true;
 		};
 
@@ -275,8 +268,7 @@ class SensorIR_t : public Sensor_t {
 
 			vector<string> Codesets = JSON(SensorIRACCheckBuffer).GetStringArray();
 
-
-			ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
+			ESP_LOGE("IR Signal size from ACCheckFinished", "%d", LastSignal.RawData.size());
 
 			SensorIRACCheckBuffer = "";
 
@@ -303,7 +295,7 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		static void ACReadAborted(const char *IP) {
-			ESP_LOGE("IR Signal size", "%d", LastSignal.RawData.size());
+			ESP_LOGE("IR Signal size from ACReadAborted", "%d", LastSignal.RawData.size());
 
 			SensorIRACCheckBuffer = "";
 		}

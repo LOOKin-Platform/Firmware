@@ -86,7 +86,7 @@ class MatterTempSensor : public MatterGenericDevice {
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
         {
-            ESP_LOGE("HandleReadAttribute TEMP SENSOR", "%d %d %d", ClusterID, AttributeID, maxReadLength);
+            ESP_LOGE("HandleReadAttribute TEMP SENSOR", "%lu 0x%lx %d", ClusterID, AttributeID, maxReadLength);
 
             if ((AttributeID == TemperatureMeasurement::Attributes::MeasuredValue::Id) && (maxReadLength == 2))
             {             

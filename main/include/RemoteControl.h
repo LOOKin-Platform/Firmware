@@ -43,14 +43,14 @@ class RemoteControl_t {
 
 		string 				GetClientID();
 
-		static esp_err_t 	mqtt_event_handler(esp_mqtt_event_handle_t event);
+		static void 		mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
 
 		static int 			SendMessage (string Payload, string Topic = "",
 				uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
 
-		static string		StartChunk 	(int MessageID = 0, uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
-		static void 		SendChunk 	(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID = 0,uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
-		static void 		EndChunk 	(string ChunkHash, int MessageID = 0,uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
+		static string		StartChunk 	(uint32_t MessageID = 0, uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
+		static void 		SendChunk 	(string Payload, string ChunkHash, uint16_t ChunkPartID, uint32_t MessageID = 0,uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
+		static void 		EndChunk 	(string ChunkHash, uint32_t MessageID = 0,uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);
 
 		static bool 		IsCredentialsSet();
 		static bool			IsSecured();

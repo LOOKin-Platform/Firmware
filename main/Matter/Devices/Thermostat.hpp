@@ -99,7 +99,7 @@ class MatterThermostat : public MatterGenericDevice {
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * Buffer, uint16_t maxReadLength) override
         {
-            ESP_LOGE("MatterThermostat", "HandleReadAttribute, ClusterID: %d, attributeID: %04X, MaxReadLength: %d", ClusterID, attributeId, maxReadLength);
+            ESP_LOGE("MatterThermostat", "HandleReadAttribute, ClusterID: %lu, attributeID: 0x%lx, MaxReadLength: %d", ClusterID, attributeId, maxReadLength);
 
             if (ClusterID == chip::app::Clusters::Thermostat::Id)
             {

@@ -726,7 +726,7 @@ string WiFiAPRecord::toString() {
  * @param[in] WiFiEventHandler The class that will be used to process events.
  */
 void WiFi_t::SetWiFiEventHandler(WiFiEventHandler* WiFiEventHandler) {
-	ESP_LOGD(tag, ">> setWiFiEventHandler: 0x%d", (uint32_t)WiFiEventHandler);
+	ESP_LOGD(tag, ">> setWiFiEventHandler: %" PRIu32 "", (uint32_t)WiFiEventHandler);
 	this->m_pWifiEventHandler = WiFiEventHandler;
 	ESP_LOGD(tag, "<< setWiFiEventHandler");
 } // setWiFiEventHandler

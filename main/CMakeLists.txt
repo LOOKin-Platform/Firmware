@@ -54,10 +54,14 @@ idf_component_register(
 	"chip"
 	"QRCode"
 	"bt"
+	"nvs_flash"
 	REQUIRES 
 	"bt"
+	"efuse"
 	"Converter"
 	"DateTime"
+	"esp_timer"
+	"esp_hw_support"
 	"HTTPClient"
 	"libJSON"
 	"esp_http_server"
@@ -82,6 +86,7 @@ idf_component_register(
 
 
 get_filename_component(CHIP_ROOT ${CMAKE_SOURCE_DIR}/third_party/connectedhomeip REALPATH)
+
 include("${CHIP_ROOT}/build/chip/esp32/esp32_codegen.cmake")
 
 chip_app_component_codegen("${CHIP_ROOT}/examples/bridge-app/bridge-common/bridge-app.matter")

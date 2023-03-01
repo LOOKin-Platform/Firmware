@@ -33,7 +33,7 @@ I2C::I2C() {
  * @return N/A.
  */
 void I2C::Init(uint8_t address, gpio_num_t sdaPin, gpio_num_t sclPin, uint32_t clockSpeed, i2c_port_t portNum) {
-	ESP_LOGD(tag, ">> I2C::init.  address=%d, sda=%d, scl=%d, clockSpeed=%d, portNum=%d", address, sdaPin, sclPin, clockSpeed, portNum);
+	ESP_LOGD(tag, ">> I2C::init.  address=%d, sda=%d, scl=%d, clockSpeed=%lu, portNum=%d", address, sdaPin, sclPin, clockSpeed, portNum);
 	assert(portNum < I2C_NUM_MAX);
 	m_portNum = portNum;
 	m_sdaPin  = sdaPin;

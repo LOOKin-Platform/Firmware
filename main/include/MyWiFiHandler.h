@@ -20,7 +20,7 @@ class MyWiFiEventHandler: public WiFiEventHandler {
 		esp_err_t staStart();
 		esp_err_t staConnected();
 		esp_err_t ConnectionTimeout();
-		esp_err_t staDisconnected(system_event_sta_disconnected_t DisconnectedInfo);
+		esp_err_t staDisconnected(wifi_event_sta_disconnected_t DisconnectedInfo);
         esp_err_t staGotIPv4(ip_event_got_ip_t GotIPv4Info);
 		esp_err_t staGotIPv6(ip_event_got_ip6_t GotIPv6Info);
 

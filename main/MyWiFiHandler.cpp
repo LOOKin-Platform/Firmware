@@ -105,7 +105,7 @@ esp_err_t MyWiFiEventHandler::ConnectionTimeout() {
 	return ESP_OK;
 }
 
-esp_err_t MyWiFiEventHandler::staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
+esp_err_t MyWiFiEventHandler::staDisconnected(wifi_event_sta_disconnected_t DisconnectedInfo) {
 	Log::Add(Log::Events::WiFi::STADisconnected, (uint32_t)DisconnectedInfo.reason);
 
 	::esp_timer_stop(RemoteControlStartTimer);

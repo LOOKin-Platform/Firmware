@@ -15,6 +15,7 @@ using namespace std;
 #include "driver/ledc.h"
 #include <driver/rtc_io.h>
 #include <esp_pm.h>
+#include "rom/gpio.h"
 
 
 #include "DateTime.h"

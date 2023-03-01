@@ -63,7 +63,7 @@ class MatterVideoPlayer : public MatterGenericDevice {
 
         EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override
         {
-            ESP_LOGE("MatterVideoPlayer", "HandleReadAttribute, ClusterID: %d, attributeID: %04X, MaxReadLength: %d", ClusterID, AttributeID, maxReadLength);
+            ESP_LOGE("MatterVideoPlayer", "HandleReadAttribute, ClusterID: %lu, attributeID: 0x%lx, MaxReadLength: %d", ClusterID, AttributeID, maxReadLength);
 
             if (ClusterID == chip::app::Clusters::OnOff::Id)
             {

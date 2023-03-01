@@ -75,7 +75,7 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
  */
 void RMT::ReceiveStart(rmt_channel_t Channel) {
 	if (RMT::ChannelsMap.count(Channel) > 0)
-		if (RMT::ChannelsMap[Channel].Handle > 0) {
+		if (RMT::ChannelsMap[Channel].Handle != NULL) {
 			ESP_LOGE(tag,"Channel task already started");
 			return;
 		}
@@ -216,7 +216,7 @@ void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t 
 
 	for (int i = 1; i < GPIO.size(); i++) {
 		if (GPIO[i] != GPIO_NUM_0)
-			rmt_set_pin(Channel, RMT_MODE_TX, GPIO[i]);
+			rmt_set_gpio(Channel, RMT_MODE_TX, GPIO[i], false);
 	}
 
 	/*

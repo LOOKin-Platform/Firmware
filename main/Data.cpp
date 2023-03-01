@@ -52,12 +52,15 @@ void DataEndpoint_t::Defragment() {
 
 	vector<tuple<uint32_t, uint32_t, string>> MemoryMap = vector<tuple<uint32_t,uint32_t, string>>();
 
-	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY);
-	while (it != NULL)
+	nvs_iterator_t it = nullptr;
+	
+	esp_err_t res = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY, &it);
+
+	while (res == ESP_OK)
 	{
 		nvs_entry_info_t info;
 		nvs_entry_info(it, &info);
-		it = nvs_entry_next(it);
+		res = nvs_entry_next(&it);
 
 		uint64_t AddressAndSize;
 		esp_err_t nvs_err = nvs_get_u64(handle, info.key, &AddressAndSize);
@@ -73,6 +76,9 @@ void DataEndpoint_t::Defragment() {
 				nvs_erase_key(handle, info.key);
 		}
 	}
+
+	nvs_release_iterator(it);
+
 
     if (MemoryMap.size() == 0) {
     	EraseAll();
@@ -100,12 +106,15 @@ void DataEndpoint_t::Defragment() {
 	nvs_open(DataEndpoint_t::NVSArea.c_str(), NVS_READONLY, &handle);
 	vector<uint32_t> FindFreeMemoryAddresVector = vector<uint32_t>();
 
-	nvs_iterator_t FreeIt = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY);
-	while (FreeIt != NULL)
+	nvs_iterator_t FreeIt = nullptr;
+	
+	esp_err_t FreeRes = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY, &FreeIt);
+
+	while (FreeRes == ESP_OK)
 	{
 		nvs_entry_info_t info;
 		nvs_entry_info(FreeIt, &info);
-		FreeIt = nvs_entry_next(FreeIt);
+		FreeRes = nvs_entry_next(&FreeIt);
 
 		uint64_t AddressAndSize;
 		esp_err_t nvs_err = nvs_get_u64(handle, info.key, &AddressAndSize);
@@ -117,6 +126,8 @@ void DataEndpoint_t::Defragment() {
     sort(FindFreeMemoryAddresVector.begin(), FindFreeMemoryAddresVector.end());
 
 	nvs_close(handle);
+
+	nvs_release_iterator(FreeIt);
 
 	if (FindFreeMemoryAddresVector.size() > 0) {
 		SetFreeMemoryAddress(FindFreeMemoryAddresVector.back());
@@ -150,7 +161,10 @@ void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
     const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
     if (Partition == NULL) return;
 
-    if (Start + Length > spi_flash_get_chip_size())
+    uint32_t FlashSize = 0;
+    esp_flash_get_size(NULL,&FlashSize);
+
+    if (Start + Length > FlashSize)
         return;
 
     if (Length % 4 != 0 || Start % 4 != 0) {
@@ -223,7 +237,7 @@ IRAM_ATTR bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
     AddressToSave 		= (ReplacementAddress == 0xFFFFFFFF) ? GetFreeMemoryAddress() : ReplacementAddress;
     NormalizedAddress 	= NormalizedItemAddress(Item.size());
 
-    ESP_LOGE("SAVE ITEM", "%s To: %08X Normalized: %08X  DATA: %s", ItemName.c_str(), AddressToSave, NormalizedAddress, Item.c_str());
+    ESP_LOGE("SAVE ITEM", "%s To: %08lX Normalized: %08lX  DATA: %s", ItemName.c_str(), AddressToSave, NormalizedAddress, Item.c_str());
 
     EraseRange(AddressToSave, NormalizedAddress);
 
@@ -417,12 +431,16 @@ void DataEndpoint_t::Debug(string Tag) {
 	if (Tag!="") Tag = ", Tag: " + Tag;
 	ESP_LOGE("Data debug", "Output%s", Tag.c_str());
 
-	nvs_iterator_t it = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY);
-	while (it != NULL)
+	nvs_iterator_t it = nullptr;
+	
+	esp_err_t res = ::nvs_entry_find(NVS_DEFAULT_PART_NAME, DataEndpoint_t::NVSArea.c_str(), NVS_TYPE_ANY, &it);
+
+	while (res == ESP_OK)
 	{
 		nvs_entry_info_t info;
 		nvs_entry_info(it, &info);
-		it = nvs_entry_next(it);
+		
+		res = nvs_entry_next(&it);
 
 		uint64_t AddressAndSize;
 		esp_err_t nvs_err = nvs_get_u64(handle, info.key, &AddressAndSize);
@@ -435,13 +453,14 @@ void DataEndpoint_t::Debug(string Tag) {
 		    char ReadBuffer[Size];
 		    esp_partition_read(Partition, Address, ReadBuffer, Size);
 
-			ESP_LOGE("Data debug", "Item: %s Address %d Size %d", info.key, Address, Size);
+			ESP_LOGE("Data debug", "Item: %s Address %lu Size %lu", info.key, Address, Size);
 			ESP_LOGE("Data debug", "Value: %s", string(ReadBuffer, Size).c_str());
 		}
 	}
 
 	ESP_LOGE("!", "-------------");
-
+	
+	nvs_release_iterator(it);
 	nvs_close(handle);
 }
 

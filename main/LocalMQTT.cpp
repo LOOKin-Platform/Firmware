@@ -101,6 +101,8 @@ void LocalMQTT_t::Start() {
 
 	    LocalMQTT_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
 
+		esp_mqtt_client_register_event(ClientHandle, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+
 	    if (ClientHandle != NULL)
 			esp_mqtt_client_start(LocalMQTT_t::ClientHandle);
 	    else
@@ -137,13 +139,16 @@ void LocalMQTT_t::Reconnect() {
 	Start();
 }
 
-esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
-    esp_mqtt_client_handle_t client = event->client;
+void IRAM_ATTR LocalMQTT_t::mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) 
+{
+    esp_mqtt_event_handle_t 	event 	= (esp_mqtt_event_handle_t)event_data;
+    esp_mqtt_client_handle_t 	client	= event->client;
 
     string DeviceTopic = Settings.LocalMQTT.TopicPrefix + Device.IDToString();
 
     // your_context_t *context = event->context;
-    switch (event->event_id) {
+    switch ((esp_mqtt_event_id_t)event_id) 
+	{
         case MQTT_EVENT_CONNECTED:
         	SetStatus(CONNECTED);
 
@@ -192,25 +197,23 @@ esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t even
 			if (Topic.size() > (DeviceTopic.size() + 1))
 				Topic = Topic.substr(DeviceTopic.size()+1);
 			else
-				return ESP_OK;
+				return;
 
 			ESP_LOGE(TAG, "Topic: %s", Topic.c_str());
 
 			vector<string> TopicParts = Converter::StringToVector(Topic, "/");
 
 			if (TopicParts.size() < 3)
-				return ESP_OK;
+				return;
 
 			if (TopicParts[0] == "commands")
 			{
 				Command_t* Command = Command_t::GetCommandByName(TopicParts[1]);
 
 				if (Command == NULL)
-					return ESP_OK;
+					return;
 
 				Command->Execute(Command->GetEventCode(TopicParts[2]), Data.c_str());
-
-				return ESP_OK;
 			}
 			break;
 		}
@@ -223,8 +226,6 @@ esp_err_t IRAM_ATTR LocalMQTT_t::mqtt_event_handler(esp_mqtt_event_handle_t even
             ESP_LOGI(TAG, "Other event id:%d", event->event_id);
             break;
     }
-
-    return ESP_OK;
 }
 
 int LocalMQTT_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retain) {
@@ -282,15 +283,15 @@ string LocalMQTT_t::GetStatusString() {
 esp_mqtt_client_config_t LocalMQTT_t::CreateConfig() {
 	esp_mqtt_client_config_t Config = ConfigDefault();
 
-	Config.uri 			= (ServerURI != "") ? ServerURI.c_str() : NULL;
+	Config.broker.address.uri 		= (ServerURI != "") ? ServerURI.c_str() : NULL;
 
-	Config.event_handle = mqtt_event_handler;
+	Config.credentials.username 	= (Username != "") ? Username.c_str() : NULL;
+    Config.credentials.authentication.password	
+									= (Password != "") ? Password.c_str() : NULL;
+    Config.credentials.client_id	= (ClientID != "") ? ClientID.c_str() : NULL;
 
-    Config.username 	= (Username != "") ? Username.c_str() : NULL;
-    Config.password 	= (Password != "") ? Password.c_str() : NULL;
-    Config.client_id	= (ClientID != "") ? ClientID.c_str() : NULL;
-
-    Config.protocol_ver	= MQTT_PROTOCOL_V_3_1_1;
+	//! Перейти на MQTT 5
+    Config.session.protocol_ver		= MQTT_PROTOCOL_V_3_1_1;
 
     return Config;
 }
@@ -299,65 +300,33 @@ esp_mqtt_client_config_t LocalMQTT_t::ConfigDefault() {
 	esp_mqtt_client_config_t Config;
 	::memset(&Config, 0, sizeof(Config));
 
-	Config.host					= NULL;
-	Config.uri					= NULL;
-    Config.path					= NULL;
-	Config.port					= 0;
-	Config.keepalive			= 60;
-    Config.disable_keepalive    = false;
-	Config.reconnect_timeout_ms	= 15000;
-	Config.disable_auto_reconnect
-								= false;
-	Config.network_timeout_ms	= 5000;
-	Config.use_secure_element	= false;
-	Config.ds_data				= NULL;
-	Config.transport 			= MQTT_TRANSPORT_UNKNOWN;
+	Config.broker.address.port						= 0;
+	Config.broker.address.transport 				= MQTT_TRANSPORT_UNKNOWN;
 
-	Config.event_handle 		= NULL;
-	Config.event_loop_handle	= NULL;
+	Config.network.reconnect_timeout_ms 			= 15000;
+	Config.network.disable_auto_reconnect 			= false;
+	Config.network.timeout_ms						= 5000;
+	Config.network.refresh_connection_after_ms		= 0;
 
-	Config.username				= NULL;
-	Config.password				= NULL;
-	Config.client_id 			= NULL;
-	Config.lwt_topic			= NULL;
-	Config.lwt_msg				= NULL;
-	Config.lwt_msg_len 			= 0;
-	Config.lwt_qos				= 0;
-	Config.lwt_retain			= 0;
+	Config.session.keepalive						= 60;
+	Config.session.disable_keepalive    			= false;
+	Config.session.message_retransmit_timeout 		= 0;
+	Config.session.disable_clean_session			= false;
+	Config.session.protocol_ver 					= MQTT_PROTOCOL_V_3_1;
 
-	Config.cert_pem				= NULL;
-	Config.client_cert_pem 		= NULL;
-	Config.client_key_pem		= NULL;
-	Config.cert_len				= 0;
-	Config.client_cert_len		= 0;
-	Config.client_key_len		= 0;
-	Config.psk_hint_key			= NULL;
-	Config.clientkey_password 	= NULL;
-	Config.clientkey_password_len = 0;
+	Config.credentials.authentication.use_secure_element		
+													= false;
 
-	Config.disable_clean_session= false;
-	Config.refresh_connection_after_ms
-								= 0;
+	Config.buffer.size								= 4096;
+	Config.buffer.out_size							= 0; // if 0 then used buffer_size
 
-    Config.task_stack			= 4096;
+	Config.broker.verification.use_global_ca_store 	= false;
+	Config.broker.verification.alpn_protos			= NULL;
+	Config.broker.verification.skip_cert_common_name_check 
+													= true;
 
-	Config.buffer_size			= 4096;
-	Config.out_buffer_size		= 0; // if 0 then used buffer_size
-	Config.task_prio			= 5;
-
-	Config.protocol_ver 		= MQTT_PROTOCOL_V_3_1;
-
-	Config.user_context			= NULL;
-	Config.use_global_ca_store 	= false;
-
-	Config.alpn_protos			= NULL;
-
-	Config.message_retransmit_timeout = 0;
-	Config.transport			= MQTT_TRANSPORT_UNKNOWN;
-	Config.crt_bundle_attach	= NULL;
-
-	Config.skip_cert_common_name_check = true;
-
+    Config.task.stack_size							= 4096;
+	Config.task.priority 							= 5;
 
 	return Config;
 }

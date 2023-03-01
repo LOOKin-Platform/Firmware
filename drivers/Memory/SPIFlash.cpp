@@ -15,7 +15,8 @@ const char tag[] = "SPIFlash";
  *
  */
 esp_err_t IRAM_ATTR SPIFlash::EraseSector(uint32_t Sector) {
-	return spi_flash_erase_sector(Sector);
+
+    return esp_flash_erase_region(NULL, Sector * SPI_FLASH_SEC_SIZE, SPI_FLASH_SEC_SIZE);
 }
 
 /**
@@ -25,7 +26,10 @@ esp_err_t IRAM_ATTR SPIFlash::EraseSector(uint32_t Sector) {
  *
  */
 void IRAM_ATTR SPIFlash::EraseRange(uint32_t Start, uint32_t Length) {
-    if (Start + Length > spi_flash_get_chip_size())
+    uint32_t FlashSize = 0;
+    esp_flash_get_size(NULL,&FlashSize);
+
+    if (Start + Length > FlashSize)
         return;
 
     if (Length % 4 != 0) {
@@ -44,8 +48,8 @@ void IRAM_ATTR SPIFlash::EraseRange(uint32_t Start, uint32_t Length) {
     uint32_t 	*HeadBuffer 	= (uint32_t *) malloc((Start - BlockStart));
     uint32_t 	*TailBuffer 	= (uint32_t *) malloc((BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 
-	::spi_flash_read(BlockStart		, HeadBuffer, (Start - BlockStart));
-    ::spi_flash_read(Start + Length	, TailBuffer, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
+	::esp_flash_read(NULL, HeadBuffer, BlockStart, (Start - BlockStart));
+    ::esp_flash_read(NULL, TailBuffer, Start + Length, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 
     /*
     ESP_LOGE("SPI FLASH", "BlockStart: %d, BlocksToErase: %d", BlockStart, BlocksToErase);
@@ -53,11 +57,12 @@ void IRAM_ATTR SPIFlash::EraseRange(uint32_t Start, uint32_t Length) {
     ESP_LOGE("SPI FLASH", "End address: %d, Size: %d", Start + Length, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 	*/
 
-    for (int i=0; i < BlocksToErase; i++)
-    		EraseSector((BlockStart + i*Settings.Memory.BlockSize) / Settings.Memory.BlockSize);
+    for (int i=0; i < BlocksToErase; i++) {
+    	EraseSector((BlockStart + i*Settings.Memory.BlockSize) / Settings.Memory.BlockSize);        
+    }
 
-	::spi_flash_write(BlockStart	, HeadBuffer, (Start - BlockStart));
-    ::spi_flash_write(Start + Length, TailBuffer, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
+	::esp_flash_write(NULL, HeadBuffer, BlockStart, (Start - BlockStart));
+    ::esp_flash_write(NULL, TailBuffer, Start + Length, (BlockStart + BlocksToErase*Settings.Memory.BlockSize - Start - Length));
 
     free(HeadBuffer);
     free(TailBuffer);
@@ -75,10 +80,15 @@ esp_err_t IRAM_ATTR SPIFlash::Write(void* Data, uint32_t Address, size_t Size) {
 	if (Size == 0)
 		Size = sizeof(Data);
 
-    if ((Address + Size) > spi_flash_get_chip_size())
+    uint32_t FlashSize = 0;
+    esp_flash_get_size(NULL,&FlashSize);
+
+    if ((Address + Size) > FlashSize)
     	return ESP_ERR_INVALID_SIZE;
     else
-    	return ::spi_flash_write(Address, Data, Size);
+    	return ::esp_flash_write(NULL, Data, Address, Size);
+
+    return ESP_OK;
 }
 
 /**
@@ -90,7 +100,7 @@ esp_err_t IRAM_ATTR SPIFlash::Write(void* Data, uint32_t Address, size_t Size) {
  */
 esp_err_t IRAM_ATTR SPIFlash::WriteUint8(uint8_t Data, uint32_t Address) {
 	return Write((void*)(&Data), Address, 1);
-//	return ::spi_flash_write(Address, (void*)(&Data), sizeof(Data));
+//	return ::esp_flash_write(NULL, Address, (void*)(&Data), sizeof(Data));
 }
 
 /**
@@ -146,7 +156,7 @@ esp_err_t IRAM_ATTR SPIFlash::Read(void *Data, uint32_t Address, size_t Size) {
 	if (Size == 0)
 		return ESP_ERR_INVALID_SIZE;
 
-	return ::spi_flash_read(Address, Data, Size);
+	return ::esp_flash_read(NULL, Data, Address, Size);
 }
 
 /**

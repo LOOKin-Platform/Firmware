@@ -3,6 +3,7 @@
 *    CommandSwitch_t implementation
 *
 */
+
 class CommandMultiSwitch_t : public Command_t {
 	private:
 		vector<gpio_num_t> GPIOS = vector<gpio_num_t>();
@@ -14,10 +15,10 @@ class CommandMultiSwitch_t : public Command_t {
 
 			GPIOS = Settings.GPIOData.GetCurrent().MultiSwitch.GPIO;
 
-			for (int i=0; i < GPIOS.size(); i++) {
+			for (uint8_t i=0; i < GPIOS.size(); i++) {
 				if (GPIOS[i] != GPIO_NUM_0) {
 					GPIO::Setup(GPIOS[i]); //GPIO::Setup(GPIOS[i], GPIO_MODE_OUTPUT);
-					string EventName 	= "channel" + Converter::ToString(i+1);
+					string EventName 	= "channel" + Converter::ToString<uint8_t>(i+1);
 					Events[EventName] 	= i+1;
 				}
 			}

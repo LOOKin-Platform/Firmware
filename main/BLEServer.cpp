@@ -239,8 +239,8 @@ void BLEServer_t::Deinit() {
 	{
 		ESP_LOGE("BLE", "ENABLED");
 
-		int ret       = nimble_port_stop();
-		esp_err_t err = ESP_OK;
+		int ret = nimble_port_stop();
+
 		if (ret == 0)
 		{
 			nimble_port_deinit();

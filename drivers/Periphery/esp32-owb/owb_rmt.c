@@ -56,7 +56,7 @@ sample code bearing this copyright.
 //--------------------------------------------------------------------------
 */
 
-#include "../../Periphery/esp32-owb/include/owb.h"
+#include "owb.h"
 #include "driver/rmt.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
@@ -381,6 +381,8 @@ static owb_status _init(owb_rmt_driver_info *info, gpio_num_t gpio_num,
     rmt_tx.tx_config.idle_level = 1;
     rmt_tx.tx_config.idle_output_en = true;
     rmt_tx.rmt_mode = RMT_MODE_TX;
+    
+
     if (rmt_config(&rmt_tx) == ESP_OK)
     {
         if (rmt_driver_install(rmt_tx.channel, 0, ESP_INTR_FLAG_LOWMED | ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED) == ESP_OK)
@@ -436,8 +438,8 @@ static owb_status _init(owb_rmt_driver_info *info, gpio_num_t gpio_num,
     // attach RMT channels to new gpio pin
     // ATTENTION: set pin for rx first since gpio_output_disable() will
     //            remove rmt output signal in matrix!
-    rmt_set_pin(info->rx_channel, RMT_MODE_RX, gpio_num);
-    rmt_set_pin(info->tx_channel, RMT_MODE_TX, gpio_num);
+    rmt_set_gpio(info->rx_channel, RMT_MODE_RX, gpio_num, false); //!rmt_set_pin(info->rx_channel, RMT_MODE_RX, gpio_num);
+    rmt_set_gpio(info->tx_channel, RMT_MODE_TX, gpio_num, false); //!rmt_set_pin(info->rx_channel, RMT_MODE_RX, gpio_num);
 
     // force pin direction to input to enable path to RX channel
     PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[gpio_num]);

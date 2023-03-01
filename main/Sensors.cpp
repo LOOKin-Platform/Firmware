@@ -203,7 +203,7 @@ string Sensor_t::RootSensorJSON() {
 
 		if (Values.size() > 0) {
 			for (const auto &Value : Values) {
-				ESP_LOGE("Value", "Key: %s, Value: %d", Value.first.c_str(), Value.second);
+				ESP_LOGE("Value", "Key: %s, Value: %lu", Value.first.c_str(), Value.second);
 				if (Value.first == "Primary")
 					continue;
 

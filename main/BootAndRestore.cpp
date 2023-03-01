@@ -74,9 +74,9 @@ void BootAndRestore::CheckPartitionTable() {
             esp_err_t err;
 
             if (Settings.DeviceGeneration < 2)
-            	{ err = spi_flash_write(0x8000, partitions_4mb_v2_start, PartitionSize4mb);}
+            	{ err = esp_flash_write(NULL, partitions_4mb_v2_start, 0x8000, PartitionSize4mb);}
             else
-            	{ err = spi_flash_write(0x8000, partitions_16mb_v2_start, PartitionSize16mb); }
+            	{ err = esp_flash_write(NULL, partitions_16mb_v2_start,0x8000, PartitionSize16mb); }
 
         	if (err == ESP_OK)
             	Reboot(false);

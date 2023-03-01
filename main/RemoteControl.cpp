@@ -35,7 +35,7 @@ void RemoteControl_t::Init() {
 void RemoteControl_t::Start() {
 	if (Username != "" && Status != CONNECTED)
 	{
-		ESP_LOGI(Tag, "Started RAM left %d", esp_get_free_heap_size());
+		ESP_LOGI(Tag, "Started RAM left %lu", esp_get_free_heap_size());
 
 		if (ClientHandle == NULL)
 		{
@@ -44,6 +44,8 @@ void RemoteControl_t::Start() {
 			ConnectionTries = 0;
 
 		    RemoteControl_t::ClientHandle = esp_mqtt_client_init(&mqtt_cfg);
+
+			esp_mqtt_client_register_event(ClientHandle, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, &mqtt_event_handler, NULL);
 
 		    ESP_LOGI(Tag, "RC MQTT inited");
 		}
@@ -93,7 +95,7 @@ void RemoteControl_t::ChangeSecuredType(bool sIsSecuredFlag) {
 
 	Config = CreateConfig();
 
-	Config.uri 			= (!sIsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
+	Config.broker.address.uri 			= (!sIsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
 
 	IsSecuredFlag = sIsSecuredFlag;
 
@@ -151,17 +153,18 @@ void RemoteControl_t::ChangeOrSetCredentialsBLE(string Username, string Password
 	}
 }
 
-
-
-esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
+void RemoteControl_t::mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)  
+{
+    esp_mqtt_event_handle_t event 	= (esp_mqtt_event_handle_t)event_data;
     esp_mqtt_client_handle_t client = event->client;
 
     string DeviceTopic = Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString();
 
-    int MessageID = 0;
+    uint32_t MessageID = 0;
 
     // your_context_t *context = event->context;
-    switch (event->event_id) {
+    switch ((esp_mqtt_event_id_t)event_id) 
+	{
         case MQTT_EVENT_CONNECTED:
 			Status = CONNECTED;
 			ESP_LOGI(Tag, "MQTT_EVENT_CONNECTED");
@@ -233,13 +236,13 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 				Query.Cleanup();
 
 				if (Response.ResponseCode == WebServer_t::Response::CODE::IGNORE)
-					return ESP_OK;
+					return;
 
-				Response.Body = Converter::ToString(Response.CodeToInt()) + " " + Response.Body;
+				Response.Body = Converter::ToString<uint16_t>(Response.CodeToInt()) + " " + Response.Body;
 
 				SendMessage(Response.Body,
 							Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() +
-							"/" + Converter::ToString(MessageID));
+							"/" + Converter::ToString<uint32_t>(MessageID));
 			}
 			break;
 		}
@@ -253,8 +256,6 @@ esp_err_t RemoteControl_t::mqtt_event_handler(esp_mqtt_event_handle_t event) {
 
             break;
     }
-
-    return ESP_OK;
 }
 
 int RemoteControl_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint8_t Retain) {
@@ -269,18 +270,18 @@ int RemoteControl_t::SendMessage(string Payload, string Topic, uint8_t QOS, uint
 
 }
 
-string RemoteControl_t::StartChunk(int MessageID, uint8_t QOS, uint8_t Retain) {
+string RemoteControl_t::StartChunk(uint32_t MessageID, uint8_t QOS, uint8_t Retain) {
     string ChunkID = Converter::ToHexString((rand() % 0xFFFF) + 1, 4);
-    SendMessage("200 CHUNK " + ChunkID +  " START", Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
+    SendMessage("200 CHUNK " + ChunkID +  " START", Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString<uint32_t>(MessageID));
     return ChunkID;
 }
 
-void RemoteControl_t::SendChunk(string Payload, string ChunkHash, uint16_t ChunkPartID, int MessageID, uint8_t QOS, uint8_t Retain) {
-    SendMessage("200 CHUNK " + ChunkHash +  " " + Converter::ToString(ChunkPartID) + " " + Payload, Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
+void RemoteControl_t::SendChunk(string Payload, string ChunkHash, uint16_t ChunkPartID, uint32_t MessageID, uint8_t QOS, uint8_t Retain) {
+    SendMessage("200 CHUNK " + ChunkHash +  " " + Converter::ToString<uint16_t>(ChunkPartID) + " " + Payload, Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString<uint32_t>(MessageID));
 }
 
-void RemoteControl_t::EndChunk (string ChunkHash, int MessageID, uint8_t QOS, uint8_t Retain) {
-    SendMessage("200 CHUNK " + ChunkHash +  " END", Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString(MessageID));
+void RemoteControl_t::EndChunk (string ChunkHash, uint32_t MessageID, uint8_t QOS, uint8_t Retain) {
+    SendMessage("200 CHUNK " + ChunkHash +  " END", Settings.RemoteControl.DeviceTopicPrefix + Device.IDToString() + "/" + Converter::ToString<uint32_t>(MessageID));
 }
 
 
@@ -315,17 +316,18 @@ esp_mqtt_client_config_t RemoteControl_t::CreateConfig() {
 	IsSecuredFlag = !(Matter::IsEnabledForDevice() || LocalMQTT.GetIsActive());
 
 	//Config.host			= "mqtt.look-in.club";
-	Config.uri 			= (!IsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
-	Config.port			= 8883;
+	Config.broker.address.uri 			= (!IsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
+	Config.broker.address.port			= 8883;
 
-	Config.event_handle = mqtt_event_handler;
 	//Config.transport 	= MQTT_TRANSPORT_OVER_SSL;
 
-	Config.username		= Username.c_str();
-    Config.password		= Password.c_str();
-    Config.client_id	= Username.c_str();
+	Config.credentials.username 	= Username.c_str();
+    Config.credentials.authentication.password	
+									= Password.c_str();
+    Config.credentials.client_id	= Username.c_str();
 
-    Config.protocol_ver	= MQTT_PROTOCOL_V_3_1_1;
+	//! Перейти на MQTT 5
+    Config.session.protocol_ver		= MQTT_PROTOCOL_V_3_1_1;
 
     return Config;
 }
@@ -334,61 +336,28 @@ esp_mqtt_client_config_t RemoteControl_t::ConfigDefault() {
 	esp_mqtt_client_config_t Config;
 	::memset(&Config, 0, sizeof(Config));
 
-	Config.host					= NULL;
-	Config.uri					= NULL;
-	Config.path					= NULL;
-	Config.port					= 0;
-	Config.keepalive			= 60;
-	Config.disable_keepalive	= false;
-	Config.reconnect_timeout_ms	= 10000;
-	Config.disable_auto_reconnect
-								= false;
-	Config.network_timeout_ms	= 10000;
-	Config.use_secure_element	= false;
-	Config.ds_data				= NULL;
+	Config.broker.address.port						= 0;
+	Config.broker.address.transport 				= MQTT_TRANSPORT_UNKNOWN;
 
-	Config.event_handle 		= NULL;
-	Config.event_loop_handle	= NULL;
+	Config.network.reconnect_timeout_ms 			= 10000;
+	Config.network.disable_auto_reconnect 			= false;
+	Config.network.timeout_ms						= 10000;
+	Config.network.refresh_connection_after_ms		= 0;
 
-	Config.username				= NULL;
-	Config.password				= NULL;
-	Config.client_id 			= NULL;
-	Config.lwt_topic			= NULL;
-	Config.lwt_msg				= NULL;
-	Config.lwt_msg_len 			= 0;
-	Config.lwt_qos				= 0;
-	Config.lwt_retain			= 0;
+	Config.session.keepalive						= 60;
+	Config.session.disable_keepalive    			= false;
+	Config.session.message_retransmit_timeout 		= 0;
+	Config.session.disable_clean_session			= false;
+	Config.session.protocol_ver 					= MQTT_PROTOCOL_V_3_1;
 
-	Config.cert_pem				= NULL;
-	Config.client_cert_pem 		= NULL;
-	Config.client_key_pem		= NULL;
-	Config.cert_len				= 0;
-	Config.client_cert_len		= 0;
-	Config.client_key_len		= 0;
-	Config.psk_hint_key			= NULL;
-	Config.clientkey_password 	= NULL;
-	Config.clientkey_password_len = 0;
+	Config.buffer.size								= 3072;
+	Config.buffer.out_size							= 0; // if 0 then used buffer_size
 
-	Config.disable_clean_session= false;
-	Config.refresh_connection_after_ms
-								= 0;
+	Config.broker.verification.skip_cert_common_name_check 
+													= true;
 
-    Config.task_stack			= 5120;//6144;//8192;//8192;
-	Config.buffer_size			= 3072;
-	Config.out_buffer_size		= 0; // if 0 then used buffer_size
-	Config.task_prio			= 6;
-
-	Config.protocol_ver 		= MQTT_PROTOCOL_V_3_1;
-
-	Config.user_context			= NULL;
-	Config.use_global_ca_store 	= false;
-
-	Config.alpn_protos			= NULL;
-	Config.message_retransmit_timeout = 0;
-	Config.transport			= MQTT_TRANSPORT_UNKNOWN;
-	Config.crt_bundle_attach	= NULL;
-
-	Config.skip_cert_common_name_check = true;
+    Config.task.stack_size							= 5120;//6144;//8192;//8192;
+	Config.task.priority 							= 6;
 
 	return Config;
 }

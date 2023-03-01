@@ -27,7 +27,7 @@
  * @file
  */
 
-#include "../../Periphery/esp32-owb/include/owb.h"
+#include "owb.h"
 
 #include <stddef.h>
 #include <stdbool.h>
@@ -35,7 +35,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "../../periphery/esp32-owb/include/owb_gpio.h"
+#include "owb_gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"

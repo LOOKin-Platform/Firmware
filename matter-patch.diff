@@ -1,8 +1,20 @@
+diff --git a/src/include/platform/NetworkCommissioning.h b/src/include/platform/NetworkCommissioning.h
+index 5880ec5665..07a1a563fe 100644
+--- a/src/include/platform/NetworkCommissioning.h
++++ b/src/include/platform/NetworkCommissioning.h
+@@ -28,6 +28,7 @@
+ #include <lib/core/Optional.h>
+ #include <lib/support/ThreadOperationalDataset.h>
+ #include <platform/internal/DeviceNetworkInfo.h>
++#include <lib/support/BitFlags.h>
+ 
+ #include <app-common/zap-generated/cluster-enums.h>
+ 
 diff --git a/src/platform/ESP32/ConfigurationManagerImpl.cpp b/src/platform/ESP32/ConfigurationManagerImpl.cpp
-index 88005bda3..57d525719 100644
+index 20dc895b36..bbe3c60426 100644
 --- a/src/platform/ESP32/ConfigurationManagerImpl.cpp
 +++ b/src/platform/ESP32/ConfigurationManagerImpl.cpp
-@@ -361,11 +361,13 @@ void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
+@@ -377,11 +377,13 @@ void ConfigurationManagerImpl::DoFactoryReset(intptr_t arg)
  
      // Restore WiFi persistent settings to default values.
  #if CHIP_DEVICE_CONFIG_ENABLE_WIFI
@@ -17,7 +29,7 @@ index 88005bda3..57d525719 100644
      ThreadStackMgr().ErasePersistentInfo();
  #endif
 diff --git a/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp b/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
-index 831775ef5..316ac05ca 100644
+index 831775ef50..102664e596 100644
 --- a/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
 +++ b/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
 @@ -103,6 +103,7 @@ bool ConnectivityManagerImpl::_IsWiFiStationProvisioned(void)
@@ -134,7 +146,23 @@ index 831775ef5..316ac05ca 100644
  
      // Determine if the ESP WiFi layer thinks the station interface is currently connected.
      ReturnOnFailure(Internal::ESP32Utils::IsStationConnected(stationConnected));
-@@ -764,6 +792,11 @@ void ConnectivityManagerImpl::OnStationDisconnected()
+@@ -619,6 +647,7 @@ void ConnectivityManagerImpl::DriveStationState()
+             }
+         }
+ 
++#ifndef MATTER_WIFI_OVERRIDE
+         // If the WiFi station interface is now enabled and provisioned (and by implication,
+         // not presently under application control), AND the system is not in the process of
+         // scanning, then...
+@@ -651,6 +680,7 @@ void ConnectivityManagerImpl::DriveStationState()
+                 ReturnOnFailure(DeviceLayer::SystemLayer().StartTimer(timeToNextConnect, DriveStationState, NULL));
+             }
+         }
++#endif
+     }
+ 
+     ChipLogProgress(DeviceLayer, "Done driving station state, nothing else to do...");
+@@ -764,6 +794,11 @@ void ConnectivityManagerImpl::OnStationDisconnected()
  
  void ConnectivityManagerImpl::ChangeWiFiStationState(WiFiStationState newState)
  {
@@ -146,7 +174,7 @@ index 831775ef5..316ac05ca 100644
      if (mWiFiStationState != newState)
      {
          ChipLogProgress(DeviceLayer, "WiFi station state change: %s -> %s", WiFiStationStateToStr(mWiFiStationState),
-@@ -920,6 +953,10 @@ exit:
+@@ -920,6 +955,10 @@ exit:
  
  CHIP_ERROR ConnectivityManagerImpl::ConfigureWiFiAP()
  {
@@ -158,7 +186,7 @@ index 831775ef5..316ac05ca 100644
  
      memset(&wifiConfig, 0, sizeof(wifiConfig));
 diff --git a/src/platform/ESP32/PlatformManagerImpl.cpp b/src/platform/ESP32/PlatformManagerImpl.cpp
-index 074750654..5418750d5 100644
+index 074750654c..5418750d57 100644
 --- a/src/platform/ESP32/PlatformManagerImpl.cpp
 +++ b/src/platform/ESP32/PlatformManagerImpl.cpp
 @@ -70,6 +70,7 @@ CHIP_ERROR PlatformManagerImpl::_InitChipStack(void)

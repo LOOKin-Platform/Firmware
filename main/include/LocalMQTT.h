@@ -29,20 +29,20 @@ using namespace std;
 
 class LocalMQTT_t {
 	public:
-		enum 	StatusEnum { UNACTIVE, CONNECTING, CONNECTED, ERROR };
+		enum 				StatusEnum { UNACTIVE, CONNECTING, CONNECTED, ERROR };
 
-		void 	Init();
+		void 				Init();
 
-		void 	LoadCredentials();
-		void 	SetCredentials			(bool, string, string, string, string);
-		void 	SetIsActive				(bool);
-		string	GetCredentialsJSON();
+		void 				LoadCredentials();
+		void 				SetCredentials			(bool, string, string, string, string);
+		void 				SetIsActive				(bool);
+		string				GetCredentialsJSON();
 
-		void 	Start();
-		void 	Stop();
-		void 	Reconnect();
+		void 				Start();
+		void 				Stop();
+		void 				Reconnect();
 
-		static esp_err_t 	mqtt_event_handler(esp_mqtt_event_handle_t event);
+		static void 		mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
 
 		static int 			SendMessage (string Payload, string Topic = "",
 				uint8_t QOS = Settings.RemoteControl.DefaultQOS, uint8_t Retain = Settings.RemoteControl.DefaultRetain);

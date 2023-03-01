@@ -158,7 +158,7 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 			for (auto &item : WiFiSettings)
 				if (item.SSID == WiFiScannedItem.SSID) {
 					if (!DontUseCache && item.IP != 0 && item.Gateway != 0 && item.Netmask !=0) {
-						ESP_LOGI("tag", "ip %d Gateway %d Netmask %d", item.IP, item.Gateway, item.Netmask);
+						ESP_LOGI("tag", "ip %lu Gateway %lu Netmask %lu", item.IP, item.Gateway, item.Netmask);
 						WiFi.SetIPInfo(item.IP, item.Gateway, item.Netmask);
 						//!WiFi.AddDNSServer(inet_ntoa(item.Gateway));
 					}

@@ -364,7 +364,7 @@ Matter::AccessoryData_t(string sName, string sModel, string sID) {
 EmberAfStatus HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, chip::AttributeId attributeId, uint8_t * buffer,
                                                     uint16_t maxReadLength)
 {
-    ChipLogProgress(DeviceLayer, "HandleReadBridgedDeviceBasicAttribute: attrId=%d, maxReadLength=%d", attributeId, maxReadLength);
+    ChipLogProgress(DeviceLayer, "HandleReadBridgedDeviceBasicAttribute: attrId=%08lX, maxReadLength=%d", attributeId, maxReadLength);
 
     if ((attributeId == BridgedDeviceBasicInformation::Attributes::Reachable::Id) && (maxReadLength == 1))
     {
@@ -391,7 +391,7 @@ EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterI
                                                    const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer,
                                                    uint16_t maxReadLength)
 {
-	ESP_LOGE(Tag, "emberAfExternalAttributeReadCallback, EndpointID %d, ClusterID 0x%0X", endpoint, clusterId);
+	ESP_LOGE(Tag, "emberAfExternalAttributeReadCallback, EndpointID %d, ClusterID 0x%0lX", endpoint, clusterId);
 
     uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
 
@@ -412,7 +412,7 @@ EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterI
 
 EmberAfStatus emberAfExternalAttributeWriteCallback(EndpointId endpoint, ClusterId ClusterID, const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer)
 {
-	ESP_LOGE(Tag, "emberAfExternalAttributeWriteCallback, EndpointID %d, ClusterID %d", endpoint, ClusterID);
+	ESP_LOGE(Tag, "emberAfExternalAttributeWriteCallback, EndpointID %d, ClusterID %04lX", endpoint, ClusterID);
 
     uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
 
