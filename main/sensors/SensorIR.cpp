@@ -17,8 +17,6 @@ extern DataEndpoint_t *Data;
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
 
-static uint32_t             SignalDetectedTime     			= 0;
-
 static IRAM_ATTR esp_timer_handle_t 	
 							SignalReceivedTimer 			= NULL;
 
@@ -27,14 +25,15 @@ static char 				SensorIRSignalCRCBuffer[96] 	= "\0";
 
 class SensorIR_t : public Sensor_t {
 	public:
+		IRLib 		LastSignal;
+		uint32_t	SignalDetectedTime     			= 0;
+
 		SensorIR_t() {
 			if (GetIsInited()) return;
 
 			ID          = SensorIRID;
 			Name        = "IR";
 			EventCodes  = { 0x00, 0x01, 0xEE, 0xFF };
-
-			static IRLib LastSignal;
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0 && Settings.eFuse.Type != Settings.Devices.Remote) {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
@@ -61,8 +60,6 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		void Update() override {
-			ESP_LOGE("IR Signal size from Update", "%d", LastSignal.RawData.size());
-
 			Values.clear();
 
 			uint32_t SignalDetectionTime = Time::UptimeToUnixTime(SignalDetectedTime);
@@ -142,7 +139,13 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageStart() {
-			SignalDetectedTime = Time::Uptime();
+			SensorIR_t* IRSensorItem = (SensorIR_t*)Sensor_t::GetSensorByID(SensorIRID);
+			if (IRSensorItem == nullptr) {
+				ESP_LOGE("MessageStart", "IR sensor didnt find");
+				return;
+			}
+
+			IRSensorItem->SignalDetectedTime = Time::Uptime();
 			SensorIRCurrentMessage.clear();
 		};
 
@@ -161,6 +164,12 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void MessageEnd() {
+			SensorIR_t* IRSensorItem = (SensorIR_t*)Sensor_t::GetSensorByID(SensorIRID);
+			if (IRSensorItem == nullptr) {
+				ESP_LOGE("MessageEnd", "IR sensor didnt find");
+				return;
+			}
+
 			if (SensorIRCurrentMessage.size() < 4)
 			{
 				SensorIRCurrentMessage.empty();
@@ -174,17 +183,19 @@ class SensorIR_t : public Sensor_t {
 				}
 
 			bool IsRepeatSignal = false;
-			vector<int32_t> PotentialRepeatSignal = LastSignal.GetRawRepeatSignalForSending();
 
-			if (LastSignal.Protocol != 0xFF && PotentialRepeatSignal.size() > 0 &&
+			
+			vector<int32_t> PotentialRepeatSignal = IRSensorItem->LastSignal.GetRawRepeatSignalForSending();
+
+			if (IRSensorItem->LastSignal.Protocol != 0xFF && PotentialRepeatSignal.size() > 0 &&
 				IRLib::CompareIsIdentical(PotentialRepeatSignal, SensorIRCurrentMessage))
 				IsRepeatSignal = true;
 
 			if (!IsRepeatSignal) {
-				LastSignal.RepeatCount = 0;
-				LastSignal.RepeatPause = 0;
-				LastSignal.RawData = SensorIRCurrentMessage;
-				LastSignal.ExternFillPostOperations();
+				IRSensorItem->LastSignal.RepeatCount = 0;
+				IRSensorItem->LastSignal.RepeatPause = 0;
+				IRSensorItem->LastSignal.RawData = SensorIRCurrentMessage;
+				IRSensorItem->LastSignal.ExternFillPostOperations();
 			}
 /*
 			if (Settings.eFuse.DeviceID == 0x00000003 || Settings.eFuse.DeviceID == 0x00000004) {
@@ -197,11 +208,8 @@ class SensorIR_t : public Sensor_t {
 */
 			SensorIRCurrentMessage.empty();
 
-			if (LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
+			if (IRSensorItem->LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
 				Log::Add(Log::Events::Sensors::IRReceived);
-
-			ESP_LOGE("Timer", "Before");
-			ESP_LOGE("IR Signal size from MessageEnd", "%d", LastSignal.RawData.size());
 
 			if (SignalReceivedTimer == NULL) {
 				esp_timer_create_args_t TimerArgs;
@@ -217,32 +225,26 @@ class SensorIR_t : public Sensor_t {
 		};
 
 		static void SignalReceivedCallback(void *Param) {
-			ESP_LOGE("IR Signal size from SignalReceivedCallback", "%d", LastSignal.RawData.size());
+			SensorIR_t* IRSensorItem = (SensorIR_t*)Sensor_t::GetSensorByID(SensorIRID);
+			if (IRSensorItem == nullptr) {
+				ESP_LOGE("SignalReceivedCallback", "IR sensor didnt find");
+				return;
+			}
 
-			if (LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
+			if (IRSensorItem->LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
 				return;
 
-			ESP_LOGE("IR Signal size from SignalReceivedCallback2", "%d", LastSignal.RawData.size());
+			IRSensorItem->Update();
 
-			Sensor_t* Sensor = Sensor_t::GetSensorByID(SensorIRID);
-
-			if (Sensor != nullptr) 
-				Sensor->Update();
-			else
-				ESP_LOGE("sensor is nullptr","!");
-
-			ESP_LOGE("IR Signal size from SignalReceivedCallback3", "%d", LastSignal.RawData.size());
-
-
-			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
+			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(IRSensorItem->LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);
 
 			if (Settings.eFuse.Type == Settings.Devices.Remote)
-				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(LastSignal);
+				((DataRemote_t*)Data)->SetExternalStatusByIRCommand(IRSensorItem->LastSignal);
 
-			if (LastSignal.Protocol == 0xFF) {
+			if (IRSensorItem->LastSignal.Protocol == 0xFF) {
 				string URL = Settings.ServerUrls.BaseURL + "/ac/match";
-				string CRC = LastSignal.GetSignalCRC();
+				string CRC = IRSensorItem->LastSignal.GetSignalCRC();
 
 				if (CRC.size() > 96) CRC = CRC.substr(0, 96);
 
@@ -278,9 +280,13 @@ class SensorIR_t : public Sensor_t {
 			if (SensorIRACCheckBuffer.size() == 0)
 				return;
 
-			vector<string> Codesets = JSON(SensorIRACCheckBuffer).GetStringArray();
+			SensorIR_t* IRSensorItem = (SensorIR_t*)Sensor_t::GetSensorByID(SensorIRID);
+			if (IRSensorItem == nullptr) {
+				ESP_LOGE("ACCheckFinished", "IR sensor didnt find");
+				return;
+			}
 
-			ESP_LOGE("IR Signal size from ACCheckFinished", "%d", LastSignal.RawData.size());
+			vector<string> Codesets = JSON(SensorIRACCheckBuffer).GetStringArray();
 
 			SensorIRACCheckBuffer = "";
 
@@ -307,7 +313,11 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		static void ACReadAborted(const char *IP) {
-			ESP_LOGE("IR Signal size from ACReadAborted", "%d", LastSignal.RawData.size());
+			SensorIR_t* IRSensorItem = (SensorIR_t*)Sensor_t::GetSensorByID(SensorIRID);
+			if (IRSensorItem == nullptr) {
+				ESP_LOGE("ACReadAborted", "IR sensor didnt find");
+				return;
+			}
 
 			SensorIRACCheckBuffer = "";
 		}
