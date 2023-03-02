@@ -60,9 +60,9 @@ Sensor_t* Sensor_t::GetSensorByName(string SensorName) {
 }
 
 Sensor_t* Sensor_t::GetSensorByID(uint8_t SensorID) {
-	for (auto& Sensor : Sensors)
-		if (Sensor->ID == SensorID)
-			return Sensor;
+	for (auto& SensorItem : Sensors)
+		if (SensorItem->ID == SensorID)
+			return SensorItem;
 
 	return nullptr;
 }

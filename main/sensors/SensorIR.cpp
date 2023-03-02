@@ -17,7 +17,6 @@ extern DataEndpoint_t *Data;
 static vector<int32_t> 		SensorIRCurrentMessage 			= {};
 static uint8_t 				SensorIRID 						= 0x87;
 
-static IRLib 				LastSignal;
 static uint32_t             SignalDetectedTime     			= 0;
 
 static IRAM_ATTR esp_timer_handle_t 	
@@ -34,6 +33,8 @@ class SensorIR_t : public Sensor_t {
 			ID          = SensorIRID;
 			Name        = "IR";
 			EventCodes  = { 0x00, 0x01, 0xEE, 0xFF };
+
+			static IRLib LastSignal;
 
 			if (Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38 != GPIO_NUM_0 && Settings.eFuse.Type != Settings.Devices.Remote) {
 				RMT::SetRXChannel(Settings.GPIOData.GetCurrent().IR.ReceiverGPIO38, RMT_CHANNEL_2, SensorIR_t::MessageStart, SensorIR_t::MessageBody, SensorIR_t::MessageEnd);
@@ -60,7 +61,6 @@ class SensorIR_t : public Sensor_t {
 		}
 
 		void Update() override {
-
 			ESP_LOGE("IR Signal size from Update", "%d", LastSignal.RawData.size());
 
 			Values.clear();
@@ -201,26 +201,38 @@ class SensorIR_t : public Sensor_t {
 				Log::Add(Log::Events::Sensors::IRReceived);
 
 			ESP_LOGE("Timer", "Before");
+			ESP_LOGE("IR Signal size from MessageEnd", "%d", LastSignal.RawData.size());
 
 			if (SignalReceivedTimer == NULL) {
-				const esp_timer_create_args_t TimerArgs = {
-					.callback 			= &SignalReceivedCallback,
-					.name				= "SignalReceivedTimer"
-				};
+				esp_timer_create_args_t TimerArgs;
+				::memset(&TimerArgs, 0, sizeof(TimerArgs));
+				TimerArgs.callback  = &SignalReceivedCallback;
+				TimerArgs.name  	= "SignalReceivedTimer";
 
 				::esp_timer_create(&TimerArgs, &SignalReceivedTimer);
 			}
 
 			::esp_timer_stop(SignalReceivedTimer);
-			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);		
+			::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);	
 		};
 
 		static void SignalReceivedCallback(void *Param) {
+			ESP_LOGE("IR Signal size from SignalReceivedCallback", "%d", LastSignal.RawData.size());
+
 			if (LastSignal.RawData.size() < Settings.SensorsConfig.IR.MinSignalLen)
 				return;
 
+			ESP_LOGE("IR Signal size from SignalReceivedCallback2", "%d", LastSignal.RawData.size());
+
 			Sensor_t* Sensor = Sensor_t::GetSensorByID(SensorIRID);
-			Sensor->Update();
+
+			if (Sensor != nullptr) 
+				Sensor->Update();
+			else
+				ESP_LOGE("sensor is nullptr","!");
+
+			ESP_LOGE("IR Signal size from SignalReceivedCallback3", "%d", LastSignal.RawData.size());
+
 
 			Wireless.SendBroadcastUpdated(SensorIRID, Converter::ToHexString(static_cast<uint8_t>(LastSignal.Protocol),2));
 			Automation.SensorChanged(SensorIRID);

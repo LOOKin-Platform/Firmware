@@ -35,9 +35,9 @@ TaskHandle_t FreeRTOS::StartTask(void task(void*), string taskName, void *param,
 	return TaskHandle;
 } // startTask
 
-TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), string taskName, void *param, int stackSize, uint8_t Core) {
+TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), string taskName, void *param, int stackSize, uint8_t Priority, uint8_t Core) {
 	TaskHandle_t TaskHandle = NULL;
-	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, 5, &TaskHandle, Core);
+	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, tskIDLE_PRIORITY + Priority, &TaskHandle, Core);
 	return TaskHandle;
 } // startTask
 
