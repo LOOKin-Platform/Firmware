@@ -215,7 +215,6 @@ void Settings_t::eFuse_t::ReadDataOrInit() {
 		Revision = 2;
 	}
 
-
 	NVS Memory(NVSDeviceArea);
 
 	unsigned char mac[6] = {0};
