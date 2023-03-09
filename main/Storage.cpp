@@ -679,7 +679,7 @@ uint16_t Storage_t::WriteNow(Item Record) {
 	return ((AddressVector[0] - DataStart) / Settings.Storage.Data.ItemSize);
 }
 
-void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
+void Storage_t::EraseNow(uint16_t ItemID) {
 	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
 	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
@@ -710,13 +710,13 @@ void IRAM_ATTR Storage_t::EraseNow(uint16_t ItemID) {
 	MemoryStoredItems--;
 }
 
-uint32_t IRAM_ATTR Storage_t::GetFreeMemory() {
+uint32_t Storage_t::GetFreeMemory() {
 	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
 	return ((DataSize / Settings.Storage.Data.ItemSize) - MemoryStoredItemsSize) * (Settings.Storage.Data.ItemSize - sizeof(RecordHeader) - sizeof(RecordPartInfo));
 }
 
-void IRAM_ATTR Storage_t::CalculateMemoryItemsData() {
+void Storage_t::CalculateMemoryItemsData() {
 	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
 	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
@@ -738,7 +738,7 @@ void IRAM_ATTR Storage_t::CalculateMemoryItemsData() {
 	}
 }
 
-vector<uint8_t> IRAM_ATTR Storage_t::GetItemsTypes() {
+vector<uint8_t> Storage_t::GetItemsTypes() {
 	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
 	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
@@ -760,7 +760,7 @@ vector<uint8_t> IRAM_ATTR Storage_t::GetItemsTypes() {
 
 	return Result;
 }
-uint16_t IRAM_ATTR Storage_t::CountItemsForTypeID(uint8_t TypeID) {
+uint16_t Storage_t::CountItemsForTypeID(uint8_t TypeID) {
 	uint16_t Result = 0;
 
 	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
@@ -807,7 +807,7 @@ vector<uint16_t> Storage_t::GetItemsForTypeID(uint8_t Type, uint16_t Limit, uint
 	return Result;
 }
 
-bool IRAM_ATTR Storage_t::IsExist(uint16_t ID) {
+bool Storage_t::IsExist(uint16_t ID) {
 	uint32_t DataStart 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.StartAddress4MB : Settings.Storage.Data.StartAddress16MB;
 	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 
@@ -826,7 +826,7 @@ bool IRAM_ATTR Storage_t::IsExist(uint16_t ID) {
 	return false;
 }
 
-uint16_t IRAM_ATTR Storage_t::VersionHistoryCount() {
+uint16_t Storage_t::VersionHistoryCount() {
 	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
 	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
 
@@ -851,7 +851,7 @@ uint16_t IRAM_ATTR Storage_t::VersionHistoryCount() {
 	return Count;
 }
 
-vector<uint16_t> IRAM_ATTR Storage_t::VersionHistoryGet(uint16_t Limit, uint8_t Page) {
+vector<uint16_t> Storage_t::VersionHistoryGet(uint16_t Limit, uint8_t Page) {
 	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
 	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
 
@@ -887,12 +887,12 @@ vector<uint16_t> IRAM_ATTR Storage_t::VersionHistoryGet(uint16_t Limit, uint8_t 
 	return Result;
 }
 
-vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version) {
+vector<uint16_t> Storage_t::GetItemsForVersion(uint16_t Version) {
 	uint32_t LastAddress;
 	return GetItemsForVersion(Version, LastAddress);
 }
 
-vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version, uint32_t &LastAddress, uint32_t StartAdress) {
+vector<uint16_t> Storage_t::GetItemsForVersion(uint16_t Version, uint32_t &LastAddress, uint32_t StartAdress) {
 	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
 	uint32_t VersionsSize 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.Size4MB : Settings.Storage.Versions.Size16MB;
 
@@ -949,7 +949,7 @@ vector<uint16_t> IRAM_ATTR Storage_t::GetItemsForVersion(uint16_t Version, uint3
 	return Result;
 }
 
-vector<Storage_t::Item> IRAM_ATTR Storage_t::GetUpgradeItems(uint16_t From, uint16_t &ToCurrent) {
+vector<Storage_t::Item> Storage_t::GetUpgradeItems(uint16_t From, uint16_t &ToCurrent) {
 	uint32_t DataSize 		= (Settings.DeviceGeneration < 2) ? Settings.Storage.Data.Size4MB : Settings.Storage.Data.Size16MB;
 	uint32_t VersionsStart 	= (Settings.DeviceGeneration < 2) ? Settings.Storage.Versions.StartAddress4MB : Settings.Storage.Versions.StartAddress16MB;
 
