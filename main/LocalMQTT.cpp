@@ -92,7 +92,7 @@ string LocalMQTT_t::GetCredentialsJSON() {
 
 
 void LocalMQTT_t::Start() {
-	if (ServerURI != "" && CurrentStatus != CONNECTED && IsActive) {
+	if (ServerURI != "" && CurrentStatus != CONNECTED && IsActive && Device.IsLocalMQTTEnabled()) {
 		SetStatus(CONNECTING);
 
 	    static esp_mqtt_client_config_t mqtt_cfg = CreateConfig();
@@ -111,7 +111,7 @@ void LocalMQTT_t::Start() {
 }
 
 void LocalMQTT_t::Stop() {
-	if (ClientHandle && CurrentStatus != UNACTIVE) {
+	if (ClientHandle && CurrentStatus != UNACTIVE  && Device.IsLocalMQTTEnabled()) {
 		SetStatus(UNACTIVE);
 
 		if (ClientHandle != NULL)
@@ -124,6 +124,9 @@ void LocalMQTT_t::Stop() {
 }
 
 void LocalMQTT_t::Reconnect() {
+	if (!Device.IsLocalMQTTEnabled())
+		return;
+
 	if (CurrentStatus == CONNECTED  && ClientHandle != NULL) {
 		Stop();
 		FreeRTOS::Sleep(2000);

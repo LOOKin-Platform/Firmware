@@ -16,8 +16,6 @@ uint8_t HandlersPooling_t::RegisterHandler(PoolingHandler_fn Handler, uint32_t P
 	while (std::find(HandlerIDs.begin(), HandlerIDs.end(), Index) != HandlerIDs.end())
 		Index++;
 
-	ESP_LOGE("Handler Index", "%d", Index);
-
 	HandlerItem_t NewHandler;
 	NewHandler.Index 	= Index;
 	NewHandler.Handler 	= Handler;

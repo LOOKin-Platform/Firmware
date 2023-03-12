@@ -97,12 +97,13 @@ extern "C" void app_main()
 
 	Network.ImportScannedSSIDList(WiFi.Scan());
 
+	Device.Init();
+
 	if (Matter::IsEnabledForDevice()) 
 		Matter::Init();
 
 	Time::SetTimezone();
 
-	Device.Init();
 	Network.Init();
 	Automation.Init();
 

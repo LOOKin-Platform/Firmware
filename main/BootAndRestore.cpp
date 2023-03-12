@@ -121,14 +121,6 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 		Memory.EraseStartedWith(NVSLogArray);
 	}
 
-	// Set eco mode on for all updated and new devices
-	if (OldFirmware < "2.41" && OldFirmware != "")
-	{
-		NVS Memory(NVSDeviceArea);
-		Memory.SetInt8Bit(NVSDeviceEco, 0);
-		Memory.Commit();
-	}
-
 	// set autoupdate to true
 	if (OldFirmware < "2.43" && OldFirmware != "")
 	{
@@ -140,6 +132,14 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 	// Erase firmware while update to 2.40
 	if (OldFirmware < "2.40" && Settings.DeviceGeneration > 1) {
 		SPIFlash::EraseRange(0x8A0000, 0x450000);
+	}
+
+	if (OldFirmware < "2.44" && NewFirmware >= "3.00") {
+		NVS Memory(NVSDeviceArea);
+		Memory.Erase("SensorMode");
+		Memory.Erase("Eco");
+		Memory.Erase("HomeKit");
+		Memory.Commit();
 	}
 
 	if (OldFirmware < "2.41" && OldFirmware != "") {
@@ -154,7 +154,6 @@ void BootAndRestore::Migration(string OldFirmware, string NewFirmware) {
 			Memory.Commit();
 		}
 	}
-
 }
 
 void BootAndRestore::ExecuteOperationNow(OperationTypeEnum Operation) {

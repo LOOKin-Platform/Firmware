@@ -35,14 +35,14 @@ void HandlersPooling_t::EnergyPeriodicHandler::InnerHandler(bool SkipTimeCheck) 
 		if (ConstValue > 5000)
 		{
 			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::BATTERY)
-				PowerManagement::SetPMType(Device.GetEcoFromNVS(), true);
+				PowerManagement::SetPMType(Device.IsEcoModeEnabled(), true);
 
 			Device.PowerMode = DevicePowerMode::CONST;
 		}
 		else
 		{
 			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::CONST)
-				PowerManagement::SetPMType(Device.GetEcoFromNVS(), false);
+				PowerManagement::SetPMType(Device.IsEcoModeEnabled(), false);
 
 			Device.PowerMode = DevicePowerMode::BATTERY;
 		}

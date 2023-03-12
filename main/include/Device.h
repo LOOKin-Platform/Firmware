@@ -40,14 +40,15 @@ using namespace std;
 #define NVSDeviceName				"Name"
 #define NVSDevicePowerMode			"PowerMode"
 #define	NVSDevicePowerModeVoltage	"PowerModeVoltage"
-#define	NVSDeviceSensorMode			"SensorMode"
-#define	NVSDeviceEco				"Eco"
 #define	NVSDeviceAutoUpdate			"IsAutoUpdate"
+#define	NVSDeviceCapabilities		"Capabilities"
 
 #define NVSDeviceID					"ID"
 #define NVSDeviceType				"Type"
 #define NVSDeviceModel				"Model"
 #define NVSDeviceRevision			"Revision"
+
+#define JSONFieldCapabilities		"capabilities"
 
 class DeviceType_t {
 	public:
@@ -63,8 +64,8 @@ class DeviceType_t {
 		static string 	ToString(uint8_t);
 };
 
-enum    DeviceStatus    { RUNNING, UPDATING };
-enum    DevicePowerMode { BATTERY, CONST };
+enum    DeviceStatus    	{ RUNNING, UPDATING };
+enum    DevicePowerMode 	{ BATTERY, CONST };
 
 class Device_t {
 	public:
@@ -78,7 +79,7 @@ class Device_t {
 		uint16_t			CurrentVoltage = 0;
 
 		bool				SensorMode = false;
-
+		
 		Device_t();
 		void    			Init();
 		void    			HandleHTTPRequest(WebServer_t::Response &, Query_t &);
@@ -87,19 +88,22 @@ class Device_t {
 		string				GetName();
 		void				SetName(string);
 
-		static bool 		GetEcoFromNVS();
-		static void 		SetEcoToNVS(bool);
-
-		static bool			GetSensorModeFromNVS();
-		static void			SetSensorModeToNVS(bool);
-
 		static bool 		GetAutoUpdateFromNVS();
 		static void 		SetAutoUpdateToNVS(bool);
+
+	    bool 				IsMatterEnabled() 			const	{ return Capabilities.IsMatterEnabled; }
+	    bool 				IsRemoteControlEnabled()	const 	{ return Capabilities.IsRemoteControlEnabled; }
+	    bool 				IsLocalMQTTEnabled() 		const	{ return Capabilities.IsLocalMQTTEnabled; }
+	    bool 				IsSensorModeEnabled() 		const	{ return Capabilities.IsSensorModeEnabled; }
+	    bool 				IsEcoModeEnabled() 			const	{ return Capabilities.IsEcoModeEnabled; }
+		uint16_t			CapabilitiesRaw()			const 	{ return Capabilities.Raw; }
+
+		void 				LoadCapabilityFlagsFromNVS();
+		void 				SetCapabilityFlagsToNVS();
 
 		string				IDToString();
 		string				TypeToString();
 		string				ModelToString();
-		string				HomeKitToString();
 
 		static uint32_t 	GenerateID();
 
@@ -116,9 +120,11 @@ class Device_t {
 		bool 				POSTTime(map<string,string>);
 		bool 				POSTTimezone(map<string,string>);
 		bool 				POSTFirmwareVersion(map<string,string>, WebServer_t::Response &, httpd_req_t *Request, WebServer_t::QueryTransportType);
-		bool 				POSTSensorMode(map<string,string>, WebServer_t::Response &);
-		bool 				POSTEco(map<string,string> Params);
 		bool				POSTIsAutoUpdate(Query_t& Query);
+
+		bool 				POSTCapabilites(const char *);
+		bool 				PUTCapabilities(const char *);
+		bool 				SetCapabilities(uint16_t Capabilities);
 
 		string 				StatusToString();
 		string 				NameToString();
@@ -126,13 +132,27 @@ class Device_t {
 		string 				FirmwareVersionToString();
 		string 				TemperatureToString();
 		string 				CurrentVoltageToString();
-		string				SensorModeToString();
 		string				MRDCToString();
-		string				EcoToString();
 
 		static string 		FirmwareURLForOTA;
 		static TaskHandle_t	OTATaskHandler;
 		static void 		ExecuteOTATask(void*);
+
+		union Capabilities_t
+		{
+			struct 
+			{
+				uint16_t Reserved 			: 11;
+				bool IsEcoModeEnabled		: 1;
+				bool IsMatterEnabled 		: 1;
+				bool IsRemoteControlEnabled : 1;
+				bool IsLocalMQTTEnabled 	: 1;
+				bool IsSensorModeEnabled 	: 1;
+			};
+
+			uint16_t Raw;
+		} Capabilities;
+
 };
 
 #endif

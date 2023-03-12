@@ -245,7 +245,7 @@ esp_err_t MyWiFiEventHandler::staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
 		//!string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
 		//!mdns_instance_name_set(InstanceName.c_str());
 	}
-	else if (0)
+	else
 	{
 		esp_err_t err = mdns_init();
 		if (err) {

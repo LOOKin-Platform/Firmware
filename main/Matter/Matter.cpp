@@ -510,7 +510,7 @@ void Matter::ResetData() {
 }
 
 bool Matter::IsEnabledForDevice() {
-	return true;
+	return Device.IsMatterEnabled();
 }
 
 void Matter::Reboot() {

@@ -33,7 +33,7 @@ void RemoteControl_t::Init() {
 }
 
 void RemoteControl_t::Start() {
-	if (Username != "" && Status != CONNECTED)
+	if (Username != "" && Status != CONNECTED && Device.IsRemoteControlEnabled())
 	{
 		ESP_LOGI(Tag, "Started RAM left %lu", esp_get_free_heap_size());
 
@@ -58,7 +58,7 @@ void RemoteControl_t::Start() {
 void RemoteControl_t::Stop() {
 	Status = UNACTIVE;
 
-	if (ClientHandle != NULL) {
+	if (ClientHandle != NULL && Device.IsRemoteControlEnabled()) {
 		::esp_mqtt_client_stop(ClientHandle);
 		::esp_mqtt_client_destroy(ClientHandle);
 	}
@@ -69,6 +69,9 @@ void RemoteControl_t::Stop() {
 }
 
 void RemoteControl_t::Reconnect(uint16_t Delay) {
+	if (!Device.IsRemoteControlEnabled())
+		return;
+
 	if (Status == UNACTIVE && ClientHandle == NULL)
 		Start();
 
@@ -316,10 +319,13 @@ esp_mqtt_client_config_t RemoteControl_t::CreateConfig() {
 	IsSecuredFlag = !(Matter::IsEnabledForDevice() || LocalMQTT.GetIsActive());
 
 	//Config.host			= "mqtt.look-in.club";
-	Config.broker.address.uri 			= (!IsSecuredFlag) ? Settings.RemoteControl.ServerUnsecure.c_str() : Settings.RemoteControl.Server.c_str();
-	Config.broker.address.port			= 8883;
+	Config.broker.address.uri 			= 
+			(!IsSecuredFlag) 
+				? Settings.RemoteControl.ServerUnsecure.c_str() 
+				: Settings.RemoteControl.Server.c_str();
 
-	//Config.transport 	= MQTT_TRANSPORT_OVER_SSL;
+	//Config.broker.address.port			= 8883;
+	//Config.broker.address.transport = MQTT_TRANSPORT_OVER_SSL;
 
 	Config.credentials.username 	= Username.c_str();
     Config.credentials.authentication.password	

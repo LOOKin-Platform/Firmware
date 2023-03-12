@@ -57,23 +57,26 @@ void Device_t::Init() {
 	Type = DeviceType_t(Settings.eFuse.Type);
 	PowerMode = (Type.IsBattery()) ? DevicePowerMode::BATTERY : DevicePowerMode::CONST;
 
-	switch (Type.Hex) {
+	Capabilities.Raw = 0;
+
+	switch (Type.Hex) 
+	{
 		case Settings.Devices.Duo:
 		case Settings.Devices.Plug:
-			PowerModeVoltage = +220;
+			PowerModeVoltage 	= +220;
 			break;
 
 		case Settings.Devices.Remote:
 			PowerModeVoltage 	= +5;
-			SensorMode 			= GetSensorModeFromNVS();
 			break;
 
 		case Settings.Devices.WindowOpener:
 			PowerModeVoltage 	= +5;
 			break;
 	}
-
-	PowerManagement::SetPMType(GetEcoFromNVS(), (PowerMode == DevicePowerMode::CONST));
+	
+	LoadCapabilityFlagsFromNVS();
+	PowerManagement::SetPMType(IsEcoModeEnabled(), (PowerMode == DevicePowerMode::CONST));
 
 	IsAutoUpdate = GetAutoUpdateFromNVS();
 }
@@ -88,22 +91,18 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 
 		// Запрос конкретного параметра
 		if (Query.GetURLPartsCount() == 2) {
-			if (Query.CheckURLPart("type"			, 1))	Result.Body = TypeToString();
-			if (Query.CheckURLPart("mrdc"			, 1))	Result.Body = MRDCToString();
-			if (Query.CheckURLPart("status"			, 1))	Result.Body = StatusToString();
-			if (Query.CheckURLPart("id"				, 1))	Result.Body = IDToString();
-			if (Query.CheckURLPart("name"			, 1))	Result.Body = NameToString();
-			if (Query.CheckURLPart("time"			, 1))	Result.Body = Time::UnixtimeString();
-			if (Query.CheckURLPart("timezone"		, 1))	Result.Body = Time::TimezoneStr();
-			if (Query.CheckURLPart("powermode"		, 1))	Result.Body = PowerModeToString();
-			if (Query.CheckURLPart("currentvoltage"	, 1))	Result.Body = CurrentVoltageToString();
-			if (Query.CheckURLPart("firmware"		, 1))	Result.Body = FirmwareVersionToString();
-			if (Query.CheckURLPart("temperature"	, 1))	Result.Body = TemperatureToString();
-			if (Query.CheckURLPart("homekit"		, 1))	Result.Body = HomeKitToString();
-			if (Query.CheckURLPart("ecomode"		, 1))	Result.Body = EcoToString();
-
-			if ((Query.CheckURLPart("sensormode", 1)) && Device.Type.Hex == Settings.Devices.Remote)
-				Result.Body = SensorModeToString();
+			if (Query.CheckURLPart("type"				, 1))	Result.Body = TypeToString();
+			if (Query.CheckURLPart("mrdc"				, 1))	Result.Body = MRDCToString();
+			if (Query.CheckURLPart("status"				, 1))	Result.Body = StatusToString();
+			if (Query.CheckURLPart("id"					, 1))	Result.Body = IDToString();
+			if (Query.CheckURLPart("name"				, 1))	Result.Body = NameToString();
+			if (Query.CheckURLPart("time"				, 1))	Result.Body = Time::UnixtimeString();
+			if (Query.CheckURLPart("timezone"			, 1))	Result.Body = Time::TimezoneStr();
+			if (Query.CheckURLPart("powermode"			, 1))	Result.Body = PowerModeToString();
+			if (Query.CheckURLPart("currentvoltage"		, 1))	Result.Body = CurrentVoltageToString();
+			if (Query.CheckURLPart("firmware"			, 1))	Result.Body = FirmwareVersionToString();
+			if (Query.CheckURLPart("temperature"		, 1))	Result.Body = TemperatureToString();
+			if (Query.CheckURLPart(JSONFieldCapabilities, 1))	Result.Body = Converter::ToHexString(Capabilities.Raw,4);
 
 			Result.ContentType = WebServer_t::Response::TYPE::PLAIN;
 		}
@@ -123,22 +122,32 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 
 	// обработка POST запроса - сохранение и изменение данных
 	if (Query.Type == QueryType::POST) {
-		map<string,string> Params = JSON(Query.GetBody()).GetItems();
+		JSON JSONObject = JSON(Query.GetBody());
+		map<string,string> Params = JSONObject.GetItems();
 
 		if (Query.GetURLPartsCount() == 1) {
 			bool isNameSet            	= POSTName(Params);
 			bool isTimeSet            	= POSTTime(Params);
 			bool isTimezoneSet        	= POSTTimezone(Params);
-			bool isEcoSet				= POSTEco(Params);
 			bool isFirmwareVersionSet 	= POSTFirmwareVersion(Params, Result, Query.GetRequest(), Query.Transport);
-			bool isSensorModeSet		= POSTSensorMode(Params, Result);
 			bool IsAutoUpdateSet		= POSTIsAutoUpdate(Query);
 
-			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || isSensorModeSet || isEcoSet || IsAutoUpdateSet) && Result.Body == "")
+			if ((isNameSet || isTimeSet || isTimezoneSet || isFirmwareVersionSet || IsAutoUpdateSet) && Result.Body == "")
 				Result.Body = "{\"success\" : \"true\"}";
 		}
 
 		if (Query.GetURLPartsCount() == 2) {
+			if (Query.CheckURLPart(JSONFieldCapabilities, 1)) {
+				bool IsSucceed = POSTCapabilites(Query.GetBody());
+
+				if (IsSucceed)
+					Result.SetSuccess();
+				else 
+					Result.SetFail("Incorrect capability format");
+
+				return;
+			}
+
 			if (Query.CheckURLPart("factory-reset", 1)) {
 				Result.SetSuccess();
 				BootAndRestore::HardReset(true);
@@ -193,6 +202,24 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 		}
 	}
 
+	// обработка PUT запроса - изменение данных
+	if (Query.Type == QueryType::PUT) {
+		JSON JSONObject = JSON(Query.GetBody());
+
+		if (Query.GetURLPartsCount() == 2) { // Operation to logical end for capabilities
+			if (Query.CheckURLPart(JSONFieldCapabilities, 1)) {
+				bool IsSucceed = PUTCapabilities(Query.GetBody());
+
+				if (IsSucceed)
+					Result.SetSuccess();
+				else 
+					Result.SetFail("Incorrect capability format");
+
+				return;
+			}
+		}
+	}
+
 	if (Query.CheckURLMask("POST /device/efuse")) {
 		JSON JSONItem(Query.GetBody());
 
@@ -224,26 +251,22 @@ JSON Device_t::RootInfo() {
 	JSON JSONObject;
 
 	JSONObject.SetItems(vector<pair<string,string>> ({
-		make_pair("Type"			, TypeToString()),
-		make_pair("MRDC"			, MRDCToString()),
-		make_pair("Status"			, StatusToString()),
-		make_pair("ID"				, IDToString()),
-		make_pair("Name"			, NameToString()),
-		make_pair("Time"			, Time::UnixtimeString()),
-		make_pair("Timezone"		, Time::TimezoneStr()),
-		make_pair("PowerMode"		, PowerModeToString()),
-		make_pair("CurrentVoltage"	, CurrentVoltageToString()),
-		make_pair("Firmware"		, FirmwareVersionToString()),
-		make_pair("Temperature"		, TemperatureToString()),
-		make_pair("HomeKit"			, HomeKitToString()),
-		make_pair("EcoMode"			, EcoToString()),
-		make_pair("BLEStatus"		, Converter::ToHexString(Wireless.GetBLEStatus(),2))
+		make_pair("Type"				, TypeToString()),
+		make_pair("MRDC"				, MRDCToString()),
+		make_pair("Status"				, StatusToString()),
+		make_pair("ID"					, IDToString()),
+		make_pair("Name"				, NameToString()),
+		make_pair("Time"				, Time::UnixtimeString()),
+		make_pair("Timezone"			, Time::TimezoneStr()),
+		make_pair("PowerMode"			, PowerModeToString()),
+		make_pair("CurrentVoltage"		, CurrentVoltageToString()),
+		make_pair("Firmware"			, FirmwareVersionToString()),
+		make_pair("Temperature"			, TemperatureToString()),
+		make_pair("BLEStatus"			, Converter::ToHexString(Wireless.GetBLEStatus(),2)),
+		make_pair(JSONFieldCapabilities	, Converter::ToHexString(Capabilities.Raw,4))
 	}));
 
 	JSONObject.SetBoolItem("IsAutoUpdate", IsAutoUpdate);
-
-	if (Device.Type.Hex == Settings.Devices.Remote)
-		JSONObject.SetItem("SensorMode", SensorModeToString());
 
 	return JSONObject;
 }
@@ -256,28 +279,6 @@ string Device_t::GetName() {
 void Device_t::SetName(string Name) {
 	NVS Memory(NVSDeviceArea);
 	Memory.SetString(NVSDeviceName, Name);
-	Memory.Commit();
-}
-
-bool Device_t::GetEcoFromNVS() {
-	NVS Memory(NVSDeviceArea);
-	return (Memory.GetInt8Bit(NVSDeviceEco) == 1) ? true : false;
-}
-
-void Device_t::SetEcoToNVS(bool Eco) {
-	NVS Memory(NVSDeviceArea);
-	Memory.SetInt8Bit(NVSDeviceEco, (Eco) ? 1 : 0);
-	Memory.Commit();
-}
-
-bool Device_t::GetSensorModeFromNVS() {
-	NVS Memory(NVSDeviceArea);
-	return (Memory.GetString(NVSDeviceSensorMode) == "1") ? true : false;
-}
-
-void Device_t::SetSensorModeToNVS(bool SensorMode) {
-	NVS Memory(NVSDeviceArea);
-	Memory.SetString(NVSDeviceSensorMode, (SensorMode) ? "1" : "0");
 	Memory.Commit();
 }
 
@@ -298,6 +299,20 @@ void Device_t::SetAutoUpdateToNVS(bool AutoUpdateNew) {
 	Memory.Commit();
 
 	IsAutoUpdate = AutoUpdateNew;
+}
+
+void Device_t::LoadCapabilityFlagsFromNVS() {
+	NVS Memory(NVSDeviceArea);
+	Capabilities.Raw = Memory.GetUInt16Bit(NVSDeviceCapabilities);
+
+	if (Capabilities.Raw == 0x0) // Set default value
+		Capabilities.IsMatterEnabled = true;
+}
+
+void Device_t::SetCapabilityFlagsToNVS() {
+	NVS Memory(NVSDeviceArea);
+	Memory.SetUInt16Bit(NVSDeviceCapabilities, Capabilities.Raw);
+	Memory.Commit();
 }
 
 // Генерация ID на основе MAC-адреса чипа
@@ -446,38 +461,6 @@ void Device_t::OTAFailedCallback() {
 	Matter::Start();
 }
 
-bool Device_t::POSTSensorMode(map<string,string> Params, WebServer_t::Response& Response)
-{
-	if (Params.count("sensormode") > 0) {
-		if (Params["sensormode"] == "1" || Converter::ToLower(Params["sensormode"]) == "true")
-			SensorMode = true;
-
-		if (Params["sensormode"] == "0" || Converter::ToLower(Params["sensormode"]) == "false")
-			SensorMode = false;
-
-		SetSensorModeToNVS(SensorMode);
-
-		return true;
-	}
-
-	return false;
-}
-
-bool Device_t::POSTEco(map<string,string> Params) {
-	if (Params.count("ecomode") > 0) {
-		bool EcoOn = Converter::ToLower(Params["ecomode"]) == "on" ? true : false;
-		SetEcoToNVS(EcoOn);
-
-		PowerManagement::SetPMType(EcoOn, (Device.PowerMode == CONST));
-
-		Log::Add((EcoOn) ? Log::Events::System::PowerManageOn : Log::Events::System::PowerManageOff);
-
-		return true;
-	}
-
-	return false;
-}
-
 bool Device_t::POSTIsAutoUpdate(Query_t& Query) {
 	JSON JSONObject(Query.GetBody());
 
@@ -493,6 +476,83 @@ bool Device_t::POSTIsAutoUpdate(Query_t& Query) {
 
 	return false;
 }
+
+bool Device_t::POSTCapabilites(const char * Data) {
+	if (strlen(Data) < 3)
+		return false;
+
+	string CapabilityRawString(Data);
+
+	uint16_t CapabilitiesToSet = 0;
+
+	if (CapabilityRawString.substr(0,2) == "0x" || CapabilityRawString.substr(0,2) == "0b") {
+		string Prefix = CapabilityRawString.substr(0,2);
+		CapabilityRawString = CapabilityRawString.substr(2);
+
+		if (Prefix == "0x") {
+			CapabilitiesToSet = Converter::UintFromHexString<uint16_t>(CapabilityRawString);	
+		}
+		else if (Prefix == "0b") {
+			while (CapabilityRawString.size() < 16)
+				CapabilityRawString = "0" + CapabilityRawString;
+
+			CapabilitiesToSet = std::strtol(CapabilityRawString.c_str(), nullptr, 2);
+		}
+
+		return SetCapabilities(CapabilitiesToSet);
+	}
+
+	return false;
+}
+
+bool Device_t::PUTCapabilities(const char * Data) {
+	if (strlen(Data) < 3)
+		return false;
+
+	string CapabilityRawString(Data);
+
+	uint16_t CapabilitiesToSet = 0;
+
+	if (CapabilityRawString.substr(0,2) == "0x" || CapabilityRawString.substr(0,2) == "0b") {
+		string Prefix = CapabilityRawString.substr(0,2);
+		CapabilityRawString = CapabilityRawString.substr(2);
+
+		uint16_t Divider = 0;
+
+		if (Prefix == "0x") {
+			Divider = Converter::UintFromHexString<uint16_t>(CapabilityRawString);	
+		}
+		else if (Prefix == "0b") {
+			while (CapabilityRawString.size() < 16)
+				CapabilityRawString = "0" + CapabilityRawString;
+
+			Divider = std::strtol(CapabilityRawString.c_str(), nullptr, 2);
+		}
+
+		CapabilitiesToSet = Capabilities.Raw & Divider;
+		return SetCapabilities(CapabilitiesToSet);
+	}
+
+	return false;
+}
+
+bool Device_t::SetCapabilities(uint16_t NewCapabilities) {
+
+	Capabilities.Raw = NewCapabilities;
+
+	if (Capabilities.IsMatterEnabled && 
+		(Capabilities.IsRemoteControlEnabled || Capabilities.IsLocalMQTTEnabled)) 
+		{
+			Capabilities.IsRemoteControlEnabled 	= false;
+			Capabilities.IsLocalMQTTEnabled			= false;
+		}
+
+	SetCapabilityFlagsToNVS();
+
+	return true;
+}
+
+
 
 string Device_t::TypeToString() {
 	return Type.ToString();
@@ -533,10 +593,6 @@ string Device_t::CurrentVoltageToString() {
 	return Converter::ToString(CurrentVoltage);
 }
 
-string Device_t::SensorModeToString() {
-	return (SensorMode) ? "1" : "0";
-}
-
 string Device_t::ModelToString() {
 	return Converter::ToHexString(((Settings.eFuse.Model == 0) ? 1 : Settings.eFuse.Model), 2);
 }
@@ -550,12 +606,3 @@ string Device_t::MRDCToString() {
 			+ Converter::ToHexString(Settings.eFuse.Produced.Month, 1)
 			+ Converter::ToHexString(Settings.eFuse.Produced.Year, 3);
 }
-
-string Device_t::HomeKitToString() {
-	return (Matter::IsEnabledForDevice()) ? "1" : "0";
-}
-
-string Device_t::EcoToString() {
-	return GetEcoFromNVS() ? "on" : "off";
-}
-

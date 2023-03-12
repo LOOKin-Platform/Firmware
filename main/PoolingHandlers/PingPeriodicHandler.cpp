@@ -78,12 +78,11 @@ void HandlersPooling_t::PingPeriodicHandler::Pool() {
 				JSON TelemetryData;
 
 				TelemetryData.SetItem("Uptime"		, Converter::ToString<uint32_t>(Time::Uptime()));
-				TelemetryData.SetItem("Eco"			, (Device.GetEcoFromNVS()) ? "1" : "0");
-				TelemetryData.SetItem("HomeKit"		, Device.HomeKitToString());
 				TelemetryData.SetItem("IsBattery"	, (Device.PowerMode == DevicePowerMode::BATTERY) ? "1" : "0");
 				TelemetryData.SetItem("RCStatus"	, RemoteControl.GetStatusString());
 				TelemetryData.SetItem("Memory"		, Converter::ToString(::esp_get_free_heap_size()));
 				TelemetryData.SetItem("IsAutoUpdate", (Device.IsAutoUpdate) ? "true" : "false");
+				TelemetryData.SetItem("capabilities", Converter::ToHexString(Device.CapabilitiesRaw(),4));
 
 				CommandIR_t* CommandIR = (CommandIR_t*)Command_t::GetCommandByName("IR");
 				if (CommandIR != nullptr) {
