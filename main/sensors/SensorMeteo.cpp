@@ -144,12 +144,6 @@ class SensorMeteo_t : public Sensor_t {
 
 				if (IsMatterEnabled() && Settings.eFuse.Type == Settings.Devices.Remote)
 				{
-					for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
-						if (IRDevice.DeviceType == 0xEF)
-						{
-							//!HomeKitUpdateCharValue(IRDevice.DeviceID, HAP_SERV_UUID_HUMIDITY_SENSOR, HAP_CHAR_UUID_CURRENT_RELATIVE_HUMIDITY, CurrentHumidityValue);
-						}
-				
 					MatterHumiditySensor* HumiditySensor = (MatterHumiditySensor*)GetBridgedAccessoryByType(MatterGenericDevice::Humidity);
 					if (HumiditySensor != nullptr)
 						HumiditySensor->SetHumidity(Value);

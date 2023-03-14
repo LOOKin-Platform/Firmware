@@ -418,7 +418,14 @@ void DataEndpoint_t::EraseAll() {
     	::esp_partition_erase_range(Partition, 0, Partition->size);
 }
 
-bool DataEndpoint_t::IsHomeKitEnabled() 		{ return Matter::IsEnabledForDevice();		}
+bool DataEndpoint_t::IsMatterEnabled() { 
+	return Matter::IsEnabledForDevice();		
+}
+
+MatterGenericDevice* DataEndpoint_t::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID) {
+	return Matter::GetBridgedAccessoryByType(Type, UUID);
+}
+
 
 void DataEndpoint_t::Debug(string Tag) {
     const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);

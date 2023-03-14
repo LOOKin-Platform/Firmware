@@ -79,6 +79,31 @@ class MatterThermostat : public MatterGenericDevice {
                 HandleStatusChanged(this, kChanged_MeasurementValue);
         }
 
+        chip::app::Clusters::Thermostat::ThermostatSystemMode GetMode() {
+            return CurrentMode;
+        }
+
+        void SetMode(chip::app::Clusters::Thermostat::ThermostatSystemMode ModeToSet) {
+            CurrentMode = ModeToSet;
+            //! Проорать о значении в HomeKit
+        }
+
+        float GetACTemperature() {
+            return ACTemp;
+        }
+
+        void SetACTemperature(float Value) {
+            int16_t NormalizedValue = round(Value * 100);
+
+            bool changed = ACTemp != NormalizedValue;
+
+            ACTemp = NormalizedValue;
+
+            if (changed)
+                HandleStatusChanged(this, kChanged_MeasurementValue);
+
+        }
+
         static void HandleStatusChanged(MatterThermostat * dev, MatterThermostat::Changed_t itemChangedMask)
         {
             ESP_LOGE("MatterThermostat", "MatterThermostat");
@@ -138,7 +163,7 @@ class MatterThermostat : public MatterGenericDevice {
                 }
                 else if ((attributeId == Thermostat::Attributes::OccupiedCoolingSetpoint::Id || attributeId == Thermostat::Attributes::OccupiedHeatingSetpoint::Id) && (maxReadLength == 2))
                 {
-                    int16_t CurValue = 2100;
+                    int16_t CurValue = ACTemp;
                     memcpy(Buffer, &CurValue, sizeof(CurValue));
                 }
                 else if ((attributeId == Thermostat::Attributes::FeatureMap::Id) && (maxReadLength == 4))
@@ -221,6 +246,11 @@ class MatterThermostat : public MatterGenericDevice {
         const int16_t   mLocalTempMax           = -10000;
 
         int16_t         mLocalTempMeasurement   = 1600;
+
+        int16_t         ACTemp                  = 2100;
+
+        chip::app::Clusters::Thermostat::ThermostatSystemMode
+                        CurrentMode             = chip::app::Clusters::Thermostat::ThermostatSystemMode::kOff;
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override {
             ESP_LOGE("MatterThermostat", "HandleDeviceChange");

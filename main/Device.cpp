@@ -305,8 +305,11 @@ void Device_t::LoadCapabilityFlagsFromNVS() {
 	NVS Memory(NVSDeviceArea);
 	Capabilities.Raw = Memory.GetUInt16Bit(NVSDeviceCapabilities);
 
-	if (Capabilities.Raw == 0x0) // Set default value
-		Capabilities.IsMatterEnabled = true;
+	if (Capabilities.Raw == 0x0) {
+		// Set default value
+		Capabilities.IsRemoteControlEnabled = true;
+		Capabilities.IsLocalMQTTEnabled 	= true;
+	}
 }
 
 void Device_t::SetCapabilityFlagsToNVS() {

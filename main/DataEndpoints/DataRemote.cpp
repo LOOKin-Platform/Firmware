@@ -1273,7 +1273,7 @@ class DataRemote_t : public DataEndpoint_t {
 
 			StatusSave(DeviceID, ACOperandNext.ToUint16());
 
-			if (IsHomeKitEnabled()) {
+			if (IsMatterEnabled()) {
 				if (ACOperandPrev.Mode 			!= ACOperandNext.Mode) 			HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE0, ACOperandNext.Mode);
 				if (ACOperandPrev.Temperature 	!= ACOperandNext.Temperature) 	HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE1, ACOperandNext.Temperature);
 				if (ACOperandPrev.FanMode 		!= ACOperandNext.FanMode) 		HomeKitStatusTriggerUpdated(DeviceID, 0xEF, 0xE2, ACOperandNext.FanMode);
@@ -1404,7 +1404,7 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		void StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value, uint16_t Status) {
-			if (FunctionID > 0 && IsHomeKitEnabled())
+			if (FunctionID > 0 && IsMatterEnabled())
 				HomeKitStatusTriggerUpdated(DeviceID, DeviceType, FunctionID, Value);
 
 			Wireless.SendBroadcastUpdated(0x87, "FE", DeviceID + Converter::ToHexString(Status,4));
@@ -1414,16 +1414,13 @@ class DataRemote_t : public DataEndpoint_t {
 		}
 
 		void HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {
-			if (!IsHomeKitEnabled())
+			if (!IsMatterEnabled())
 				return;
 
 			ESP_LOGE("HomeKitStatusTriggerUpdated", "FunctionID: %04X Value: %d DeviceID: %s", FunctionID, Value, DeviceID.c_str());
 
-			uint32_t AID = (uint32_t)Converter::UintFromHexString<uint16_t>(DeviceID);
-
-			//!static hap_val_t HAPValue;
-
 			switch (FunctionID) {
+				// power, poweron, poweroff
 				case 0x01:
 				case 0x02:
 				case 0x03:
@@ -1537,16 +1534,14 @@ class DataRemote_t : public DataEndpoint_t {
 				}
 				case 0xE1: // AC Temeperature
 				{
-					//!HAPValue.f = (float)Value;
+					MatterThermostat* Thermostat = (MatterThermostat*)GetBridgedAccessoryByType(MatterGenericDevice::Thermostat, DeviceID);
+					if (Thermostat != nullptr) 
+					{
+						bool isACUnitOn = (Thermostat->GetMode() != chip::app::Clusters::Thermostat::ThermostatSystemMode::kOff);
 
-					//!const hap_val_t* IsActive 		= HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_ACTIVE);
-					//!if (IsActive->b)
-					//!{
-					//!	const hap_val_t* CurrentMode 	= HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_TARGET_HEATER_COOLER_STATE);
-
-					//!	if (CurrentMode != NULL)
-							//!HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, (CurrentMode->u == 1) ?  HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE :  HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE, HAPValue);
-					//!}
+						if (isACUnitOn) 
+							Thermostat->SetACTemperature(Value);
+					}
 					break;
 				}
 				case 0xE2: // Fan Mode

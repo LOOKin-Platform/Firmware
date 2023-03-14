@@ -15,6 +15,9 @@
 #include "WiFi.h"
 #include "Memory.h"
 
+#include "Matter.h"
+#include "GenericDevice.hpp"
+
 using namespace std;
 
 #define FREE_MEMORY_NVS		"FreeMemoryAddr"
@@ -52,8 +55,8 @@ class DataEndpoint_t {
 		void					Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Size);
 		void 					EraseRange(uint32_t Start, uint32_t Length);
 	protected:
-		bool					IsHomeKitEnabled();
-		bool 					IsHomeKitExperimental();
+		bool					IsMatterEnabled();
+		MatterGenericDevice*	GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID = "");
 
 		bool					SaveItem(string ItemName, string Item);
 		string					GetItem(string ItemName);
