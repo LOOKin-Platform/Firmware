@@ -39,7 +39,7 @@ void Wireless_t::StopInterfaces(bool ShouldBlockForever) {
 	if (WiFi.IsRunning())
 		Wireless.StopWiFi();
 
-	if (BLEServer.IsRunning())
+	if (MyBLEServer.IsRunning())
 		Wireless.StopBluetooth();
 }
 
@@ -49,7 +49,7 @@ void Wireless_t::StopWiFi() {
 }
 
 void Wireless_t::StopBluetooth() {
-	BLEServer.StopAdvertising();
+	MyBLEServer.StopAdvertising();
 }
 
 void Wireless_t::SendBroadcastUpdated(uint8_t SensorID, string EventID, string Operand, bool IsScheduled, bool InvokeStartIntefaces) {
@@ -104,5 +104,5 @@ bool Wireless_t::IsPeriodicPool() {
 }
 
 uint8_t Wireless_t::GetBLEStatus() {
-	return BLEServer.GetStatus();
+	return MyBLEServer.GetStatus();
 }

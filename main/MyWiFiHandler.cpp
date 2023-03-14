@@ -43,7 +43,7 @@ esp_err_t MyWiFiEventHandler::apStart() {
 
 	BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.APSuccessDelay);
 
-	BLEServer.ForceHIDMode(BASIC);
+	MyBLEServer.ForceHIDMode(BASIC);
 
 	PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
 
@@ -280,7 +280,7 @@ esp_err_t MyWiFiEventHandler::staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
 
 	BootAndRestore::MarkDeviceStartedWithDelay(Settings.BootAndRestore.STASuccessADelay);
 
-	BLEServer.ForceHIDMode(HID);
+	MyBLEServer.ForceHIDMode(HID);
 
 	return ESP_OK;
 }

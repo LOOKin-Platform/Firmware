@@ -38,8 +38,8 @@ extern WiFi_t					WiFi;
 extern WebServer_t				WebServer;
 
 #if defined(CONFIG_BT_ENABLED)
-extern BLEServer_t				BLEServer;
-extern BLEClient_t				BLEClient;
+extern BLEServer_t				MyBLEServer;
+extern BLEClient_t				MyBLEClient;
 #endif /* Bluetooth enabled */
 
 extern Wireless_t				Wireless;

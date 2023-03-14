@@ -12,17 +12,19 @@
 #include "Data.h"
 
 extern DataEndpoint_t 	*Data;
-extern BLEServer_t		BLEServer;
+extern BLEServer_t 		MyBLEServer;
 
 static string 	CommandBLELastKBDSignalSended 	= "";
 static uint64_t	CommandBLELastTimeSended		= 0;
 
 #define	NVSCommandsBLEArea 		"CommandBLE"
-#define NVSBLESeqRepeatCounter 	"BLERepeatCounter"
+#define NVSBLESeqRepeatCounter 	"BLERepeatCount"
+#define NVSBLESkipPairingCode 	"BLECodeSkiped"
 
 class CommandBLE_t : public Command_t {
 	private:
-		uint8_t 		SequenceRepeatCounter = 5;
+		uint8_t 		SequenceRepeatCounter 	= 5;
+		bool			IsBLEPairingCodeSkiped	= false;
 
 	public:
 		uint32_t		SendCounter 		= 0;
@@ -50,13 +52,19 @@ class CommandBLE_t : public Command_t {
 				SequenceRepeatCounter = Memory.GetInt8Bit(NVSBLESeqRepeatCounter);
 				if (SequenceRepeatCounter < 1)
 					SequenceRepeatCounter = 1;
+
+				IsBLEPairingCodeSkiped = (Memory.GetInt8Bit(NVSBLESkipPairingCode) > 0 ? true : false);
 			}
+		}
+
+		bool GetIsBLEPairingCodeSkiped() const {
+			return IsBLEPairingCodeSkiped;
 		}
 
 		string GetSettings() override {
 			return "{\"SequenceRepeatCounter\": " +
 					Converter::ToString<uint8_t>(SequenceRepeatCounter)
-					+ "}";
+					+ ", \"IsBLEPairingCodeSkiped\":" + (IsBLEPairingCodeSkiped ? "true": "false")  + "}";
 		}
 
 		void SetSettings(WebServer_t::Response &Result, Query_t &Query) override {
@@ -76,6 +84,13 @@ class CommandBLE_t : public Command_t {
 			{
 				SequenceRepeatCounter = JSONItem.GetIntItem("SequenceRepeatCounter");
 				Memory.SetInt8Bit(NVSBLESeqRepeatCounter, SequenceRepeatCounter);
+				IsChanged = true;
+			}
+
+			if (JSONItem.IsItemExists("IsBLEPairingCodeSkiped") && JSONItem.IsItemBool("IsBLEPairingCodeSkiped"))
+			{
+				IsBLEPairingCodeSkiped = JSONItem.GetBoolItem("IsBLEPairingCodeSkiped");
+				Memory.SetInt8Bit(NVSBLESkipPairingCode, IsBLEPairingCodeSkiped ? 1 : 0);
 				IsChanged = true;
 			}
 
@@ -103,51 +118,51 @@ class CommandBLE_t : public Command_t {
 					CurrentMediaKeyReport[0] = Converter::UintFromHexString<uint8_t>(Operand.substr(0, 2));
 					CurrentMediaKeyReport[1] = Converter::UintFromHexString<uint8_t>(Operand.substr(2, 2));
 
-					BLEServer.Write(CurrentMediaKeyReport);
+					MyBLEServer.Write(CurrentMediaKeyReport);
 
 					return true;
 				}
 
 				size_t Result = 0;
 
-				if 		(Operand == "MEDIA_NEXT_TRACK") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_NEXT_TRACK) 			;}
-				else if (Operand == "MEDIA_PREV_TRACK") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_PREVIOUS_TRACK)		;}
-				else if (Operand == "MEDIA_STOP") 			{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_STOP)				;}
-				else if (Operand == "MEDIA_PLAY_PAUSE") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_PLAY_PAUSE)			;}
-				else if (Operand == "MEDIA_MUTE") 			{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_MUTE)				;}
-				else if (Operand == "MEDIA_VOLUME_UP") 		{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_UP)			;}
-				else if (Operand == "MEDIA_VOLUME_DOWN") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_VOLUME_DOWN)			;}
-				else if (Operand == "MEDIA_CHANNEL_UP") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CHANNEL_UP)			;}
-				else if (Operand == "MEDIA_CHANNEL_DOWN") 	{ Result = BLEServer.Write(BLEServer.KEY_MEDIA_CHANNEL_DOWN)		;}
-				else if (Operand == "CC_POWER") 			{ Result = BLEServer.Write(BLEServer.KEY_CC_POWER)					;}
-				else if (Operand == "CC_SLEEP") 			{ Result = BLEServer.Write(BLEServer.KEY_CC_SLEEP)					;}
-				else if (Operand == "CC_MENU") 				{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU)					;}
-				else if (Operand == "CC_MENU_PICK") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_PICK)				;}
-				else if (Operand == "CC_BACK") 				{ Result = BLEServer.Write(BLEServer.KEY_CC_BACK)					;}
-				else if (Operand == "CC_HOME") 				{ Result = BLEServer.Write(BLEServer.KEY_CC_HOME)					;}
-				else if (Operand == "CC_MENU_UP") 			{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_UP)				;}
-				else if (Operand == "CC_MENU_DOWN") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_DOWN)				;}
-				else if (Operand == "CC_MENU_LEFT") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_LEFT)				;}
-				else if (Operand == "CC_MENU_RIGHT") 		{ Result = BLEServer.Write(BLEServer.KEY_CC_MENU_RIGHT)				;}
-				else if (Operand == "KEY_ARROW_UP")			{ Result = BLEServer.Write(0xDA)									;}
-				else if (Operand == "KEY_ARROW_DOWN")		{ Result = BLEServer.Write(0xD9)									;}
-				else if (Operand == "KEY_ARROW_LEFT")		{ Result = BLEServer.Write(0xD8)									;}
-				else if (Operand == "KEY_ARROW_RIGHT")		{ Result = BLEServer.Write(0xD7)									;}
-				else if (Operand == "KEY_BACKSPACE")		{ Result = BLEServer.Write(0xB2)									;}
-				else if (Operand == "KEY_TAB")				{ Result = BLEServer.Write(0xB3)									;}
-				else if (Operand == "KEY_RETURN")			{ Result = BLEServer.Write(0xB0)									;}
-				else if (Operand == "KEY_ESCAPE")			{ Result = BLEServer.Write(0xB1)									;}
-				else if (Operand == "KEY_INSERT")			{ Result = BLEServer.Write(0xD1)									;}
-				else if (Operand == "KEY_DELETE")			{ Result = BLEServer.Write(0xD4)									;}
-				else if (Operand == "KEY_PAGE_UP")			{ Result = BLEServer.Write(0xD3)									;}
-				else if (Operand == "KEY_PAGE_DOWN")		{ Result = BLEServer.Write(0xD6)									;}
-				else if (Operand == "KEY_HOME")				{ Result = BLEServer.Write(0xD2)									;}
-				else if (Operand == "KEY_END")				{ Result = BLEServer.Write(0xD5)									;}
-				else if (Operand == "KEY_CAPS_LOCK")		{ Result = BLEServer.Write(0xC1)									;}
-				else if (Operand == "KEY_ENTER")			{ Result = BLEServer.Write(0x28)									;}
+				if 		(Operand == "MEDIA_NEXT_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_NEXT_TRACK) 			;}
+				else if (Operand == "MEDIA_PREV_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_PREVIOUS_TRACK)		;}
+				else if (Operand == "MEDIA_STOP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_STOP)				;}
+				else if (Operand == "MEDIA_PLAY_PAUSE") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_PLAY_PAUSE)			;}
+				else if (Operand == "MEDIA_MUTE") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_MUTE)				;}
+				else if (Operand == "MEDIA_VOLUME_UP") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_VOLUME_UP)			;}
+				else if (Operand == "MEDIA_VOLUME_DOWN") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_VOLUME_DOWN)			;}
+				else if (Operand == "MEDIA_CHANNEL_UP") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_CHANNEL_UP)			;}
+				else if (Operand == "MEDIA_CHANNEL_DOWN") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_CHANNEL_DOWN)		;}
+				else if (Operand == "CC_POWER") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_POWER)					;}
+				else if (Operand == "CC_SLEEP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_SLEEP)					;}
+				else if (Operand == "CC_MENU") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU)					;}
+				else if (Operand == "CC_MENU_PICK") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_PICK)				;}
+				else if (Operand == "CC_BACK") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_BACK)					;}
+				else if (Operand == "CC_HOME") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_HOME)					;}
+				else if (Operand == "CC_MENU_UP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_UP)				;}
+				else if (Operand == "CC_MENU_DOWN") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_DOWN)				;}
+				else if (Operand == "CC_MENU_LEFT") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_LEFT)				;}
+				else if (Operand == "CC_MENU_RIGHT") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_RIGHT)				;}
+				else if (Operand == "KEY_ARROW_UP")			{ Result = MyBLEServer.Write(0xDA)									;}
+				else if (Operand == "KEY_ARROW_DOWN")		{ Result = MyBLEServer.Write(0xD9)									;}
+				else if (Operand == "KEY_ARROW_LEFT")		{ Result = MyBLEServer.Write(0xD8)									;}
+				else if (Operand == "KEY_ARROW_RIGHT")		{ Result = MyBLEServer.Write(0xD7)									;}
+				else if (Operand == "KEY_BACKSPACE")		{ Result = MyBLEServer.Write(0xB2)									;}
+				else if (Operand == "KEY_TAB")				{ Result = MyBLEServer.Write(0xB3)									;}
+				else if (Operand == "KEY_RETURN")			{ Result = MyBLEServer.Write(0xB0)									;}
+				else if (Operand == "KEY_ESCAPE")			{ Result = MyBLEServer.Write(0xB1)									;}
+				else if (Operand == "KEY_INSERT")			{ Result = MyBLEServer.Write(0xD1)									;}
+				else if (Operand == "KEY_DELETE")			{ Result = MyBLEServer.Write(0xD4)									;}
+				else if (Operand == "KEY_PAGE_UP")			{ Result = MyBLEServer.Write(0xD3)									;}
+				else if (Operand == "KEY_PAGE_DOWN")		{ Result = MyBLEServer.Write(0xD6)									;}
+				else if (Operand == "KEY_HOME")				{ Result = MyBLEServer.Write(0xD2)									;}
+				else if (Operand == "KEY_END")				{ Result = MyBLEServer.Write(0xD5)									;}
+				else if (Operand == "KEY_CAPS_LOCK")		{ Result = MyBLEServer.Write(0xC1)									;}
+				else if (Operand == "KEY_ENTER")			{ Result = MyBLEServer.Write(0x28)									;}
 				else {
 					SendCounter++;
-					Result = BLEServer.Write(int(StringOperand[0]));
+					Result = MyBLEServer.Write(int(StringOperand[0]));
 				}
 
 				if (Result > 0)
@@ -195,7 +210,7 @@ class CommandBLE_t : public Command_t {
 				string Operand(StringOperand);
 				uint32_t PairingPin = Converter::ToUint32(Operand);
 
-				BLEServer.SetPairingPin(PairingPin);
+				MyBLEServer.SetPairingPin(PairingPin);
 				return true;
 			}
 

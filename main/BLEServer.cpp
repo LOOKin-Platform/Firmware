@@ -18,11 +18,7 @@
 
 #include "nimble/nimble_port.h"
 
-extern Device_t 		Device;
-extern WiFi_t			WiFi;
-extern Network_t		Network;
-extern RemoteControl_t	RemoteControl;
-extern Wireless_t		Wireless;
+#include "Globals.h"
 
 #include "esp_log.h"
 static const char* Tag = "BLEDevice";
@@ -277,7 +273,13 @@ void BLEServer_t::StartAdvertisingAsHID()
 	HIDDevice->deviceInfo()->addCharacteristic(WiFiSetupCharacteristic);
 	HIDDevice->deviceInfo()->addCharacteristic(RCSetupCharacteristic);
 
-	BLEDevice::setSecurityIOCap(BLE_HS_IO_KEYBOARD_ONLY);
+	uint8_t IOCaps = BLE_HS_IO_KEYBOARD_ONLY;
+
+	CommandBLE_t* BLECommand = (CommandBLE_t*)Command_t::GetCommandByID(0x08);
+	if (BLECommand != nullptr)
+		IOCaps = (BLECommand->GetIsBLEPairingCodeSkiped()) ? BLE_HS_IO_NO_INPUT_OUTPUT : BLE_HS_IO_KEYBOARD_ONLY;
+
+	BLEDevice::setSecurityIOCap(IOCaps);
 	BLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
 	BLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
 	//BLEDevice::setSecurityAuth(BLE_SM_PAIR_AUTHREQ_BOND);

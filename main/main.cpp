@@ -31,7 +31,7 @@ Settings_t 			Settings;
 WiFi_t				WiFi;
 WebServer_t 		WebServer;
 
-BLEServer_t			BLEServer;
+BLEServer_t			MyBLEServer;
 BLEClient_t			BLEClient;
 
 Device_t			Device;
@@ -130,10 +130,10 @@ extern "C" void app_main()
 	if (Matter::IsEnabledForDevice())
 		Matter::StartServer();
 
-	BLEServer.StartAdvertising();
+	MyBLEServer.StartAdvertising();
 
 	if (Network.WiFiSettings.size() == 0) // first start for HID devices
-		BLEServer.ForceHIDMode(BASIC);
+		MyBLEServer.ForceHIDMode(BASIC);
 
 	WebServer.HTTPStart();
 
