@@ -1,5 +1,5 @@
 #include "Matter.h"
-#include "GenericDevice.hpp"
+#include "GenericDevice.h"
 #include "DeviceCallbacks.h"
 #include "NetworkCommissioningCustomDriver.h"
 #include "MatterWiFi.h"
@@ -28,8 +28,6 @@
 #include <app/server/Server.h>
 
 #include <esp_log.h>
-
-#include "MatterWiFi.h"
 
 #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 #include <platform/ESP32/ESP32FactoryDataProvider.h>
@@ -103,6 +101,8 @@ static EndpointId gFirstDynamicEndpointId;
 #define DEVICE_TYPE_VIDEOPLAYER 			0x0028 
 #define DEVICE_REVISION_VIDEOPLAYER 		1
 
+#define kNodeLabelSize 						2
+#define kDescriptorAttributeArraySize		254
 
 /* REVISION definitions:
  */
@@ -469,6 +469,8 @@ void Matter::StartServer() {
 	//esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
 	//esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
 
+    esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
+
     chip::DeviceLayer::PlatformMgr().ScheduleWork(StartServerInner, reinterpret_cast<intptr_t>(nullptr));
 }
 
@@ -770,70 +772,6 @@ bool Matter::Volume(uint8_t Value, uint16_t AccessoryID) {
 	*/
 }
 
-bool Matter::HeaterCoolerState(uint8_t Value, uint16_t AID) {
-	return false;
-	
-	/*
-	ESP_LOGE("HeaterCoolerState", "UUID: %04X, Value: %d", AID, Value);
-
-    if (Settings.eFuse.Type == Settings.Devices.Remote) {
-        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
-
-        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
-        	return false;
-
-        switch (Value)
-        {
-        	case 0: Value = 1; break;
-        	case 1:	Value = 3; break;
-        	case 2: Value = 2; break;
-        	default: break;
-        }
-
-        // change temperature because of it may depends on selected mode
-        const hap_val_t* NewTempValue  = HomeKitGetCharValue(AID, HAP_SERV_UUID_HEATER_COOLER,
-        		(Value == 3) ? HAP_CHAR_UUID_HEATING_THRESHOLD_TEMPERATURE : HAP_CHAR_UUID_COOLING_THRESHOLD_TEMPERATURE);
-
-        if (NewTempValue != NULL)
-            StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra, 0xE1, round(NewTempValue->f), false);
-
-    	if (Value > 0) {
-            // change current heater cooler state
-            hap_val_t CurrentHeaterCoolerState;
-
-
-            CurrentHeaterCoolerState.u = 0;
-            if (Value == 1) CurrentHeaterCoolerState.u = 2;
-            if (Value == 2) CurrentHeaterCoolerState.u = 3;
-
-            HomeKitUpdateCharValue(AID, HAP_SERV_UUID_HEATER_COOLER, HAP_CHAR_UUID_CURRENT_HEATER_COOLER_STATE, CurrentHeaterCoolerState);
-
-    		hap_val_t ValueForACFanActive;
-    		ValueForACFanActive.u = 1;
-    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
-
-    		hap_val_t ValueForACFanState;
-    		hap_val_t ValueForACFanAuto;
-
-    		uint8_t FanStatus = DataDeviceItem_t::GetStatusByte(IRDeviceItem.Status, 2);
-
-    		ValueForACFanState.f 	= (FanStatus > 0)	? FanStatus : 2;
-    		ValueForACFanAuto.u 	= (FanStatus == 0) 	? 1 : 0;
-
-    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
-    		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
-    	}
-
-
-        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, Value);
-
-        return true;
-    }
-
-    return false;
-	*/
-}
-
 bool Matter::ThresholdTemperature(float Value, uint16_t AID, bool IsCooling) {
 	return false;
 
@@ -984,10 +922,6 @@ bool Matter::TargetPosition(uint8_t Value, uint16_t AID, uint8_t *Char, uint8_t 
 }
 
 void Matter::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send) {
-	return;
-
-	/*
-
 	pair<bool, uint16_t> Result = ((DataRemote_t*)Data)->StatusUpdateForDevice(UUID, FunctionID, Value, "", false, true);
 
 	ESP_LOGE("RESULT", "StatusACUpdateIRSend %02X %02X %u Result.second %04X", FunctionID, Value, Send, Result.second);
@@ -1009,7 +943,6 @@ void Matter::StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t Functio
     	Operand += Converter::ToHexString(Result.second,4);
 
     IRCommand->Execute(0xEF, Operand.c_str());
-	*/
 }
 
 /* A dummy callback for handling a write on the "On" characteristic of Fan.

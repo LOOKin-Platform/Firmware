@@ -142,12 +142,12 @@ class Device_t {
 		{
 			struct 
 			{
-				uint16_t Reserved 			: 11;
-				bool IsEcoModeEnabled		: 1;
-				bool IsMatterEnabled 		: 1;
-				bool IsRemoteControlEnabled : 1;
+				bool IsSensorModeEnabled 	: 1; // последний бит
 				bool IsLocalMQTTEnabled 	: 1;
-				bool IsSensorModeEnabled 	: 1;
+				bool IsRemoteControlEnabled : 1;
+				bool IsMatterEnabled 		: 1;
+				bool IsEcoModeEnabled		: 1;
+				uint16_t Reserved 			: 11;
 			};
 
 			uint16_t Raw;

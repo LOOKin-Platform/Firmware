@@ -11,7 +11,6 @@
 
 #include "Data.h"
 
-extern DataEndpoint_t 	*Data;
 extern BLEServer_t 		MyBLEServer;
 
 static string 	CommandBLELastKBDSignalSended 	= "";

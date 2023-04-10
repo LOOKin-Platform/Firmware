@@ -16,7 +16,7 @@
 #include "Memory.h"
 
 #include "Matter.h"
-#include "GenericDevice.hpp"
+#include "GenericDevice.h"
 
 using namespace std;
 
@@ -32,7 +32,6 @@ class DataEndpoint_t {
 		const 	uint8_t			PartitionType	= 0x81;
 
 		static 	const uint16_t	MinRecordSize 	= 2048;
-		static 	const uint16_t	MaxRecordsNum 	= 1024;
 		static 	const uint16_t	MemoryBlockSize = 4096;
 
 		static	DataEndpoint_t*	GetForDevice();
@@ -45,7 +44,7 @@ class DataEndpoint_t {
 		void					Defragment();
 
 	private:
-		pair<uint32_t, uint32_t>SplitAddres(uint64_t FullAddress);
+		static pair<uint32_t, uint32_t>SplitAddres(uint64_t FullAddress);
 		uint64_t				JoinAddress(uint32_t Address, uint32_t Size);
 		uint32_t 				NormalizedItemAddress(uint32_t Address);
 		uint32_t				GetFreeMemoryAddress();
@@ -54,9 +53,9 @@ class DataEndpoint_t {
 		//void					Defragment();
 		void					Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Size);
 		void 					EraseRange(uint32_t Start, uint32_t Length);
+
 	protected:
 		bool					IsMatterEnabled();
-		MatterGenericDevice*	GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID = "");
 
 		bool					SaveItem(string ItemName, string Item);
 		string					GetItem(string ItemName);
@@ -65,7 +64,5 @@ class DataEndpoint_t {
 		void					EraseAll();
 		void					Debug(string Tag="");
 };
-
-#include "../DataEndpoints/DataRemote.cpp"
 
 #endif

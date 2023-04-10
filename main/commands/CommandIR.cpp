@@ -8,9 +8,11 @@
 
 #include <RMT.h>
 #include "Sensors.h"
+#include "SensorIR.h"
 #include "CommandBLE.cpp"
 
 #include "Data.h"
+#include "DataRemote.h"
 
 #define CommandIRArea 			"RMT"
 #define CommandIRTXQueuePrefix 	"tx_"
@@ -949,7 +951,7 @@ class CommandIR_t : public Command_t {
 					uint16_t Codeset = Converter::UintFromHexString<uint16_t>(Params["operand"].substr(0, 4));
 					uint16_t Operand = Converter::UintFromHexString<uint16_t>(Params["operand"].substr(4, 4));
 
-					pair<bool, uint16_t> StatusSetResult = ((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Operand);
+					pair<bool, uint16_t> StatusSetResult = ((DataRemote_t *)Data)->SetExternalStatusForAC(Codeset, Operand);
 
 					if (ACOperand::IsOnSeparateForCodeset(Codeset) && Operand == 0xFFF0)
 						CommandIR->TXSendAddPause(500);

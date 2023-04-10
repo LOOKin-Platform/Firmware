@@ -399,11 +399,11 @@ bool EventData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
 			return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
 
 	return false;
-};
+}
 
 void EventData_t::ExecuteCommands(uint32_t ScenarioID) {
 	Scenario_t::ExecuteScenario(ScenarioID);
-};
+}
 
 /************************************/
 /*        Timer Data class          */
@@ -456,12 +456,12 @@ bool TimerData_t::SensorUpdatedIsTriggered(uint8_t SensorID) {
 			return Sensor_t::GetSensorByID(SensorID)->CheckOperand(EventCode, EventOperand);
 
 	return false;
-};
+}
 
 void TimerData_t::ExecuteCommands(uint32_t ScenarioID) {
 	FreeRTOS::Timer *ScenarioTimer = new FreeRTOS::Timer("ScenarioTimer", (TimerDelay * 1000)/portTICK_PERIOD_MS, pdFALSE, ( void * )ScenarioID, TimerCallback);
 	ScenarioTimer->Start();
-};
+}
 
 void TimerData_t::TimerCallback(FreeRTOS::Timer *pTimer) {
 	uint32_t ScenarioID = (uint32_t) pTimer->GetData();

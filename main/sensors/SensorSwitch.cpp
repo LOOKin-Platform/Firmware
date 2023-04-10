@@ -4,40 +4,39 @@
 *
 */
 
-class SensorSwitch_t : public Sensor_t {
-	public:
-		SensorSwitch_t() {
-			if (GetIsInited()) return;
+#include "SensorSwitch.h"
 
-			ID          = 0x81;
-			Name        = "Switch";
-			EventCodes  = { 0x00, 0x01, 0x02 };
+SensorSwitch::SensorSwitch_t() {
+	if (GetIsInited()) return;
 
-			SetIsInited(true);
-		}
+	ID          = 0x81;
+	Name        = "Switch";
+	EventCodes  = { 0x00, 0x01, 0x02 };
 
-		void Update() override {
-			if (SetValue(ReceiveValue(), "Primary"), 0) {
-				Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
-				Automation.SensorChanged(ID);
-			}
-		};
+	SetIsInited(true);
+}
 
-		uint32_t ReceiveValue(string Key = "Primary") override {
-        	if (Settings.GPIOData.GetCurrent().Switch.GPIO == GPIO_NUM_0)
-        	{
-        		return 0;
-        	}
+void SensorSwitch::Update() {
+	if (SetValue(ReceiveValue(), "Primary"), 0) {
+		Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
+		Automation.SensorChanged(ID);
+	}
+}
 
-			return (GPIO::Read(Settings.GPIOData.GetCurrent().Switch.GPIO) == true) ? 1 : 0;
-		};
+uint32_t SensorSwitch::ReceiveValue(string Key = "Primary") {
+	if (Settings.GPIOData.GetCurrent().Switch.GPIO == GPIO_NUM_0)
+	{
+		return 0;
+	}
 
-		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-			uint32_t ValueItem = GetValue();
+	return (GPIO::Read(Settings.GPIOData.GetCurrent().Switch.GPIO) == true) ? 1 : 0;
+}
 
-			if (SceneEventCode == 0x01 && ValueItem == 1) return true;
-			if (SceneEventCode == 0x02 && ValueItem == 0) return true;
+bool SensorSwitch::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
+	uint32_t ValueItem = GetValue();
 
-			return false;
-		}
-};
+	if (SceneEventCode == 0x01 && ValueItem == 1) return true;
+	if (SceneEventCode == 0x02 && ValueItem == 0) return true;
+
+	return false;
+}

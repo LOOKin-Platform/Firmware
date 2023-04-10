@@ -30,7 +30,7 @@
 #include "Log.h"
 
 #include "Matter.h"
-#include "GenericDevice.hpp"
+#include "GenericDevice.h"
 
 using namespace std;
 
@@ -98,15 +98,5 @@ extern Settings_t 	Settings;
 extern Automation_t Automation;
 extern Wireless_t	Wireless;
 extern Storage_t	Storage;
-
-#include "../sensors/SensorSwitch.cpp"
-#include "../sensors/SensorMultiSwitch.cpp"
-//#include "../sensors/SensorRGBW.cpp"
-#include "../sensors/SensorIR.cpp"
-//#include "../sensors/SensorMotion.cpp"
-#include "../sensors/SensorTemperature.cpp"
-#include "../sensors/SensorMeteo.cpp"
-#include "../sensors/SensorTouch.cpp"
-#include "../sensors/SensorWindowOpener.cpp"
 
 #endif

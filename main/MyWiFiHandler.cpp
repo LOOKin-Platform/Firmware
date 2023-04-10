@@ -238,21 +238,17 @@ esp_err_t MyWiFiEventHandler::staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
 
 	Wireless.IsEventDrivenStart = false;
 
-	if (!Matter::IsEnabledForDevice())
-	{			
-		//!mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
-	
-		//!string InstanceName = "LOOKin_" + Converter::ToLower(Device.TypeToString()) + "_" + Converter::ToLower(Device.IDToString());
-		//!mdns_instance_name_set(InstanceName.c_str());
-	}
-	else
-	{
-		esp_err_t err = mdns_init();
-		if (err) {
-			ESP_LOGE("!", "MDNS Init failed: %d", err);
-			return ESP_OK;
-		}
+	esp_err_t err = ESP_OK;
 
+	if (!Matter::IsEnabledForDevice())
+	{		
+		err = mdns_init();
+		if (err)
+			ESP_LOGE("!", "MDNS Init failed: %d", err);
+	}
+
+	if (err == ESP_OK)
+	{
 		err = mdns_hostname_set(Converter::ToLower(Device.IDToString()).c_str());
 
 		if (err !=ESP_OK)
@@ -268,7 +264,6 @@ esp_err_t MyWiFiEventHandler::staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
 
 		MDNSSetServiceText();
 	}
-
 	//mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
 	
 	IsConnectedBefore = true;

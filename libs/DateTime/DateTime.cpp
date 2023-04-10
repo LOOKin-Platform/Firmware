@@ -126,7 +126,7 @@ void Time::ReadStarted(const char *IP) {
 bool Time::ReadBody(char Data[], int DataLen, const char *IP) {
 	ReadBuffer += Data;
 	return true;
-};
+}
 
 void Time::ReadFinished(const char *IP) {
 	if (ReadBuffer.length() == 0) {

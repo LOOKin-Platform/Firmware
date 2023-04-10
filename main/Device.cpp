@@ -305,6 +305,14 @@ void Device_t::LoadCapabilityFlagsFromNVS() {
 	NVS Memory(NVSDeviceArea);
 	Capabilities.Raw = Memory.GetUInt16Bit(NVSDeviceCapabilities);
 
+	ESP_LOGE("Capabilities.Raw","%04X", Capabilities.Raw);
+
+	ESP_LOGE("IsSensorModeEnabled"		,"%d", Capabilities.IsSensorModeEnabled);
+	ESP_LOGE("IsLocalMQTTEnabled"		,"%d", Capabilities.IsLocalMQTTEnabled);
+	ESP_LOGE("IsRemoteControlEnabled"	,"%d", Capabilities.IsRemoteControlEnabled);
+	ESP_LOGE("IsMatterEnabled"			,"%d", Capabilities.IsMatterEnabled);
+	ESP_LOGE("IsEcoModeEnabled"			,"%d", Capabilities.IsEcoModeEnabled);
+
 	if (Capabilities.Raw == 0x0) {
 		// Set default value
 		Capabilities.IsRemoteControlEnabled = true;

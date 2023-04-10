@@ -11,7 +11,8 @@
 
 #include "NetworkCommissioningDriver.h"
 
-#include "GenericDevice.hpp"
+#include "GenericDevice.h"
+#include "Thermostat.h"
 
 #define NVS_MATTER_AREA "matter"
 
@@ -45,6 +46,8 @@ class Matter {
 		static MatterGenericDevice*
 								GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum, string UUID = "");
 
+		static void				StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send = true);
+
 	private:
 		inline static 			vector<MatterGenericDevice *>	MatterDevices = vector<MatterGenericDevice *>();
 
@@ -68,7 +71,6 @@ class Matter {
 		static bool				GetConfiguredName	(char*		Value	, uint16_t AID, uint8_t *Char, uint8_t Iterator = 0);
 		static bool				SetConfiguredName	(char*		Value	, uint16_t AID, uint8_t *Char, uint8_t Iterator = 0);
 
-		static void				StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send = true);
 
 //		static int 				WriteCallback	(hap_write_data_t write_data[], int count, void *serv_priv, void *write_priv);
 		static void				StartServerInner(intptr_t context);

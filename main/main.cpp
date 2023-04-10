@@ -99,6 +99,8 @@ extern "C" void app_main()
 
 	Device.Init();
 
+	ESP_LOGE("Matter Enabled?","%s", Device.IsMatterEnabled() ? "true" : "false");
+
 	if (Matter::IsEnabledForDevice()) 
 		Matter::Init();
 

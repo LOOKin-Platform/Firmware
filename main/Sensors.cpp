@@ -7,6 +7,12 @@
 #include "Sensors.h"
 #include "Matter.h"
 
+#include "SensorMultiSwitch.h"
+#include "SensorSwitch.h"
+#include "SensorTouch.h"
+#include "SensorMeteo.h"
+#include "SensorWindowOpener.h"
+
 Sensor_t::Sensor_t() {}
 
 vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
@@ -166,7 +172,6 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 MatterGenericDevice* Sensor_t::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID) {
 	return Matter::GetBridgedAccessoryByType(Type, UUID);
 }
-
 
 // возвращаемое значение - было ли изменено значение в памяти
 bool Sensor_t::SetValue(uint32_t Value, string Key, uint32_t UpdatedTime) {

@@ -5,6 +5,7 @@
 */
 #include "Globals.h"
 #include "Data.h"
+
 #include "Matter.h"
 
 const char *DataEndpoint_t::Tag 			= "Data_t";
@@ -422,15 +423,10 @@ bool DataEndpoint_t::IsMatterEnabled() {
 	return Matter::IsEnabledForDevice();		
 }
 
-MatterGenericDevice* DataEndpoint_t::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID) {
-	return Matter::GetBridgedAccessoryByType(Type, UUID);
-}
-
-
 void DataEndpoint_t::Debug(string Tag) {
     const esp_partition_t *Partition = esp_partition_find_first((esp_partition_type_t)PartitionType, ESP_PARTITION_SUBTYPE_ANY, PartitionName);
 
-    if (Partition == NULL) return;
+    if (Partition == NULL || Partition == nullptr) return;
 
 	nvs_handle handle;
 	nvs_open(DataEndpoint_t::NVSArea.c_str(), NVS_READWRITE, &handle);

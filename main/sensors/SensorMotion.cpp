@@ -4,12 +4,9 @@
 *
 */
 
-static uint8_t 			SensorMotionID 		= 0xE1;
-static adc1_channel_t 	SensorMotionChannel	= ADC1_CHANNEL_0;
+#include "SensorMotion.h"
 
-static const adc_atten_t	atten = ADC_ATTEN_11db;
-
-static void MotionDetectTask(void *) {
+void SensorMotion_t::MotionDetectTask(void *) {
 	while (1)  {
 		uint16_t Value = (uint16_t)adc1_get_raw(SensorMotionChannel);
 
@@ -31,44 +28,41 @@ static void MotionDetectTask(void *) {
 	}
 }
 
-class SensorMotion_t : public Sensor_t {
-	public:
-		SensorMotion_t() {
-			if (GetIsInited()) return;
+SensorMotion_t::SensorMotion_t() {
+	if (GetIsInited()) return;
 
-			ID          = SensorMotionID;
-			Name        = "Motion";
-			EventCodes  = { 0x00, 0x01 };
+	ID          = SensorMotionID;
+	Name        = "Motion";
+	EventCodes  = { 0x00, 0x01 };
 
-			if (Settings.GPIOData.GetCurrent().Motion.ADCChannel != ADC1_CHANNEL_MAX)
-				SensorMotionChannel = Settings.GPIOData.GetCurrent().Motion.ADCChannel;
+	if (Settings.GPIOData.GetCurrent().Motion.ADCChannel != ADC1_CHANNEL_MAX)
+		SensorMotionChannel = Settings.GPIOData.GetCurrent().Motion.ADCChannel;
 
-			if (SensorMotionChannel != ADC1_CHANNEL_MAX) {
-				adc1_config_width(ADC_WIDTH_BIT_12);
-				adc1_config_channel_atten(SensorMotionChannel, atten);
-				FreeRTOS::StartTask(MotionDetectTask, "MotionDetectTask", NULL, 4096);
-			}
+	if (SensorMotionChannel != ADC1_CHANNEL_MAX) {
+		adc1_config_width(ADC_WIDTH_BIT_12);
+		adc1_config_channel_atten(SensorMotionChannel, atten);
+		FreeRTOS::StartTask(MotionDetectTask, "MotionDetectTask", NULL, 4096);
+	}
 
-			SetIsInited(true);
-		}
+	SetIsInited(true);
+}
 
-		void Update() override {
-			if (SetValue(ReceiveValue())) {
-				Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
-				Automation.SensorChanged(ID);
-			}
-		};
+void SensorMotion_t::Update() {
+	if (SetValue(ReceiveValue())) {
+		Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
+		Automation.SensorChanged(ID);
+	}
+}
 
-		uint32_t ReceiveValue(string Key = "Primary") override {
-			return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
-		};
-
-		bool CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
-			SensorValueItem ValueItem = GetValue();
-
-			if (SceneEventCode == 0x01 && ValueItem.Value == 1)
-				return true;
-
-			return false;
-		}
+uint32_t SensorMotion_t::ReceiveValue(string Key = "Primary") {
+	return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
 };
+
+bool SensorMotion_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
+	SensorValueItem ValueItem = GetValue();
+
+	if (SceneEventCode == 0x01 && ValueItem.Value == 1)
+		return true;
+
+	return false;
+}
