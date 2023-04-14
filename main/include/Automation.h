@@ -55,8 +55,8 @@ class Automation_t {
 		vector<ScenarioCacheItem_t> ScenariosCache;
 		map<string, uint32_t>       VersionMap;
 
-		void  			Debug(Scenario_t);
-		void  			Debug(ScenarioCacheItem_t);
+		static void  	Debug(Scenario_t);
+		static void  	Debug(ScenarioCacheItem_t);
 };
 
 #endif //AUTOMATION_H

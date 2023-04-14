@@ -152,8 +152,7 @@ void Automation_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Que
 		if (Query.GetURLPartsCount() == 1) {
 			if (Settings.DeviceGeneration == 1)
 				SPIFlash::EraseRange(Settings.Scenarios.Memory.Start4MB, Settings.Scenarios.Memory.Size4MB);
-			else
-			{
+			else {
 				SPIFlash::EraseRange(Settings.Scenarios.Memory.Start16MB, Settings.Scenarios.Memory.Size16MB);
 				/*
 				 * idfupdate - replace for this after ESP_PARTITION_TYPE_ANY will be avaliable
