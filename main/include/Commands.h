@@ -60,13 +60,4 @@ class Command_t {
 
 extern Storage_t Storage;
 
-#include "../commands/CommandSwitch.cpp"
-#include "../commands/CommandMultiSwitch.cpp"
-//#include "../commands/CommandRGBW.cpp"
-#include "../commands/CommandIR.cpp"
-#include "../commands/CommandBLE.cpp"
-#include "../commands/CommandWindowOpener.cpp"
-#include "../../partners/drivent/CommandWindowOpener.cpp"
-
-
 #endif

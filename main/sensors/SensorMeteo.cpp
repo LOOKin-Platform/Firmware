@@ -15,7 +15,6 @@
 #include "HumiditySensor.h"
 #include "TempSensor.h"
 #include "DataRemote.h"
-#include "Sensors.h"
 
 extern DataEndpoint_t *Data;
 

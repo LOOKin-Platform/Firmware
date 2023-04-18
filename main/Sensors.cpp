@@ -7,6 +7,7 @@
 #include "Sensors.h"
 #include "Matter.h"
 
+#include "SensorIR.h"
 #include "SensorMultiSwitch.h"
 #include "SensorSwitch.h"
 #include "SensorTouch.h"
@@ -167,10 +168,6 @@ void Sensor_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 		}
 
 	}
-}
-
-MatterGenericDevice* Sensor_t::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID) {
-	return Matter::GetBridgedAccessoryByType(Type, UUID);
 }
 
 // возвращаемое значение - было ли изменено значение в памяти

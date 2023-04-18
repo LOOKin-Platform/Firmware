@@ -85,8 +85,6 @@ class Sensor_t {
 		static void						LocalMQTTSend(string Payload, string Topic);
 
 		static void 					HandleHTTPRequest(WebServer_t::Response &, Query_t &);
-		
-		static MatterGenericDevice*		GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID = "");
 	private:
 		bool 							IsInited	= false;
 

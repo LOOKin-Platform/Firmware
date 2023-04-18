@@ -15,8 +15,6 @@ using namespace std;
 #include "FreeRTOSWrapper.h"
 #include "HTTPClient.h"
 
-typedef void (*TimeSynced)();
-
 #define  NVSTimeTimezone  "Timezone"
 
 struct DateTime_t {

@@ -6,6 +6,14 @@
 #include "Globals.h"
 #include "Commands.h"
 
+#include "CommandBLE.h"
+#include "CommandIR.h"
+#include "CommandMultiSwitch.h"
+#include "CommandRGBW.h"
+#include "CommandSwitch.h"
+#include "CommandWindowOpener.h"
+#include "CommandDriventWindowOpener.h"
+
 uint8_t Command_t::GetEventCode(string Action) {
 	if (Events.count(Action) > 0)
 		return Events[Action];

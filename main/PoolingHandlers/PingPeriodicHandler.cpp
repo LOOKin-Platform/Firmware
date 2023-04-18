@@ -1,4 +1,6 @@
 #include "HandlersPooling.h"
+#include "CommandIR.h"
+#include "CommandBLE.h"
 
 void HandlersPooling_t::PingPeriodicHandler::FirmwareCheckStarted(const char *IP) {
 	FirmwareUpdateURL = "";

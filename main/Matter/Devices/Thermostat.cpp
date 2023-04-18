@@ -2,6 +2,9 @@
 #include "GenericDevice.h"
 #include "Thermostat.h"
 
+#include "TempSensor.h"
+#include "DataRemote.h"
+
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;
 

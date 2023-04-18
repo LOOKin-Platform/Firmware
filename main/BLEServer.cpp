@@ -10,11 +10,11 @@
 
 #include "Device.h"
 #include "WiFi.h"
-#include "Network.h"
 #include "RemoteControl.h"
 #include "Wireless.h"
-
 #include "PowerManagement.h"
+
+#include "CommandBLE.h"
 
 #include "nimble/nimble_port.h"
 
@@ -566,8 +566,6 @@ const uint8_t _asciimap[128] =
 	0x35|SHIFT,    // ~
 	0				// DEL
 };
-
-uint8_t USBPutChar(uint8_t c);
 
 // press() adds the specified key (printing, non-printing, or modifier)
 // to the persistent key report and sends the report.  Because of the way
