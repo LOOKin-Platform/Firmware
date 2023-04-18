@@ -92,9 +92,4 @@ class Sensor_t {
 		bool							IsMatterEnabled();
 };
 
-extern Settings_t 	Settings;
-extern Automation_t Automation;
-extern Wireless_t	Wireless;
-extern Storage_t	Storage;
-
 #endif

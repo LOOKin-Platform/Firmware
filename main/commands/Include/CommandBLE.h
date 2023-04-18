@@ -8,11 +8,9 @@
 
 #include "Sensors.h"
 #include "Commands.h"
-#include "BLEServer.h"
+#include "BLEServerGeneric.h"
 
 #include "Data.h"
-
-extern BLEServer_t 		MyBLEServer;
 
 static string 	        CommandBLELastKBDSignalSended 	= "";
 static uint64_t	        CommandBLELastTimeSended		= 0;

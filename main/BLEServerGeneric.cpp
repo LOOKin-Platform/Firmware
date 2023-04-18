@@ -1,26 +1,5 @@
-#include <NimBLEDevice.h>
-#include <NimBLEServer.h>
-#include <NimBLEUtils.h>
-#include <NimBLEHIDDevice.h>
+#include "BLEServerGeneric.h"
 
-#include "HIDTypes.h"
-#include <driver/adc.h>
-
-#include "BLEServer.h"
-
-#include "Device.h"
-#include "WiFi.h"
-#include "RemoteControl.h"
-#include "Wireless.h"
-#include "PowerManagement.h"
-
-#include "CommandBLE.h"
-
-#include "nimble/nimble_port.h"
-
-#include "Globals.h"
-
-#include "esp_log.h"
 static const char* Tag = "BLEDevice";
 
 // Report IDs:
@@ -113,14 +92,14 @@ static const uint8_t _hidReportDescriptor[] = {
   END_COLLECTION(0)						// END_COLLECTION
 };
 
-bool BLEServer_t::IsHIDEnabledForDevice() {
+bool BLEServerGeneric_t::IsHIDEnabledForDevice() {
 	if (Settings.eFuse.Type == Settings.Devices.Remote)
 		return true;
 
 	return false;
 }
 
-void BLEServer_t::CheckHIDMode() {
+void BLEServerGeneric_t::CheckHIDMode() {
 	if (!IsHIDEnabledForDevice()) 
 		return;
 
@@ -137,7 +116,7 @@ void BLEServer_t::CheckHIDMode() {
 	*/
 }
 
-void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
+void BLEServerGeneric_t::ForceHIDMode(BLEServerModeEnum Mode) {
 	if (!IsHIDEnabledForDevice()) return;
 
 	if (CurrentMode == Mode) return;
@@ -158,13 +137,13 @@ void BLEServer_t::ForceHIDMode(BLEServerModeEnum Mode) {
 
 
 
-BLEServer_t::BLEServer_t(std::string deviceName, std::string deviceManufacturer, uint8_t batteryLevel)
+BLEServerGeneric_t::BLEServerGeneric_t(std::string deviceName, std::string deviceManufacturer, uint8_t batteryLevel)
     : HIDDevice(0)
     , deviceName(std::string(deviceName).substr(0, 15))
     , deviceManufacturer(std::string(deviceManufacturer).substr(0,15))
     , batteryLevel(batteryLevel) {}
 
-int8_t BLEServer_t::GetRSSIForConnection(uint16_t ConnectionHandle) {
+int8_t BLEServerGeneric_t::GetRSSIForConnection(uint16_t ConnectionHandle) {
 	int8_t RSSI = 0;
 
 	if (::ble_gap_conn_rssi(ConnectionHandle, &RSSI) == 0)
@@ -173,7 +152,7 @@ int8_t BLEServer_t::GetRSSIForConnection(uint16_t ConnectionHandle) {
 		return -128;
 }
 
-void BLEServer_t::Init() {
+void BLEServerGeneric_t::Init() {
 	BLEDevice::init(Settings.Bluetooth.DeviceNamePrefix + Device.IDToString());
 
 	BLEDevice::setPower(Settings.Bluetooth.PublicModePower, ESP_BLE_PWR_TYPE_DEFAULT);
@@ -228,7 +207,7 @@ void BLEServer_t::Init() {
 	}
 }
 
-void BLEServer_t::Deinit() {
+void BLEServerGeneric_t::Deinit() {
 	ESP_LOGE("BLE", "ble_hs_is_enabled");
 
 	if (ble_hs_is_enabled())
@@ -244,14 +223,14 @@ void BLEServer_t::Deinit() {
 	}
 }
 
-void BLEServer_t::StartAdvertising() {
+void BLEServerGeneric_t::StartAdvertising() {
 	if (IsHIDEnabledForDevice())
 		StartAdvertisingAsHID();
 	else
 		StartAdvertisingAsGenericDevice();
 }
 
-void BLEServer_t::StartAdvertisingAsHID()
+void BLEServerGeneric_t::StartAdvertisingAsHID()
 {
 	Init();
 
@@ -329,7 +308,7 @@ void BLEServer_t::StartAdvertisingAsHID()
 	isRunning = true;
 }
 
-void BLEServer_t::StartAdvertisingAsGenericDevice()
+void BLEServerGeneric_t::StartAdvertisingAsGenericDevice()
 {
 	Init();
 
@@ -361,27 +340,27 @@ void BLEServer_t::StartAdvertisingAsGenericDevice()
 	isRunning = true;
 }
 
-void BLEServer_t::StopAdvertising()
+void BLEServerGeneric_t::StopAdvertising()
 {
 	isRunning = false;
 }
 
-bool BLEServer_t::isConnected() {
+bool BLEServerGeneric_t::isConnected() {
   return this->connected;
 }
 
-bool BLEServer_t::IsRunning() {
+bool BLEServerGeneric_t::IsRunning() {
 	return isRunning;
 }
 
-void BLEServer_t::setBatteryLevel(uint8_t level) {
+void BLEServerGeneric_t::setBatteryLevel(uint8_t level) {
   this->batteryLevel = level;
   if (HIDDevice != 0)
     this->HIDDevice->setBatteryLevel(this->batteryLevel);
 }
 
 //must be called before begin in order to set the name
-void BLEServer_t::SetName(std::string deviceName) {
+void BLEServerGeneric_t::SetName(std::string deviceName) {
   this->deviceName = deviceName;
 }
 
@@ -390,23 +369,23 @@ void BLEServer_t::SetName(std::string deviceName) {
  *
  * @param ms Time in milliseconds
  */
-void BLEServer_t::SetDelay(uint32_t ms) {
+void BLEServerGeneric_t::SetDelay(uint32_t ms) {
   this->_delay_ms = ms;
 }
 
-void BLEServer_t::set_vendor_id(uint16_t vid) {
+void BLEServerGeneric_t::set_vendor_id(uint16_t vid) {
 	this->vid = vid;
 }
 
-void BLEServer_t::set_product_id(uint16_t pid) {
+void BLEServerGeneric_t::set_product_id(uint16_t pid) {
 	this->pid = pid;
 }
 
-void BLEServer_t::set_version(uint16_t version) {
+void BLEServerGeneric_t::set_version(uint16_t version) {
 	this->version = version;
 }
 
-void BLEServer_t::SendReport(KeyReport* keys)
+void BLEServerGeneric_t::SendReport(KeyReport* keys)
 {
 	if (this->isConnected())
 	{
@@ -418,7 +397,7 @@ void BLEServer_t::SendReport(KeyReport* keys)
 	}
 }
 
-void BLEServer_t::SendReport(MediaKeyReport* keys)
+void BLEServerGeneric_t::SendReport(MediaKeyReport* keys)
 {
 	if (this->isConnected())
 	{
@@ -571,7 +550,7 @@ const uint8_t _asciimap[128] =
 // to the persistent key report and sends the report.  Because of the way
 // USB HID works, the host acts like the key remains pressed until we
 // call release(), releaseAll(), or otherwise clear the report and resend.
-size_t BLEServer_t::Press(uint8_t k)
+size_t BLEServerGeneric_t::Press(uint8_t k)
 {
 	uint8_t i;
 	if (k >= 136) {			// it's a non-printing key (not a modifier)
@@ -612,7 +591,7 @@ size_t BLEServer_t::Press(uint8_t k)
 	return 1;
 }
 
-size_t BLEServer_t::Press(const MediaKeyReport k)
+size_t BLEServerGeneric_t::Press(const MediaKeyReport k)
 {
     uint32_t k_32 = k[2] | (k[1] << 8) | (k[0] << 16);
     uint32_t mediaKeyReport_32 = _mediaKeyReport[2] | (_mediaKeyReport[1] << 8) | (_mediaKeyReport[0] << 16);
@@ -629,7 +608,7 @@ size_t BLEServer_t::Press(const MediaKeyReport k)
 // release() takes the specified key out of the persistent key report and
 // sends the report.  This tells the OS the key is no longer pressed and that
 // it shouldn't be repeated any more.
-size_t BLEServer_t::Release(uint8_t k)
+size_t BLEServerGeneric_t::Release(uint8_t k)
 {
 	uint8_t i;
 	if (k >= 136) {			// it's a non-printing key (not a modifier)
@@ -660,7 +639,7 @@ size_t BLEServer_t::Release(uint8_t k)
 	return 1;
 }
 
-size_t BLEServer_t::Release(const MediaKeyReport k)
+size_t BLEServerGeneric_t::Release(const MediaKeyReport k)
 {
     uint32_t k_32 = k[2] | (k[1] << 8) | (k[0] << 16);
     uint32_t mediaKeyReport_32 = _mediaKeyReport[2] | (_mediaKeyReport[1] << 8) | (_mediaKeyReport[0] << 16);
@@ -675,7 +654,7 @@ size_t BLEServer_t::Release(const MediaKeyReport k)
 	return 1;
 }
 
-void BLEServer_t::ReleaseAll(void)
+void BLEServerGeneric_t::ReleaseAll(void)
 {
 	_keyReport.keys[0] = 0;
 	_keyReport.keys[1] = 0;
@@ -690,21 +669,21 @@ void BLEServer_t::ReleaseAll(void)
 	SendReport(&_keyReport);
 }
 
-size_t BLEServer_t::Write(uint8_t c)
+size_t BLEServerGeneric_t::Write(uint8_t c)
 {
 	uint8_t p = Press(c);  // Keydown
 	Release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
 }
 
-size_t BLEServer_t::Write(const MediaKeyReport c)
+size_t BLEServerGeneric_t::Write(const MediaKeyReport c)
 {
 	uint16_t p = Press(c);  // Keydown
 	Release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
 }
 
-size_t BLEServer_t::Write(const uint8_t *buffer, size_t size) {
+size_t BLEServerGeneric_t::Write(const uint8_t *buffer, size_t size) {
 	size_t n = 0;
 	while (size--)
 	{
@@ -724,20 +703,20 @@ size_t BLEServer_t::Write(const uint8_t *buffer, size_t size) {
 	return n;
 }
 
-void BLEServer_t::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
+void BLEServerGeneric_t::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
 	if (!(pServer->getAdvertising()->isAdvertising()))
 		BLEDevice::startAdvertising();
 
 	this->connected = true;
 }
 
-void BLEServer_t::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
+void BLEServerGeneric_t::onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
 	this->connected = false;
 
 	//BLEDevice::startAdvertising();
 }
 
-void BLEServer_t::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
+void BLEServerGeneric_t::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo& connInfo) {
 	if (((pCharacteristic->getUUID().toString() == "0x4000") || (pCharacteristic->getUUID().toString() == "0x5000")) && GetRSSIForConnection(connInfo.getConnHandle()) < Settings.Bluetooth.RSSILimit)
 	{
 		ESP_LOGE(Tag ,"RSSI so small: %d", GetRSSIForConnection(connInfo.getConnHandle()));
@@ -803,11 +782,11 @@ void BLEServer_t::onWrite(NimBLECharacteristic* pCharacteristic, NimBLEConnInfo&
 	}
 }
 
-void BLEServer_t::SetPairingPin(uint32_t Pin) {
+void BLEServerGeneric_t::SetPairingPin(uint32_t Pin) {
 	PairingPin = Pin;
 }
 
-uint8_t BLEServer_t::GetStatus() {
+uint8_t BLEServerGeneric_t::GetStatus() {
 	uint8_t Result = (uint8_t)CurrentMode;
 	Result = Result << 4;
 	
@@ -817,7 +796,7 @@ uint8_t BLEServer_t::GetStatus() {
 	return Result;
 }
 
-uint32_t BLEServer_t::onPassKeyRequest() {
+uint32_t BLEServerGeneric_t::onPassKeyRequest() {
 	printf("Client Passkey Request\n");
 	PairingPin = Settings.Memory.Empty32Bit;
 	IsPinRequested = true;
@@ -841,7 +820,7 @@ uint32_t BLEServer_t::onPassKeyRequest() {
 };
 
 // Pairing process complete, we can check the results in ble_gap_conn_desc
-void BLEServer_t::onAuthenticationComplete(NimBLEConnInfo& connInfo){ //
+void BLEServerGeneric_t::onAuthenticationComplete(NimBLEConnInfo& connInfo){ //
 	if(!connInfo.isEncrypted()) {
 		printf("Encrypt connection failed - disconnecting for conn_handle %d \n",  connInfo.getConnHandle() );
 		// Find the client with the connection handle provided in desc
@@ -850,6 +829,6 @@ void BLEServer_t::onAuthenticationComplete(NimBLEConnInfo& connInfo){ //
 	}
 }
 
-bool BLEServer_t::onConfirmPIN(uint32_t pass_key) {
+bool BLEServerGeneric_t::onConfirmPIN(uint32_t pass_key) {
 	return true;
 }

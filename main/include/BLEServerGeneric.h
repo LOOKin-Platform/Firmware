@@ -1,8 +1,30 @@
-#ifndef BLE_SERVER_H
-#define BLE_SERVER_H
+#ifndef BLE_SERVER_GENERIC_H
+#define BLE_SERVER_GENERIC_H
 
 #include "NimBLECharacteristic.h"
 #include "NimBLEHIDDevice.h"
+
+#include <NimBLEDevice.h>
+#include <NimBLEServer.h>
+#include <NimBLEUtils.h>
+#include <NimBLEHIDDevice.h>
+
+#include "HIDTypes.h"
+#include <driver/adc.h>
+
+#include "Device.h"
+#include "WiFi.h"
+#include "RemoteControl.h"
+#include "Wireless.h"
+#include "PowerManagement.h"
+
+#include "CommandBLE.h"
+
+#include "nimble/nimble_port.h"
+
+#include "Globals.h"
+
+#include "esp_log.h"
 
 #define BLEDevice                  NimBLEDevice
 #define BLEServerCallbacks         NimBLEServerCallbacks
@@ -75,7 +97,7 @@ typedef struct
 
 enum BLEServerModeEnum { OFF = 0, BASIC, HID };
 
-class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
+class BLEServerGeneric_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 {
 	private:
 		BLEHIDDevice* 			HIDDevice;
@@ -120,7 +142,7 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		void		CheckHIDMode();
 		void		ForceHIDMode(BLEServerModeEnum Mode);
 
-		BLEServer_t(std::string deviceName = "ESP32 Keyboard", std::string deviceManufacturer = "Espressif", uint8_t batteryLevel = 100);
+		BLEServerGeneric_t(std::string deviceName = "ESP32 Keyboard", std::string deviceManufacturer = "Espressif", uint8_t batteryLevel = 100);
 
 		void 		StartAdvertising();
 		void		StartAdvertisingAsHID();
@@ -200,4 +222,4 @@ class BLEServer_t : public BLEServerCallbacks, public BLECharacteristicCallbacks
 		virtual bool		onConfirmPIN(uint32_t pass_key) override;
 };
 
-#endif // BLE_SERVER_H
+#endif // BLE_SERVER_GENERIC_H

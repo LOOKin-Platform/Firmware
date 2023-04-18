@@ -3,6 +3,7 @@
 #include "DeviceCallbacks.h"
 #include "NetworkCommissioningCustomDriver.h"
 #include "MatterWiFi.h"
+#include "DataRemote.h"
 
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>

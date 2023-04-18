@@ -29,6 +29,20 @@ class MatterDevice {
         static const int kDeviceNameSize     = 32;
         static const int kDeviceLocationSize = 32;
 
+        enum State_t
+        {
+            kState_On = 0,
+            kState_Off,
+        } State;
+
+        enum Changed_t
+        {
+            kChanged_Reachable = 0x01,
+            kChanged_State     = 0x02,
+            kChanged_Location  = 0x04,
+            kChanged_Name      = 0x08,
+        } Changed;
+
         MatterDevice(const char * szDeviceName, const char * szLocation);
 
         bool        IsOn() const;

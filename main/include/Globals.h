@@ -17,7 +17,7 @@
 
 #include "WiFi.h"
 #include "WebServer.h"
-#include "BLEServer.h"
+#include "BLEServerGeneric.h"
 #include "BLEClient.h"
 #include "LocalMQTT.h"
 #include "RemoteControl.h"
@@ -38,7 +38,7 @@ extern WiFi_t					WiFi;
 extern WebServer_t				WebServer;
 
 #if defined(CONFIG_BT_ENABLED)
-extern BLEServer_t				MyBLEServer;
+extern BLEServerGeneric_t		MyBLEServer;
 extern BLEClient_t				MyBLEClient;
 #endif /* Bluetooth enabled */
 

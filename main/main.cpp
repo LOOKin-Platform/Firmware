@@ -31,7 +31,7 @@ Settings_t 			Settings;
 WiFi_t				WiFi;
 WebServer_t 		WebServer;
 
-BLEServer_t			MyBLEServer;
+BLEServerGeneric_t			MyBLEServer;
 BLEClient_t			BLEClient;
 
 Device_t			Device;
