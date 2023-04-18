@@ -5,6 +5,11 @@
 */
 
 #include "DataRemote.h"
+#include "Wireless.h"
+#include "Sensors.h"
+#include "LocalMQTT.h"
+
+extern Wireless_t Wireless;
 
 extern DataEndpoint_t *Data;
 
@@ -1334,7 +1339,7 @@ void DataRemote_t::StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uin
 	Wireless.SendBroadcastUpdated(0x87, "FE", DeviceID + Converter::ToHexString(Status,4));
 
 	if (DeviceType != 0xEF)
-		Sensor_t::LocalMQTTSend("{\"UUID\": \""+DeviceID+"\", \"Status\":\"" + Converter::ToHexString(Status,4) + "\"}", "/ir/localremote/sent");
+		LocalMQTT_t::SendMessage("{\"UUID\": \""+DeviceID+"\", \"Status\":\"" + Converter::ToHexString(Status,4) + "\"}", "/ir/localremote/sent");
 }
 
 void DataRemote_t::HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value) {

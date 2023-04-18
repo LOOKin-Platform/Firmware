@@ -6,6 +6,9 @@
 
 #include "SensorWindowOpener.h"
 
+#include "Automation.h"
+#include "Wireless.h"
+
 SensorWindowOpener_t::SensorWindowOpener_t() {
 	if (GetIsInited()) return;
 
@@ -52,8 +55,8 @@ string SensorWindowOpener_t::FormatValue(string Key)
 void SensorWindowOpener_t::Update() {
 	uint8_t Position = GetValue("Position");
 
-	Wireless.SendBroadcastUpdated(ID, "03", Converter::ToHexString(Position,8));
-	Automation.SensorChanged(ID);
+	Wireless_t::SendBroadcastUpdated(ID, "03", Converter::ToHexString(Position,8));
+	Automation_t::SensorChanged(ID);
 
 	if (IsMatterEnabled())
 	{
@@ -64,7 +67,7 @@ void SensorWindowOpener_t::Update() {
 	}
 }
 
-uint32_t SensorWindowOpener_t::ReceiveValue(string Key = "Primary") {
+uint32_t SensorWindowOpener_t::ReceiveValue(string Key) {
 	/*
 	if (Key == "Position") {
 		CommandWindowOpener_t *WindowOpenerCommand = Command_t::GetCommandByID(ID - 0x80);

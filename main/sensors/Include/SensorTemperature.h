@@ -7,6 +7,8 @@
 #ifndef SENSORS_TEMPERATURE_H
 #define SENSORS_TEMPERATURE_H
 
+#include "Sensors.h"
+
 class SensorTemperature_t : public Sensor_t {
 	protected:
 		uint32_t 	PreviousValue 	= numeric_limits<uint32_t>::max();

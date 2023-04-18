@@ -7,6 +7,8 @@
 #ifndef COMMANDS_MULTISWITCH
 #define COMMANDS_MULTISWITCH
 
+#include "Commands.h"
+
 class CommandMultiSwitch_t : public Command_t {
 	private:
 		vector<gpio_num_t> GPIOS = vector<gpio_num_t>();

@@ -11,6 +11,7 @@
 #include <ISR.h>
 #include "HTTPClient.h"
 
+#include "Sensors.h"
 #include "Data.h"
 #include "DataRemote.h"
 

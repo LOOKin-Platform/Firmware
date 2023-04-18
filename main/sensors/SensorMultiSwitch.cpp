@@ -6,6 +6,15 @@
 
 #include "SensorMultiSwitch.h"
 
+#include "HardwareIO.h"
+
+#include "Automation.h"
+#include "Wireless.h"
+
+extern Wireless_t 	Wireless;
+extern Automation_t	Automation;
+
+
 SensorMultiSwitch_t::SensorMultiSwitch_t() {
 	if (GetIsInited()) return;
 
@@ -45,7 +54,7 @@ void SensorMultiSwitch_t::Update() {
 		}
 }
 
-uint32_t SensorMultiSwitch_t::ReceiveValue(string Key = "Primary") {
+uint32_t SensorMultiSwitch_t::ReceiveValue(string Key) {
 	if (Key == "Primary") {
 		bool AllOn = false;
 

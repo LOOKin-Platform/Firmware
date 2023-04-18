@@ -13,22 +13,22 @@ using namespace std;
 
 class Wireless_t {
 	public:
-		void 	StartInterfaces();
+		static void StartInterfaces();
 
-		void 	StopInterfaces(bool ShouldBlockForever);
-		void	StopWiFi();
-		void 	StopBluetooth();
+		void 		StopInterfaces(bool ShouldBlockForever);
+		void		StopWiFi();
+		void 		StopBluetooth();
 
-		void 	SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "", bool IsScheduled = true, bool InvokeStartIntefaces = false);
-		void 	SendBroadcastUpdated(string ServiceID, string Value, string Operand = "", bool IsScheduled = true, bool InvokeStartIntefaces = false);
-		bool 	IsPeriodicPool();
+		static void	SendBroadcastUpdated(uint8_t SensorID, string Value, string Operand = "", bool IsScheduled = true, bool InvokeStartIntefaces = false);
+		static void SendBroadcastUpdated(string ServiceID, string Value, string Operand = "", bool IsScheduled = true, bool InvokeStartIntefaces = false);
+		bool 		IsPeriodicPool();
 
-		uint8_t GetBLEStatus();
+		uint8_t 	GetBLEStatus();
 
-		bool 	IsFirstWiFiStart	= true;
-		bool 	IsEventDrivenStart = false;
+		static inline bool 		IsFirstWiFiStart	= true;
+		static inline bool 		IsEventDrivenStart = false;
 	private:
-		bool	BlockRestartForever = false;
+		static inline bool		BlockRestartForever = false;
 };
 
 #endif // WIRELESS_H

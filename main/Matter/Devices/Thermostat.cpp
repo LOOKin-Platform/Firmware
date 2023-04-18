@@ -3,7 +3,11 @@
 #include "Thermostat.h"
 
 #include "TempSensor.h"
+
+#include "Data.h"
 #include "DataRemote.h"
+
+extern DataEndpoint_t *Data;
 
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;

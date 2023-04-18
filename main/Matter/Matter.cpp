@@ -1,9 +1,16 @@
 #include "Matter.h"
+
+
+#include "Globals.h"
+
 #include "GenericDevice.h"
 #include "DeviceCallbacks.h"
 #include "NetworkCommissioningCustomDriver.h"
 #include "MatterWiFi.h"
 #include "DataRemote.h"
+
+#include "SensorMeteo.h"
+#include "CommandIR.h"
 
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
@@ -29,6 +36,13 @@
 #include <app/server/Server.h>
 
 #include <esp_log.h>
+
+#include "HumiditySensor.h"
+#include "Light.h"
+#include "Outlet.h"
+#include "TempSensor.h"
+#include "Thermostat.h"
+#include "VideoPlayer.h"
 
 #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 #include <platform/ESP32/ESP32FactoryDataProvider.h>

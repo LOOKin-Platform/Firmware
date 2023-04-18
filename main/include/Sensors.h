@@ -17,18 +17,6 @@
 
 #include "Settings.h"
 
-#include "Automation.h"
-#include "Globals.h"
-#include "Wireless.h"
-#include "JSON.h"
-#include "RMT.h"
-#include "HardwareIO.h"
-#include "DateTime.h"
-#include "Commands.h"
-#include "LocalMQTT.h"
-#include "Storage.h"
-#include "Log.h"
-
 #include "Matter.h"
 #include "GenericDevice.h"
 
@@ -81,8 +69,6 @@ class Sensor_t {
 		static Sensor_t*				GetSensorByName(string);
 		static Sensor_t*				GetSensorByID(uint8_t);
 		static uint8_t					GetDeviceTypeHex();
-
-		static void						LocalMQTTSend(string Payload, string Topic);
 
 		static void 					HandleHTTPRequest(WebServer_t::Response &, Query_t &);
 	private:

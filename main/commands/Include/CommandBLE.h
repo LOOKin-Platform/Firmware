@@ -6,9 +6,7 @@
 #ifndef COMMANDS_BLE
 #define COMMANDS_BLE
 
-#include "Sensors.h"
 #include "Commands.h"
-#include "BLEServerGeneric.h"
 
 #include "Data.h"
 
@@ -33,7 +31,7 @@ class CommandBLE_t : public Command_t {
         string  GetSettings() override;
         void    SetSettings(WebServer_t::Response &Result, Query_t &Query) override;
 
-		bool GetIsBLEPairingCodeSkiped() const;
+		bool 	GetIsBLEPairingCodeSkiped(); //const;
 
 		bool Execute(uint8_t EventCode, const char* StringOperand) override;
 

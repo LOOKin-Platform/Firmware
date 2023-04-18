@@ -96,7 +96,6 @@ class WebServer_t {
 	    static QueueHandle_t 	UDPBroadcastQueue;
 	    static httpd_handle_t	HTTPServerHandle;
 
-
 		static void				UDPListenerTask(void *);
 };
 

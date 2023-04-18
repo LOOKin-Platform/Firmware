@@ -78,7 +78,6 @@ class CommandIR_t : public Command_t {
 		
 		bool TXSendHelper(IRLib &Signal,uint32_t Operand, uint16_t Misc);
 
-
 		static void BLESendToQueue(string Signal);
 		static void TXSendAddPause(uint32_t PauseLength = 500);
 

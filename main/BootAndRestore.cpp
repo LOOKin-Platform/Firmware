@@ -5,9 +5,13 @@
 */
 
 #include "BootAndRestore.h"
+
 #include "Matter.h"
 #include "Memory.h"
 #include "Settings.h"
+#include "Log.h"
+
+#include "Globals.h"
 
 bool BootAndRestore::IsDeviceFullyStarted = false;
 

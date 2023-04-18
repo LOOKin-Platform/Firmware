@@ -7,9 +7,7 @@
 #ifndef COMMANDS_WINDOWOPENER
 #define COMMANDS_WINDOWOPENER
 
-#include "Sensors.h"
-
-const char CommandWOBaseTag[]			= "WindowOpenerBase";
+#include "Commands.h"
 
 class CommandWindowOpener_t : public Command_t {
   public:

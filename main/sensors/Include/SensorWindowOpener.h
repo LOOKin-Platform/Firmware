@@ -7,6 +7,8 @@
 #ifndef SENSORS_WINDOWOPENER_H
 #define SENSORS_WINDOWOPENER_H
 
+#include "Sensors.h"
+
 class SensorWindowOpener_t : public Sensor_t {
 	public:
 		SensorWindowOpener_t();

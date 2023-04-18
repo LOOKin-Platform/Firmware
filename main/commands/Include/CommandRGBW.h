@@ -7,6 +7,8 @@
 #ifndef COMMANDS_RGBW
 #define COMMANDS_RGBW
 
+#include "Commands.h"
+
 class CommandColor_t : public Command_t {
 	public:
 		CommandColor_t();

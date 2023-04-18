@@ -5,6 +5,9 @@
 */
 
 #include "CommandBLE.h"
+#include "BLEServerGeneric.h"
+
+extern BLEServerGeneric_t MyBLEServer;
 
 CommandBLE_t::CommandBLE_t()
 {

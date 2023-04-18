@@ -6,14 +6,21 @@
 
 #include "SensorMotion.h"
 
+#include "Wireless.h"
+#include "Automation.h"
+#include "Sensors.h"
+
+extern Wireless_t 	Wireless;
+extern Automation_t	Automation;
+
 void SensorMotion_t::MotionDetectTask(void *) {
 	while (1)  {
 		uint16_t Value = (uint16_t)adc1_get_raw(SensorMotionChannel);
 
 		if (Value > 2000) {
 			Sensor_t::GetSensorByID(SensorMotionID)->SetValue(1);
-			Wireless.SendBroadcastUpdated(SensorMotionID, Converter::ToString(Sensor_t::GetSensorByID(SensorMotionID)->GetValue().Value));
-			Automation.SensorChanged(SensorMotionID);
+			Wireless_t::SendBroadcastUpdated(SensorMotionID, Converter::ToString(Sensor_t::GetSensorByID(SensorMotionID)->GetValue()));
+			Automation_t::SensorChanged(SensorMotionID);
 
 			while (Value > 2000) {
 				Value = (uint16_t)adc1_get_raw(SensorMotionChannel);
@@ -49,19 +56,19 @@ SensorMotion_t::SensorMotion_t() {
 
 void SensorMotion_t::Update() {
 	if (SetValue(ReceiveValue())) {
-		Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue().Value));
-		Automation.SensorChanged(ID);
+		Wireless_t::SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
+		Automation_t::SensorChanged(ID);
 	}
 }
 
-uint32_t SensorMotion_t::ReceiveValue(string Key = "Primary") {
+uint32_t SensorMotion_t::ReceiveValue(string Key) {
 	return ((uint16_t)adc1_get_raw(SensorMotionChannel) > 2000) ? 1 : 0;
 };
 
 bool SensorMotion_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
-	SensorValueItem ValueItem = GetValue();
+	uint32_t ValueItem = GetValue();
 
-	if (SceneEventCode == 0x01 && ValueItem.Value == 1)
+	if (SceneEventCode == 0x01 && ValueItem == 1)
 		return true;
 
 	return false;

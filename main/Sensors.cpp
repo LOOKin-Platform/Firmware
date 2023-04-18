@@ -78,10 +78,6 @@ uint8_t Sensor_t::GetDeviceTypeHex() {
 	return Device.Type.Hex;
 }
 
-void Sensor_t::LocalMQTTSend(string Payload, string Topic) {
-	LocalMQTT.SendMessage(Payload, "/sensors" + Topic);
-}
-
 void Sensor_t::UpdateSensors() {
 	if (Device.Status != RUNNING)
 		return;

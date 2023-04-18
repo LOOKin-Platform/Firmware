@@ -3,8 +3,6 @@
 
 #include "FreeRTOSWrapper.h"
 
-#include "Globals.h"
-
 #include <stdio.h>
 #include <string.h>
 #include "Custom.h"

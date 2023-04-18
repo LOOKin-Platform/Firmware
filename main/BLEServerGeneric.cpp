@@ -1,4 +1,5 @@
 #include "BLEServerGeneric.h"
+#include "Globals.h"
 
 static const char* Tag = "BLEDevice";
 

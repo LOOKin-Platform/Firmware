@@ -6,6 +6,9 @@
 
 #include "SensorTemperature.h"
 
+#include "Wireless.h"
+#include "Automation.h"
+
 SensorTemperature_t::SensorTemperature_t() {
 	if (GetIsInited()) return;
 
@@ -19,11 +22,11 @@ SensorTemperature_t::SensorTemperature_t() {
 }
 
 void SensorTemperature_t::Update() {
-	Wireless.SendBroadcastUpdated(ID, "00", Converter::ToHexString(GetValue(),4));
-	Automation.SensorChanged(ID);
+	Wireless_t::SendBroadcastUpdated(ID, "00", Converter::ToHexString(GetValue(),4));
+	Automation_t::SensorChanged(ID);
 };
 
-string SensorTemperature_t::FormatValue(string Key = "Primary") {
+string SensorTemperature_t::FormatValue(string Key) {
 	if (Key == "Primary")
 		return (Values[Key] >= 0x1000)
 				? "-" + Converter::ToString(((float)(Values[Key]-0x1000) / 10))

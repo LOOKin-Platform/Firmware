@@ -3,11 +3,9 @@
 *    Class to handle API /Device
 *
 */
-#include "Globals.h"
+
 #include "Data.h"
-
 #include "DataRemote.h"
-
 #include "Matter.h"
 
 const char *DataEndpoint_t::Tag 			= "Data_t";

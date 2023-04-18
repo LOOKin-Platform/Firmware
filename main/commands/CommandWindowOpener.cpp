@@ -3,7 +3,10 @@
 *    CommandSwitch_t implementation
 *
 */
-#include "CommandsWindowOpener.h"
+#include "CommandWindowOpener.h"
+#include "Sensors.h"
+
+const char CommandWOBaseTag[]			= "WindowOpenerBase";
 
 CommandWindowOpener_t::CommandWindowOpener_t() {
 	ID          	= 0x10;
@@ -44,7 +47,7 @@ void CommandWindowOpener_t::UpdateSensorWindowOpener(uint8_t Value, bool ForceUp
 	}
 }
 
-void SetCurrentMode(OperationalModeEnum Mode) {
+void CommandWindowOpener_t::SetCurrentMode(OperationalModeEnum Mode) {
 	if (Sensor_t::GetSensorByID(ID + 0x80) != nullptr) {
 		Sensor_t::GetSensorByID(ID + 0x80)->SetValue((uint32_t)Mode, "Mode", 0);
 		Sensor_t::GetSensorByID(ID + 0x80)->Update();

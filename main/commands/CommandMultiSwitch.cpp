@@ -6,6 +6,10 @@
 
 #include "CommandMultiSwitch.h"
 
+#include "HardwareIO.h"
+
+#include "Sensors.h"
+
 CommandMultiSwitch_t::CommandMultiSwitch_t() {
 	ID          = 0x02;
 	Name        = "MultiSwitch";

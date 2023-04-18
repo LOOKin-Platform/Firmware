@@ -8,6 +8,8 @@
 #ifndef SENSORS_TOUCH_H
 #define SENSORS_TOUCH_H
 
+#include "Sensors.h"
+
 class SensorTouch_t : public Sensor_t {
 	private:
 		static inline map<gpio_num_t, uint64_t> 	SensorTouchStatusMap 	= {};

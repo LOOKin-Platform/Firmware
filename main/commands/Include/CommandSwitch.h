@@ -7,7 +7,7 @@
 #ifndef COMMANDS_SWITCH
 #define COMMANDS_SWITCH
 
-#include "Sensors.h"
+#include "Commands.h"
 
 class CommandSwitch_t : public Command_t {
   public:

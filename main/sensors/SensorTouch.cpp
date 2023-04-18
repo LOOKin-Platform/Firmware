@@ -5,6 +5,10 @@
 */
 
 #include "SensorTouch.h"
+#include "ISR.h"
+
+#include "Automation.h"
+#include "Wireless.h"
 
 void SensorTouch_t::SensorTouchTask(void *) {
 	while (1)
@@ -30,7 +34,7 @@ void SensorTouch_t::SensorTouchTask(void *) {
 	}
 }
 
-static void SensorTouch_t::Callback(void* arg) {
+void SensorTouch_t::Callback(void* arg) {
 	gpio_num_t ActiveGPIO = static_cast<gpio_num_t>((uint32_t) arg);
 
 	if (SensorTouchStatusMap.find(ActiveGPIO) != SensorTouchStatusMap.end())
@@ -67,14 +71,14 @@ SensorTouch_t::SensorTouch_t() {
 	SetIsInited(true);
 }
 
-void SensorTouch_t::Update() override {
+void SensorTouch_t::Update() {
 	if (SetValue(ReceiveValue(), "Primary"), 0) {
-		Wireless.SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
-		Automation.SensorChanged(ID);
+		Wireless_t::SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
+		Automation_t::SensorChanged(ID);
 	}
 };
 
-uint32_t SensorTouch_t::ReceiveValue(string Key = "Primary") override {
+uint32_t SensorTouch_t::ReceiveValue(string Key) {
 	/*
 	SensorSwitchSettingsItem CurrentSettings;
 
@@ -90,7 +94,7 @@ uint32_t SensorTouch_t::ReceiveValue(string Key = "Primary") override {
 	return 0;
 };
 
-bool SensorTouch_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) override {
+bool SensorTouch_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
 	/*
 	SensorValueItem ValueItem = GetValue();
 

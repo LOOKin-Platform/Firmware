@@ -11,6 +11,8 @@
 #include "BME280.h"
 #include "hdc1080.h"
 
+#include "Sensors.h"
+
 #include "Matter.h"
 #include "Thermostat.h"
 #include "HumiditySensor.h"

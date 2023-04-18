@@ -13,19 +13,7 @@
 
 #include <esp_log.h>
 
-#include "Settings.h"
-
-#include "Globals.h"
-#include "Device.h"
-#include "WebServer.h"
-#include "JSON.h"
-#include "HardwareIO.h"
-#include "Converter.h"
-#include "Storage.h"
-
-#include "Sensors.h"
-
-#include "Log.h"
+#include "Query.h"
 
 using namespace std;
 
@@ -57,7 +45,5 @@ class Command_t {
 
 		static void					SendLocalMQTT(string Payload, string Topic);
 };
-
-extern Storage_t Storage;
 
 #endif

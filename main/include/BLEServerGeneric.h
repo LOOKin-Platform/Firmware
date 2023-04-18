@@ -22,8 +22,6 @@
 
 #include "nimble/nimble_port.h"
 
-#include "Globals.h"
-
 #include "esp_log.h"
 
 #define BLEDevice                  NimBLEDevice

@@ -6,6 +6,9 @@
 
 #include "CommandRGBW.h"
 
+#include "Sensors.h"
+#include "HardwareIO.h"
+
 CommandColor_t::CommandColor_t() {
 	ID          = 0x04;
 	Name        = "RGBW";
@@ -15,11 +18,13 @@ CommandColor_t::CommandColor_t() {
 
 	Settings_t::GPIOData_t::Color_t GPIO = Settings.GPIOData.GetCurrent().Color;
 
+/*
+	Не работает, обновить до поддержки обновленного HardwareIO
 	if (GPIO.Red.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Red.GPIO		, GPIO.Timer, GPIO.Red.Channel	);
 	if (GPIO.Green.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Green.GPIO	, GPIO.Timer, GPIO.Green.Channel);
 	if (GPIO.Blue.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.Blue.GPIO	, GPIO.Timer, GPIO.Blue.Channel	);
 	if (GPIO.White.GPIO	!= GPIO_NUM_0) GPIO::SetupPWM(GPIO.White.GPIO	, GPIO.Timer, GPIO.White.Channel);
-
+*/
 	if (GPIO.Red.GPIO != GPIO_NUM_0 || GPIO.Green.GPIO	!= GPIO_NUM_0 || GPIO.Blue.GPIO	!= GPIO_NUM_0 || GPIO.White.GPIO != GPIO_NUM_0)
 		GPIO::PWMFadeInstallFunction();
 }

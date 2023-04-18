@@ -7,6 +7,9 @@
 #ifndef SENSORS_MOTION_H
 #define SENSORS_MOTION_H
 
+#include "Sensors.h"
+#include "driver/adc.h"
+
 class SensorMotion_t : public Sensor_t {
 	public:
 		SensorMotion_t();
@@ -21,6 +24,6 @@ class SensorMotion_t : public Sensor_t {
 		static inline uint8_t 			SensorMotionID 		= 0xE1;
 		static inline adc1_channel_t 	SensorMotionChannel	= ADC1_CHANNEL_0;
 
-		static inline const adc_atten_t	atten = ADC_ATTEN_11db;
+		static inline const adc_atten_t	atten = ADC_ATTEN_DB_11;
 };
 #endif

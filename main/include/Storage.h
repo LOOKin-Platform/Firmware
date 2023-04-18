@@ -12,7 +12,6 @@ using namespace std;
 #include <map>
 #include <bitset>
 
-#include "Settings.h"
 #include "Query.h"
 
 #include "Memory.h"

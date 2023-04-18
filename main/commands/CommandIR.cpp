@@ -7,6 +7,10 @@
 #include "CommandIR.h"
 #include "CommandBLE.h"
 
+#include "Storage.h"
+#include "LocalMQTT.h"
+
+extern Storage_t Storage;
 
 CommandIR_t::CommandIR_t() {
 	ID          				= 0x07;
@@ -622,7 +626,7 @@ bool CommandIR_t::SendToCommandIRQueue(uint32_t &HashID) {
 	return false;
 }
 
-static void CommandIRTXTask(void *TaskData) {
+void CommandIR_t::CommandIRTXTask(void *TaskData) {
 	static uint32_t HashID = 0;
 	static uint32_t	LastFrequency = 0;
 
@@ -902,7 +906,7 @@ void CommandIR_t::ACReadFinished(const char *IP) {
 				string DeviceID =  ((DataRemote_t*)Data)->GetUUIDByExtraValue(Codeset);
 
 				if (DeviceID != "")
-					Sensor_t::LocalMQTTSend("{\"UUID\": \""+DeviceID+"\", \"Status\":\"" + Converter::ToHexString(StatusSetResult.second,4) + "\"}", "/ir/localremote/sent");
+					LocalMQTT_t::SendMessage("{\"UUID\": \""+DeviceID+"\", \"Status\":\"" + Converter::ToHexString(StatusSetResult.second,4) + "\"}", "/ir/localremote/sent");
 			}
 		}
 }

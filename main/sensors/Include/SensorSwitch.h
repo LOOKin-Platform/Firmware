@@ -7,6 +7,8 @@
 #ifndef SENSORS_SWITCH_H
 #define SENSORS_SWITCH_H
 
+#include "Sensors.h"
+
 class SensorSwitch_t : public Sensor_t {
 	public:
 		SensorSwitch_t();

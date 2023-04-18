@@ -16,7 +16,6 @@
 #include "Memory.h"
 
 #include "Matter.h"
-#include "GenericDevice.h"
 
 using namespace std;
 

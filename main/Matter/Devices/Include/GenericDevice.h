@@ -5,26 +5,23 @@
 #include <app-common/zap-generated/ids/Attributes.h>
 #include <app-common/zap-generated/ids/Clusters.h>
 
-#include "Matter.h"
-#include "Data.h"
-
 #include <app/util/attribute-storage.h>
-
 #include <platform/CHIPDeviceLayer.h>
 #include <lib/support/CHIPMemString.h>
-
 #include <app/reporting/reporting.h>
 
 #include <functional>
-
 #include <typeinfo>
+#include <string>
 
+#include "esp_log.h"
+
+using namespace std;
 using namespace chip::Platform;
 
 #define ZCL_ON_OFF_CLUSTER_REVISION (4u)
 
-class MatterGenericDevice
-{
+class MatterGenericDevice {
     public:
         enum DeviceTypeEnum {
             Undefined   = 0x0,
@@ -70,8 +67,8 @@ class MatterGenericDevice
         inline char *           GetLocation()                       { return mLocation; };
         inline DeviceTypeEnum   GetTypeName()                       { return DeviceType; };
 
-        virtual EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)   { return EMBER_ZCL_STATUS_SUCCESS; }
-        virtual EmberAfStatus HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value)                           { return EMBER_ZCL_STATUS_SUCCESS; }
+        virtual EmberAfStatus   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)   { return EMBER_ZCL_STATUS_SUCCESS; }
+        virtual EmberAfStatus   HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value)                           { return EMBER_ZCL_STATUS_SUCCESS; }
 
         virtual bool            GetOnOff()                          { ESP_LOGE("GetOnOff Generic", "Invoked"); return false;}
         virtual void            SetOnOff(bool Value)                { ESP_LOGE("SetOnOff Generic", "Invoked"); }

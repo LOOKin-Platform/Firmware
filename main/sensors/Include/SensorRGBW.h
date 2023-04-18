@@ -7,7 +7,7 @@
 #ifndef SENSORS_RGBW_H
 #define SENSORS_RGBW_H
 
-#include "Sensor.h"
+#include "Sensors.h"
 
 class SensorColor_t : public Sensor_t {
 	public:

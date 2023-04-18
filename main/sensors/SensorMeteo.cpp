@@ -15,8 +15,13 @@
 #include "HumiditySensor.h"
 #include "TempSensor.h"
 #include "DataRemote.h"
+#include "PowerManagement.h"
+#include "Wireless.h"
+#include "Automation.h"
 
-extern DataEndpoint_t *Data;
+extern DataEndpoint_t 	*Data;
+extern Wireless_t		Wireless;
+extern Automation_t		Automation;
 
 bool SensorMeteo_t::HasPrimaryValue() {
 	return false;
@@ -89,13 +94,13 @@ uint32_t SensorMeteo_t::ValueToUint32(float Value, string Type) {
 			for (auto &IRDevice : ((DataRemote_t *)Data)->IRDevicesCache)
 				if (IRDevice.DeviceType == 0xEF)
 				{
-					MatterThermostat* Thermostat = (MatterThermostat*)GetBridgedAccessoryByType(MatterGenericDevice::Thermostat, IRDevice.DeviceID);
+					MatterThermostat* Thermostat = (MatterThermostat*)Matter::GetBridgedAccessoryByType(MatterGenericDevice::Thermostat, IRDevice.DeviceID);
 
 					if (Thermostat != nullptr)
 						Thermostat->SetLocalTemperature(Value);
 				}
 
-			MatterTempSensor* TempSensor = (MatterTempSensor*)GetBridgedAccessoryByType(MatterGenericDevice::Temperature);
+			MatterTempSensor* TempSensor = (MatterTempSensor*)Matter::GetBridgedAccessoryByType(MatterGenericDevice::Temperature);
 			
 			if (TempSensor != nullptr)
 				TempSensor->SetTemperature(Value);
@@ -106,7 +111,7 @@ uint32_t SensorMeteo_t::ValueToUint32(float Value, string Type) {
 
 		if (IsMatterEnabled() && Settings.eFuse.Type == Settings.Devices.Remote)
 		{
-			MatterHumiditySensor* HumiditySensor = (MatterHumiditySensor*)GetBridgedAccessoryByType(MatterGenericDevice::Humidity);
+			MatterHumiditySensor* HumiditySensor = (MatterHumiditySensor*)Matter::GetBridgedAccessoryByType(MatterGenericDevice::Humidity);
 			if (HumiditySensor != nullptr)
 				HumiditySensor->SetHumidity(Value);
 		}

@@ -7,6 +7,8 @@
 #ifndef SENSORS_MULTISWITCH_H
 #define SENSORS_MULTISWITCH_H
 
+#include "Sensors.h"
+
 class SensorMultiSwitch_t : public Sensor_t {
 	private:
 		vector<gpio_num_t> GPIOS = vector<gpio_num_t>();

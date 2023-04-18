@@ -7,6 +7,8 @@
 #include "Sensors.h"
 #include "CommandSwitch.h"
 
+#include "HardwareIO.h"
+
 CommandSwitch_t::CommandSwitch_t() {
 	ID          = 0x01;
 	Name        = "Switch";

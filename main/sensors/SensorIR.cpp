@@ -12,10 +12,18 @@
 
 #include "Data.h"
 #include "DataRemote.h"
+#include "Storage.h"
+#include "Wireless.h"
+#include "Automation.h"
+#include "LocalMQTT.h"
 
 #include "esp_timer.h"
+#include "RMT.h"
 
-extern DataEndpoint_t *Data;
+extern DataEndpoint_t 	*Data;
+extern Storage_t 		Storage;
+extern Wireless_t 		Wireless;
+extern Automation_t		Automation;
 
 SensorIR_t::SensorIR_t() {
 	if (GetIsInited()) return;
@@ -297,7 +305,7 @@ void SensorIR_t::ACCheckFinished(const char *IP) {
 		if (Settings.eFuse.Type == Settings.Devices.Remote)
 			((DataRemote_t*)Data)->SetExternalStatusForAC(Codeset, Status);
 
-		LocalMQTTSend(StatusString, "/ir/ac/" + CodesetString);
+		LocalMQTT_t::SendMessage(StatusString, "/ir/ac/" + CodesetString);
 	}
 }
 
