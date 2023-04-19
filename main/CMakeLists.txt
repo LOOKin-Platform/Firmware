@@ -1,6 +1,5 @@
 idf_component_register(
 	PRIV_INCLUDE_DIRS
-	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/zzz_generated/bridge-app"
 	"${CMAKE_CURRENT_LIST_DIR}/include"
 	"${CMAKE_SOURCE_DIR}/third_party/connectedhomeip/examples/providers"
 	INCLUDE_DIRS
