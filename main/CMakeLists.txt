@@ -66,7 +66,7 @@ idf_component_register(
 	REQUIRES 
 	"bt"
 	"efuse"
-	"Converter"
+	"converter"
 	"DateTime"
 	"esp_timer"
 	"esp_hw_support"

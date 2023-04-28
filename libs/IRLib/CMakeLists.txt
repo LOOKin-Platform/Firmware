@@ -5,6 +5,6 @@ set(srcs
 
 idf_component_register(SRCS "${srcs}"
                       INCLUDE_DIRS .
-                      REQUIRES "Converter")
+                      REQUIRES "converter")
                       
 set(LOG_LOCAL_LEVEL "ESP_LOG_ERROR")

@@ -40,12 +40,12 @@ class IRProto {
 		}
 };
 
-#include "protocols/NEC1.cpp"
+#include "Protocols/NEC1.cpp"
 #include "Protocols/SONY.cpp"
 #include "Protocols/NECx.cpp"
-#include "protocols/Panasonic.cpp"
-#include "protocols/Samsung36.cpp"
-#include "protocols/RC5.cpp"
+#include "Protocols/Panasonic.cpp"
+#include "Protocols/Samsung36.cpp"
+#include "Protocols/RC5.cpp"
 #include "Protocols/RC6.cpp"
 //#include "protocols/Daikin.cpp"
 //#include "protocols/MitsubishiAC.cpp"
