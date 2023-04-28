@@ -163,7 +163,7 @@ uint32_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
 			return PWMValuesCache[PWMChannel].Value;
 	}
 
-	return ledc_get_duty(LEDC_HIGH_SPEED_MODE, PWMChannel);
+	return ledc_get_duty(LEDC_LOW_SPEED_MODE, PWMChannel);
 }
 
 void GPIO::PWMSetDuty(ledc_channel_t PWMChannel, uint32_t Duty) {
@@ -183,8 +183,8 @@ void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint32_t Duty, uint16_t FadeTime
 		return;
 	}
 
-	if (ESP_OK == ::ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty, FadeTime))
-		if (ESP_OK == ::ledc_fade_start(LEDC_HIGH_SPEED_MODE, PWMChannel, LEDC_FADE_NO_WAIT))
+	if (ESP_OK == ::ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, PWMChannel, Duty, FadeTime))
+		if (ESP_OK == ::ledc_fade_start(LEDC_LOW_SPEED_MODE, PWMChannel, LEDC_FADE_NO_WAIT))
 			PWMValuesCache[PWMChannel] = PWMCacheItem(Duty, Time::Uptime());
 }
 

@@ -76,7 +76,10 @@ void Device_t::Init() {
 	}
 	
 	LoadCapabilityFlagsFromNVS();
+
+#if CONFIG_IDF_TARGET_ESP32
 	PowerManagement::SetPMType(IsEcoModeEnabled(), (PowerMode == DevicePowerMode::CONST));
+#endif
 
 	IsAutoUpdate = GetAutoUpdateFromNVS();
 }
@@ -193,7 +196,7 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 						Result.Body = "{\"success\" : \"false\" , \"Error\": \"Writing data failed\"}";
 					}
 
-					delete BinaryData;
+					destroy_at(BinaryData);
 				}
 
 				if (Query.CheckURLPart("finish", 2))

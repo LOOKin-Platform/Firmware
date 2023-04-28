@@ -90,7 +90,9 @@ bool CommandBLE_t::Execute(uint8_t EventCode, const char* StringOperand) {
 		if (Operand.size() == 0)
 			return false;
 
+#if CONFIG_IDF_TARGET_ESP32
 		PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+#endif
 
 		if (Operand.size() == 4 && Converter::IsStringContainsOnlyDigits(Operand))
 		{

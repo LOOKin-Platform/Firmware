@@ -34,16 +34,18 @@ void HandlersPooling_t::EnergyPeriodicHandler::InnerHandler(bool SkipTimeCheck) 
 
 		if (ConstValue > 5000)
 		{
+#if CONFIG_IDF_TARGET_ESP32
 			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::BATTERY)
 				PowerManagement::SetPMType(Device.IsEcoModeEnabled(), true);
-
+#endif
 			Device.PowerMode = DevicePowerMode::CONST;
 		}
 		else
 		{
+#if CONFIG_IDF_TARGET_ESP32
 			if (Settings.eFuse.Type == Settings.Devices.Remote && Device.PowerMode == DevicePowerMode::CONST)
 				PowerManagement::SetPMType(Device.IsEcoModeEnabled(), false);
-
+#endif
 			Device.PowerMode = DevicePowerMode::BATTERY;
 		}
 

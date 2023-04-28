@@ -106,7 +106,7 @@ void FillDevices() {
 				DeviceHardware.Indicator.Red.MaxDuty				= 127;
 
 				DeviceHardware.Indicator.Blue.GPIO 					= GPIO_NUM_21;
-				DeviceHardware.Indicator.Blue.Channel				= LEDC_CHANNEL_6;
+				DeviceHardware.Indicator.Blue.Channel				= LEDC_CHANNEL_5;//!LEDC_CHANNEL_6;
 				DeviceHardware.Indicator.Blue.Frequency				= 400;
 				DeviceHardware.Indicator.Blue.IsInverted			= true;		
 				DeviceHardware.Indicator.Red.MaxDuty				= 255;

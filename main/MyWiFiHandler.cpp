@@ -45,7 +45,9 @@ esp_err_t MyWiFiEventHandler::apStart() {
 
 	MyBLEServer.ForceHIDMode(BASIC);
 
+#if CONFIG_IDF_TARGET_ESP32
 	PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+#endif
 
 	return ESP_OK;
 }
@@ -63,7 +65,9 @@ esp_err_t MyWiFiEventHandler::apStop() {
 
 	Wireless.IsEventDrivenStart = false;
 
+#if CONFIG_IDF_TARGET_ESP32
 	PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
+#endif
 
 	return ESP_OK;
 }
@@ -77,7 +81,9 @@ esp_err_t MyWiFiEventHandler::staStart() {
 */
 	Wireless.IsFirstWiFiStart = false;
 
+#if CONFIG_IDF_TARGET_ESP32
 	PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
+#endif
 
 	return ESP_OK;
 
@@ -92,7 +98,9 @@ esp_err_t MyWiFiEventHandler::staConnected() {
 */
 	ConnectionTries = 0;
 
+#if CONFIG_IDF_TARGET_ESP32
 	PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
+#endif
 
 	if (!Matter::IsEnabledForDevice())
 		IPDidntGetTimer->Start();

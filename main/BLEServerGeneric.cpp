@@ -118,13 +118,17 @@ void BLEServerGeneric_t::CheckHIDMode() {
 }
 
 void BLEServerGeneric_t::ForceHIDMode(BLEServerModeEnum Mode) {
+	return; //!
+
 	if (!IsHIDEnabledForDevice()) return;
 
 	if (CurrentMode == Mode) return;
 
 	if (Mode == BASIC && pServer->getConnectedCount())
 	{
+#if CONFIG_IDF_TARGET_ESP32
 		PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_BALANCE);
+#endif
 
 		for (auto& Connection : pServer->getPeerDevices())
 			pServer->disconnect(Connection);
@@ -225,6 +229,8 @@ void BLEServerGeneric_t::Deinit() {
 }
 
 void BLEServerGeneric_t::StartAdvertising() {
+	return; //!
+
 	if (IsHIDEnabledForDevice())
 		StartAdvertisingAsHID();
 	else
@@ -233,6 +239,8 @@ void BLEServerGeneric_t::StartAdvertising() {
 
 void BLEServerGeneric_t::StartAdvertisingAsHID()
 {
+	return; //!
+
 	Init();
 
 	HIDDevice 		= new BLEHIDDevice(pServer);
@@ -311,6 +319,8 @@ void BLEServerGeneric_t::StartAdvertisingAsHID()
 
 void BLEServerGeneric_t::StartAdvertisingAsGenericDevice()
 {
+	return; //!
+
 	Init();
 
 	BLEService *pService = pServer->createService(NimBLEUUID((uint16_t) 0x180A));

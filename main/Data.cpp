@@ -155,7 +155,7 @@ void DataEndpoint_t::Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Siz
 	}
 }
 
-void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
+void DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
 	if (Length == 0)
 		return;
 
@@ -201,7 +201,7 @@ void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
     free(TailBuffer);
 }
 
-IRAM_ATTR bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
+bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 	NVS Memory(DataEndpoint_t::NVSArea);
 
 	if (Settings.DeviceGeneration == 1) {
@@ -254,7 +254,7 @@ IRAM_ATTR bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
 	return true;
 }
 
-IRAM_ATTR string DataEndpoint_t::GetItem(string ItemName) {
+string DataEndpoint_t::GetItem(string ItemName) {
 	NVS Memory(DataEndpoint_t::NVSArea);
 	if (Settings.DeviceGeneration == 1)
 		return Memory.GetString(ItemName);
