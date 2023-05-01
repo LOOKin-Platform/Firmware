@@ -163,7 +163,12 @@ uint32_t GPIO::PWMValue(ledc_channel_t PWMChannel) {
 			return PWMValuesCache[PWMChannel].Value;
 	}
 
+#if CONFIG_IDF_TARGET_ESP32
+    return ledc_get_duty(LEDC_HIGH_SPEED_MODE, PWMChannel);
+#elif CONFIG_IDF_TARGET_ESP32C6
 	return ledc_get_duty(LEDC_LOW_SPEED_MODE, PWMChannel);
+#endif
+
 }
 
 void GPIO::PWMSetDuty(ledc_channel_t PWMChannel, uint32_t Duty) {
@@ -183,9 +188,15 @@ void GPIO::PWMFadeTo(ledc_channel_t PWMChannel, uint32_t Duty, uint16_t FadeTime
 		return;
 	}
 
+#if CONFIG_IDF_TARGET_ESP32
+	if (ESP_OK == ::ledc_set_fade_with_time(LEDC_HIGH_SPEED_MODE, PWMChannel, Duty, FadeTime))
+		if (ESP_OK == ::ledc_fade_start(LEDC_HIGH_SPEED_MODE, PWMChannel, LEDC_FADE_NO_WAIT))
+			PWMValuesCache[PWMChannel] = PWMCacheItem(Duty, Time::Uptime());
+#elif CONFIG_IDF_TARGET_ESP32C6
 	if (ESP_OK == ::ledc_set_fade_with_time(LEDC_LOW_SPEED_MODE, PWMChannel, Duty, FadeTime))
 		if (ESP_OK == ::ledc_fade_start(LEDC_LOW_SPEED_MODE, PWMChannel, LEDC_FADE_NO_WAIT))
 			PWMValuesCache[PWMChannel] = PWMCacheItem(Duty, Time::Uptime());
+#endif
 }
 
 void GPIO::PWMFadeTo(Settings_t::GPIOData_t::Color_t::Item_t Color, uint32_t Duty, uint16_t FadeTime) {

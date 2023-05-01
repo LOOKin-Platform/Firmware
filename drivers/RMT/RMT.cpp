@@ -49,7 +49,12 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 2500, 0));
+
+#if CONFIG_IDF_TARGET_ESP32
+	ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_REF));
+#elif CONFIG_IDF_TARGET_ESP32C6
 	ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_XTAL));
+#endif
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;

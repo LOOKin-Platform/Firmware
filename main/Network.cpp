@@ -115,6 +115,9 @@ bool Network_t::WiFiConnect(string SSID, bool DontUseCache, bool IsHidden) {
 	else
 		ESP_LOGI("WiFiConnect", "SSID: %s", SSID.c_str());
 
+	SSID  = "testo";
+	Password = "prostomesto#9";
+
 	if (SSID != "" && Converter::ToLower(SSID) == Converter::ToLower(WiFi.GetSSID()))
 		return false;
 

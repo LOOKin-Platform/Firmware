@@ -231,8 +231,8 @@ bool MatterThermostat::HandleModeChange(uint8_t Value) {
 
         switch (Value)
         {
-            case 3: ACOperandValue = 2;
-            case 4: ACOperandValue = 3;
+            case 3: ACOperandValue = 2; break;
+            case 4: ACOperandValue = 3; break;
             default: break;
         }
 

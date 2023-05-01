@@ -18,7 +18,6 @@ esp_netif_t*	WiFi_t::NetIfAPHandle		= NULL;
 esp_event_handler_instance_t WiFi_t::instance_any_id = NULL;
 esp_event_handler_instance_t WiFi_t::instance_any_ip = NULL;
 
-
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
 	m_initCalled        = false;
 	m_WiFiRunning		= false;
@@ -336,7 +335,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	if (GetMode() == WIFI_MODE_STA_STR && m_apConnectionStatus == ESP_OK) {
 		::esp_wifi_disconnect();
 		m_WiFiNetworkSwitch = true;
-		DHCPStop();
+		//!DHCPStop();
 		FreeRTOS::Sleep(1000);
 	}
 
@@ -351,7 +350,6 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	Init();
 
 	if (ip != 0 && gw != 0 && Netmask != 0) {
-
 		DHCPStop();
 
 		esp_netif_ip_info_t ipInfo;
@@ -360,9 +358,9 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 		ipInfo.netmask.addr = Netmask;
 
 		::esp_netif_set_ip_info(WiFi_t::GetNetIf(), &ipInfo);
-	}
 
-	DHCPStart();
+		DHCPStart();
+	}
 
 	errRc = ::esp_wifi_set_mode(WIFI_MODE_STA);
 	if (errRc != ESP_OK) {
@@ -373,6 +371,7 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 
 	wifi_config_t sta_config;
 	::memset(&sta_config, 0, sizeof(sta_config));
+
 	::memcpy(sta_config.sta.ssid, SSID.data(), SSID.size());
 	::memcpy(sta_config.sta.password, Password.data(), Password.size());
 
@@ -387,6 +386,9 @@ uint8_t WiFi_t::ConnectAP(const std::string& SSID, const std::string& Password, 
 	sta_config.sta.btm_enabled		= 1;
 
 	sta_config.sta.channel			= Channel;
+
+    sta_config.sta.threshold.authmode = WIFI_AUTH_OPEN;
+	sta_config.sta.failure_retry_cnt 	= 2;
 
 	errRc = ::esp_wifi_set_config(WIFI_IF_STA, &sta_config);
 
@@ -431,8 +433,12 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 	if (GetMode() == WIFI_MODE_STA_STR)
 		::esp_wifi_disconnect();
 
+	ESP_LOGD(tag, "2");
+
 	m_WiFiRunning = true;
 	Init();
+
+	ESP_LOGD(tag, "3");
 
 	esp_err_t errRc;
 
@@ -441,9 +447,13 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 		FreeRTOS::Sleep(1000);
 	}
 
+	ESP_LOGD(tag, "4");
+
 	errRc = ::esp_wifi_stop();
 	if (errRc != ESP_OK)
 		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+
+	ESP_LOGD(tag, "5");
 
 	errRc = ::esp_wifi_set_mode(WIFI_MODE_APSTA);
 	if (errRc != ESP_OK) {
@@ -451,9 +461,12 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 		abort();
 	}
 
+	ESP_LOGD(tag, "6");
+
 	// Build the apConfig structure.
 	wifi_config_t apConfig;
 	::memset(&apConfig, 0, sizeof(apConfig));
+
 	::memcpy(apConfig.ap.ssid, SSID.data(), SSID.size());
 	apConfig.ap.ssid_len 		= SSID.size();
 	::memcpy(apConfig.ap.password, "", 0);
@@ -462,7 +475,9 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 	apConfig.ap.authmode        = WIFI_AUTH_OPEN;
 	apConfig.ap.ssid_hidden     = (uint8_t) SSIDIsHidden;
 	apConfig.ap.max_connection  = MaxConnections;
-	apConfig.ap.beacon_interval = 100;
+    apConfig.ap.pmf_cfg.required= true;
+
+	ESP_LOGD(tag, "7");
 
 	errRc = ::esp_wifi_set_config(WIFI_IF_AP, &apConfig);
 	if (errRc != ESP_OK) {
@@ -470,13 +485,18 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 		abort();
 	}
 
+	ESP_LOGD(tag, "8");
+
 	wifi_config_t sta_config;
 	::memset(&sta_config, 0, sizeof(sta_config));
 	errRc = ::esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_apsta_sta_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
 	}
+
+	ESP_LOGD(tag, "9");
 
 	errRc = ::esp_wifi_start();
 	if (errRc != ESP_OK) {
@@ -484,8 +504,9 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 		abort();
 	}
 
-	ESP_LOGD(tag, "<< startAP");
+	ESP_LOGD(tag, "10");
 
+	ESP_LOGD(tag, "<< startAP");
 } // startAP
 
 /**

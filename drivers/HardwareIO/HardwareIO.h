@@ -50,7 +50,13 @@ class GPIO {
 
 		// PWM to rule LEDs
 		static bool 	PWMIsInited;
-		static void 	SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq = 1000, ledc_timer_bit_t Resolution = LEDC_TIMER_8_BIT, ledc_timer_t TimerIndex = LEDC_TIMER_MAX, ledc_clk_cfg_t ClockSource = LEDC_USE_RTC8M_CLK, uint32_t DefaultDuty = 0);
+		
+#if CONFIG_IDF_TARGET_ESP32
+		static void 	SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq = 1000, ledc_timer_bit_t Resolution = LEDC_TIMER_8_BIT, ledc_timer_t TimerIndex = LEDC_TIMER_MAX, ledc_clk_cfg_t ClockSource = LEDC_USE_REF_TICK, uint32_t DefaultDuty = 0);
+#elif CONFIG_IDF_TARGET_ESP32C6
+		static void     SetupPWM(gpio_num_t GPIO, ledc_channel_t PWMChannel, uint16_t Freq = 1000, ledc_timer_bit_t Resolution = LEDC_TIMER_8_BIT, ledc_timer_t TimerIndex = LEDC_TIMER_MAX, ledc_clk_cfg_t ClockSource = LEDC_USE_RTC8M_CLK, uint32_t DefaultDuty = 0);
+#endif
+
 		static void 	PWMFadeInstallFunction();
 
 		static uint32_t PWMValue(ledc_channel_t PWMChannel);

@@ -70,7 +70,7 @@ void PowerManagement::SetWirelessPriority(esp_coex_prefer_t Option) {
 	ESP_LOGE("Current Wireless priority set", "%d", Option);
 
 	CurrentPriority = Option;
-	//!esp_coex_preference_set((esp_coex_prefer_t)Option);
+	esp_coex_preference_set((esp_coex_prefer_t)Option);
 
 	CurrentPriorityChangeTime = Time::UptimeU();
 }
@@ -88,10 +88,10 @@ void PowerManagement::SetBLEOptions() {
 	if (!BLEDevice::getInitialized())
 		return;
 
-	//!if (ActivePMType == NONE)
-		//!::esp_bt_sleep_disable();
-	//!else
-		//!::esp_bt_sleep_enable();
+	if (ActivePMType == NONE)
+		::esp_bt_sleep_disable();
+	else
+		::esp_bt_sleep_enable();
 }
 
 void PowerManagement::AddLock(string LockName) {

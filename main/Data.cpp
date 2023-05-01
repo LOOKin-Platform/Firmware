@@ -155,7 +155,11 @@ void DataEndpoint_t::Move(uint32_t NewAddress, uint32_t OldAddress, uint32_t Siz
 	}
 }
 
+#if CONFIG_IDF_TARGET_ESP32
+void IRAM_ATTR DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
+#elif CONFIG_IDF_TARGET_ESP32C6
 void DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
+#endif
 	if (Length == 0)
 		return;
 
@@ -201,7 +205,11 @@ void DataEndpoint_t::EraseRange(uint32_t Start, uint32_t Length) {
     free(TailBuffer);
 }
 
+#if CONFIG_IDF_TARGET_ESP32
+bool IRAM_ATTR DataEndpoint_t::SaveItem(string ItemName, string Item) {
+#elif CONFIG_IDF_TARGET_ESP32C6
 bool DataEndpoint_t::SaveItem(string ItemName, string Item) {
+#endif
 	NVS Memory(DataEndpoint_t::NVSArea);
 
 	if (Settings.DeviceGeneration == 1) {

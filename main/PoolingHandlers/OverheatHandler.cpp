@@ -3,9 +3,11 @@
 #include "Log.h"
 #include "FreeRTOSWrapper.h"
 
-//!extern "C" {
-//!	uint8_t temprature_sens_read(void);
-//!}
+#if CONFIG_IDF_TARGET_ESP32
+extern "C" {
+	uint8_t temprature_sens_read(void);
+}
+#endif
 
 void HandlersPooling_t::OverheatHandler::Start()  {
 	IsActive 		= true;
@@ -27,7 +29,12 @@ void HandlersPooling_t::OverheatHandler::Pool() {
 	if (OverheatTimer < Settings.Pooling.OverHeat.Inverval)
 		return;
 
-	//!uint8_t SoCTemperature = temprature_sens_read();
+#if CONFIG_IDF_TARGET_ESP32
+	uint8_t SoCTemperature = temprature_sens_read();
+#elif CONFIG_IDF_TARGET_ESP32C6
+	uin8_t SoCTemperature = 0;
+#endif
+
 	uint8_t SoCTemperature = 0;
 	SoCTemperature = (uint8_t)floor((SoCTemperature - 32) * (5.0/9.0) + 0.5); // From Fahrenheit to Celsius
 	Device.Temperature = SoCTemperature;
