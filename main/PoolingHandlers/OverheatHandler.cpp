@@ -34,9 +34,7 @@ void HandlersPooling_t::OverheatHandler::Pool() {
 #elif CONFIG_IDF_TARGET_ESP32C6
 	uin8_t SoCTemperature = 0;
 #endif
-
-	uint8_t SoCTemperature = 0;
-	SoCTemperature = (uint8_t)floor((SoCTemperature - 32) * (5.0/9.0) + 0.5); // From Fahrenheit to Celsius
+    SoCTemperature = (uint8_t)floor((SoCTemperature - 32) * (5.0/9.0) + 0.5); // From Fahrenheit to Celsius
 	Device.Temperature = SoCTemperature;
 
 	if (SoCTemperature > Settings.Pooling.OverHeat.OverheatTemp) {

@@ -30,19 +30,18 @@ index 8cec8f46f9..f48672c8e4 100644
  #if CHIP_DEVICE_CONFIG_ENABLE_THREAD
      ThreadStackMgr().ErasePersistentInfo();
 diff --git a/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp b/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
-index 4c962d24a5..75b3c14ab8 100644
+index 48251a2712..78c75fa11b 100644
 --- a/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
 +++ b/src/platform/ESP32/ConnectivityManagerImpl_WiFi.cpp
-@@ -103,6 +103,8 @@ bool ConnectivityManagerImpl::_IsWiFiStationProvisioned(void)
+@@ -103,6 +103,7 @@ bool ConnectivityManagerImpl::_IsWiFiStationProvisioned(void)
  
  void ConnectivityManagerImpl::_ClearWiFiStationProvision(void)
  {
 +#ifndef MATTER_WIFI_OVERRIDE
-+
      if (mWiFiStationMode != kWiFiStationMode_ApplicationControlled)
      {
-         DeviceLayer::SystemLayer().ScheduleWork(DriveStationState, NULL);
-@@ -110,11 +112,17 @@ void ConnectivityManagerImpl::_ClearWiFiStationProvision(void)
+         CHIP_ERROR error = chip::DeviceLayer::Internal::ESP32Utils::ClearWiFiStationProvision();
+@@ -116,11 +117,17 @@ void ConnectivityManagerImpl::_ClearWiFiStationProvision(void)
          DeviceLayer::SystemLayer().ScheduleWork(DriveAPState, NULL);
  #endif // CHIP_DEVICE_CONFIG_ENABLE_WIFI_AP
      }
@@ -60,7 +59,7 @@ index 4c962d24a5..75b3c14ab8 100644
      CHIP_ERROR err = CHIP_NO_ERROR;
  
      VerifyOrExit(val != kWiFiAPMode_NotSupported, err = CHIP_ERROR_INVALID_ARGUMENT);
-@@ -134,6 +142,10 @@ exit:
+@@ -140,6 +147,10 @@ exit:
  
  void ConnectivityManagerImpl::_DemandStartWiFiAP(void)
  {
@@ -71,7 +70,7 @@ index 4c962d24a5..75b3c14ab8 100644
      if (mWiFiAPMode == kWiFiAPMode_OnDemand || mWiFiAPMode == kWiFiAPMode_OnDemand_NoStationProvision)
      {
          mLastAPDemandTime = System::SystemClock().GetMonotonicTimestamp();
-@@ -143,6 +155,10 @@ void ConnectivityManagerImpl::_DemandStartWiFiAP(void)
+@@ -149,6 +160,10 @@ void ConnectivityManagerImpl::_DemandStartWiFiAP(void)
  
  void ConnectivityManagerImpl::_StopOnDemandWiFiAP(void)
  {
@@ -82,7 +81,7 @@ index 4c962d24a5..75b3c14ab8 100644
      if (mWiFiAPMode == kWiFiAPMode_OnDemand || mWiFiAPMode == kWiFiAPMode_OnDemand_NoStationProvision)
      {
          mLastAPDemandTime = System::Clock::kZero;
-@@ -152,6 +168,10 @@ void ConnectivityManagerImpl::_StopOnDemandWiFiAP(void)
+@@ -158,6 +173,10 @@ void ConnectivityManagerImpl::_StopOnDemandWiFiAP(void)
  
  void ConnectivityManagerImpl::_MaintainOnDemandWiFiAP(void)
  {
@@ -93,7 +92,7 @@ index 4c962d24a5..75b3c14ab8 100644
      if (mWiFiAPMode == kWiFiAPMode_OnDemand || mWiFiAPMode == kWiFiAPMode_OnDemand_NoStationProvision)
      {
          if (mWiFiAPState == kWiFiAPState_Activating || mWiFiAPState == kWiFiAPState_Active)
-@@ -163,6 +183,10 @@ void ConnectivityManagerImpl::_MaintainOnDemandWiFiAP(void)
+@@ -169,6 +188,10 @@ void ConnectivityManagerImpl::_MaintainOnDemandWiFiAP(void)
  
  void ConnectivityManagerImpl::_SetWiFiAPIdleTimeout(System::Clock::Timeout val)
  {
@@ -104,7 +103,7 @@ index 4c962d24a5..75b3c14ab8 100644
      mWiFiAPIdleTimeout = val;
      DeviceLayer::SystemLayer().ScheduleWork(DriveAPState, NULL);
  }
-@@ -456,10 +480,12 @@ void ConnectivityManagerImpl::OnWiFiPlatformEvent(const ChipDeviceEvent * event)
+@@ -462,10 +485,12 @@ void ConnectivityManagerImpl::OnWiFiPlatformEvent(const ChipDeviceEvent * event)
          {
              switch (event->Platform.ESPSystemEvent.Id)
              {
@@ -117,7 +116,7 @@ index 4c962d24a5..75b3c14ab8 100644
              case WIFI_EVENT_STA_START:
                  ChipLogProgress(DeviceLayer, "WIFI_EVENT_STA_START");
                  DriveStationState();
-@@ -554,6 +580,7 @@ void ConnectivityManagerImpl::DriveStationState()
+@@ -560,6 +585,7 @@ void ConnectivityManagerImpl::DriveStationState()
      // kWiFiStationMode_Disabled.
      GetWiFiStationMode();
  
@@ -125,7 +124,7 @@ index 4c962d24a5..75b3c14ab8 100644
      // If the station interface is NOT under application control...
      if (mWiFiStationMode != kWiFiStationMode_ApplicationControlled)
      {
-@@ -563,6 +590,7 @@ void ConnectivityManagerImpl::DriveStationState()
+@@ -569,6 +595,7 @@ void ConnectivityManagerImpl::DriveStationState()
          // Ensure that station mode is enabled in the ESP WiFi layer.
          ReturnOnFailure(Internal::ESP32Utils::EnableStationMode());
      }
@@ -133,7 +132,7 @@ index 4c962d24a5..75b3c14ab8 100644
  
      // Determine if the ESP WiFi layer thinks the station interface is currently connected.
      ReturnOnFailure(Internal::ESP32Utils::IsStationConnected(stationConnected));
-@@ -622,6 +650,7 @@ void ConnectivityManagerImpl::DriveStationState()
+@@ -628,6 +655,7 @@ void ConnectivityManagerImpl::DriveStationState()
              }
          }
  
@@ -141,7 +140,7 @@ index 4c962d24a5..75b3c14ab8 100644
          // If the WiFi station interface is now enabled and provisioned (and by implication,
          // not presently under application control), AND the system is not in the process of
          // scanning, then...
-@@ -654,6 +683,7 @@ void ConnectivityManagerImpl::DriveStationState()
+@@ -660,6 +688,7 @@ void ConnectivityManagerImpl::DriveStationState()
                  ReturnOnFailure(DeviceLayer::SystemLayer().StartTimer(timeToNextConnect, DriveStationState, NULL));
              }
          }
@@ -149,7 +148,7 @@ index 4c962d24a5..75b3c14ab8 100644
      }
  
      ChipLogProgress(DeviceLayer, "Done driving station state, nothing else to do...");
-@@ -767,6 +797,11 @@ void ConnectivityManagerImpl::OnStationDisconnected()
+@@ -773,6 +802,11 @@ void ConnectivityManagerImpl::OnStationDisconnected()
  
  void ConnectivityManagerImpl::ChangeWiFiStationState(WiFiStationState newState)
  {
@@ -161,7 +160,7 @@ index 4c962d24a5..75b3c14ab8 100644
      if (mWiFiStationState != newState)
      {
          ChipLogProgress(DeviceLayer, "WiFi station state change: %s -> %s", WiFiStationStateToStr(mWiFiStationState),
-@@ -923,6 +958,10 @@ exit:
+@@ -929,6 +963,10 @@ exit:
  
  CHIP_ERROR ConnectivityManagerImpl::ConfigureWiFiAP()
  {
