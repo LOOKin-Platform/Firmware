@@ -1,5 +1,17 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ae10819..e539e00 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -25,6 +25,7 @@ idf_component_register(
+     "esp32"
+     "esp32s3"
+     "esp32c3"
++    "esp32c6"
+   INCLUDE_DIRS
+     "src"
+   SRCS
 diff --git a/src/NimBLEHIDDevice.cpp b/src/NimBLEHIDDevice.cpp
-index 29150ce..d6aaddd 100644
+index a2310eb..70c2a28 100644
 --- a/src/NimBLEHIDDevice.cpp
 +++ b/src/NimBLEHIDDevice.cpp
 @@ -126,8 +126,8 @@ void NimBLEHIDDevice::hidInfo(uint8_t country, uint8_t flags) {
