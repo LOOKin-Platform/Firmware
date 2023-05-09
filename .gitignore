@@ -16,6 +16,7 @@ cmake-build-release/
 .vscode/
 Doxyfile
 private_ota_signing_key.pem
+third_party/connectedhomeip/
 
 remote_factory.bin
 remote_factory.csv
