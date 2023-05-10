@@ -3,4 +3,4 @@
 	url = https://github.com/h2zero/esp-nimble-cpp.git
 [submodule "partners/drivent"]
 	path = partners/drivent
-	url = https://github.com/LOOKin-Platform/Firmware-Partners-Drivent.git
+	url = git@github.com:LOOKin-Platform/Firmware-Partners-Drivent.git
