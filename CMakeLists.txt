@@ -21,6 +21,7 @@ idf_build_set_property(CXX_COMPILE_OPTIONS "-std=gnu++17;-Os;-DCHIP_HAVE_CONFIG_
 idf_build_set_property(C_COMPILE_OPTIONS "-Os" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-format-nonliteral;-Wno-format-security" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-error=maybe-uninitialized" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-Wno-error=format" APPEND)
 
 target_add_binary_data(firmware.elf "partitions_16mb_v2" BINARY)
 target_add_binary_data(firmware.elf "partitions_4mb_v2" BINARY)
