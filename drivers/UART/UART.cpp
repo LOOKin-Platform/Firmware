@@ -76,7 +76,11 @@ uint8_t UART::UARTPort(uart_port_t UARTPort) {
 	switch (UARTPort) {
 		case UART_NUM_0 : return 0;
 		case UART_NUM_1 : return 1;
-		case UART_NUM_2 : return 2;
+
+#if CONFIG_IDF_TARGET_ESP32
+        case UART_NUM_2 : return 2;
+#endif
+
 		default: return 3;
 	}
 }
@@ -85,7 +89,11 @@ uart_port_t UART::UARTPort(uint8_t UARTPortNum) {
 	switch (UARTPortNum) {
 		case 0 : return UART_NUM_0;
 		case 1 : return UART_NUM_1;
-		case 2 : return UART_NUM_2;
+
+#if CONFIG_IDF_TARGET_ESP32
+        case UART_NUM_2 : return 2;
+#endif
+
 		default: return UART_NUM_MAX;
 	}
 }

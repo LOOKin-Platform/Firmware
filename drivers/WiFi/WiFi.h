@@ -152,7 +152,7 @@ class WiFi_t {
 		vector<WiFiAPRecord> Scan();
 
 		uint8_t ConnectAP(const string& SSID, const string& Password, const uint8_t& Channel = 0, bool WaitForConnection = true);
-	    void 	StartAP	 (const string& SSID, uint8_t Channel = 0, bool SSIDIsHidden = false, uint8_t MaxConnections = 16);
+	    void 	StartAP	 (const string& SSID, uint8_t Channel = 0, bool SSIDIsHidden = false, uint8_t MaxConnections = 4);
 
 		void	SetIPInfo(const string& ip, const string& gw, const string& netmask);
 		void	SetIPInfo(const char* ip, const char* gw, const char* netmask);

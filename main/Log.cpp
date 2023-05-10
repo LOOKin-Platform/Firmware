@@ -306,26 +306,49 @@ Log::Indicator_t::MODE
 void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Blinking, uint16_t Duration) {
 	Settings_t::GPIOData_t::Indicator_t GPIOSettings = Settings.GPIOData.GetCurrent().Indicator;
 
+#if CONFIG_IDF_TARGET_ESP32C6
+	return;
+#endif
+
 	if (!IsInited)
 	{
 		if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGB || GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::RGBFrequencyControl)
 		{
+
+#if CONFIG_IDF_TARGET_ESP32
 			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	
 				GPIO::SetupPWM(GPIOSettings.Red.GPIO, GPIOSettings.Red.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_REF_TICK, (GPIOSettings.Red.IsInverted) ? 255 : 0);
 			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	
 				GPIO::SetupPWM(GPIOSettings.Green.GPIO, GPIOSettings.Green.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_REF_TICK, (GPIOSettings.Green.IsInverted) ? 255 : 0);
 			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	
 				GPIO::SetupPWM(GPIOSettings.Blue.GPIO, GPIOSettings.Blue.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_REF_TICK, (GPIOSettings.Blue.IsInverted) ? 255 : 0);
+#elif CONFIG_IDF_TARGET_ESP32C6
+			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	
+				GPIO::SetupPWM(GPIOSettings.Red.GPIO, GPIOSettings.Red.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_RTC8M_CLK, (GPIOSettings.Red.IsInverted) ? 255 : 0);
+			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	
+				GPIO::SetupPWM(GPIOSettings.Green.GPIO, GPIOSettings.Green.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_RTC8M_CLK, (GPIOSettings.Green.IsInverted) ? 255 : 0);
+			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	
+				GPIO::SetupPWM(GPIOSettings.Blue.GPIO, GPIOSettings.Blue.Channel, 1000, LEDC_TIMER_8_BIT, LEDC_TIMER_MAX, LEDC_USE_RTC8M_CLK, (GPIOSettings.Blue.IsInverted) ? 255 : 0);
+#endif
 
 			if (GPIOSettings.Red.GPIO != GPIO_NUM_0 || GPIOSettings.Green.GPIO != GPIO_NUM_0 || GPIOSettings.Blue.GPIO != GPIO_NUM_0)
 				GPIO::PWMFadeInstallFunction();
 
+#if CONFIG_IDF_TARGET_ESP32
 			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	
 				ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Red.Channel	, (GPIOSettings.Red.IsInverted) 	? 255 : 0);
 			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	
 				ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Green.Channel	, (GPIOSettings.Green.IsInverted)	? 255 : 0);
 			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	
 				ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Blue.Channel	, (GPIOSettings.Blue.IsInverted) 	? 255 : 0);
+#elif CONFIG_IDF_TARGET_ESP32C6
+			if (GPIOSettings.Red.GPIO 	!= GPIO_NUM_0) 	
+				ledc_stop(LEDC_LOW_SPEED_MODE, GPIOSettings.Red.Channel		, (GPIOSettings.Red.IsInverted) 	? 255 : 0);
+			if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	
+				ledc_stop(LEDC_LOW_SPEED_MODE, GPIOSettings.Green.Channel	, (GPIOSettings.Green.IsInverted)	? 255 : 0);
+			if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	
+				ledc_stop(LEDC_LOW_SPEED_MODE, GPIOSettings.Blue.Channel	, (GPIOSettings.Blue.IsInverted) 	? 255 : 0);
+#endif
 		}
 		else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812)
 		{
@@ -382,9 +405,15 @@ void Log::Indicator_t::Execute(uint8_t Red, uint8_t Green, uint8_t Blue, MODE Bl
 		if (GPIOSettings.Green.GPIO != GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Green	, tGreen, 	0);
 		if (GPIOSettings.Blue.GPIO 	!= GPIO_NUM_0) 	GPIO::PWMFadeTo(GPIOSettings.Blue 	, tBlue	, 	0);
 
+#if CONFIG_IDF_TARGET_ESP32
 		if (GPIOSettings.Red.IsInverted) 	ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Red.Channel	,  255);
 		if (GPIOSettings.Green.IsInverted)	ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Green.Channel	,  255);
 		if (GPIOSettings.Blue.IsInverted)	ledc_stop(LEDC_HIGH_SPEED_MODE, GPIOSettings.Blue.Channel	,  255);
+#elif CONFIG_IDF_TARGET_ESP32C6
+		if (GPIOSettings.Red.IsInverted) 	ledc_stop(LEDC_LOW_SPEED_MODE, GPIOSettings.Red.Channel	,  255);
+		if (GPIOSettings.Green.IsInverted)	ledc_stop(LEDC_LOW_SPEED_MODE, GPIOSettings.Green.Channel	,  255);
+		if (GPIOSettings.Blue.IsInverted)	ledc_stop(LEDC_LOW_SPEED_MODE, GPIOSettings.Blue.Channel	,  255);
+#endif
 	}
 	else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) {
 		ws2812->setAllPixels(tRed, tGreen, tBlue);
@@ -457,6 +486,7 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 		uint8_t GreenBlank 	= (GPIOSettings.Green.IsInverted) 	? 255 : 0;
 		uint8_t BlueBlank 	= (GPIOSettings.Blue.IsInverted) 	? 255 : 0;
 
+#if CONFIG_IDF_TARGET_ESP32
 		GPIO::PWMFadeTo(GPIOSettings.Red, (IsLighted) ? RedBlank : tRed, 	0);
 		if (IsLighted && GPIOSettings.Green.IsInverted) ledc_stop(LEDC_HIGH_SPEED_MODE	, GPIOSettings.Red.Channel	,  255);
 
@@ -465,6 +495,16 @@ void Log::Indicator_t::IndicatorCallback(void *Param) {
 
 		GPIO::PWMFadeTo(GPIOSettings.Blue, (IsLighted) ? BlueBlank : tBlue, 	0);
 		if (IsLighted && GPIOSettings.Blue.IsInverted) ledc_stop(LEDC_HIGH_SPEED_MODE	, GPIOSettings.Blue.Channel	,  255);
+#elif CONFIG_IDF_TARGET_ESP32C6
+		GPIO::PWMFadeTo(GPIOSettings.Red, (IsLighted) ? RedBlank : tRed, 	0);
+		if (IsLighted && GPIOSettings.Green.IsInverted) ledc_stop(LEDC_LOW_SPEED_MODE	, GPIOSettings.Red.Channel	,  255);
+
+		GPIO::PWMFadeTo(GPIOSettings.Green, (IsLighted) ? GreenBlank : tGreen, 	0);
+		if (IsLighted && GPIOSettings.Green.IsInverted) ledc_stop(LEDC_LOW_SPEED_MODE	, GPIOSettings.Green.Channel,  255);
+
+		GPIO::PWMFadeTo(GPIOSettings.Blue, (IsLighted) ? BlueBlank : tBlue, 	0);
+		if (IsLighted && GPIOSettings.Blue.IsInverted) ledc_stop(LEDC_LOW_SPEED_MODE	, GPIOSettings.Blue.Channel	,  255);
+#endif
 	}
 	else if (GPIOSettings.Type == Settings_t::GPIOData_t::Indicator_t::ws2812) 
 	{

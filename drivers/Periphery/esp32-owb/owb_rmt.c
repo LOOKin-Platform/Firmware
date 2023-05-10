@@ -428,11 +428,15 @@ static owb_status _init(owb_rmt_driver_info *info, gpio_num_t gpio_num,
     // attach GPIO to previous pin
     if (gpio_num < 32)
     {
+#if CONFIG_IDF_TARGET_ESP32
         GPIO.enable_w1ts = (0x1 << gpio_num);
+#endif
     }
     else
     {
+#if CONFIG_IDF_TARGET_ESP32
         GPIO.enable1_w1ts.data = (0x1 << (gpio_num - 32));
+#endif
     }
 
     // attach RMT channels to new gpio pin

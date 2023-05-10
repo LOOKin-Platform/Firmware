@@ -2,9 +2,11 @@
 #message(WARNING "PARTITION_CSV_PATH (${PARTITION_CSV_PATH})")
 
 if (CONFIG_ESPTOOLPY_FLASHSIZE_4MB)
-    set(PARTITION_CSV_PATH "${PROJECT_SOURCE_DIR}/partitions_4mb.csv")
+	set(PARTITION_CSV_PATH "${PROJECT_SOURCE_DIR}/partitions_4mb.csv")	
+elseif (CONFIG_ESPTOOLPY_FLASHSIZE_8MB)
+	set(PARTITION_CSV_PATH "${PROJECT_SOURCE_DIR}/partitions_8mb.csv")
 else()
-    set(PARTITION_CSV_PATH "${PROJECT_SOURCE_DIR}/partitions_16mb.csv")
+	set(PARTITION_CSV_PATH "${PROJECT_SOURCE_DIR}/partitions_16mb.csv")
 endif()
 
 
