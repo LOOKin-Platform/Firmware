@@ -9,7 +9,7 @@ using namespace std;
 #include <string.h>
 
 #include "Globals.h"
-#include "Webserver.h"
+#include "WebServer.h"
 #include "Query.h"
 #include "API.h"
 
