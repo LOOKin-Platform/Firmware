@@ -252,7 +252,7 @@ uint8_t Query_t::GetURLPartsCount() {
 	return PartsData.size();
 }
 
-const char* IRAM_ATTR Query_t::GetBody() {
+const char* Query_t::GetBody() {
 	if (IsolatedBody != NULL)
 		return IsolatedBody;
 

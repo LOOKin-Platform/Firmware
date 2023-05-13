@@ -22,7 +22,7 @@ class SensorIR_t : public Sensor_t {
         static inline vector<int32_t> 		        SensorIRCurrentMessage 			= {};
         static inline uint8_t 				        SensorIRID 						= 0x87;
 
-        static inline IRAM_ATTR esp_timer_handle_t  SignalReceivedTimer 	        = NULL;
+        static inline  esp_timer_handle_t  			SignalReceivedTimer 	        = NULL;
 
         static inline string 				        SensorIRACCheckBuffer 			= "";
         static inline char 				            SensorIRSignalCRCBuffer[96] 	= "\0";

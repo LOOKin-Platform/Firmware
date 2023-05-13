@@ -36,7 +36,7 @@ void HandlersPooling_t::WiFiUptimeHandler::Start() {
 	}
 }
 
-void IRAM_ATTR HandlersPooling_t::WiFiUptimeHandler::Pool() {
+void HandlersPooling_t::WiFiUptimeHandler::Pool() {
 	if (Device.PowerMode == DevicePowerMode::CONST ||
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
