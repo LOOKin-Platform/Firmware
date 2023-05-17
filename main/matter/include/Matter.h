@@ -46,6 +46,11 @@ class Matter {
 
 		static void				StatusACUpdateIRSend(string UUID, uint16_t Codeset, uint8_t FunctionID, uint8_t Value, bool Send = true);
 
+        /// <summary>
+        /// Send IR Command to device
+        /// </summary>
+        static void             SendIRWrapper(string UUID, string params);
+
 	private:
 		inline static 			vector<MatterGenericDevice *>	MatterDevices = vector<MatterGenericDevice *>();
 

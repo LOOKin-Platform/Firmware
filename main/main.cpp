@@ -108,7 +108,8 @@ extern "C" void app_main()
 	if (Matter::IsEnabledForDevice()) 
 		Matter::Init();
 
-	Time::SetTimezone();
+
+    Time::SetTimezone();
 
 	Network.Init();
 	Automation.Init();

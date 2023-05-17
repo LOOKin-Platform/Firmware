@@ -1,4 +1,6 @@
 #include "GenericDevice.h"
+#include "Matter.h"
+
 
 MatterGenericDevice::MatterGenericDevice(string szDeviceName, string szLocation)
 {
@@ -77,3 +79,17 @@ void MatterGenericDevice::CallReportingCallback(intptr_t closure) {
     MatterReportingAttributeChangeCallback(*path);
     chip::Platform::Delete(path);
 }
+
+
+
+
+/// <summary>
+/// Send IR Command to device
+/// </summary>
+void MatterGenericDevice::SendIRCmd(string operand)
+{
+    ESP_LOGI("MatterGenericDevice", "SendIRCmd");
+    Matter::SendIRWrapper(BridgedUUID, operand);
+}
+
+

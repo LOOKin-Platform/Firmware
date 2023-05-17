@@ -408,6 +408,8 @@ EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterI
 {
 	ESP_LOGE(Tag, "emberAfExternalAttributeReadCallback, EndpointID %d, ClusterID 0x%0lX", endpoint, clusterId);
 
+    ///////////////////////////
+
     uint16_t endpointIndex = emberAfGetDynamicIndexFromEndpoint(endpoint);
 
     MatterGenericDevice* FindedDevice = Matter::GetDeviceByDynamicIndex(endpointIndex);
@@ -556,6 +558,16 @@ int Matter::AccessoryIdentify(uint16_t AID)
 
 	return 0;
 }
+
+
+void Matter::SendIRWrapper(string UUID, string params)
+{
+    string operand = UUID + params;
+
+    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+    IRCommand->Execute(0xFE, operand.c_str());
+}
+
 
 bool Matter::On(bool Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
 	return 0;

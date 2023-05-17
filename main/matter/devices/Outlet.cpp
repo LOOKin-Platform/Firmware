@@ -35,6 +35,11 @@ EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=0x%lx attrId=0x%lx", ClusterID, AttributeID);
 
+    string IRMsg;
+    if(*Value == 1) IRMsg = "01FF";
+    else            IRMsg = "02FF";
+    SendIRCmd(IRMsg);
+
     ReturnErrorCodeIf((AttributeID != OnOff::Attributes::OnOff::Id) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
                 
     SetOnOff(*Value == 1);
