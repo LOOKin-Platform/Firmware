@@ -14,8 +14,6 @@
 #include <typeinfo>
 #include <string>
 
-
-
 #include "esp_log.h"
 
 using namespace std;
@@ -84,7 +82,7 @@ class MatterGenericDevice {
         static void HandleDeviceStatusChanged(MatterGenericDevice * dev, MatterGenericDevice::Changed_t itemChangedMask);
         static void ScheduleReportingCallback(MatterGenericDevice * dev, chip::ClusterId cluster, chip::AttributeId attribute);
 
-        void SendIRCmd(string operand);
+        void        MatterSendIRCommand(string operand);
 
     private:
         const char *Tag = "MatterDevice";

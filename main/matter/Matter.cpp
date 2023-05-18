@@ -564,6 +564,8 @@ void Matter::SendIRWrapper(string UUID, string params)
 {
     string operand = UUID + params;
 
+	ESP_LOGE("OPERAND", "%s", operand.c_str());
+
     CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
     IRCommand->Execute(0xFE, operand.c_str());
 }

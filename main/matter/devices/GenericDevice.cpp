@@ -81,14 +81,12 @@ void MatterGenericDevice::CallReportingCallback(intptr_t closure) {
 }
 
 
-
-
 /// <summary>
 /// Send IR Command to device
 /// </summary>
-void MatterGenericDevice::SendIRCmd(string operand)
+void MatterGenericDevice::MatterSendIRCommand(string operand)
 {
-    ESP_LOGI("MatterGenericDevice", "SendIRCmd");
+    ESP_LOGI("MatterGenericDevice", "MatterSendIRCommand");
     Matter::SendIRWrapper(BridgedUUID, operand);
 }
 

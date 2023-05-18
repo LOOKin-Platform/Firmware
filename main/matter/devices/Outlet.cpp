@@ -13,11 +13,14 @@ MatterOutlet::MatterOutlet(string szDeviceName, string szLocation) : MatterGener
 
 EmberAfStatus MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
 {
-    ESP_LOGE("Light", "HandleReadOnOffAttribute: attrId=%lu, maxReadLength=%d", AttributeID, maxReadLength);
+    ESP_LOGE("Outlet", "HandleReadOnOffAttribute: attrId=%lu, maxReadLength=%d", AttributeID, maxReadLength);
 
     if ((AttributeID == OnOff::Attributes::OnOff::Id) && (maxReadLength == 1))
     {
-        *Buffer = GetOnOff() ? 1 : 0;
+        uint8_t IsOn = GetOnOff() ? 1 : 0;
+        *Buffer = IsOn;
+
+        ESP_LOGE("HandleReadAttribute GETONOFF", "%d", (GetOnOff() ? 1 : 0));
     }
     else if ((AttributeID == ClusterRevision::Id) && (maxReadLength == 2))
     {
@@ -33,27 +36,31 @@ EmberAfStatus MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip:
 
 EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
 {
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=0x%lx attrId=0x%lx", ClusterID, AttributeID);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
 
-    string IRMsg;
-    if(*Value == 1) IRMsg = "01FF";
-    else            IRMsg = "02FF";
-    SendIRCmd(IRMsg);
-
-    ReturnErrorCodeIf((AttributeID != OnOff::Attributes::OnOff::Id) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
+    if (ClusterID == 0x0006 && AttributeID == 0x0000)
+    {
+        string IRMsg;
+        if(*Value == 1) IRMsg = "01FF";
+        else            IRMsg = "02FF";
+    
+        MatterSendIRCommand(IRMsg);
+        SetOnOff(*Value == 1);
+    }
                 
-    SetOnOff(*Value == 1);
     return EMBER_ZCL_STATUS_SUCCESS;
 }
 
 bool MatterOutlet::GetOnOff()
 { 
-    ESP_LOGE("Light device GetOnOff", "Invoked"); 
+    ESP_LOGE("Outlet GetOnOff", "Invoked"); 
     return (mState == kState_On);
 }
 
 void MatterOutlet::SetOnOff(bool aOn)
 {
+    ESP_LOGE("Outlet SetOnOff", "Invoked");
+
     bool changed;
 
     if (aOn)
