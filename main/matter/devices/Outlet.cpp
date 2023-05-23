@@ -37,14 +37,20 @@ EmberAfStatus MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip:
 EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
+    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
 
     if (ClusterID == 0x0006 && AttributeID == 0x0000)
     {
-        string IRMsg;
-        if(*Value == 1) IRMsg = "01FF";
-        else            IRMsg = "02FF";
-    
-        MatterSendIRCommand(IRMsg);
+        if(*Value == 1) MatterSendIRCommand("01FF");
+        else            MatterSendIRCommand("02FF");
+
         SetOnOff(*Value == 1);
     }
                 
@@ -53,13 +59,13 @@ EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip
 
 bool MatterOutlet::GetOnOff()
 { 
-    ESP_LOGE("Outlet GetOnOff", "Invoked"); 
+    ESP_LOGI("Outlet GetOnOff", "Invoked");
     return (mState == kState_On);
 }
 
 void MatterOutlet::SetOnOff(bool aOn)
 {
-    ESP_LOGE("Outlet SetOnOff", "Invoked");
+    ESP_LOGI("Outlet SetOnOff", "Invoked");
 
     bool changed;
 

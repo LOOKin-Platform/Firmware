@@ -82,6 +82,10 @@ class MatterGenericDevice {
         static void HandleDeviceStatusChanged(MatterGenericDevice * dev, MatterGenericDevice::Changed_t itemChangedMask);
         static void ScheduleReportingCallback(MatterGenericDevice * dev, chip::ClusterId cluster, chip::AttributeId attribute);
 
+    /// <summary>
+    /// Send IR Command to device
+    /// </summary>
+    /// <param name="operand"> string command to execute </param>
         void        MatterSendIRCommand(string operand);
 
     private:

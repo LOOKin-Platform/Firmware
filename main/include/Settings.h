@@ -50,10 +50,11 @@ class Settings_t {
 		struct {
 			const string 					BaseURL			= "http://api.look-in.club/v1";
 
-			const string					SyncTime		= BaseURL + "/time";
+			const char* 					SyncTime		= "pool.ntp.org";
 			const string					Telemetry		= BaseURL + "/telemetry";
 			const string					FirmwareCheck	= BaseURL + "/firmwares/check";
 			const string					GetACCode		= BaseURL + "/ac/codesets";
+            const string                    Ping            = BaseURL + "/ping";
 
 			const string					ACtoken			= "2058707b-6fc2-4ff2-b40d-12bcf93c58c7";
 		} ServerUrls;

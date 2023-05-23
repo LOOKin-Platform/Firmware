@@ -4,6 +4,8 @@
 *
 */
 
+#define _USE_32BIT_TIME_T
+
 #include "DateTime.h"
 
 #include <string>
@@ -16,12 +18,18 @@
 #include "Converter.h"
 #include "Memory.h"
 
+#include <time.h>
+#include "esp_sntp.h"
+
+
+
 const char tag[] 			= "Time";
 const char NVSTimeArea[] 	= "Time";
 
 uint32_t    Time::Offset = 0;
 float		Time::TimezoneOffset = 0;
 string      Time::ReadBuffer = "";
+
 
 uint32_t Time::Uptime() {
 	struct timeval Now;
@@ -38,14 +46,17 @@ uint64_t Time::UptimeU() {
 }
 
 uint32_t Time::Unixtime() {
-	return Uptime() + Offset + TimezoneOffset*3600;
+    time_t now;
+    time(&now);
+    return now;
+	//return Uptime() + Offset + TimezoneOffset*3600;
 }
 
 DateTime_t Time::DateTime() {
 	uint32_t TimeToParse = Unixtime();
 
 	DateTime_t DateTime;
-
+/*
 	DateTime.Seconds  = TimeToParse % 60;
 	DateTime.Minutes  = (TimeToParse / 60) % 60;
 	DateTime.Hours    = (int)(TimeToParse / 3600) % 24;
@@ -64,6 +75,20 @@ DateTime_t Time::DateTime() {
 
 	DateTime.Day   = Doy - (153*Mp+2)/5 + 1;
 	DateTime.Month = Mp + (Mp < 10 ? 3 : -9);
+*/
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    DateTime.Year = timeinfo.tm_year;
+    DateTime.Month = timeinfo.tm_mon;
+    DateTime.Day = timeinfo.tm_mday;
+    DateTime.DayOfWeek = timeinfo.tm_wday;
+    DateTime.Hours = timeinfo.tm_hour;
+    DateTime.Minutes = timeinfo.tm_min;
+    DateTime.Seconds = timeinfo.tm_sec;
+
 
 	return DateTime;
 }
@@ -111,14 +136,19 @@ uint32_t Time::UptimeToUnixTime(uint32_t Uptime) {
 }
 
 
-void Time::ServerSync(string URL) {
+void Time::ServerSync(const char* URL) {
 	if (Offset != 0)
 		return;
 
 	ESP_LOGI(tag, "Time sync started");
-	HTTPClient::Query(URL, QueryType::GET, true, true, &ReadStarted, &ReadBody, &ReadFinished, &Aborted);
+
+    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setservername(0, URL);
+    sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
+    sntp_init();
 }
 
+/*
 void Time::ReadStarted(const char *IP) {
 	ReadBuffer = "";
 }
@@ -147,7 +177,7 @@ void Time::ReadFinished(const char *IP) {
 
 	Log::CorrectTime();
 }
-
+*/
 void Time::Aborted(const char *IP) {
 	ESP_LOGE(tag, "Failed to retrieve time from server");
 }

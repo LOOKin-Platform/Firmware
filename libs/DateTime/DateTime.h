@@ -49,12 +49,14 @@ class Time {
 
     static uint32_t   UptimeToUnixTime(uint32_t);
 
-    static void       ServerSync(string URL);
+    static void       ServerSync(const char* URL);
 
     // HTTP Callbacks
+    /*
     static void ReadStarted (const char *IP);
     static bool ReadBody    (char Data[], int DataLen, const char *IP);
     static void ReadFinished(const char *IP);
+     */
     static void Aborted     (const char *IP);
 
   private:

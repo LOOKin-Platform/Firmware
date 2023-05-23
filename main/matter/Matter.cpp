@@ -1255,12 +1255,15 @@ void Matter::CreateRemoteBridge() {
 			}
 			case 0x06: // Vacuum cleaner
 			{
-				MatterGenericDevice* OutletToAdd = new MatterOutlet(IRDevice.Name);
-
+                MatterOutlet* OutletToAdd = new MatterOutlet(IRDevice.Name);
 				OutletToAdd->IsBridgedDevice = true;
 				OutletToAdd->BridgedUUID = IRDevice.UUID;
 
-				AddDeviceEndpoint(OutletToAdd, &bridgedOutletEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffOutletDeviceTypes), 1);
+                auto var = IRDevice.UUID;
+
+
+
+                AddDeviceEndpoint(OutletToAdd, &bridgedOutletEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffOutletDeviceTypes), 1);
 				break;
 			}
 			case 0x07: // Fan

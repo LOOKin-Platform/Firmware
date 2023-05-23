@@ -277,6 +277,7 @@ esp_err_t MyWiFiEventHandler::staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
 	IsConnectedBefore = true;
 
 	Time::ServerSync(Settings.ServerUrls.SyncTime);
+    HTTPClient::Query(Settings.ServerUrls.Ping, QueryType::GET, true, true);
 
 	::esp_timer_stop(RemoteControlStartTimer);
 	::esp_timer_start_once(RemoteControlStartTimer, 5000000);
