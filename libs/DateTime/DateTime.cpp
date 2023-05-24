@@ -48,23 +48,7 @@ uint64_t Time::UptimeU() {
 uint32_t Time::Unixtime() {
     time_t now;
     time(&now);
-
-    struct tm timeInfo;
-    now = now + Offset + TimezoneOffset*3600;
-    localtime_r(&now, &timeInfo);
-    DateTime_t DateTime;
-    DateTime.Year = timeInfo.tm_year + 1900;
-    DateTime.Month = timeInfo.tm_mon;
-    DateTime.Day = timeInfo.tm_mday;
-    DateTime.DayOfWeek = timeInfo.tm_wday;
-    DateTime.Hours = timeInfo.tm_hour;
-    DateTime.Minutes = timeInfo.tm_min;
-    DateTime.Seconds = timeInfo.tm_sec;
-
-    ESP_LOGI(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>..", "%d:%d %d.%d.%d", DateTime.Hours, DateTime.Minutes, DateTime.Day, DateTime.Month, DateTime.Year);
-    return now;
-
-    //return now + Offset + TimezoneOffset*3600;
+    return now + Offset + TimezoneOffset*3600;
 }
 
 DateTime_t Time::DateTime() {
