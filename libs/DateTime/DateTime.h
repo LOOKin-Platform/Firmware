@@ -49,7 +49,7 @@ class Time {
 
     static uint32_t   UptimeToUnixTime(uint32_t);
 
-    static void       ServerSync(const char* URL);
+    static void       ServerSync(string URL);
 
     // HTTP Callbacks
     /*

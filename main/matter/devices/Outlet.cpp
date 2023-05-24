@@ -37,14 +37,6 @@ EmberAfStatus MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip:
 EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
-    ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
 
     if (ClusterID == 0x0006 && AttributeID == 0x0000)
     {
