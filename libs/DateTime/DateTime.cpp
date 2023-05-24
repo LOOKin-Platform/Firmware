@@ -48,48 +48,39 @@ uint64_t Time::UptimeU() {
 uint32_t Time::Unixtime() {
     time_t now;
     time(&now);
+
+    struct tm timeInfo;
+    now = now + Offset + TimezoneOffset*3600;
+    localtime_r(&now, &timeInfo);
+    DateTime_t DateTime;
+    DateTime.Year = timeInfo.tm_year + 1900;
+    DateTime.Month = timeInfo.tm_mon;
+    DateTime.Day = timeInfo.tm_mday;
+    DateTime.DayOfWeek = timeInfo.tm_wday;
+    DateTime.Hours = timeInfo.tm_hour;
+    DateTime.Minutes = timeInfo.tm_min;
+    DateTime.Seconds = timeInfo.tm_sec;
+
+    ESP_LOGI(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>..", "%d:%d %d.%d.%d", DateTime.Hours, DateTime.Minutes, DateTime.Day, DateTime.Month, DateTime.Year);
     return now;
-	//return Uptime() + Offset + TimezoneOffset*3600;
+
+    //return now + Offset + TimezoneOffset*3600;
 }
 
 DateTime_t Time::DateTime() {
-	uint32_t TimeToParse = Unixtime();
-
 	DateTime_t DateTime;
-/*
-	DateTime.Seconds  = TimeToParse % 60;
-	DateTime.Minutes  = (TimeToParse / 60) % 60;
-	DateTime.Hours    = (int)(TimeToParse / 3600) % 24;
-
-	int      AllDays  = (int)(TimeToParse / 86400);
-
-	DateTime.Year     = floor(AllDays / 365.25) + 1970;
-	DateTime.DayOfWeek= (AllDays + 4) % 7;
-
-	int Z = AllDays + 719468;
-	const int Era 		= (Z >= 0 ? Z : Z - 146096) / 146097;
-	const unsigned Doe 	= static_cast<unsigned>(Z - Era * 146097);           // [0, 146096]
-	const unsigned Yoe 	= (Doe - Doe/1460 + Doe/36524 - Doe/146096) / 365;   // [0, 399]
-	const unsigned Doy 	= Doe - (365*Yoe +Yoe/4 - Yoe/100);                  // [0, 365]
-	const unsigned Mp 	= (5*Doy + 2)/153;                                   // [0, 11]
-
-	DateTime.Day   = Doy - (153*Mp+2)/5 + 1;
-	DateTime.Month = Mp + (Mp < 10 ? 3 : -9);
-*/
     time_t now;
-    struct tm timeinfo;
-    time(&now);
-    localtime_r(&now, &timeinfo);
+    struct tm timeInfo;
+    now = Time::Unixtime();
+    localtime_r(&now, &timeInfo);
 
-    DateTime.Year = timeinfo.tm_year;
-    DateTime.Month = timeinfo.tm_mon;
-    DateTime.Day = timeinfo.tm_mday;
-    DateTime.DayOfWeek = timeinfo.tm_wday;
-    DateTime.Hours = timeinfo.tm_hour;
-    DateTime.Minutes = timeinfo.tm_min;
-    DateTime.Seconds = timeinfo.tm_sec;
-
-
+    DateTime.Year = timeInfo.tm_year + 1900;
+    DateTime.Month = timeInfo.tm_mon;
+    DateTime.Day = timeInfo.tm_mday;
+    DateTime.DayOfWeek = timeInfo.tm_wday;
+    DateTime.Hours = timeInfo.tm_hour;
+    DateTime.Minutes = timeInfo.tm_min;
+    DateTime.Seconds = timeInfo.tm_sec;
 	return DateTime;
 }
 
@@ -136,48 +127,20 @@ uint32_t Time::UptimeToUnixTime(uint32_t Uptime) {
 }
 
 
-void Time::ServerSync(const char* URL) {
+void Time::ServerSync(string URL) {
 	if (Offset != 0)
 		return;
 
 	ESP_LOGI(tag, "Time sync started");
 
+    std::string* url = new std::string(URL);
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    sntp_setservername(0, URL);
+    sntp_setservername(0, url->c_str());
     sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
     sntp_init();
 }
 
-/*
-void Time::ReadStarted(const char *IP) {
-	ReadBuffer = "";
-}
 
-bool Time::ReadBody(char Data[], int DataLen, const char *IP) {
-	ReadBuffer += Data;
-	return true;
-}
-
-void Time::ReadFinished(const char *IP) {
-	if (ReadBuffer.length() == 0) {
-		ESP_LOGE(tag, "Empty data received");
-		return;
-	}
-
-	JSON JSONObject(ReadBuffer);
-
-	string GMTTime = JSONObject.GetItem("GMT");
-	if (GMTTime.empty()) {
-		ESP_LOGE(tag, "No time info found");
-		return;
-	}
-
-	Time::SetTime(GMTTime);
-	ESP_LOGI(tag, "Time received: %s", Time::UnixtimeString().c_str());
-
-	Log::CorrectTime();
-}
-*/
 void Time::Aborted(const char *IP) {
 	ESP_LOGE(tag, "Failed to retrieve time from server");
 }

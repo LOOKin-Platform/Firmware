@@ -1259,10 +1259,6 @@ void Matter::CreateRemoteBridge() {
 				OutletToAdd->IsBridgedDevice = true;
 				OutletToAdd->BridgedUUID = IRDevice.UUID;
 
-                auto var = IRDevice.UUID;
-
-
-
                 AddDeviceEndpoint(OutletToAdd, &bridgedOutletEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffOutletDeviceTypes), 1);
 				break;
 			}
