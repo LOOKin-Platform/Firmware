@@ -483,9 +483,6 @@ app::Clusters::NetworkCommissioning::Instance
     sWiFiNetworkCommissioningInstance(0 /* Endpoint Id */, &(chip::DeviceLayer::NetworkCommissioning::ESPCustomWiFiDriver::GetInstance()));
 
 void Matter::StartServer() {
-	//esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
-	//esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
-
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
 
     chip::DeviceLayer::PlatformMgr().ScheduleWork(StartServerInner, reinterpret_cast<intptr_t>(nullptr));
