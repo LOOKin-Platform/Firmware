@@ -285,7 +285,7 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(thermostatAttrs)
 	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::ControlSequenceOfOperation::Id, ENUM8, 	1, 	ZAP_ATTRIBUTE_MASK(MIN_MAX) | ZAP_ATTRIBUTE_MASK(WRITABLE)),
 	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::SystemMode::Id				, ENUM8, 	1,	ZAP_ATTRIBUTE_MASK(WRITABLE)),
 	DECLARE_DYNAMIC_ATTRIBUTE(Thermostat::Attributes::FeatureMap::Id				, BITMAP32, 4, 0),
-DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();Thermostat
+DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 constexpr chip::CommandId ThermostatIncomingCommands[] = {
 	chip::app::Clusters::Thermostat::Commands::SetpointRaiseLower::Id,

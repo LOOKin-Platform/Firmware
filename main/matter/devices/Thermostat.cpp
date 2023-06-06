@@ -199,9 +199,7 @@ EmberAfStatus MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, 
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Thermostat: clusterID=%lu attrId=0x%lx", ClusterID, AttributeID);
 
-    ESP_LOGE(">>>>>>>>>>>>>>>>>>>>>>>MatterThermostat", "AttributeID: %lu, ClusterId: %lu", AttributeID, ClusterID);
-
-    //CurrentMode = Value;
+    //CurrentMode = *Value;
 
     if (ClusterID == 0x0201)
     {
@@ -376,34 +374,3 @@ void MatterThermostat::ThermostatOperatingStateClusterHandler(chip::AttributeId 
         ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
     }
 }
-
-
-/*
-E (13875) chip[DMG]: Endpoint ffff, Cluster 0x0000_0039 not found in IncreaseClusterDataVersion!
-
-E (16165) chip[DMG]: Endpoint 3, Cluster 0x0000_0405 not found in IncreaseClusterDataVersion!
-
-E (87785) chip[DMG]: Error retrieving data from clusterId: 0x0000_0035, err = 6c
-E (86875) chip[DMG]: Error retrieving data from clusterId: 0x0000_0032, err = b
-E (86555) chip[DMG]: Error retrieving data from clusterId: 0x0000_002D, err = b
-E (86085) chip[DMG]: Failed to save subscription info error: 'b
-E (86105) chip[DMG]: Error retrieving data from clusterId: 0x0000_0028, err = b
-E (58865) chip[DIS]: OperationalSessionSetup[1:0000000013A78943]: operational discovery failed: 32
-E (58865) chip[DMG]: Failed to establish CASE for subscription-resumption with error '32'
-E (89415) chip[DMG]: Error retrieving data from clusterId: 0x0000_0006, err = b
-E (110175) chip[EM]: OnMessageReceived failed, err = 70
-
- 0x40117a57: emAfWriteAttribute(unsigned short, unsigned long, unsigned long, unsigned char*, unsigned char, bool, bool) at /home/daniil/workspace/Firmware/third_party/connectedhomeip/src/app/util/attribute-table.cpp:280
-
-
- коммит
- увеличить dataversion
- код сорпяжения
- sntp
-
- factory
- датапровайдер
-
-
-
- * */
