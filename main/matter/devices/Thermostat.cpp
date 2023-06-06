@@ -199,7 +199,7 @@ EmberAfStatus MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, 
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Thermostat: clusterID=%lu attrId=0x%lx", ClusterID, AttributeID);
 
-    //CurrentMode = *Value;
+    CurrentMode = *Value;
 
     if (ClusterID == 0x0201)
     {
