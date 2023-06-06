@@ -7,6 +7,8 @@
 #include "Data.h"
 #include "DataRemote.h"
 
+#define Tag "MatterThermostat"
+
 extern DataEndpoint_t *Data;
 
 using namespace ::chip::app::Clusters;
@@ -196,11 +198,38 @@ EmberAfStatus MatterThermostat::HandleReadAttribute(chip::ClusterId ClusterID, c
 EmberAfStatus MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value)
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Thermostat: clusterID=%lu attrId=0x%lx", ClusterID, AttributeID);
-    ESP_LOGE("VALUE", "%d", *Value);
 
+    ESP_LOGE(">>>>>>>>>>>>>>>>>>>>>>>MatterThermostat", "AttributeID: %lu, ClusterId: %lu", AttributeID, ClusterID);
+
+    //CurrentMode = Value;
+
+    if (ClusterID == 0x0201)
+    {
+        ThermostatClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0402)
+    {
+        TemperatureMeasurementClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x001C)
+    {
+        ThermostatUIConfigClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0202)
+    {
+        FanControlClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0200)
+    {
+        ThermostatOperatingStateClusterHandler(AttributeID, Value);
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong ClusterID: %lu", ClusterID);
+    }
     bool Result = false;
 
-    if (ClusterID == 0x201 && AttributeID == 0x1C) 
+    if (ClusterID == 0x201 && AttributeID == 0x1C)
         Result = HandleModeChange(*Value);
 
     return Result ? EMBER_ZCL_STATUS_SUCCESS : EMBER_ZCL_STATUS_FAILURE;
@@ -262,3 +291,119 @@ bool MatterThermostat::HandleModeChange(uint8_t Value) {
 
     return false;
 }
+
+void MatterThermostat::ThermostatClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "ThermostatClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //Local Temperature
+    {
+
+    }
+    else if(AttributeID == 0x000B)  //Abs Min Heat
+    {
+
+    }
+    else if(AttributeID == 0x000C)  //Abs Max Heat
+    {
+
+    }
+    else if(AttributeID == 0x000D)  //Abs Min Cool
+    {
+
+    }
+    else if(AttributeID == 0x000E)  //Abs Max Cool
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterThermostat::TemperatureMeasurementClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "TemperatureMeasurementClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //Measured Value
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterThermostat::ThermostatUIConfigClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "ThermostatUIConfigClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //Display Temperature
+    {
+
+    }
+    else if(AttributeID == 0x0008)   //Keypad Lockout
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterThermostat::FanControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "FanControlClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //Fan Mode
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterThermostat::ThermostatOperatingStateClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "ThermostatOperatingStateClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //Thermostat State
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+
+/*
+E (13875) chip[DMG]: Endpoint ffff, Cluster 0x0000_0039 not found in IncreaseClusterDataVersion!
+
+E (16165) chip[DMG]: Endpoint 3, Cluster 0x0000_0405 not found in IncreaseClusterDataVersion!
+
+E (87785) chip[DMG]: Error retrieving data from clusterId: 0x0000_0035, err = 6c
+E (86875) chip[DMG]: Error retrieving data from clusterId: 0x0000_0032, err = b
+E (86555) chip[DMG]: Error retrieving data from clusterId: 0x0000_002D, err = b
+E (86085) chip[DMG]: Failed to save subscription info error: 'b
+E (86105) chip[DMG]: Error retrieving data from clusterId: 0x0000_0028, err = b
+E (58865) chip[DIS]: OperationalSessionSetup[1:0000000013A78943]: operational discovery failed: 32
+E (58865) chip[DMG]: Failed to establish CASE for subscription-resumption with error '32'
+E (89415) chip[DMG]: Error retrieving data from clusterId: 0x0000_0006, err = b
+E (110175) chip[EM]: OnMessageReceived failed, err = 70
+
+ 0x40117a57: emAfWriteAttribute(unsigned short, unsigned long, unsigned long, unsigned char*, unsigned char, bool, bool) at /home/daniil/workspace/Firmware/third_party/connectedhomeip/src/app/util/attribute-table.cpp:280
+
+
+ коммит
+ увеличить dataversion
+ код сорпяжения
+ sntp
+
+ factory
+ датапровайдер
+
+
+
+ * */
