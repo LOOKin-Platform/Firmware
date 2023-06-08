@@ -225,6 +225,7 @@ void BLEServerGeneric_t::Deinit() {
 }
 
 void BLEServerGeneric_t::StartAdvertising() {
+    return;
 	if (IsHIDEnabledForDevice())
 		StartAdvertisingAsHID();
 	else
@@ -233,6 +234,7 @@ void BLEServerGeneric_t::StartAdvertising() {
 
 void BLEServerGeneric_t::StartAdvertisingAsHID()
 {
+    return;
 	Init();
 
 	HIDDevice 		= new BLEHIDDevice(pServer);
@@ -311,6 +313,8 @@ void BLEServerGeneric_t::StartAdvertisingAsHID()
 
 void BLEServerGeneric_t::StartAdvertisingAsGenericDevice()
 {
+
+    return;
 	Init();
 
 	BLEService *pService = pServer->createService(NimBLEUUID((uint16_t) 0x180A));
@@ -705,6 +709,7 @@ size_t BLEServerGeneric_t::Write(const uint8_t *buffer, size_t size) {
 }
 
 void BLEServerGeneric_t::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
+    return;
 	if (!(pServer->getAdvertising()->isAdvertising()))
 		BLEDevice::startAdvertising();
 

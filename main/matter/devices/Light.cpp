@@ -1,5 +1,7 @@
 #include "Light.h"
 
+#define Tag "MatterLight"
+
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;
 
@@ -36,7 +38,35 @@ EmberAfStatus MatterLight::HandleWriteAttribute(chip::ClusterId ClusterID, chip:
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=%lu attrId=0x%lx", ClusterID, AttributeID);
 
     ReturnErrorCodeIf((AttributeID != OnOff::Attributes::OnOff::Id) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
-                
+
+
+    ESP_LOGE(">>>>>>>>>>>>>>>>>>>>>>>MatterLight", "AttributeID: %lu, ClusterId: %lu", AttributeID, ClusterID);
+
+    if (ClusterID == 0x0006)
+    {
+        OnOffClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0008)
+    {
+        LevelControlClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0300)
+    {
+        ColorControlClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0005)
+    {
+        ScenesClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0004)
+    {
+        GroupsClusterHandler(AttributeID, Value);
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong ClusterID: %lu", ClusterID);
+    }
+
     SetOnOff(*Value == 1);
     return EMBER_ZCL_STATUS_SUCCESS;
 }
@@ -87,5 +117,111 @@ void MatterLight::HandleDeviceChange(MatterGenericDevice * device, MatterGeneric
     if (mChanged_CB)
     {
         mChanged_CB(this, (MatterLight::Changed_t) changeMask);
+    }
+}
+
+void MatterLight::OnOffClusterHandler(chip::AttributeId AttributeID, uint8_t *Value) {
+    ESP_LOGI(Tag, "OnOffClusterHandler, AttributeID: %lu", AttributeID);
+    if (AttributeID == 0x0000)  //On/Off attribute
+    {
+        if(*Value == 1) MatterSendIRCommand("01FF");
+        else            MatterSendIRCommand("02FF");
+        SetOnOff(*Value == 1);
+    }
+    else if(AttributeID == 0x4000)  //GlobalSceneControl
+    {
+
+    }
+    else if(AttributeID == 0x4001)  //OnTime
+    {
+
+    }
+    else if(AttributeID == 0x4002)  //OffWaitTime
+    {
+
+    }
+    else if(AttributeID == 0x4003)  //StartUpOnOff
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterLight::LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t *Value) {
+    ESP_LOGI(Tag, "LevelControlClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //CurrentLevel
+    {
+
+    }
+    else if(AttributeID == 0x0001)  //RemainingTime
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterLight::ColorControlClusterHandler(chip::AttributeId AttributeID, uint8_t *Value) {
+    ESP_LOGI(Tag, "ColorControlClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //CurrentHue
+    {
+
+    }
+    else if(AttributeID == 0x0001)  //CurrentSaturation
+    {
+
+    }
+    else if(AttributeID == 0x0002)  //ColorMode
+    {
+
+    }
+    else if(AttributeID == 0x0003)  //Options
+    {
+
+    }
+    else if(AttributeID == 0x0010)  //NumberOfPrimaries
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterLight::GroupsClusterHandler(chip::AttributeId AttributeID, uint8_t *Value) {
+    ESP_LOGI(Tag, "GroupsClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //NameSupport
+    {
+
+    }
+    else if(AttributeID == 0x0001)  //GroupID
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterLight::ScenesClusterHandler(chip::AttributeId AttributeID, uint8_t *Value) {
+    ESP_LOGI(Tag, "ScenesClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //SceneCount
+    {
+
+    }
+    else if(AttributeID == 0x0001)  //CurrentScene
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
     }
 }

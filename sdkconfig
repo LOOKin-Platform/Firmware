@@ -1834,6 +1834,12 @@ CONFIG_NIMBLE_CPP_ATT_VALUE_INIT_LENGTH=20
 # end of ESP-NimBLE-CPP configuration
 
 #
+# ESP-ASIO
+#
+# CONFIG_ASIO_SSL_SUPPORT is not set
+# end of ESP-ASIO
+
+#
 # ESP Secure Cert Manager
 #
 # CONFIG_ESP_SECURE_CERT_SUPPORT_LEGACY_FORMATS is not set

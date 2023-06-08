@@ -1,5 +1,7 @@
 #include "Outlet.h"
 
+#define Tag "MatterOutlet"
+
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;
 
@@ -13,7 +15,7 @@ MatterOutlet::MatterOutlet(string szDeviceName, string szLocation) : MatterGener
 
 EmberAfStatus MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
 {
-    ESP_LOGE("Outlet", "HandleReadOnOffAttribute: attrId=%lu, maxReadLength=%d", AttributeID, maxReadLength);
+    ESP_LOGI(Tag, "HandleReadOnOffAttribute: attrId=%lu, maxReadLength=%d", AttributeID, maxReadLength);
 
     if ((AttributeID == OnOff::Attributes::OnOff::Id) && (maxReadLength == 1))
     {
@@ -38,14 +40,23 @@ EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
 
-    if (ClusterID == 0x0006 && AttributeID == 0x0000)
+    if (ClusterID == 0x0006)
     {
-        if(*Value == 1) MatterSendIRCommand("01FF");
-        else            MatterSendIRCommand("02FF");
-
-        SetOnOff(*Value == 1);
+        OnOffClusterHandler(AttributeID, Value);
     }
-                
+    else if(ClusterID == 0x0003)
+    {
+        IdentifyClusterHandler(AttributeID, Value);
+    }
+    else if(ClusterID == 0x0001)
+    {
+        PowerConfigClusterHandler(AttributeID, Value);
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong ClusterID: %lu", ClusterID);
+    }
+
     return EMBER_ZCL_STATUS_SUCCESS;
 }
 
@@ -97,5 +108,44 @@ void MatterOutlet::HandleDeviceChange(MatterGenericDevice * device, MatterGeneri
     if (mChanged_CB)
     {
         mChanged_CB(this, (MatterOutlet::Changed_t) changeMask);
+    }
+}
+
+
+void MatterOutlet::OnOffClusterHandler(chip::AttributeId AttributeID, uint8_t * Value) {
+    ESP_LOGI(Tag, "OnOffClusterHandler, AttributeID: %lu", AttributeID);
+    if (AttributeID == 0x0000)  //On/Off attribute
+    {
+        if(*Value == 1) MatterSendIRCommand("01FF");
+        else            MatterSendIRCommand("02FF");
+        SetOnOff(*Value == 1);
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterOutlet::IdentifyClusterHandler(chip::AttributeId AttributeID, uint8_t *Value) {
+    ESP_LOGI(Tag, "IdentifyClusterHandler, AttributeID: %lu", AttributeID);
+    if (AttributeID == 0x0000)  //IdentifyTime attribute
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterOutlet::PowerConfigClusterHandler(chip::AttributeId AttributeID, uint8_t *Value) {
+    ESP_LOGI(Tag, "PowerConfigClusterHandler, AttributeID: %lu", AttributeID);
+    if (AttributeID == 0x0020)  //BatteryVoltage
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
     }
 }

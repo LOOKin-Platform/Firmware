@@ -1,8 +1,9 @@
 #include "VideoPlayer.h"
 
+#define Tag "MatterVideoPlayer"
 
-MatterVideoPlayer:: MatterVideoPlayer(string szDeviceName, string szLocation) :
-    MatterGenericDevice(szDeviceName, szLocation)
+
+MatterVideoPlayer:: MatterVideoPlayer(string szDeviceName, string szLocation):MatterGenericDevice(szDeviceName, szLocation)
 {
     DeviceType = DeviceTypeEnum::MediaPlayer;
 
@@ -67,5 +68,113 @@ void MatterVideoPlayer::HandleDeviceChange(MatterGenericDevice * device, MatterG
     if (mChanged_CB)
     {
         mChanged_CB(this, (MatterVideoPlayer::Changed_t) changeMask);
+    }
+}
+
+
+
+
+
+void MatterVideoPlayer::OnOffClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "OnOffClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterVideoPlayer::BasicClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "BasicClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterVideoPlayer::IdentifyMeasurementClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "IdentifyMeasurementClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterVideoPlayer::GroupsClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "GroupsClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterVideoPlayer::ScenesClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "ScenesClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterVideoPlayer::PowerConfigurationClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "PowerConfigurationClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterVideoPlayer::LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "LevelControlClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+    }
+}
+
+void MatterVideoPlayer::AudioOutputClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+{
+    ESP_LOGI(Tag, "AudioOutputClusterHandler, AttributeID: %lu", AttributeID);
+    if(AttributeID == 0x0000)   //
+    {
+
+    }
+    else
+    {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
     }
 }

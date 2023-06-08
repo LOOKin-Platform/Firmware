@@ -41,6 +41,10 @@ class MatterOutlet : public MatterGenericDevice {
         DeviceCallback_fn mChanged_CB;
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override;
+
+        void OnOffClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void IdentifyClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void PowerConfigClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
 };
 
 #endif

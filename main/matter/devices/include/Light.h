@@ -46,6 +46,15 @@ class MatterLight : public MatterGenericDevice {
         DeviceCallback_fn mChanged_CB;
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override;
+
+        void OnOffClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void ColorControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void GroupsClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void ScenesClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+
+
+
 };
 
 #endif

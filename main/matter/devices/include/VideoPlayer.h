@@ -38,6 +38,16 @@ class MatterVideoPlayer : public MatterGenericDevice {
         DeviceCallback_fn mChanged_CB;
         
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override;
+
+
+        void OnOffClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void BasicClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void IdentifyMeasurementClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void GroupsClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void ScenesClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void PowerConfigurationClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void AudioOutputClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
 };
 
 #endif

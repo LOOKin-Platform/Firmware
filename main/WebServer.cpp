@@ -15,6 +15,10 @@ using namespace std;
 
 #include <esp_log.h>
 
+
+
+
+
 static char tag[] = "WebServer";
 
 bool WebServer_t::UDPServerStopFlag 			= false;
@@ -293,7 +297,7 @@ void WebServer_t::UDPSendBroadcast(string Message, bool IsScheduled) {
 	}
 }
 
-void WebServer_t::UDPSendBroacastFromQueue() {
+void WebServer_t::UDPSendBroadcastFromQueue() {
 	UDPBroacastQueueItem ItemToSend;
 
 	if (UDPBroadcastQueue != 0)

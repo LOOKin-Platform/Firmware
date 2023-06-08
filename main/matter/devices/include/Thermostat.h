@@ -67,6 +67,13 @@ class MatterThermostat : public MatterGenericDevice {
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override;
         bool HandleModeChange(uint8_t Value);
+
+        void ThermostatClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void TemperatureMeasurementClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void ThermostatUIConfigClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void FanControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+        void ThermostatOperatingStateClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+
 };
 
 #endif

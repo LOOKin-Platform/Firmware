@@ -235,7 +235,7 @@ esp_err_t MyWiFiEventHandler::staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
 
 	ESP_LOGI(MyWiFiTag, "GOT IP %s", Network.IPToString().c_str());
 
-	WebServer.UDPSendBroacastFromQueue();
+    WebServer.UDPSendBroadcastFromQueue();
 
 	if (!Wireless.IsEventDrivenStart) {
 		WebServer.UDPSendBroadcastAlive();

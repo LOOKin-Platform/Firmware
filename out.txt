@@ -1,0 +1,420 @@
+Executing action: all (aliases: build)
+Running ninja in directory /home/daniil/workspace/Firmware/build
+Executing "ninja all"...
+[1/64] Performing build step for 'chip_gn'
+ninja: no work to do.
+[2/62] Performing build step for 'bootloader'
+[1/1] cd /home/daniil/workspace/Firmware/build/bootloader/esp-idf/esptool_py && /home/daniil/.espressif/python_env/idf5.0_py3.10_env/bin/python /home/daniil/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x1000 /home/daniil/workspace/Firmware/build/bootloader/bootloader.bin
+Bootloader binary size 0x54a0 bytes. 0x1b60 bytes (24%) free.
+[3/60] To flash /home/daniil/workspace/Firmware/build/firmware.bin run ./build/firmware.flash.py
+[4/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/time-format-localization-server/time-format-localization-server.cpp.obj
+[5/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/general-diagnostics-server/GenericFaultTestEventTriggerDelegate.cpp.obj
+[6/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/bridged-device-basic-information-server/bridged-device-basic-information-server.cpp.obj
+[7/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/fixed-label-server/fixed-label-server.cpp.obj
+[8/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/ethernet-network-diagnostics-server/ethernet-network-diagnostics-server.cpp.obj
+[9/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/identify-server/identify-server.cpp.obj
+[10/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/localization-configuration-server/localization-configuration-server.cpp.obj
+[11/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/switch-server/switch-server.cpp.obj
+[12/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/thread-network-diagnostics-server/thread-network-diagnostics-server.cpp.obj
+[13/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/software-diagnostics-server/software-diagnostics-server.cpp.obj
+[14/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/wifi-network-diagnostics-server/wifi-network-diagnostics-server.cpp.obj
+[15/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/user-label-server/user-label-server.cpp.obj
+[16/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/matter/devices/VideoPlayer.cpp.obj
+FAILED: esp-idf/main/CMakeFiles/__idf_main.dir/matter/devices/VideoPlayer.cpp.obj 
+/home/daniil/.espressif/tools/xtensa-esp32-elf/esp-2022r1-11.2.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-g++ -DMATTER_WIFI_OVERRIDE -DMBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\" -I/home/daniil/workspace/Firmware/build/config -I/home/daniil/workspace/Firmware/partners/drivent -I/home/daniil/workspace/Firmware/main -I/home/daniil/workspace/Firmware/main/include -I/home/daniil/workspace/Firmware/main/data_endpoints/include -I/home/daniil/workspace/Firmware/main/matter/include -I/home/daniil/workspace/Firmware/main/matter/devices/include -I/home/daniil/workspace/Firmware/main/matter/override -I/home/daniil/workspace/Firmware/main/matter/connectivity -I/home/daniil/workspace/Firmware/main/sensors/include -I/home/daniil/workspace/Firmware/main/commands/include -I/home/daniil/connectedhomeip/src -I/home/daniil/connectedhomeip/src/app/util -I/home/daniil/connectedhomeip/examples/platform/esp32 -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/include -I/home/daniil/workspace/Firmware/third_party/connectedhomeip/examples/providers -I/home/daniil/workspace/Firmware/build/gen/app-codegen/cpp-app -I/home/daniil/workspace/Firmware/build/gen/app-zapgen/zapgen/app-templates -I/home/daniil/esp-idf/components/newlib/platform_include -I/home/daniil/esp-idf/components/freertos/FreeRTOS-Kernel/include -I/home/daniil/esp-idf/components/freertos/esp_additions/include/freertos -I/home/daniil/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -I/home/daniil/esp-idf/components/freertos/esp_additions/include -I/home/daniil/esp-idf/components/esp_hw_support/include -I/home/daniil/esp-idf/components/esp_hw_support/include/soc -I/home/daniil/esp-idf/components/esp_hw_support/include/soc/esp32 -I/home/daniil/esp-idf/components/esp_hw_support/port/esp32/. -I/home/daniil/esp-idf/components/esp_hw_support/port/esp32/private_include -I/home/daniil/esp-idf/components/heap/include -I/home/daniil/esp-idf/components/log/include -I/home/daniil/esp-idf/components/soc/include -I/home/daniil/esp-idf/components/soc/esp32/. -I/home/daniil/esp-idf/components/soc/esp32/include -I/home/daniil/esp-idf/components/hal/esp32/include -I/home/daniil/esp-idf/components/hal/include -I/home/daniil/esp-idf/components/hal/platform_port/include -I/home/daniil/esp-idf/components/esp_rom/include -I/home/daniil/esp-idf/components/esp_rom/include/esp32 -I/home/daniil/esp-idf/components/esp_rom/esp32 -I/home/daniil/esp-idf/components/esp_common/include -I/home/daniil/esp-idf/components/esp_system/include -I/home/daniil/esp-idf/components/esp_system/port/soc -I/home/daniil/esp-idf/components/esp_system/port/include/private -I/home/daniil/esp-idf/components/xtensa/include -I/home/daniil/esp-idf/components/xtensa/esp32/include -I/home/daniil/esp-idf/components/lwip/include -I/home/daniil/esp-idf/components/lwip/include/apps -I/home/daniil/esp-idf/components/lwip/include/apps/sntp -I/home/daniil/esp-idf/components/lwip/lwip/src/include -I/home/daniil/esp-idf/components/lwip/port/esp32/include -I/home/daniil/esp-idf/components/lwip/port/esp32/include/arch -I/home/daniil/esp-idf/components/bt/include/esp32/include -I/home/daniil/esp-idf/components/bt/common/osi/include -I/home/daniil/esp-idf/components/bt/common/api/include/api -I/home/daniil/esp-idf/components/bt/common/btc/profile/esp/blufi/include -I/home/daniil/esp-idf/components/bt/common/btc/profile/esp/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ans/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/bas/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/dis/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gap/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gatt/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ias/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ipss/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/lls/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/tps/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/util/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/ram/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/config/include -I/home/daniil/esp-idf/components/bt/porting/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/porting/nimble/include -I/home/daniil/esp-idf/components/bt/host/nimble/port/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/porting/npl/freertos/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/include -I/home/daniil/esp-idf/components/bt/host/nimble/esp-hci/include -I/home/daniil/esp-idf/components/esp_timer/include -I/home/daniil/esp-idf/components/esp_wifi/include -I/home/daniil/esp-idf/components/esp_event/include -I/home/daniil/esp-idf/components/esp_phy/include -I/home/daniil/esp-idf/components/esp_phy/esp32/include -I/home/daniil/esp-idf/components/esp_netif/include -I/home/daniil/esp-idf/components/efuse/include -I/home/daniil/esp-idf/components/efuse/esp32/include -I/home/daniil/workspace/Firmware/libs/converter -I/home/daniil/workspace/Firmware/libs/DateTime -I/home/daniil/workspace/Firmware/libs/HTTPClient -I/home/daniil/workspace/Firmware/drivers/FreeRTOSWrapper -I/home/daniil/esp-idf/components/esp_ringbuf/include -I/home/daniil/esp-idf/components/esp_http_client/include -I/home/daniil/workspace/Firmware/drivers/Memory/include -I/home/daniil/esp-idf/components/nvs_flash/include -I/home/daniil/esp-idf/components/esp_partition/include -I/home/daniil/esp-idf/components/spi_flash/include -I/home/daniil/workspace/Firmware/libs/libJSON -I/home/daniil/esp-idf/components/json/cJSON -I/home/daniil/esp-idf/components/esp_http_server/include -I/home/daniil/esp-idf/components/http_parser -I/home/daniil/workspace/Firmware/drivers/WiFi -I/home/daniil/workspace/Firmware/drivers/PowerManagement -I/home/daniil/workspace/Firmware/libs/NimBLE/src -I/home/daniil/workspace/Firmware/libs/OTA -I/home/daniil/esp-idf/components/esp_https_ota/include -I/home/daniil/esp-idf/components/bootloader_support/include -I/home/daniil/esp-idf/components/bootloader_support/bootloader_flash/include -I/home/daniil/esp-idf/components/esp_app_format/include -I/home/daniil/esp-idf/components/app_update/include -I/home/daniil/workspace/Firmware/drivers/HardwareIO -I/home/daniil/esp-idf/components/driver/include -I/home/daniil/esp-idf/components/driver/deprecated -I/home/daniil/esp-idf/components/driver/esp32/include -I/home/daniil/esp-idf/components/esp_pm/include -I/home/daniil/workspace/Firmware/drivers/ISR -I/home/daniil/workspace/Firmware/drivers/RMT -I/home/daniil/workspace/Firmware/libs/IRLib -I/home/daniil/esp-idf/components/mqtt/esp-mqtt/include -I/home/daniil/esp-idf/components/tcp_transport/include -I/home/daniil/esp-idf/components/esp-tls -I/home/daniil/esp-idf/components/esp-tls/esp-tls-crypto -I/home/daniil/esp-idf/components/mbedtls/port/include -I/home/daniil/esp-idf/components/mbedtls/mbedtls/include -I/home/daniil/esp-idf/components/mbedtls/mbedtls/library -I/home/daniil/esp-idf/components/mbedtls/esp_crt_bundle/include -I/home/daniil/workspace/Firmware/drivers/UART -I/home/daniil/workspace/Firmware/drivers/Sleep -I/home/daniil/workspace/Firmware/managed_components/espressif__mdns/include -I/home/daniil/esp-idf/components/console -I/home/daniil/esp-idf/components/vfs/include -I/home/daniil/workspace/Firmware/drivers/Periphery/esp32-ds18b20/include -I/home/daniil/workspace/Firmware/drivers/Periphery/esp32-owb/include -I/home/daniil/workspace/Firmware/drivers/Periphery/esp-bme280 -I/home/daniil/workspace/Firmware/drivers/I2C -I/home/daniil/workspace/Firmware/drivers/Periphery/hdc1080 -I/home/daniil/workspace/Firmware/drivers/Periphery/hdc1080_esp8266_wrapper -I/home/daniil/workspace/Firmware/drivers/Periphery/ds18b20-wrapper -I/home/daniil/workspace/Firmware/drivers/Periphery/ws2812 -I/home/daniil/connectedhomeip/src/platform/ESP32 -I/home/daniil/connectedhomeip/src/platform/OpenThread -I/home/daniil/connectedhomeip/src/include -I/home/daniil/connectedhomeip/src/lib -I/home/daniil/connectedhomeip/zzz_generated/app-common -I/home/daniil/connectedhomeip/third_party/nlassert/repo/include -I/home/daniil/connectedhomeip/third_party/nlio/repo/include -I/home/daniil/workspace/Firmware/build/esp-idf/chip/src/include -I/home/daniil/workspace/Firmware/build/esp-idf/chip/include -I/home/daniil/workspace/Firmware/build/esp-idf/chip/gen/include -I/home/daniil/connectedhomeip/config/esp32 -I/home/daniil/connectedhomeip/config/esp32/../.. -I/home/daniil/workspace/Firmware/third_party/connectedhomeip/examples/common/QRCode/repo/c -mlongcalls -Wno-frame-address  -ffunction-sections -fdata-sections -Wall -Werror=all -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=deprecated-declarations -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -Os -freorder-blocks -fmacro-prefix-map=/home/daniil/workspace/Firmware=. -fmacro-prefix-map=/home/daniil/esp-idf=/IDF -fstrict-volatile-bitfields -Wno-error=unused-but-set-variable -fno-jump-tables -fno-tree-switch-conversion -DconfigENABLE_FREERTOS_DEBUG_OCDAWARE=1 -Wno-format-nonliteral -Wno-format-security -Wno-error=maybe-uninitialized -Wno-error=format -Wno-error=array-bounds -std=gnu++20 -fno-exceptions -fno-rtti -std=gnu++17 -DCHIP_HAVE_CONFIG_H -DCHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT=16 -D_GNU_SOURCE -DIDF_VER=\"v5.0.1-dirty\" -DESP_PLATFORM -DNDEBUG -D_POSIX_READER_WRITER_LOCKS "-D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG" "-D CHIP_HAVE_CONFIG_H" "-DCHIP_ADDRESS_RESOLVE_IMPL_INCLUDE_HEADER=<lib/address_resolve/AddressResolve_DefaultImpl.h>" -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/matter/devices/VideoPlayer.cpp.obj -MF esp-idf/main/CMakeFiles/__idf_main.dir/matter/devices/VideoPlayer.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/matter/devices/VideoPlayer.cpp.obj -c /home/daniil/workspace/Firmware/main/matter/devices/VideoPlayer.cpp
+In file included from /home/daniil/workspace/Firmware/main/include/Settings.h:16,
+                 from /home/daniil/workspace/Firmware/main/include/Device.h:25,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Custom.h:5,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Matter.h:8,
+                 from /home/daniil/workspace/Firmware/main/matter/devices/include/VideoPlayer.h:4,
+                 from /home/daniil/workspace/Firmware/main/matter/devices/VideoPlayer.cpp:1:
+/home/daniil/esp-idf/components/driver/deprecated/driver/adc.h:19:2: warning: #warning "legacy adc driver is deprecated, please migrate to use esp_adc/adc_oneshot.h and esp_adc/adc_continuous.h for oneshot mode and continuous mode drivers respectively" [-Wcpp]
+   19 | #warning "legacy adc driver is deprecated, please migrate to use esp_adc/adc_oneshot.h and esp_adc/adc_continuous.h for oneshot mode and continuous mode drivers respectively"
+      |  ^~~~~~~
+In file included from /home/daniil/workspace/Firmware/main/include/Settings.h:17,
+                 from /home/daniil/workspace/Firmware/main/include/Device.h:25,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Custom.h:5,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Matter.h:8,
+                 from /home/daniil/workspace/Firmware/main/matter/devices/include/VideoPlayer.h:4,
+                 from /home/daniil/workspace/Firmware/main/matter/devices/VideoPlayer.cpp:1:
+/home/daniil/esp-idf/components/driver/deprecated/driver/timer.h:16:2: warning: #warning "legacy timer group driver is deprecated, please migrate to driver/gptimer.h" [-Wcpp]
+   16 | #warning "legacy timer group driver is deprecated, please migrate to driver/gptimer.h"
+      |  ^~~~~~~
+In file included from /home/daniil/workspace/Firmware/main/matter/devices/VideoPlayer.cpp:1:
+/home/daniil/workspace/Firmware/main/matter/devices/include/VideoPlayer.h:50:14: error: 'void MatterVideoPlayer::LevelControlClusterHandler(chip::AttributeId, uint8_t*)' cannot be overloaded with 'void MatterVideoPlayer::LevelControlClusterHandler(chip::AttributeId, uint8_t*)'
+   50 |         void LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/main/matter/devices/include/VideoPlayer.h:48:14: note: previous declaration 'void MatterVideoPlayer::LevelControlClusterHandler(chip::AttributeId, uint8_t*)'
+   48 |         void LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+[17/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/level-control/level-control.cpp.obj
+[18/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/general-diagnostics-server/general-diagnostics-server.cpp.obj
+[19/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/diagnostic-logs-server/diagnostic-logs-server.cpp.obj
+[20/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/basic-information/basic-information.cpp.obj
+[21/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/matter/Matter.cpp.obj
+FAILED: esp-idf/main/CMakeFiles/__idf_main.dir/matter/Matter.cpp.obj 
+/home/daniil/.espressif/tools/xtensa-esp32-elf/esp-2022r1-11.2.0/xtensa-esp32-elf/bin/xtensa-esp32-elf-g++ -DMATTER_WIFI_OVERRIDE -DMBEDTLS_CONFIG_FILE=\"mbedtls/esp_config.h\" -I/home/daniil/workspace/Firmware/build/config -I/home/daniil/workspace/Firmware/partners/drivent -I/home/daniil/workspace/Firmware/main -I/home/daniil/workspace/Firmware/main/include -I/home/daniil/workspace/Firmware/main/data_endpoints/include -I/home/daniil/workspace/Firmware/main/matter/include -I/home/daniil/workspace/Firmware/main/matter/devices/include -I/home/daniil/workspace/Firmware/main/matter/override -I/home/daniil/workspace/Firmware/main/matter/connectivity -I/home/daniil/workspace/Firmware/main/sensors/include -I/home/daniil/workspace/Firmware/main/commands/include -I/home/daniil/connectedhomeip/src -I/home/daniil/connectedhomeip/src/app/util -I/home/daniil/connectedhomeip/examples/platform/esp32 -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/include -I/home/daniil/workspace/Firmware/third_party/connectedhomeip/examples/providers -I/home/daniil/workspace/Firmware/build/gen/app-codegen/cpp-app -I/home/daniil/workspace/Firmware/build/gen/app-zapgen/zapgen/app-templates -I/home/daniil/esp-idf/components/newlib/platform_include -I/home/daniil/esp-idf/components/freertos/FreeRTOS-Kernel/include -I/home/daniil/esp-idf/components/freertos/esp_additions/include/freertos -I/home/daniil/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -I/home/daniil/esp-idf/components/freertos/esp_additions/include -I/home/daniil/esp-idf/components/esp_hw_support/include -I/home/daniil/esp-idf/components/esp_hw_support/include/soc -I/home/daniil/esp-idf/components/esp_hw_support/include/soc/esp32 -I/home/daniil/esp-idf/components/esp_hw_support/port/esp32/. -I/home/daniil/esp-idf/components/esp_hw_support/port/esp32/private_include -I/home/daniil/esp-idf/components/heap/include -I/home/daniil/esp-idf/components/log/include -I/home/daniil/esp-idf/components/soc/include -I/home/daniil/esp-idf/components/soc/esp32/. -I/home/daniil/esp-idf/components/soc/esp32/include -I/home/daniil/esp-idf/components/hal/esp32/include -I/home/daniil/esp-idf/components/hal/include -I/home/daniil/esp-idf/components/hal/platform_port/include -I/home/daniil/esp-idf/components/esp_rom/include -I/home/daniil/esp-idf/components/esp_rom/include/esp32 -I/home/daniil/esp-idf/components/esp_rom/esp32 -I/home/daniil/esp-idf/components/esp_common/include -I/home/daniil/esp-idf/components/esp_system/include -I/home/daniil/esp-idf/components/esp_system/port/soc -I/home/daniil/esp-idf/components/esp_system/port/include/private -I/home/daniil/esp-idf/components/xtensa/include -I/home/daniil/esp-idf/components/xtensa/esp32/include -I/home/daniil/esp-idf/components/lwip/include -I/home/daniil/esp-idf/components/lwip/include/apps -I/home/daniil/esp-idf/components/lwip/include/apps/sntp -I/home/daniil/esp-idf/components/lwip/lwip/src/include -I/home/daniil/esp-idf/components/lwip/port/esp32/include -I/home/daniil/esp-idf/components/lwip/port/esp32/include/arch -I/home/daniil/esp-idf/components/bt/include/esp32/include -I/home/daniil/esp-idf/components/bt/common/osi/include -I/home/daniil/esp-idf/components/bt/common/api/include/api -I/home/daniil/esp-idf/components/bt/common/btc/profile/esp/blufi/include -I/home/daniil/esp-idf/components/bt/common/btc/profile/esp/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ans/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/bas/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/dis/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gap/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/gatt/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ias/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/ipss/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/lls/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/services/tps/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/util/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/ram/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/host/store/config/include -I/home/daniil/esp-idf/components/bt/porting/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/porting/nimble/include -I/home/daniil/esp-idf/components/bt/host/nimble/port/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/porting/npl/freertos/include -I/home/daniil/esp-idf/components/bt/host/nimble/nimble/nimble/include -I/home/daniil/esp-idf/components/bt/host/nimble/esp-hci/include -I/home/daniil/esp-idf/components/esp_timer/include -I/home/daniil/esp-idf/components/esp_wifi/include -I/home/daniil/esp-idf/components/esp_event/include -I/home/daniil/esp-idf/components/esp_phy/include -I/home/daniil/esp-idf/components/esp_phy/esp32/include -I/home/daniil/esp-idf/components/esp_netif/include -I/home/daniil/esp-idf/components/efuse/include -I/home/daniil/esp-idf/components/efuse/esp32/include -I/home/daniil/workspace/Firmware/libs/converter -I/home/daniil/workspace/Firmware/libs/DateTime -I/home/daniil/workspace/Firmware/libs/HTTPClient -I/home/daniil/workspace/Firmware/drivers/FreeRTOSWrapper -I/home/daniil/esp-idf/components/esp_ringbuf/include -I/home/daniil/esp-idf/components/esp_http_client/include -I/home/daniil/workspace/Firmware/drivers/Memory/include -I/home/daniil/esp-idf/components/nvs_flash/include -I/home/daniil/esp-idf/components/esp_partition/include -I/home/daniil/esp-idf/components/spi_flash/include -I/home/daniil/workspace/Firmware/libs/libJSON -I/home/daniil/esp-idf/components/json/cJSON -I/home/daniil/esp-idf/components/esp_http_server/include -I/home/daniil/esp-idf/components/http_parser -I/home/daniil/workspace/Firmware/drivers/WiFi -I/home/daniil/workspace/Firmware/drivers/PowerManagement -I/home/daniil/workspace/Firmware/libs/NimBLE/src -I/home/daniil/workspace/Firmware/libs/OTA -I/home/daniil/esp-idf/components/esp_https_ota/include -I/home/daniil/esp-idf/components/bootloader_support/include -I/home/daniil/esp-idf/components/bootloader_support/bootloader_flash/include -I/home/daniil/esp-idf/components/esp_app_format/include -I/home/daniil/esp-idf/components/app_update/include -I/home/daniil/workspace/Firmware/drivers/HardwareIO -I/home/daniil/esp-idf/components/driver/include -I/home/daniil/esp-idf/components/driver/deprecated -I/home/daniil/esp-idf/components/driver/esp32/include -I/home/daniil/esp-idf/components/esp_pm/include -I/home/daniil/workspace/Firmware/drivers/ISR -I/home/daniil/workspace/Firmware/drivers/RMT -I/home/daniil/workspace/Firmware/libs/IRLib -I/home/daniil/esp-idf/components/mqtt/esp-mqtt/include -I/home/daniil/esp-idf/components/tcp_transport/include -I/home/daniil/esp-idf/components/esp-tls -I/home/daniil/esp-idf/components/esp-tls/esp-tls-crypto -I/home/daniil/esp-idf/components/mbedtls/port/include -I/home/daniil/esp-idf/components/mbedtls/mbedtls/include -I/home/daniil/esp-idf/components/mbedtls/mbedtls/library -I/home/daniil/esp-idf/components/mbedtls/esp_crt_bundle/include -I/home/daniil/workspace/Firmware/drivers/UART -I/home/daniil/workspace/Firmware/drivers/Sleep -I/home/daniil/workspace/Firmware/managed_components/espressif__mdns/include -I/home/daniil/esp-idf/components/console -I/home/daniil/esp-idf/components/vfs/include -I/home/daniil/workspace/Firmware/drivers/Periphery/esp32-ds18b20/include -I/home/daniil/workspace/Firmware/drivers/Periphery/esp32-owb/include -I/home/daniil/workspace/Firmware/drivers/Periphery/esp-bme280 -I/home/daniil/workspace/Firmware/drivers/I2C -I/home/daniil/workspace/Firmware/drivers/Periphery/hdc1080 -I/home/daniil/workspace/Firmware/drivers/Periphery/hdc1080_esp8266_wrapper -I/home/daniil/workspace/Firmware/drivers/Periphery/ds18b20-wrapper -I/home/daniil/workspace/Firmware/drivers/Periphery/ws2812 -I/home/daniil/connectedhomeip/src/platform/ESP32 -I/home/daniil/connectedhomeip/src/platform/OpenThread -I/home/daniil/connectedhomeip/src/include -I/home/daniil/connectedhomeip/src/lib -I/home/daniil/connectedhomeip/zzz_generated/app-common -I/home/daniil/connectedhomeip/third_party/nlassert/repo/include -I/home/daniil/connectedhomeip/third_party/nlio/repo/include -I/home/daniil/workspace/Firmware/build/esp-idf/chip/src/include -I/home/daniil/workspace/Firmware/build/esp-idf/chip/include -I/home/daniil/workspace/Firmware/build/esp-idf/chip/gen/include -I/home/daniil/connectedhomeip/config/esp32 -I/home/daniil/connectedhomeip/config/esp32/../.. -I/home/daniil/workspace/Firmware/third_party/connectedhomeip/examples/common/QRCode/repo/c -mlongcalls -Wno-frame-address  -ffunction-sections -fdata-sections -Wall -Werror=all -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=deprecated-declarations -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -Os -freorder-blocks -fmacro-prefix-map=/home/daniil/workspace/Firmware=. -fmacro-prefix-map=/home/daniil/esp-idf=/IDF -fstrict-volatile-bitfields -Wno-error=unused-but-set-variable -fno-jump-tables -fno-tree-switch-conversion -DconfigENABLE_FREERTOS_DEBUG_OCDAWARE=1 -Wno-format-nonliteral -Wno-format-security -Wno-error=maybe-uninitialized -Wno-error=format -Wno-error=array-bounds -std=gnu++20 -fno-exceptions -fno-rtti -std=gnu++17 -DCHIP_HAVE_CONFIG_H -DCHIP_DEVICE_CONFIG_DYNAMIC_ENDPOINT_COUNT=16 -D_GNU_SOURCE -DIDF_VER=\"v5.0.1-dirty\" -DESP_PLATFORM -DNDEBUG -D_POSIX_READER_WRITER_LOCKS "-D LOG_LOCAL_LEVEL=ESP_LOG_DEBUG" "-D CHIP_HAVE_CONFIG_H" "-DCHIP_ADDRESS_RESOLVE_IMPL_INCLUDE_HEADER=<lib/address_resolve/AddressResolve_DefaultImpl.h>" -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/matter/Matter.cpp.obj -MF esp-idf/main/CMakeFiles/__idf_main.dir/matter/Matter.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/matter/Matter.cpp.obj -c /home/daniil/workspace/Firmware/main/matter/Matter.cpp
+In file included from /home/daniil/workspace/Firmware/main/include/Settings.h:16,
+                 from /home/daniil/workspace/Firmware/main/include/Device.h:25,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Custom.h:5,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Matter.h:8,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:1:
+/home/daniil/esp-idf/components/driver/deprecated/driver/adc.h:19:2: warning: #warning "legacy adc driver is deprecated, please migrate to use esp_adc/adc_oneshot.h and esp_adc/adc_continuous.h for oneshot mode and continuous mode drivers respectively" [-Wcpp]
+   19 | #warning "legacy adc driver is deprecated, please migrate to use esp_adc/adc_oneshot.h and esp_adc/adc_continuous.h for oneshot mode and continuous mode drivers respectively"
+      |  ^~~~~~~
+In file included from /home/daniil/workspace/Firmware/main/include/Settings.h:17,
+                 from /home/daniil/workspace/Firmware/main/include/Device.h:25,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Custom.h:5,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Matter.h:8,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:1:
+/home/daniil/esp-idf/components/driver/deprecated/driver/timer.h:16:2: warning: #warning "legacy timer group driver is deprecated, please migrate to driver/gptimer.h" [-Wcpp]
+   16 | #warning "legacy timer group driver is deprecated, please migrate to driver/gptimer.h"
+      |  ^~~~~~~
+In file included from /home/daniil/workspace/Firmware/drivers/Periphery/ws2812/ws2812.h:4,
+                 from /home/daniil/workspace/Firmware/main/include/Log.h:20,
+                 from /home/daniil/workspace/Firmware/drivers/PowerManagement/PowerManagement.h:15,
+                 from /home/daniil/workspace/Firmware/main/include/BLEServerGeneric.h:19,
+                 from /home/daniil/workspace/Firmware/main/include/Globals.h:20,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:4:
+/home/daniil/esp-idf/components/driver/deprecated/driver/rmt.h:18:2: warning: #warning "The legacy RMT driver is deprecated, please use driver/rmt_tx.h and/or driver/rmt_rx.h" [-Wcpp]
+   18 | #warning "The legacy RMT driver is deprecated, please use driver/rmt_tx.h and/or driver/rmt_rx.h"
+      |  ^~~~~~~
+In file included from /home/daniil/workspace/Firmware/drivers/Periphery/hdc1080/hdc1080_platform.h:11,
+                 from /home/daniil/workspace/Firmware/drivers/Periphery/hdc1080/hdc1080.h:30,
+                 from /home/daniil/workspace/Firmware/main/sensors/include/SensorMeteo.h:12,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:12:
+/home/daniil/workspace/Firmware/drivers/Periphery/hdc1080_esp8266_wrapper/esp8266_wrapper.h:32: warning: "vTaskDelayUntil" redefined
+   32 | #define vTaskDelayUntil(t,d) { *t=*t; vTaskDelay(d); }
+      | 
+In file included from /home/daniil/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/timers.h:44,
+                 from /home/daniil/workspace/Firmware/drivers/FreeRTOSWrapper/FreeRTOSWrapper.h:20,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Matter.h:4,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:1:
+/home/daniil/esp-idf/components/freertos/FreeRTOS-Kernel/include/freertos/task.h:1037: note: this is the location of the previous definition
+ 1037 | #define vTaskDelayUntil( pxPreviousWakeTime, xTimeIncrement )       \
+      | 
+In file included from /home/daniil/workspace/Firmware/main/commands/include/CommandIR.h:9,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:13:
+/home/daniil/workspace/Firmware/drivers/RMT/RMT.h:72:87: warning: missing initializer for member 'rmt_item32_t::<unnamed union>::<unnamed struct>::level0' [-Wmissing-field-initializers]
+   72 |                 static inline rmt_item32_t              OutputItems[400]        = { 0 };
+      |                                                                                       ^
+/home/daniil/workspace/Firmware/drivers/RMT/RMT.h:72:87: warning: missing initializer for member 'rmt_item32_t::<unnamed union>::<unnamed struct>::duration1' [-Wmissing-field-initializers]
+/home/daniil/workspace/Firmware/drivers/RMT/RMT.h:72:87: warning: missing initializer for member 'rmt_item32_t::<unnamed union>::<unnamed struct>::level1' [-Wmissing-field-initializers]
+In file included from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:45:
+/home/daniil/workspace/Firmware/main/matter/devices/include/VideoPlayer.h:50:14: error: 'void MatterVideoPlayer::LevelControlClusterHandler(chip::AttributeId, uint8_t*)' cannot be overloaded with 'void MatterVideoPlayer::LevelControlClusterHandler(chip::AttributeId, uint8_t*)'
+   50 |         void LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/main/matter/devices/include/VideoPlayer.h:48:14: note: previous declaration 'void MatterVideoPlayer::LevelControlClusterHandler(chip::AttributeId, uint8_t*)'
+   48 |         void LevelControlClusterHandler(chip::AttributeId AttributeID, uint8_t * Value);
+      |              ^~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/daniil/workspace/Firmware/main/matter/devices/include/GenericDevice.h:8,
+                 from /home/daniil/workspace/Firmware/main/matter/include/Matter.h:12,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:1:
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:196:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  196 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:196:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  196 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:196:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  196 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:196:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  196 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:196:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  196 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:196:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  196 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:212:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  212 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:212:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  212 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:212:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  212 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:212:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  212 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:212:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  212 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:212:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  212 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:236:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  236 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:236:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  236 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:236:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  236 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:236:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  236 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:236:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  236 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:236:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  236 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:259:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  259 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:259:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  259 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:259:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  259 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:259:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  259 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:259:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  259 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:259:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  259 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:299:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  299 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:299:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  299 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:299:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  299 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:299:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  299 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:299:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  299 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:299:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  299 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:326:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  326 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:326:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  326 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:326:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  326 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:326:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  326 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:326:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  326 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:326:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  326 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventList' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/connectedhomeip/src/app/util/attribute-storage.h:64:42: warning: missing initializer for member 'EmberAfCluster::eventCount' [-Wmissing-field-initializers]
+   64 | #define DECLARE_DYNAMIC_CLUSTER_LIST_END }
+      |                                          ^
+/home/daniil/workspace/Firmware/main/matter/Matter.cpp:355:1: note: in expansion of macro 'DECLARE_DYNAMIC_CLUSTER_LIST_END'
+  355 | DECLARE_DYNAMIC_CLUSTER_LIST_END;
+      | ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In file included from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:13:
+/home/daniil/workspace/Firmware/main/commands/include/CommandIR.h:38:49: warning: 'CommandsIRLastSignalTime' defined but not used [-Wunused-variable]
+   38 | static uint64_t                                 CommandsIRLastSignalTime= 0;
+      |                                                 ^~~~~~~~~~~~~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/main/commands/include/CommandIR.h:36:41: warning: 'CommandIRTXHandle' defined but not used [-Wunused-variable]
+   36 | static TaskHandle_t                     CommandIRTXHandle               = NULL;
+      |                                         ^~~~~~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/main/commands/include/CommandIR.h:35:41: warning: 'CommandIRTXQueue' defined but not used [-Wunused-variable]
+   35 | static QueueHandle_t                    CommandIRTXQueue;
+      |                                         ^~~~~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/main/commands/include/CommandIR.h:33:41: warning: 'ProntoHexBlockedTimer' defined but not used [-Wunused-variable]
+   33 | static esp_timer_handle_t               ProntoHexBlockedTimer   = NULL;
+      |                                         ^~~~~~~~~~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/main/commands/include/CommandIR.h:28:49: warning: 'IRACFrequency' defined but not used [-Wunused-variable]
+   28 | static uint16_t                                 IRACFrequency                   = 38000;
+      |                                                 ^~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/main/commands/include/CommandIR.h:26:22: warning: 'TXChannel' defined but not used [-Wunused-variable]
+   26 | static rmt_channel_t TXChannel = RMT_CHANNEL_2;
+      |                      ^~~~~~~~~
+In file included from /home/daniil/workspace/Firmware/main/include/BLEServerGeneric.h:21,
+                 from /home/daniil/workspace/Firmware/main/include/Globals.h:20,
+                 from /home/daniil/workspace/Firmware/main/matter/Matter.cpp:4:
+/home/daniil/workspace/Firmware/main/commands/include/CommandBLE.h:14:25: warning: 'CommandBLELastTimeSended' defined but not used [-Wunused-variable]
+   14 | static uint64_t         CommandBLELastTimeSended                = 0;
+      |                         ^~~~~~~~~~~~~~~~~~~~~~~~
+[22/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/on-off-server/on-off-server.cpp.obj
+[23/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/examples/providers/DeviceInfoProviderImpl.cpp.obj
+[24/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/__/gen/app-codegen/cpp-app/app/callback-stub.cpp.obj
+[25/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/general-commissioning-server/general-commissioning-server.cpp.obj
+[26/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/descriptor/descriptor.cpp.obj
+[27/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/network-commissioning/network-commissioning.cpp.obj
+[28/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/examples/platform/esp32/common/CHIPDeviceManager.cpp.obj
+[29/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/examples/platform/esp32/common/CommonDeviceCallbacks.cpp.obj
+[30/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/group-key-mgmt-server/group-key-mgmt-server.cpp.obj
+[31/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/examples/platform/esp32/common/Esp32AppServer.cpp.obj
+/home/daniil/workspace/Firmware/third_party/connectedhomeip/examples/platform/esp32/common/Esp32AppServer.cpp:68:15: warning: 'size_t hex_string_to_binary(const char*, uint8_t*, size_t)' defined but not used [-Wunused-function]
+   68 | static size_t hex_string_to_binary(const char * hex_string, uint8_t * buf, size_t buf_size)
+      |               ^~~~~~~~~~~~~~~~~~~~
+/home/daniil/workspace/Firmware/third_party/connectedhomeip/examples/platform/esp32/common/Esp32AppServer.cpp:44:16: warning: '{anonymous}::sTestEventTriggerEnableKey' defined but not used [-Wunused-variable]
+   44 | static uint8_t sTestEventTriggerEnableKey[TestEventTriggerDelegate::kEnableKeyLength] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+      |                ^~~~~~~~~~~~~~~~~~~~~~~~~~
+[32/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/__/gen/app-zapgen/zapgen/app-templates/zap-generated/IMClusterCommandHandler.cpp.obj
+[33/60] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/__/third_party/connectedhomeip/src/app/clusters/operational-credentials-server/operational-credentials-server.cpp.obj
+ninja: build stopped: subcommand failed.
