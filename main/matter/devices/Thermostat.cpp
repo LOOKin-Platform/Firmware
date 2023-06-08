@@ -111,7 +111,8 @@ EmberAfStatus MatterThermostat::HandleReadAttribute(chip::ClusterId ClusterID, c
                     || attributeId == Thermostat::Attributes::MaxHeatSetpointLimit::Id
                     || attributeId == Thermostat::Attributes::AbsMaxHeatSetpointLimit::Id
                     || attributeId == Thermostat::Attributes::AbsMaxCoolSetpointLimit::Id) 
-                    && (maxReadLength == 2))                {
+                    && (maxReadLength == 2))                
+        {
             int16_t MaxValue = 3000;
             memcpy(Buffer, &MaxValue, sizeof(MaxValue));
         }
@@ -203,7 +204,7 @@ EmberAfStatus MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, 
 
     if (ClusterID == 0x0201)
     {
-        ThermostatClusterHandler(AttributeID, Value);
+        ThermostatClusterWriteHandler(AttributeID, Value);
     }
     else if(ClusterID == 0x0402)
     {
@@ -290,12 +291,16 @@ bool MatterThermostat::HandleModeChange(uint8_t Value) {
     return false;
 }
 
-void MatterThermostat::ThermostatClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+void MatterThermostat::ThermostatClusterWriteHandler(chip::AttributeId AttributeID, uint8_t * Value)
 {
     ESP_LOGI(Tag, "ThermostatClusterHandler, AttributeID: %lu", AttributeID);
     if(AttributeID == 0x0000)   //Local Temperature
     {
 
+    }
+    else if (AttributeID == 0x11 || AttributeID == 0x12) // set temp for heat or cool mode
+    {
+        ESP_LOGE("SET TEMPERATURE", "%d", Value);
     }
     else if(AttributeID == 0x000B)  //Abs Min Heat
     {

@@ -39,7 +39,7 @@ class MatterGenericDevice {
         static inline string    BridgedUUID = "";
         static inline uint8_t   BridgedMisc = 0x0;
 
-        chip::DataVersion dataVersions[5] = {0};
+        chip::DataVersion dataVersions[8] = {0};
 
         uint16_t DynamicIndex               = 0;
 
