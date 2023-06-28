@@ -6,6 +6,7 @@
 
 #include "Data.h"
 #include "DataRemote.h"
+#include "CommandIR.h"
 
 #define Tag "MatterThermostat"
 
@@ -220,7 +221,7 @@ EmberAfStatus MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, 
     }
     else if(ClusterID == 0x0200)
     {
-        ThermostatOperatingStateClusterHandler(AttributeID, Value);
+        WriteThermostatOperatingStateClusterHandler(AttributeID, Value);
     }
     else
     {
@@ -301,22 +302,24 @@ void MatterThermostat::ThermostatClusterWriteHandler(chip::AttributeId Attribute
     else if (AttributeID == 0x11 || AttributeID == 0x12) // set temp for heat or cool mode
     {
         ESP_LOGE("SET TEMPERATURE", "%d", Value);
-    }
-    else if(AttributeID == 0x000B)  //Abs Min Heat
-    {
 
-    }
-    else if(AttributeID == 0x000C)  //Abs Max Heat
-    {
+        if (Settings.eFuse.Type == Settings.Devices.Remote) 
+        {
+            float TempToSet;
+            std::memcpy(&TempToSet, Value, sizeof(TempToSet));
 
-    }
-    else if(AttributeID == 0x000D)  //Abs Min Cool
-    {
+            DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(BridgedUUID);
 
-    }
-    else if(AttributeID == 0x000E)  //Abs Max Cool
-    {
+            if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
+        	    return;
 
+            if (TempToSet > 30) TempToSet = 30;
+            if (TempToSet < 16) TempToSet = 16;
+
+            ACTemp = TempToSet * 100;
+
+            Matter::StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE1, round(TempToSet));
+        }
     }
     else
     {
@@ -367,15 +370,49 @@ void MatterThermostat::FanControlClusterHandler(chip::AttributeId AttributeID, u
     }
 }
 
-void MatterThermostat::ThermostatOperatingStateClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
+void MatterThermostat::WriteThermostatOperatingStateClusterHandler(chip::AttributeId AttributeID, uint8_t * Value)
 {
-    ESP_LOGI(Tag, "ThermostatOperatingStateClusterHandler, AttributeID: %lu", AttributeID);
-    if(AttributeID == 0x0000)   //Thermostat State
-    {
+    ESP_LOGI(Tag, "WriteThermostatOperatingStateClusterHandler, AttributeID: %lu VALUE: %d", AttributeID, Value);
 
+    if (AttributeID != 0x0000) {
+        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+        return;
+    }
+
+    DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(BridgedUUID);
+    // check service. If fan for ac - skip
+
+    uint8_t NewValue = 0;
+    uint8_t CurrentMode = ((DataRemote_t*)Data)->DevicesHelper.GetDeviceForType(0xEF)->GetStatusByte(IRDeviceItem.Status , 0);
+
+    if (Value == 0)  // off
+    {
+        /*
+        hap_val_t ValueForACFanActive;
+        ValueForACFanActive.u = 0;
+        HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
+
+        hap_val_t ValueForACFanState;
+        ValueForACFanState.f = 0;
+        HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
+
+        hap_val_t ValueForACFanAuto;
+        ValueForACFanAuto.u = 0;
+        HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
+        */
+        Matter::StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 0);
     }
     else
     {
-        ESP_LOGE(Tag, "Wrong AttributeID: %lu", AttributeID);
+        if (IRDeviceItem.Status < 0x1000)
+        {
+            CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+            if (IRCommand != nullptr) {
+                string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
+                IRCommand->Execute(0xEF, Operand.c_str());
+                FreeRTOS::Sleep(1000);
+            }
+        }
     }
 }

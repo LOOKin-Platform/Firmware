@@ -21,7 +21,7 @@ uint8_t DataDeviceItem_t::GetStatusByte(uint16_t Status, uint8_t ByteID) {
 	Status = Status << (ByteID * 4);
 	Status = Status >> 12;
 
-	uint8_t Result = (uint8_t)Status;
+	auto Result = (uint8_t)Status;
 
 	if (Result > 0xF) Result = 0xF;
 

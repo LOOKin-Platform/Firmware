@@ -232,8 +232,7 @@ void BLEServerGeneric_t::StartAdvertising() {
 		StartAdvertisingAsGenericDevice();
 }
 
-void BLEServerGeneric_t::StartAdvertisingAsHID()
-{
+void BLEServerGeneric_t::StartAdvertisingAsHID() {
     return;
 	Init();
 
@@ -313,7 +312,6 @@ void BLEServerGeneric_t::StartAdvertisingAsHID()
 
 void BLEServerGeneric_t::StartAdvertisingAsGenericDevice()
 {
-
     return;
 	Init();
 

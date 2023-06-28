@@ -23,7 +23,7 @@
 
 
 
-const char tag[] 			= "Time";
+const char Tag[] 			= "Time";
 const char NVSTimeArea[] 	= "Time";
 
 uint32_t    Time::Offset = 0;
@@ -115,16 +115,24 @@ void Time::ServerSync(string URL) {
 	if (Offset != 0)
 		return;
 
-	ESP_LOGI(tag, "Time sync started");
+	ESP_LOGI(Tag, "Time sync started");
 
     std::string* url = new std::string(URL);
-    sntp_setoperatingmode(SNTP_OPMODE_POLL);
+    sntp_setoperatingmode(ESP_SNTP_OPMODE_POLL);
     sntp_setservername(0, url->c_str());
-    sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
+    sntp_set_sync_mode(SNTP_SYNC_MODE_IMMED);
+
+	sntp_set_time_sync_notification_cb(SNTPCallback);
+
     sntp_init();
 }
 
+void Time::SNTPCallback(struct timeval *tv)
+{
+	ESP_LOGI(Tag, "SNTPCallback fired");
 
-void Time::Aborted(const char *IP) {
-	ESP_LOGE(tag, "Failed to retrieve time from server");
+	if (Time::Unixtime() > 100000) {
+    	ESP_LOGI(Tag, "Time synced");
+		sntp_stop();
+	}
 }

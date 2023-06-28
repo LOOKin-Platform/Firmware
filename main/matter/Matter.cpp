@@ -56,24 +56,19 @@
 
 namespace {
 #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
-chip::DeviceLayer::ESP32FactoryDataProvider sFactoryDataProvider;
+    chip::DeviceLayer::ESP32FactoryDataProvider sFactoryDataProvider;
 #endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 
 #if CONFIG_ENABLE_ESP32_DEVICE_INFO_PROVIDER
-chip::DeviceLayer::ESP32DeviceInfoProvider gExampleDeviceInfoProvider;
+    chip::DeviceLayer::ESP32DeviceInfoProvider gExampleDeviceInfoProvider;
 #else
-chip::DeviceLayer::DeviceInfoProviderImpl gExampleDeviceInfoProvider;
+    chip::DeviceLayer::DeviceInfoProviderImpl gExampleDeviceInfoProvider;
 #endif // CONFIG_ENABLE_ESP32_DEVICE_INFO_PROVIDER
 } // namespace
 
 const char *Tag = "Matter";
 
-TaskHandle_t 		Matter::TaskHandle = NULL;
-
 bool 				Matter::IsRunning 		= false;
-bool 				Matter::IsAP 			= false;
-
-uint64_t			Matter::TVHIDLastUpdated = 0;
 
 vector<uint8_t*> 	Matter::BridgedAccessories = vector<uint8_t*>();
 
@@ -452,10 +447,6 @@ bool emberAfActionsClusterInstantActionCallback(app::CommandHandler * commandObj
     return true;
 }
 
-void Matter::WiFiSetMode(bool sIsAP, string sSSID, string sPassword) {
-	IsAP 		= sIsAP;
-}
-
 void Matter::Init() {
 	DeviceLayer::SetDeviceInfoProvider(&gExampleDeviceInfoProvider);
 
@@ -486,10 +477,6 @@ void Matter::StartServer() {
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, PlatformManagerImpl::HandleESPSystemEvent, NULL);
 
     chip::DeviceLayer::PlatformMgr().ScheduleWork(StartServerInner, reinterpret_cast<intptr_t>(nullptr));
-}
-
-void Matter::WiFiConnectToAP(string SSID, string Password) {
-	chip::DeviceLayer::NetworkCommissioning::ESPWiFiDriver::GetInstance().ConnectWiFiNetwork(SSID.c_str(), SSID.size(), Password.c_str(), Password.size());
 }
 
 void Matter::StartServerInner(intptr_t context) {
@@ -567,286 +554,161 @@ void Matter::SendIRWrapper(string UUID, string params)
     IRCommand->Execute(0xFE, operand.c_str());
 }
 
-
-bool Matter::On(bool Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
-	return 0;
-
-	/*
-    if (Settings.eFuse.Type == Settings.Devices.Remote) {
-    	if (Iterator > 0) return HAP_STATUS_SUCCESS;
-
-    	ESP_LOGE("ON", "UUID: %04X, Value: %d, Iterator: %d", AID, Value, Iterator);
-
-        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
-
-        if (IRDeviceItem.DeviceType == 0x01 && (uint32_t)(Time::UptimeU() - TVHIDLastUpdated) < 500000)
-        	return HAP_STATUS_SUCCESS;
-
-        if (IRDeviceItem.IsEmpty())
-        	return HAP_STATUS_VAL_INVALID;
-
-        if (IRDeviceItem.DeviceType == 0xEF) { // air conditioner
-        	// check service. If fan for ac - skip
-        	if (strcmp(hap_serv_get_type_uuid(hap_char_get_parent(Char)), HAP_SERV_UUID_FAN_V2) == 0)
-        		return HAP_STATUS_SUCCESS;
-
-        	uint8_t NewValue = 0;
-        	uint8_t CurrentMode = ((DataRemote_t*)Data)->DevicesHelper.GetDeviceForType(0xEF)->GetStatusByte(IRDeviceItem.Status , 0);
-
-        	if (Value == 0) { // off
-        		hap_val_t ValueForACFanActive;
-        		ValueForACFanActive.u = 0;
-        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ACTIVE, ValueForACFanActive);
-
-        		hap_val_t ValueForACFanState;
-        		ValueForACFanState.f = 0;
-        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_ROTATION_SPEED, ValueForACFanState);
-
-        		hap_val_t ValueForACFanAuto;
-        		ValueForACFanAuto.u = 0;
-        		HomeKitUpdateCharValue(AID, HAP_SERV_UUID_FAN_V2, HAP_CHAR_UUID_TARGET_FAN_STATE, ValueForACFanAuto);
-
-        		StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE0, 0);
-        	}
-        	else 
-			{
-         		if (IRDeviceItem.Status < 0x1000) {
-                    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
-
-                    if (IRCommand != nullptr) {
-                    	string Operand = Converter::ToHexString(IRDeviceItem.Extra, 4) + "FFF0";
-                    	IRCommand->Execute(0xEF, Operand.c_str());
-                        FreeRTOS::Sleep(1000);
-                    }
-        		}
-        		else
-        			return HAP_STATUS_SUCCESS;
-        	}
-
-        	return HAP_STATUS_SUCCESS;
-        }
-
-        ((DataRemote_t*)Data)->StatusUpdateForDevice(IRDeviceItem.DeviceID, 0xE0, Value);
-        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(IRDeviceItem.DeviceID);
-
-        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
-
-        string Operand = IRDeviceItem.DeviceID;
-
-        if (Functions.count("power") > 0)
-        {
-        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("power"),2);
-        	Operand += (Functions["power"] == "toggle") ? ((Value) ? "00" : "01" ) : "FF";
-        	IRCommand->Execute(0xFE, Operand.c_str());
-
-        	return HAP_STATUS_SUCCESS;
-        }
-        else
-        {
-        	if (Functions.count("poweron") > 0 && Value)
-        	{
-            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweron"), 2) + "FF";
-        		IRCommand->Execute(0xFE, Operand.c_str());
-            	return HAP_STATUS_SUCCESS;
-        	}
-
-        	if (Functions.count("poweroff") > 0 && !Value)
-        	{
-            	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("poweroff"), 2) + "FF";
-        		IRCommand->Execute(0xFE, Operand.c_str());
-            	return HAP_STATUS_SUCCESS;
-        	}
-
-			if (Functions.count("poweron") > 0 || Functions.count("poweroff") > 0)
-            	return HAP_STATUS_SUCCESS;
-        }
-    }
-
-    return HAP_STATUS_VAL_INVALID;
-	*/
-}
-
+/*
 bool Matter::Cursor(uint8_t Value, uint16_t AccessoryID) {
-	return true;
+return true;
 
-	/*
-	string UUID = Converter::ToHexString(AccessoryID, 4);
-	ESP_LOGE("Cursor for UUID", "%s Value: %d", UUID.c_str(), Value);
+string UUID = Converter::ToHexString(AccessoryID, 4);
+ESP_LOGE("Cursor for UUID", "%s Value: %d", UUID.c_str(), Value);
 
-    if (Settings.eFuse.Type == Settings.Devices.Remote) {
-    	TVHIDLastUpdated = Time::UptimeU();
+if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    TVHIDLastUpdated = Time::UptimeU();
 
-        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+    map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
-        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
-        string Operand = UUID;
+    string Operand = UUID;
 
-        if (Value == 8 || Value == 6 || Value == 4 || Value == 7 || Value == 5) {
-        	if (Functions.count("cursor") > 0)
-        	{
-        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("cursor"),2);
-
-        		switch(Value) {
-    				case 8: Operand += "00"; break; // SELECT
-    				case 6: Operand += "01"; break; // LEFT
-    				case 4: Operand += "02"; break; // UP
-    				case 7: Operand += "03"; break; // RIGTH
-    				case 5: Operand += "04"; break; // DOWN
-    				default:
-    					return false;
-        		}
-
-        		IRCommand->Execute(0xFE, Operand.c_str());
-        		return true;
-        	}
-        }
-
-        if (Value == 15) {
-        	if (Functions.count("menu") > 0)
-        	{
-        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("menu"), 2) + "FF";
-        		IRCommand->Execute(0xFE, Operand.c_str());
-        		return true;
-        	}
-        }
-
-        if (Value == 11) {
-        	if (Functions.count("play") > 0)
-        	{
-        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("play"), 2) + "FF";
-        		IRCommand->Execute(0xFE, Operand.c_str());
-        		return true;
-        	}
-        }
-
-        if (Value == 9) {
-        	if (Functions.count("back") > 0)
-        	{
-        		Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("back"), 2) + "FF";
-        		IRCommand->Execute(0xFE, Operand.c_str());
-        		return true;
-        	}
-        }
-    }
-
-    return false;
-	*/
-}
-
-bool Matter::ActiveID(uint8_t NewActiveID, uint16_t AccessoryID) {
-	return true;
-
-	/*
-	string UUID = Converter::ToHexString(AccessoryID, 4);
-	ESP_LOGE("ActiveID for UUID", "%s", UUID.c_str());
-
-    if (Settings.eFuse.Type == Settings.Devices.Remote) {
-        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
-
-        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
-
-        if (Functions.count("mode") > 0)
+    if (Value == 8 || Value == 6 || Value == 4 || Value == 7 || Value == 5) {
+        if (Functions.count("cursor") > 0)
         {
-            string Operand = UUID;
-        	Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("mode"),2);
-        	Operand += Converter::ToHexString(NewActiveID - 1, 2);
+            Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("cursor"),2);
 
-        	IRCommand->Execute(0xFE, Operand.c_str());
-        	return true;
+            switch(Value) {
+                case 8: Operand += "00"; break; // SELECT
+                case 6: Operand += "01"; break; // LEFT
+                case 4: Operand += "02"; break; // UP
+                case 7: Operand += "03"; break; // RIGTH
+                case 5: Operand += "04"; break; // DOWN
+                default:
+                    return false;
+            }
+
+            IRCommand->Execute(0xFE, Operand.c_str());
+            return true;
         }
     }
 
-    return false;
-	*/
+    if (Value == 15) {
+        if (Functions.count("menu") > 0)
+        {
+            Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("menu"), 2) + "FF";
+            IRCommand->Execute(0xFE, Operand.c_str());
+            return true;
+        }
+    }
+
+    if (Value == 11) {
+        if (Functions.count("play") > 0)
+        {
+            Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("play"), 2) + "FF";
+            IRCommand->Execute(0xFE, Operand.c_str());
+            return true;
+        }
+    }
+
+    if (Value == 9) {
+        if (Functions.count("back") > 0)
+        {
+            Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("back"), 2) + "FF";
+            IRCommand->Execute(0xFE, Operand.c_str());
+            return true;
+        }
+    }
 }
+
+return false;
+}
+ */
+
+/*
+bool Matter::ActiveID(uint8_t NewActiveID, uint16_t AccessoryID) {
+return true;
+
+string UUID = Converter::ToHexString(AccessoryID, 4);
+ESP_LOGE("ActiveID for UUID", "%s", UUID.c_str());
+
+if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+
+    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+
+    if (Functions.count("mode") > 0)
+    {
+        string Operand = UUID;
+        Operand += Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("mode"),2);
+        Operand += Converter::ToHexString(NewActiveID - 1, 2);
+
+        IRCommand->Execute(0xFE, Operand.c_str());
+        return true;
+    }
+}
+
+return false;
+}
+*/
+/*
 
 bool Matter::Volume(uint8_t Value, uint16_t AccessoryID) {
-	return false;
+return false;
 
-	/*
-	string UUID = Converter::ToHexString(AccessoryID, 4);
-	ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
+string UUID = Converter::ToHexString(AccessoryID, 4);
+ESP_LOGE("Volume", "UUID: %s, Value, %d", UUID.c_str(), Value);
 
-    if (Settings.eFuse.Type == Settings.Devices.Remote) {
-    	TVHIDLastUpdated = Time::UptimeU();
+if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    TVHIDLastUpdated = Time::UptimeU();
 
-        map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
+    map<string,string> Functions = ((DataRemote_t*)Data)->LoadDeviceFunctions(UUID);
 
-        CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
+    CommandIR_t* IRCommand = (CommandIR_t *)Command_t::GetCommandByName("IR");
 
-        if (Value == 0 && Functions.count("volup") > 0)
-        {
-            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("volup"),2) + "FF";
-        	IRCommand->Execute(0xFE, Operand.c_str());
-        	IRCommand->Execute(0xED, "");
-        	IRCommand->Execute(0xED, "");
+    if (Value == 0 && Functions.count("volup") > 0)
+    {
+        string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("volup"),2) + "FF";
+        IRCommand->Execute(0xFE, Operand.c_str());
+        IRCommand->Execute(0xED, "");
+        IRCommand->Execute(0xED, "");
 
-        	return true;
-        }
-        else if (Value == 1 && Functions.count("voldown") > 0)
-        {
-            string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("voldown"),2) + "FF";
-        	IRCommand->Execute(0xFE, Operand.c_str());
-        	IRCommand->Execute(0xED, "");
-        	IRCommand->Execute(0xED, "");
-        	return true;
-        }
-    }
-
-    return false;
-	*/
-}
-
-bool Matter::ThresholdTemperature(float Value, uint16_t AID, bool IsCooling) {
-	return false;
-
-	/*
-	ESP_LOGE("TargetTemperature", "UUID: %04X, Value: %f", AID, Value);
-
-    if (Settings.eFuse.Type == Settings.Devices.Remote) {
-        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
-
-        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // air conditionair
-        	return false;
-
-        if (Value > 30) Value = 30;
-        if (Value < 16) Value = 16;
-
-        hap_val_t HAPValue;
-        HAPValue.f = Value;
-
-        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE1, round(Value));
         return true;
     }
-
-    return false;
-	*/
+    else if (Value == 1 && Functions.count("voldown") > 0)
+    {
+        string Operand = UUID + Converter::ToHexString(((DataRemote_t*)Data)->DevicesHelper.FunctionIDByName("voldown"),2) + "FF";
+        IRCommand->Execute(0xFE, Operand.c_str());
+        IRCommand->Execute(0xED, "");
+        IRCommand->Execute(0xED, "");
+        return true;
+    }
 }
+
+return false;
+}
+*/
+/*
 
 bool Matter::RotationSpeed(float Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
-	return false;
+return false;
 
-	/*
-	ESP_LOGE("RotationSpeed", "UUID: %04X, Value: %f", AID, Value);
+ESP_LOGE("RotationSpeed", "UUID: %04X, Value: %f", AID, Value);
 
-    if (Settings.eFuse.Type == Settings.Devices.Remote) {
-        DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
+if (Settings.eFuse.Type == Settings.Devices.Remote) {
+    DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(Converter::ToHexString(AID, 4));
 
-    	if (Iterator > 0 && IRDeviceItem.DeviceType != 0xEF) return true;
+    if (Iterator > 0 && IRDeviceItem.DeviceType != 0xEF) return true;
 
-        if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // Air Conditionair
-        	return false;
+    if (IRDeviceItem.IsEmpty() || IRDeviceItem.DeviceType != 0xEF) // Air Conditionair
+        return false;
 
-        StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value), (IRDeviceItem.Status >= 0x1000));
+    StatusACUpdateIRSend(IRDeviceItem.DeviceID, IRDeviceItem.Extra,  0xE2, round(Value), (IRDeviceItem.Status >= 0x1000));
 
-        return true;
-    }
-
-    return false;
-
-	*/
+    return true;
 }
+
+return false;
+
+}
+*/
 
 bool Matter::TargetFanState(bool Value, uint16_t AID, uint8_t *Char, uint8_t Iterator) {
 	return false;

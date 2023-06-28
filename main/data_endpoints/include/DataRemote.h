@@ -13,8 +13,8 @@
 #include <vector>
 #include <map>
 #include <utility>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include <esp_netif_ip_addr.h>
 
@@ -31,7 +31,7 @@ using namespace std;
 class DataDeviceItem_t {
 	public:
 		uint8_t DeviceTypeID = 0;
-		virtual vector<uint8_t> GetAvaliableFunctions() { return vector<uint8_t>(); }
+		virtual vector<uint8_t> GetAvaliableFunctions() { return {}; }
 		virtual pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value,  string FunctionType = "") {
 			return make_pair(Status, Value);
 		}
@@ -40,12 +40,12 @@ class DataDeviceItem_t {
 			return CurrentStatus;
 		}
 
-		virtual ~DataDeviceItem_t() {};
+		virtual ~DataDeviceItem_t() = default;
 
 		static uint8_t GetStatusByte(uint16_t Status, uint8_t ByteID);
 		static uint16_t SetStatusByte(uint16_t Status, uint8_t ByteID, uint8_t Value);
 
-		pair<bool,uint8_t> CheckPowerUpdated(uint8_t FunctionID, uint8_t Value, uint8_t CurrentValue = 0, string FunctionType = "");
+		static pair<bool,uint8_t> CheckPowerUpdated(uint8_t FunctionID, uint8_t Value, uint8_t CurrentValue = 0, string FunctionType = "");
 };
 
 class DataDeviceTV_t  : public DataDeviceItem_t {
@@ -55,7 +55,7 @@ class DataDeviceTV_t  : public DataDeviceItem_t {
 		vector<uint8_t> GetAvaliableFunctions() override;		
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 
-		virtual ~DataDeviceTV_t() {};
+		~DataDeviceTV_t() override = default;
 };
 
 class DataDeviceMedia_t  : public DataDeviceItem_t {
@@ -65,7 +65,7 @@ class DataDeviceMedia_t  : public DataDeviceItem_t {
 		vector<uint8_t> GetAvaliableFunctions() override;		
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 
-		virtual ~DataDeviceMedia_t() {};
+		~DataDeviceMedia_t() override = default;
 };
 
 class DataDeviceLight_t  : public DataDeviceItem_t {
@@ -75,7 +75,7 @@ class DataDeviceLight_t  : public DataDeviceItem_t {
 		vector<uint8_t> GetAvaliableFunctions() override;
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 
-		virtual ~DataDeviceLight_t() {};
+		~DataDeviceLight_t() override = default;
 };
 
 class DataDeviceHumidifier_t  : public DataDeviceItem_t {
@@ -85,7 +85,7 @@ class DataDeviceHumidifier_t  : public DataDeviceItem_t {
 		vector<uint8_t> GetAvaliableFunctions() override;
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 
-		virtual ~DataDeviceHumidifier_t() {};
+		~DataDeviceHumidifier_t() override = default;
 };
 
 class DataDeviceAirPurifier_t  : public DataDeviceItem_t {
@@ -95,7 +95,7 @@ class DataDeviceAirPurifier_t  : public DataDeviceItem_t {
 		vector<uint8_t> GetAvaliableFunctions() override;
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 
-		virtual ~DataDeviceAirPurifier_t() {};
+		~DataDeviceAirPurifier_t() override = default;
 };
 
 class DataDeviceRoboCleaner_t  : public DataDeviceItem_t {
@@ -105,7 +105,7 @@ class DataDeviceRoboCleaner_t  : public DataDeviceItem_t {
 		vector<uint8_t> GetAvaliableFunctions() override;
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 
-		virtual ~DataDeviceRoboCleaner_t() {};
+		~DataDeviceRoboCleaner_t() override = default;
 };
 
 class DataDeviceFan_t  : public DataDeviceItem_t {
@@ -115,7 +115,7 @@ class DataDeviceFan_t  : public DataDeviceItem_t {
 
 		pair<uint16_t, uint8_t> UpdateStatusForFunction(uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 		
-		virtual ~DataDeviceFan_t() {};
+		~DataDeviceFan_t() override = default;
 };
 
 class DataDeviceAC_t : public DataDeviceItem_t {
@@ -125,7 +125,7 @@ class DataDeviceAC_t : public DataDeviceItem_t {
 		pair<uint16_t, uint8_t> UpdateStatusForFunction (uint16_t Status, uint8_t FunctionID, uint8_t Value, string FunctionType = "") override;
 		uint16_t LastStatusUpdate(uint16_t SavedLastStatus, uint16_t CurrentStatus, uint16_t NewStatus) override;
 
-		virtual ~DataDeviceAC_t() {};
+		~DataDeviceAC_t() override {};
 };
 
 class DataDevice_t {
@@ -253,21 +253,21 @@ class DataRemote_t : public DataEndpoint_t {
 		void PUTorPOSTDeviceItem(Query_t &Query, string UUID, WebServer_t::Response &Result);
 		void PUTorPOSTDeviceFunction(Query_t &Query, string UUID, string Function, WebServer_t::Response &Result);
 
-		map<string,string> LoadDeviceFunctions(string UUID);
-		DataSignal LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice());
-		vector<DataSignal> LoadAllFunctionSignals(string UUID, string Function, IRDevice DeviceItem = IRDevice());
-		string GetFunctionType(string UUID, string Function, IRDevice DeviceItem = IRDevice());
+		map<string,string>  LoadDeviceFunctions(string UUID);
+		DataSignal          LoadFunctionByIndex(string UUID, string Function, uint8_t Index = 0x0, IRDevice DeviceItem = IRDevice());
+		vector<DataSignal>  LoadAllFunctionSignals(string UUID, string Function, IRDevice DeviceItem = IRDevice());
+		string              GetFunctionType(string UUID, string Function, IRDevice DeviceItem = IRDevice());
 
-		string GetUUIDByExtraValue(uint16_t Extra);
+		string              GetUUIDByExtraValue(uint16_t Extra);
 
 		pair<bool,uint16_t> SetExternalStatusForAC(uint16_t Codeset, uint16_t NewStatus);
 		bool 				SetExternalStatusByIRCommand(IRLib &Signal);
 		pair<bool,uint16_t> StatusUpdateForDevice(string DeviceID, uint8_t FunctionID, uint8_t Value, string FunctionType = "", bool IsBroadcasted = true, bool EmulateSave = false);
 
-		void StatusSave(string DeviceID, uint16_t StatusToSave);
-		static void StatusSaveCallback(void *Param);
+		void                StatusSave(string DeviceID, uint16_t StatusToSave);
+		static void         StatusSaveCallback(void *Param);
 
-		IRDevice GetDevice(string UUID);
+		IRDevice            GetDevice(string UUID);
 
 		void StatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value, uint16_t Status);
 		void HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceType, uint8_t FunctionID, uint8_t Value);

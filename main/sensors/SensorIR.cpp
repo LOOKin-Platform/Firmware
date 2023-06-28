@@ -194,7 +194,8 @@ void SensorIR_t::MessageEnd() {
 		IRSensorItem->LastSignal.RawData = SensorIRCurrentMessage;
 		IRSensorItem->LastSignal.ExternFillPostOperations();
 	}
-/*
+
+	/* Debug for IR receive for devices with ID 0x00000003 and 0x00000004 */
 	if (Settings.eFuse.DeviceID == 0x00000003 || Settings.eFuse.DeviceID == 0x00000004) {
 		string Output = "";
 		for (auto &Item : SensorIRCurrentMessage)
@@ -202,12 +203,13 @@ void SensorIR_t::MessageEnd() {
 
 		ESP_LOGI("Received", "%s", Output.c_str());
 	}
-*/
+
 	SensorIRCurrentMessage.empty();
 
 	if (IRSensorItem->LastSignal.RawData.size() >= Settings.SensorsConfig.IR.MinSignalLen)
 		Log::Add(Log::Events::Sensors::IRReceived);
 
+/*
 	if (SignalReceivedTimer == NULL) {
 		esp_timer_create_args_t TimerArgs;
 		::memset(&TimerArgs, 0, sizeof(TimerArgs));
@@ -219,6 +221,7 @@ void SensorIR_t::MessageEnd() {
 
 	::esp_timer_stop(SignalReceivedTimer);
 	::esp_timer_start_once(SignalReceivedTimer, Settings.SensorsConfig.IR.DetectionDelay);	
+	*/
 };
 
 void SensorIR_t::SignalReceivedCallback(void *Param) {

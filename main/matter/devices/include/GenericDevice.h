@@ -35,13 +35,13 @@ class MatterGenericDevice {
         static const int        kDeviceNameSize     = 32;
         static const int        kDeviceLocationSize = 32;
 
-        static inline bool      IsBridgedDevice = false;
-        static inline string    BridgedUUID = "";
-        static inline uint8_t   BridgedMisc = 0x0;
+        static inline bool      IsBridgedDevice     = false;
+        static inline string    BridgedUUID         = "";
+        static inline uint8_t   BridgedMisc         = 0x0;
 
-        chip::DataVersion dataVersions[8] = {0};
+        chip::DataVersion       dataVersions[8]     = {0};
 
-        uint16_t DynamicIndex               = 0;
+        uint16_t DynamicIndex                       = 0;
 
         enum Changed_t
         {

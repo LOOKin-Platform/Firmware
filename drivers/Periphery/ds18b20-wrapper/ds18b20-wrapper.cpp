@@ -106,10 +106,6 @@ vector<float> DS18B20::ReadData() {
 
     if (num_devices > 0)
     {
-        TickType_t last_wake_time = xTaskGetTickCount();
-
-        last_wake_time = xTaskGetTickCount();
-
         ds18b20_convert_all(owb);
 
         // In this application all devices use the same resolution,
