@@ -7,6 +7,9 @@ MatterGenericDevice::MatterGenericDevice(string szDeviceName, string szLocation)
     CopyString(mName, sizeof(mName), szDeviceName.c_str());
     CopyString(mLocation, sizeof(mLocation), szLocation.c_str());
 
+
+    SetName(mName);
+
     mReachable  = false;
     mEndpointId = 0xFFFF;
 

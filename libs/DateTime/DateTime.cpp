@@ -133,6 +133,6 @@ void Time::SNTPCallback(struct timeval *tv)
 
 	if (Time::Unixtime() > 100000) {
     	ESP_LOGI(Tag, "Time synced");
-		sntp_stop();
+		esp_sntp_stop();
 	}
 }

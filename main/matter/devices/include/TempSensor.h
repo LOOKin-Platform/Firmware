@@ -38,8 +38,8 @@ class MatterTempSensor : public MatterGenericDevice
     private:
         int16_t         mMeasurement = 0;
 
-        const int16_t   mMin;
-        const int16_t   mMax;
+        const int16_t   mMin = 0;
+        const int16_t   mMax = 10000;
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override;
 };

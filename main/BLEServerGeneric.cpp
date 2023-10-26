@@ -225,15 +225,13 @@ void BLEServerGeneric_t::Deinit() {
 }
 
 void BLEServerGeneric_t::StartAdvertising() {
-    return;
-	if (IsHIDEnabledForDevice())
+    if (IsHIDEnabledForDevice())
 		StartAdvertisingAsHID();
 	else
 		StartAdvertisingAsGenericDevice();
 }
 
 void BLEServerGeneric_t::StartAdvertisingAsHID() {
-    return;
 	Init();
 
 	HIDDevice 		= new BLEHIDDevice(pServer);
@@ -259,6 +257,7 @@ void BLEServerGeneric_t::StartAdvertisingAsHID() {
 	CommandBLE_t* BLECommand = (CommandBLE_t*)Command_t::GetCommandByID(0x08);
 	if (BLECommand != nullptr)
 		IOCaps = (BLECommand->GetIsBLEPairingCodeSkiped()) ? BLE_HS_IO_NO_INPUT_OUTPUT : BLE_HS_IO_KEYBOARD_ONLY;
+	
 
 	BLEDevice::setSecurityIOCap(IOCaps);
 	BLEDevice::setSecurityInitKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
@@ -312,7 +311,6 @@ void BLEServerGeneric_t::StartAdvertisingAsHID() {
 
 void BLEServerGeneric_t::StartAdvertisingAsGenericDevice()
 {
-    return;
 	Init();
 
 	BLEService *pService = pServer->createService(NimBLEUUID((uint16_t) 0x180A));
@@ -672,21 +670,33 @@ void BLEServerGeneric_t::ReleaseAll(void)
 	SendReport(&_keyReport);
 }
 
-size_t BLEServerGeneric_t::Write(uint8_t c)
+size_t BLEServerGeneric_t::Write(uint8_t c, uint16_t Delay)
 {
 	uint8_t p = Press(c);  // Keydown
+
+	ESP_LOGE("Delay", "%d", Delay);
+
+	if (Delay > 0)
+		FreeRTOS::Sleep(Delay);
+
 	Release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
 }
 
-size_t BLEServerGeneric_t::Write(const MediaKeyReport c)
+size_t BLEServerGeneric_t::Write(const MediaKeyReport c, uint16_t Delay)
 {
 	uint16_t p = Press(c);  // Keydown
+
+	ESP_LOGE("Delay", "%d", Delay);
+
+	if (Delay > 0)
+		FreeRTOS::Sleep(Delay);
+
 	Release(c);            // Keyup
 	return p;              // just return the result of press() since release() almost always returns 1
 }
 
-size_t BLEServerGeneric_t::Write(const uint8_t *buffer, size_t size) {
+size_t BLEServerGeneric_t::Write(size_t size, const uint8_t *buffer) {
 	size_t n = 0;
 	while (size--)
 	{

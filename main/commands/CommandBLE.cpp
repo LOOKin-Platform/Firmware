@@ -107,41 +107,48 @@ bool CommandBLE_t::Execute(uint8_t EventCode, const char* StringOperand) {
 
 		size_t Result = 0;
 
-		if 		(Operand == "MEDIA_NEXT_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_NEXT_TRACK) 			;}
-		else if (Operand == "MEDIA_PREV_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_PREVIOUS_TRACK)		;}
-		else if (Operand == "MEDIA_STOP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_STOP)				;}
-		else if (Operand == "MEDIA_PLAY_PAUSE") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_PLAY_PAUSE)			;}
-		else if (Operand == "MEDIA_MUTE") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_MUTE)				;}
-		else if (Operand == "MEDIA_VOLUME_UP") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_VOLUME_UP)			;}
-		else if (Operand == "MEDIA_VOLUME_DOWN") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_VOLUME_DOWN)			;}
-		else if (Operand == "MEDIA_CHANNEL_UP") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_CHANNEL_UP)			;}
-		else if (Operand == "MEDIA_CHANNEL_DOWN") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_CHANNEL_DOWN)		;}
-		else if (Operand == "CC_POWER") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_POWER)					;}
-		else if (Operand == "CC_SLEEP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_SLEEP)					;}
-		else if (Operand == "CC_MENU") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU)					;}
-		else if (Operand == "CC_MENU_PICK") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_PICK)				;}
-		else if (Operand == "CC_BACK") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_BACK)					;}
-		else if (Operand == "CC_HOME") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_HOME)					;}
-		else if (Operand == "CC_MENU_UP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_UP)				;}
-		else if (Operand == "CC_MENU_DOWN") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_DOWN)				;}
-		else if (Operand == "CC_MENU_LEFT") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_LEFT)				;}
-		else if (Operand == "CC_MENU_RIGHT") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_RIGHT)				;}
-		else if (Operand == "KEY_ARROW_UP")			{ Result = MyBLEServer.Write(0xDA)									;}
-		else if (Operand == "KEY_ARROW_DOWN")		{ Result = MyBLEServer.Write(0xD9)									;}
-		else if (Operand == "KEY_ARROW_LEFT")		{ Result = MyBLEServer.Write(0xD8)									;}
-		else if (Operand == "KEY_ARROW_RIGHT")		{ Result = MyBLEServer.Write(0xD7)									;}
-		else if (Operand == "KEY_BACKSPACE")		{ Result = MyBLEServer.Write(0xB2)									;}
-		else if (Operand == "KEY_TAB")				{ Result = MyBLEServer.Write(0xB3)									;}
-		else if (Operand == "KEY_RETURN")			{ Result = MyBLEServer.Write(0xB0)									;}
-		else if (Operand == "KEY_ESCAPE")			{ Result = MyBLEServer.Write(0xB1)									;}
-		else if (Operand == "KEY_INSERT")			{ Result = MyBLEServer.Write(0xD1)									;}
-		else if (Operand == "KEY_DELETE")			{ Result = MyBLEServer.Write(0xD4)									;}
-		else if (Operand == "KEY_PAGE_UP")			{ Result = MyBLEServer.Write(0xD3)									;}
-		else if (Operand == "KEY_PAGE_DOWN")		{ Result = MyBLEServer.Write(0xD6)									;}
-		else if (Operand == "KEY_HOME")				{ Result = MyBLEServer.Write(0xD2)									;}
-		else if (Operand == "KEY_END")				{ Result = MyBLEServer.Write(0xD5)									;}
-		else if (Operand == "KEY_CAPS_LOCK")		{ Result = MyBLEServer.Write(0xC1)									;}
-		else if (Operand == "KEY_ENTER")			{ Result = MyBLEServer.Write(0x28)									;}
+
+		vector<string> OperandVector = Converter::StringToVector(Operand, ":");
+		uint8_t Delay = 0;
+
+		if (OperandVector.size() == 2)
+			Delay = Converter::ToUint16(OperandVector.at(1));
+
+		if 		(Operand == "MEDIA_NEXT_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_NEXT_TRACK, Delay) 		;}
+		else if (Operand == "MEDIA_PREV_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_PREVIOUS_TRACK, Delay)	;}
+		else if (Operand == "MEDIA_STOP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_STOP, Delay)				;}
+		else if (Operand == "MEDIA_PLAY_PAUSE") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_PLAY_PAUSE, Delay)		;}
+		else if (Operand == "MEDIA_MUTE") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_MUTE, Delay)				;}
+		else if (Operand == "MEDIA_VOLUME_UP") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_VOLUME_UP, Delay)		;}
+		else if (Operand == "MEDIA_VOLUME_DOWN") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_VOLUME_DOWN, Delay)		;}
+		else if (Operand == "MEDIA_CHANNEL_UP") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_CHANNEL_UP, Delay)		;}
+		else if (Operand == "MEDIA_CHANNEL_DOWN") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_CHANNEL_DOWN, Delay)		;}
+		else if (Operand == "CC_POWER") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_POWER, Delay)				;}
+		else if (Operand == "CC_SLEEP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_SLEEP, Delay)				;}
+		else if (Operand == "CC_MENU") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU, Delay)				;}
+		else if (Operand == "CC_MENU_PICK") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_PICK, Delay)			;}
+		else if (Operand == "CC_BACK") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_BACK, Delay)				;}
+		else if (Operand == "CC_HOME") 				{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_HOME, Delay)				;}
+		else if (Operand == "CC_MENU_UP") 			{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_UP, Delay)				;}
+		else if (Operand == "CC_MENU_DOWN") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_DOWN, Delay)			;}
+		else if (Operand == "CC_MENU_LEFT") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_LEFT, Delay)			;}
+		else if (Operand == "CC_MENU_RIGHT") 		{ Result = MyBLEServer.Write(MyBLEServer.KEY_CC_MENU_RIGHT, Delay)			;}
+		else if (Operand == "KEY_ARROW_UP")			{ Result = MyBLEServer.Write(0xDA, Delay)									;}
+		else if (Operand == "KEY_ARROW_DOWN")		{ Result = MyBLEServer.Write(0xD9, Delay)									;}
+		else if (Operand == "KEY_ARROW_LEFT")		{ Result = MyBLEServer.Write(0xD8, Delay)									;}
+		else if (Operand == "KEY_ARROW_RIGHT")		{ Result = MyBLEServer.Write(0xD7, Delay)									;}
+		else if (Operand == "KEY_BACKSPACE")		{ Result = MyBLEServer.Write(0xB2, Delay)									;}
+		else if (Operand == "KEY_TAB")				{ Result = MyBLEServer.Write(0xB3, Delay)									;}
+		else if (Operand == "KEY_RETURN")			{ Result = MyBLEServer.Write(0xB0, Delay)									;}
+		else if (Operand == "KEY_ESCAPE")			{ Result = MyBLEServer.Write(0xB1, Delay)									;}
+		else if (Operand == "KEY_INSERT")			{ Result = MyBLEServer.Write(0xD1, Delay)									;}
+		else if (Operand == "KEY_DELETE")			{ Result = MyBLEServer.Write(0xD4, Delay)									;}
+		else if (Operand == "KEY_PAGE_UP")			{ Result = MyBLEServer.Write(0xD3, Delay)									;}
+		else if (Operand == "KEY_PAGE_DOWN")		{ Result = MyBLEServer.Write(0xD6, Delay)									;}
+		else if (Operand == "KEY_HOME")				{ Result = MyBLEServer.Write(0xD2, Delay)									;}
+		else if (Operand == "KEY_END")				{ Result = MyBLEServer.Write(0xD5, Delay)									;}
+		else if (Operand == "KEY_CAPS_LOCK")		{ Result = MyBLEServer.Write(0xC1, Delay)									;}
+		else if (Operand == "KEY_ENTER")			{ Result = MyBLEServer.Write(0x28, Delay)									;}
 		else {
 			SendCounter++;
 			Result = MyBLEServer.Write(int(StringOperand[0]));

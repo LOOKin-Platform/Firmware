@@ -35,9 +35,10 @@ class MatterGenericDevice {
         static const int        kDeviceNameSize     = 32;
         static const int        kDeviceLocationSize = 32;
 
-        static inline bool      IsBridgedDevice     = false;
-        static inline string    BridgedUUID         = "";
-        static inline uint8_t   BridgedMisc         = 0x0;
+        bool      IsBridgedDevice                   = false;
+
+        string    BridgedUUID                       = "";
+        uint8_t   BridgedMisc                       = 0x0;
 
         chip::DataVersion       dataVersions[8]     = {0};
 
@@ -58,7 +59,6 @@ class MatterGenericDevice {
         void SetReachable(bool aReachable);
 
         void SetName(const char * szDeviceName);
-
         void SetLocation(const char * szLocation);
 
         inline void             SetEndpointID(chip::EndpointId id)  { mEndpointId = id; };
@@ -74,7 +74,7 @@ class MatterGenericDevice {
         virtual void            SetOnOff(bool Value)                { ESP_LOGE("SetOnOff Generic", "Invoked"); }
 
     protected:
-        static inline DeviceTypeEnum DeviceType = Undefined;
+        DeviceTypeEnum DeviceType = Undefined;
 
         char mLocation[kDeviceLocationSize];
         char mName[kDeviceNameSize];

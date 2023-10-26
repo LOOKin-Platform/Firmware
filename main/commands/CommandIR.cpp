@@ -560,7 +560,7 @@ bool CommandIR_t::TXSend(vector<int32_t> &TXItemData, uint16_t Frequency, bool S
 	}
 	*/
 
-
+	/*
 	if (Settings.eFuse.DeviceID < 0x100) {
 		string SignalToDebug = "";
 
@@ -569,6 +569,7 @@ bool CommandIR_t::TXSend(vector<int32_t> &TXItemData, uint16_t Frequency, bool S
 
 		ESP_LOGE("Signal to send", "%s", SignalToDebug.c_str());
 	}
+	*/
 
 	if (HashIDStr.size() > 15)
 		return false;

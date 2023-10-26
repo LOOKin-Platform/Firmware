@@ -30,8 +30,6 @@ void MatterTempSensor::SetTemperature (float Value, bool ShouldInvokeStatusChang
 
     mMeasurement = NormalizedValue;
 
-    ESP_LOGE("mMeasurement = ", "%d", mMeasurement);
-
     if (changed && ShouldInvokeStatusChanged)
         HandleStatusChanged(this, kChanged_MeasurementValue);
 }

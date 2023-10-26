@@ -5,7 +5,7 @@
 
 #include "PowerManagement.h"
 #include "NimBLEDevice.h"
-#include "esp_coexist.h"
+#include "/Users/dmitriy/ESP32/esp-idf/components/esp_coex/include/esp_coexist.h" //! needed to fix
 
 static char tag[] = "PowerManagement";
 
@@ -44,7 +44,7 @@ PowerManagement::PowerManagementType PowerManagement::GetPMType() {
 }
 
 void PowerManagement::SetPMOptions() {
-	esp_pm_config_esp32_t pm_config;
+	esp_pm_config_t pm_config;
 
 	pm_config.max_freq_mhz 			= 160;
     pm_config.min_freq_mhz 			= (ActivePMType != NONE) ? 40 : 160;
@@ -71,7 +71,11 @@ void PowerManagement::SetWirelessPriority(esp_coex_prefer_t Option) {
 	ESP_LOGE("Current Wireless priority set", "%d", Option);
 
 	CurrentPriority = Option;
-	::esp_coex_preference_set(Option);
+
+	if (Option == ESP_COEX_PREFER_WIFI)
+		esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_CONFIG);
+	else
+		esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_CONFIG);
 
 	CurrentPriorityChangeTime = Time::UptimeU();
 }

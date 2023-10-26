@@ -97,8 +97,8 @@ uint32_t SensorMeteo_t::ValueToUint32(float Value, string Type) {
 					MatterThermostat* Thermostat = (MatterThermostat*)Matter::GetBridgedAccessoryByType(MatterGenericDevice::Thermostat, IRDevice.DeviceID);
 
 					if (Thermostat != nullptr)
-						Thermostat->SetLocalTemperature(Value);
-				}
+                        Thermostat->SetLocalTemperature(Value);;
+                }
 
 			MatterTempSensor* TempSensor = (MatterTempSensor*)Matter::GetBridgedAccessoryByType(MatterGenericDevice::Temperature);
 			

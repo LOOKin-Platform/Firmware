@@ -55,15 +55,14 @@ class MatterThermostat : public MatterGenericDevice {
         static void     HandleStatusChanged(MatterThermostat * dev, MatterThermostat::Changed_t itemChangedMask);
         EmberAfStatus   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * Buffer, uint16_t maxReadLength) override;
         EmberAfStatus   HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override;
-    
+
     private:
-        const int16_t   mLocalTempMin           = 10000;
-        const int16_t   mLocalTempMax           = -10000;
+        const int16_t   mLocalTempMin           = 100;
+        const int16_t   mLocalTempMax           = 10000;
 
         int16_t         mLocalTempMeasurement   = 1600;
 
         int16_t         ACTemp                  = 2100;
-        uint8_t         CurrentMode             = 0;
 
         void HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask) override;
         bool HandleModeChange(uint8_t Value);

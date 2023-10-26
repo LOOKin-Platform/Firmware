@@ -156,9 +156,9 @@ class BLEServerGeneric_t : public BLEServerCallbacks, public BLECharacteristicCa
 		size_t 		Release(uint8_t k);
 		size_t 		Release(const MediaKeyReport k);
 
-		size_t 		Write(uint8_t c);
-		size_t 		Write(const MediaKeyReport c);
-		size_t 		Write(const uint8_t *buffer, size_t size);
+		size_t 		Write(uint8_t c, uint16_t Delay = 0);
+		size_t 		Write(const MediaKeyReport c, uint16_t Delay = 0);
+		size_t 		Write(size_t size, const uint8_t *buffer);
 
 		void 		ReleaseAll(void);
 		bool 		isConnected();

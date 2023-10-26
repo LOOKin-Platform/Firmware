@@ -64,7 +64,7 @@ void SensorIR_t::Update() {
 	if (Time::IsUptime(SignalDetectionTime) && Time::Offset > 0)
 		SignalDetectionTime = Time::Unixtime() - (Time::Uptime() - SignalDetectionTime);
 
-	SetValue(LastSignal.Protocol				, "Protocol");
+	SetValue(LastSignal.Protocol				    , "Protocol");
 	SetValue(LastSignal.Uint32Data				, "Signal");
 	SetValue(0									, "Raw");
 	SetValue((uint8_t)LastSignal.IsRepeated		, "IsRepeated");
@@ -196,6 +196,7 @@ void SensorIR_t::MessageEnd() {
 	}
 
 	/* Debug for IR receive for devices with ID 0x00000003 and 0x00000004 */
+    /*
 	if (Settings.eFuse.DeviceID == 0x00000003 || Settings.eFuse.DeviceID == 0x00000004) {
 		string Output = "";
 		for (auto &Item : SensorIRCurrentMessage)
@@ -203,6 +204,7 @@ void SensorIR_t::MessageEnd() {
 
 		ESP_LOGI("Received", "%s", Output.c_str());
 	}
+    */
 
 	SensorIRCurrentMessage.empty();
 

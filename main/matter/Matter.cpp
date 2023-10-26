@@ -25,7 +25,6 @@
 #include <lib/core/CHIPError.h>
 #include <lib/support/CHIPMem.h>
 #include <lib/support/CHIPMemString.h>
-#include <lib/support/ErrorStr.h>
 #include <lib/support/ZclString.h>
 
 #include <app/server/OnboardingCodesUtil.h>
@@ -1066,7 +1065,6 @@ void Matter::CreateRemoteBridge() {
     emberAfSetDeviceTypeList(0, Span<const EmberAfDeviceType>(gRootDeviceTypes));
     emberAfSetDeviceTypeList(1, Span<const EmberAfDeviceType>(gAggregateNodeDeviceTypes));
 
-	
 	MatterDevices.clear();
 	
 	for (auto &IRCachedDevice : ((DataRemote_t *)Data)->IRDevicesCache)
@@ -1081,11 +1079,19 @@ void Matter::CreateRemoteBridge() {
 			case 0x01: // TV
 			case 0x02: // Media
 			{
+                MatterOutlet* OutletToAdd = new MatterOutlet(IRDevice.Name);
+                OutletToAdd->IsBridgedDevice = true;
+                OutletToAdd->BridgedUUID = IRDevice.UUID;
+
+                AddDeviceEndpoint(OutletToAdd, &bridgedOutletEndpoint, Span<const EmberAfDeviceType>(gBridgedOnOffOutletDeviceTypes), 1);
+
+                /*
 				MatterGenericDevice* VideoPlayerToAdd = new MatterVideoPlayer(IRDevice.Name);
 				VideoPlayerToAdd->IsBridgedDevice = true;
 				VideoPlayerToAdd->BridgedUUID = IRDevice.UUID;
 				AddDeviceEndpoint(VideoPlayerToAdd, &bridgedVideoPlayerEndpoint, Span<const EmberAfDeviceType>(gBridgedVideoPLayer), 1);
-				break;
+				*/
+                break;
 			}
 			case 0x03: // light
 			{
@@ -1139,7 +1145,7 @@ void Matter::CreateRemoteBridge() {
 			case 0xEF: // AC
 			{
 				MatterGenericDevice* ThermostatToAdd = new MatterThermostat(IRDevice.Name);
-				
+
 				ThermostatToAdd->IsBridgedDevice = true;
 				ThermostatToAdd->BridgedUUID = IRDevice.UUID;
 
@@ -1370,9 +1376,9 @@ MatterGenericDevice* Matter::GetDeviceByDynamicIndex(uint16_t Index) {
 MatterGenericDevice* Matter::GetBridgedAccessoryByType(MatterGenericDevice::DeviceTypeEnum Type, string UUID) {
     for (auto& DeviceItem : MatterDevices)
 		if (DeviceItem->GetTypeName() == Type) {
-			if (UUID == "" || (UUID != "" && Converter::ToUpper(DeviceItem->BridgedUUID) == Converter::ToUpper(UUID)))
-				return DeviceItem;
-		}
+            if (UUID == "" || (UUID != "" && Converter::ToUpper(DeviceItem->BridgedUUID) == Converter::ToUpper(UUID)))
+                return DeviceItem;
+        }
 
 	return nullptr;
 }
