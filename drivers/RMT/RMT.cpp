@@ -8,12 +8,6 @@
 
 static char tag[] = "RMT";
 
-bool 									RMT::IsInited 			= false;
-map<rmt_channel_t,RMT::IRChannelInfo>	RMT::ChannelsMap 		= {};
-
-rmt_item32_t 							RMT::OutputItems[400] 	= { 0 };
-uint16_t								RMT::OutputItemsSize 	= 0;
-
 /**
  * @brief Firstly init RMT driver
  *
@@ -55,7 +49,12 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
 
 	ESP_ERROR_CHECK(rmt_config(&config));
 	ESP_ERROR_CHECK(rmt_driver_install(Channel, 2500, 0));
+
+#if CONFIG_IDF_TARGET_ESP32
 	ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_REF));
+#elif CONFIG_IDF_TARGET_ESP32C6
+	ESP_ERROR_CHECK(rmt_set_source_clk(Channel, RMT_BASECLK_XTAL));
+#endif
 
 	ChannelsMap[Channel].Pin 			= Pin;
 	ChannelsMap[Channel].CallbackStart 	= CallbackStart;
@@ -75,7 +74,7 @@ void RMT::SetRXChannel(gpio_num_t Pin, rmt_channel_t Channel, IRChannelCallbackS
  */
 void RMT::ReceiveStart(rmt_channel_t Channel) {
 	if (RMT::ChannelsMap.count(Channel) > 0)
-		if (RMT::ChannelsMap[Channel].Handle > 0) {
+		if (RMT::ChannelsMap[Channel].Handle != NULL) {
 			ESP_LOGE(tag,"Channel task already started");
 			return;
 		}
@@ -216,7 +215,7 @@ void RMT::SetTXChannel(vector<gpio_num_t> GPIO, rmt_channel_t Channel, uint16_t 
 
 	for (int i = 1; i < GPIO.size(); i++) {
 		if (GPIO[i] != GPIO_NUM_0)
-			rmt_set_pin(Channel, RMT_MODE_TX, GPIO[i]);
+			rmt_set_gpio(Channel, RMT_MODE_TX, GPIO[i], false);
 	}
 
 	/*
@@ -339,7 +338,7 @@ int16_t RMT::TXItemsCount() {
 
 
 void IRAM_ATTR RMT::TXSend(rmt_channel_t Channel) {
-	if (OutputItems == 0) return;
+	//if (OutputItems == 0) return;
 
 	if (OutputItems[OutputItemsSize - 1].duration0 < 30000 || OutputItems[OutputItemsSize - 1].duration1 < 30000)
 		TXAddItem(-Settings.SensorsConfig.IR.SignalEndingLen);

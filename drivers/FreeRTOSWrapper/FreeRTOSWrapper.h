@@ -34,7 +34,7 @@ class FreeRTOS {
 
 		static void 				Sleep(uint32_t ms);
 		static TaskHandle_t 		StartTask(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Priority = 5);
-		static TaskHandle_t 		StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Core = 0);
+		static TaskHandle_t 		StartTaskPinnedToCore(void task(void *), string taskName, void *param=nullptr, int stackSize = 2048, uint8_t Priority = 5, uint8_t Core = 0);
 		static void 				DeleteTask(TaskHandle_t pTask = NULL);
 
 		static uint32_t 			GetTimeSinceStart();
@@ -43,6 +43,8 @@ class FreeRTOS {
 		static void					CleanUpMemory();
 
 		static void					SetTaskPriority(TaskHandle_t pTask, uint8_t Priority);
+
+		static void					GetRunTimeStats();
 
 		class Semaphore {
 			public:

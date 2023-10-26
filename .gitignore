@@ -5,14 +5,24 @@ sdkconfig.old
 .piolibdeps
 .clang_complete
 .gcc-flags.json
-libs/IRLib/Arduino-IRRemote/
 libs/IRremoteESP8266/
 snippets
 zconf.hash.i
 zconf.hash.s
 docs/
+managed_components/
+cmake-build-debug/
+cmake-build-release/
+.vscode/
 Doxyfile
+private_ota_signing_key.pem
+third_party/connectedhomeip/
 
 remote_factory.bin
 remote_factory.csv
 TestFactoryNVS
+
+#CLion
+
+.idea/
+make-build-debug/

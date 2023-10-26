@@ -1,0 +1,24 @@
+diff --git a/components/homekit/esp_hap_platform/src/hap_platform_httpd.c b/components/homekit/esp_hap_platform/src/hap_platform_httpd.c
+index d4ea01e..38f8fbd 100644
+--- a/components/homekit/esp_hap_platform/src/hap_platform_httpd.c
++++ b/components/homekit/esp_hap_platform/src/hap_platform_httpd.c
+@@ -27,7 +27,7 @@ httpd_handle_t *int_handle;
+ int hap_platform_httpd_start(httpd_handle_t *handle)
+ {
+     httpd_config_t config = {
+-        .task_priority  = tskIDLE_PRIORITY+5,
++        .task_priority  = tskIDLE_PRIORITY+7,
+         .stack_size         = CONFIG_HAP_HTTP_STACK_SIZE,
+         .server_port        = CONFIG_HAP_HTTP_SERVER_PORT,
+         .ctrl_port          = CONFIG_HAP_HTTP_CONTROL_PORT,
+@@ -36,8 +36,9 @@ int hap_platform_httpd_start(httpd_handle_t *handle)
+         .max_resp_headers   = 8,
+         .backlog_conn       = 5,
+         .lru_purge_enable   = true,
+-        .recv_wait_timeout  = 5,
++        .recv_wait_timeout  = 10,
+         .send_wait_timeout  = 5,
++        .uri_match_fn       = httpd_uri_match_wildcard
+     };
+     esp_err_t err =  httpd_start(handle, &config);
+     if (err == ESP_OK) {

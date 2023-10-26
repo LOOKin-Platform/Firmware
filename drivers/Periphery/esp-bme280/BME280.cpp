@@ -5,13 +5,13 @@
 *      Author: Alexander Sparkowsky
 */
 
-#include "../../Periphery/esp-bme280/BME280.h"
+#include "BME280.h"
 
 #include <esp_log.h>
 #include <math.h>
 #include <cstdint>
 
-#include "../I2C/I2C.cpp" // убрать и разобраться с линкером
+#include "I2C.cpp" // убрать и разобраться с линкером
 
 static char LOG_TAG[] = "bme280";
 static bool debug = false;

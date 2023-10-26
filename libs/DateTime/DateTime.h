@@ -15,8 +15,6 @@ using namespace std;
 #include "FreeRTOSWrapper.h"
 #include "HTTPClient.h"
 
-typedef void (*TimeSynced)();
-
 #define  NVSTimeTimezone  "Timezone"
 
 struct DateTime_t {
@@ -53,11 +51,7 @@ class Time {
 
     static void       ServerSync(string URL);
 
-    // HTTP Callbacks
-    static void ReadStarted (const char *IP);
-    static bool ReadBody    (char Data[], int DataLen, const char *IP);
-    static void ReadFinished(const char *IP);
-    static void Aborted     (const char *IP);
+    static void       SNTPCallback(struct timeval *tv);
 
   private:
     static string     ReadBuffer;

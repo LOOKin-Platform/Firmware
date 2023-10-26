@@ -8,7 +8,7 @@
 
 #include "HardwareIO.h"
 #include "sdkconfig.h"
-#include "WS2812.h"
+#include "ws2812.h"
 
 static const char* TAG = "WS2812";
 

@@ -7,18 +7,16 @@
 #include "WiFi.h"
 #include "PowerManagement.h"
 
-#include "HomeKit.h"
-
 static char 	tag[]						= "WiFi";
 
-string			WiFi_t::STAHostName 		= "LOOK.in Device";
+string			WiFi_t::STAHostName 		= "LOOKin Device";
 bool			WiFi_t::m_WiFiNetworkSwitch = false;
 
 esp_netif_t* 	WiFi_t::NetIfSTAHandle		= NULL;
 esp_netif_t*	WiFi_t::NetIfAPHandle		= NULL;
 
 esp_event_handler_instance_t WiFi_t::instance_any_id = NULL;
-esp_event_handler_instance_t WiFi_t::instance_got_ip = NULL;
+esp_event_handler_instance_t WiFi_t::instance_any_ip = NULL;
 
 
 WiFi_t::WiFi_t() : ip(0), gw(0), Netmask(0), m_pWifiEventHandler(nullptr) {
@@ -115,29 +113,38 @@ void WiFi_t::eventHandler(void* arg, esp_event_base_t event_base, int32_t event_
 	}
 } // eventHandler
 
+bool WiFi_t::IsWiFiInited() {
+	wifi_mode_t *mode = {0};
+	esp_err_t err = esp_wifi_get_mode(mode);
+
+	return !(err == ESP_ERR_WIFI_NOT_INIT);
+}
+
 /**
  * @brief Initialize WiFi.
  */
 void WiFi_t::Init() {
-	if (!m_initCalled) {
-		NVS::Init();
-	    ESP_ERROR_CHECK(::esp_netif_init());
-	    ESP_ERROR_CHECK(::esp_event_loop_create_default());
+	esp_err_t errRc = ESP_OK;
 
+	if (!m_initCalled) 
+	{
+		ESP_ERROR_CHECK(::esp_netif_init());
+		ESP_ERROR_CHECK(::esp_event_loop_create_default());
+		
 		wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-		esp_err_t errRc = ::esp_wifi_init(&cfg);
+		errRc = ::esp_wifi_init(&cfg);
 
-		if (NetIfSTAHandle 	== NULL) NetIfSTAHandle = esp_netif_create_default_wifi_sta();
-		if (NetIfAPHandle 	== NULL) NetIfAPHandle 	= esp_netif_create_default_wifi_ap();
-
-		if (errRc != ESP_OK) {
+		if (errRc != ESP_OK) 
+		{
 			ESP_LOGE(tag, "esp_wifi_init: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 			abort();
 		}
 
-		::esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID		, &eventHandler, this, &WiFi_t::instance_any_id);
-		::esp_event_handler_instance_register(IP_EVENT	, IP_EVENT_STA_GOT_IP	, &eventHandler, this, &WiFi_t::instance_got_ip);
-		::esp_event_handler_instance_register(IP_EVENT	, IP_EVENT_GOT_IP6		, &eventHandler, this, &WiFi_t::instance_got_ip);
+		if (NetIfSTAHandle 	== NULL) NetIfSTAHandle = esp_netif_create_default_wifi_sta();
+		if (NetIfAPHandle 	== NULL) NetIfAPHandle 	= esp_netif_create_default_wifi_ap();
+
+		::esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID	, &eventHandler, this, &WiFi_t::instance_any_id);
+		::esp_event_handler_instance_register(IP_EVENT	, ESP_EVENT_ANY_ID	, &eventHandler, this, &WiFi_t::instance_any_ip);
 
 		PowerManagement::SetWiFiOptions();
 
@@ -168,7 +175,7 @@ void WiFi_t::DeInit() {
 	}
 
     ::esp_event_handler_instance_unregister(WIFI_EVENT	, ESP_EVENT_ANY_ID		, instance_any_id);
-    ::esp_event_handler_instance_unregister(IP_EVENT	, IP_EVENT_STA_GOT_IP	, instance_got_ip);
+    ::esp_event_handler_instance_unregister(IP_EVENT	, ESP_EVENT_ANY_ID		, instance_any_ip);
 	::esp_event_loop_delete_default();
 
 	::esp_wifi_restore();
@@ -252,7 +259,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	uint16_t apCount = 0;  // Number of access points available.
 	rc = ::esp_wifi_scan_get_ap_num(&apCount);
-	ESP_LOGD(tag, "Count of found access points: %d", apCount);
+	ESP_LOGE(tag, "Count of found access points: %d", apCount);
 
 	wifi_ap_record_t* list = (wifi_ap_record_t *)malloc(sizeof(wifi_ap_record_t) * apCount);
 	if (list == nullptr) {
@@ -275,6 +282,8 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		wifiAPRecord.m_rssi     = list[i].rssi;
 		wifiAPRecord.m_channel	= list[i].primary;
 
+		ESP_LOGD("Founded AP", "%s, RSSI: %d", wifiAPRecord.m_ssid.c_str(), wifiAPRecord.getRSSI());
+
 		if (wifiAPRecord.m_ssid == "")
 			continue;
 
@@ -296,7 +305,7 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 
 	free(list);   // Release the storage allocated to hold the records.
 
-	if (CurrentMode != WIFI_MODE_AP) {
+	if (CurrentMode != WIFI_MODE_APSTA) {
 		::esp_wifi_disconnect();
 		::esp_wifi_stop();
 		m_WiFiRunning = false;
@@ -306,7 +315,6 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 		apRecords.end(),
 		[](const WiFiAPRecord& lhs,const WiFiAPRecord& rhs){ return lhs.m_rssi> rhs.m_rssi;});
 	return apRecords;
-
 } // scan
 
 /**
@@ -437,7 +445,7 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 	if (errRc != ESP_OK)
 		ESP_LOGE(tag, "esp_wifi_stop error: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 
-	errRc = ::esp_wifi_set_mode(WIFI_MODE_AP);
+	errRc = ::esp_wifi_set_mode(WIFI_MODE_APSTA);
 	if (errRc != ESP_OK) {
 		ESP_LOGE(tag, "esp_wifi_set_mode: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
@@ -458,7 +466,15 @@ void WiFi_t::StartAP(const std::string& SSID, uint8_t Channel, bool SSIDIsHidden
 
 	errRc = ::esp_wifi_set_config(WIFI_IF_AP, &apConfig);
 	if (errRc != ESP_OK) {
-		ESP_LOGE(tag, "esp_wifi_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		ESP_LOGE(tag, "esp_wifi_apsta_ap_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
+		abort();
+	}
+
+	wifi_config_t sta_config;
+	::memset(&sta_config, 0, sizeof(sta_config));
+	errRc = ::esp_wifi_set_config(WIFI_IF_STA, &sta_config);
+	if (errRc != ESP_OK) {
+		ESP_LOGE(tag, "esp_wifi_apsta_sta_set_config: rc=%d %s", errRc, Converter::ErrorToString(errRc));
 		abort();
 	}
 
@@ -710,7 +726,7 @@ string WiFiAPRecord::toString() {
  * @param[in] WiFiEventHandler The class that will be used to process events.
  */
 void WiFi_t::SetWiFiEventHandler(WiFiEventHandler* WiFiEventHandler) {
-	ESP_LOGD(tag, ">> setWiFiEventHandler: 0x%d", (uint32_t)WiFiEventHandler);
+	ESP_LOGD(tag, ">> setWiFiEventHandler: %" PRIu32 "", (uint32_t)WiFiEventHandler);
 	this->m_pWifiEventHandler = WiFiEventHandler;
 	ESP_LOGD(tag, "<< setWiFiEventHandler");
 } // setWiFiEventHandler

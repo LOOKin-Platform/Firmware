@@ -118,8 +118,9 @@ class WiFi_t {
 		static esp_netif_t* NetIfAPHandle;
 
 	    static esp_event_handler_instance_t instance_any_id;
-	    static esp_event_handler_instance_t instance_got_ip;
+	    static esp_event_handler_instance_t instance_any_ip;
 
+		bool				IsWiFiInited();
 
 	public:
 		void                Init();
@@ -151,7 +152,7 @@ class WiFi_t {
 		vector<WiFiAPRecord> Scan();
 
 		uint8_t ConnectAP(const string& SSID, const string& Password, const uint8_t& Channel = 0, bool WaitForConnection = true);
-	    void 	StartAP	 (const string& SSID, uint8_t Channel = 0, bool SSIDIsHidden = false, uint8_t MaxConnections = 16);
+	    void 	StartAP	 (const string& SSID, uint8_t Channel = 0, bool SSIDIsHidden = false, uint8_t MaxConnections = 4);
 
 		void	SetIPInfo(const string& ip, const string& gw, const string& netmask);
 		void	SetIPInfo(const char* ip, const char* gw, const char* netmask);
@@ -161,9 +162,11 @@ class WiFi_t {
 
 	    uint8_t	GetConnectionStatus() 	{ return m_apConnectionStatus; }
 	    bool	IsRunning() 			{ return m_WiFiRunning; }
-	    bool	IsIPCheckSuccess = false;
+	    bool	IsIPCheckSuccess 		= false;
 
 	    bool	IsConnectedSTA();
+
+		bool	IsExternalInitExists 	= false;
 };
 
 #endif /* DRIVERS_WIFI_H_ */

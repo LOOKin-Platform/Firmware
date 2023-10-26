@@ -37,7 +37,7 @@ typedef void (*IRChannelCallbackEnd)();
 class RMT {
 	public:
 		struct IRChannelInfo {
-			TaskHandle_t			Handle 			= 0;
+			TaskHandle_t			Handle 			= NULL;
 			gpio_num_t				Pin				= GPIO_NUM_0;
 			uint16_t				Frequency		= 0;
 			IRChannelCallbackStart 	CallbackStart 	= nullptr;
@@ -67,12 +67,12 @@ class RMT {
 
 		static int32_t	PrepareBit(bool, uint32_t);
 
-		static map<rmt_channel_t, IRChannelInfo> ChannelsMap;
+		static inline map<rmt_channel_t, IRChannelInfo> ChannelsMap = {};
 
-		static rmt_item32_t 		OutputItems[400];
-		static uint16_t				OutputItemsSize;
+		static inline rmt_item32_t 		OutputItems[400] 	= { 0 };
+		static inline uint16_t			OutputItemsSize 	= 0;
 	private:
-		static bool 				IsInited;
+		static inline bool 				IsInited 			= false;
 
 		static IRAM_ATTR void RXTask(void *);
 };

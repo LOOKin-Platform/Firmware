@@ -1,73 +1,40 @@
-Прошивка написана на C++ с использованием C вставок.
+====================================================================================================================================
 
-Изначально писалась в Platformio, рекомендуется запускать там же.
-В случае, если требуется собрать прошивку не в платформио, необходимо перенести все файлы из src на уровень выше.
-В противном случае компилятор выдаст ошибку.
+	настройка esp-idf:
+mkdir -p ~/esp
+cd ~/esp
+git clone --recursive https://github.com/espressif/esp-idf.git
+cd ~/esp/esp-idf
+git checkout v5.0.1
+git submodule update
 
-!ВНИМАНИЕ!
-Перед публикацией прошивки на сервере необходимо обновить номер версии в Globals.h!
 
-!ВНИМАНИЕ!
-Platformio не совершенен.
-Для корректной сборки прошивки с OTA нужно внести изменения в файле сборки, иначе прошивка не будет собираться или не будет запускаться.
-Возможно, что это получиться сделать какими-то другими способами, но пока они не найдены.
-Все правки должны быть внесены в файле espidf.py
-<директория пользователя>/.platformio/platforms/espressif32/builder/frameworks/espidf.py
+./install.sh esp32
+. ./export.sh
 
-1. Для исправления ошибки линковки:
-Для того, чтобы прошивка корректно собиралась, в файле необходимо убрать сроку «bootloader_support» из переменной ignore_dirs
+====================================================================================================================================
 
-2. Для исправления ошибки с тем, что partition_table всегда «single app»
-В том же файле строку:
-join(FRAMEWORK_DIR, "components", "partition_table", "partitions_singleapp.csv"),
-необходимо заменить на:
- join(FRAMEWORK_DIR, "components", "partition_table", "partitions_custom.csv»),
+	настройка connectedhomeip:
+git clone --recurse-submodules git@github.com:project-chip/connectedhomeip.git
+git submodule update --init
+source scripts/activate.sh
 
-После этого необходимо перенести файлик «partitions_custom.csv» из корня (есть в комите) в папку (директория платформио)/packages/framework-espidf/components/partition_table/
+Далее необходимо положить в корень connectedhomeip файл matter-patch.diff и выполнить команду git apply matter matter-patch.diff
 
-3. Для загрузки прошивки по правильному адресу.
 
-UPLOADERFLAGS=[
-        "0x1000", join("$BUILD_DIR", "bootloader.bin"),
-        "0x8000", join("$BUILD_DIR", "partitions_table.bin"),
-        "0x10000"
-    ]
+====================================================================================================================================
 
-Меняем на: 0x10000 на 0x180000
+	настройка прошивки
+git clone --recurse-submodules git@bitbucket.org:look-in/firmware.git
+git checkout Matter
+git submodule update -r
+git submodule update --init
+ln -s ~/esp/connectedhomeip/ third_party/connectedhomeip	
 
-Структура прошивки:
--> src
-|--> drivers
-  -> FreeRTOS       - C++ класс/обёртка для функций из FreeRTOS
-  -> GPIO           - C++ класс для работы с GPIO - чтение состояния пинов / запись
-  -> HTTPClient     - C++ класс для работы с HTTP запросами
-  -> JSON           - C++ класс для работы с JSON
-  -> NVS            - C++ обёртка для работы с NVS
-  -> Time           - Класс для работы с системным временем
-  -> Wifi           - Класс для работы с Wi-Fi, включая обработчики соединения
-|--> include        - Заголовочные файлы
-|--> main.cpp       - точка входа в программу
-|--> Query.cpp      - Класс, реализующий парсинг HTTP запроса и разбиение его на удобные для восприятия части
-|--> WebServer.cpp  - Класс, реализующий WEB-сервер на устройстве
-|--> OTA            - C++ обёртка для работы с OTA.
-|--> Converter      - Набор методов для конвертации данных между различными форматами
-|--> API.cpp        - Класс, реализующий API устройства
-|--> Device.cpp     - Класс, реализующий обработку команд, начинающихся с /device
-|--> Network.cpp    - Класс, реализующий обработку команд, начинающихся с /network
-|--> Commands.cpp   - Класс, реализующий команды устройств. Состоит из базового класса и его потомков для каждой комманды
-|--> Sensors.cpp    - Класс, реализующий сенсоры устройств. Состоит из базового класса и его потомков для каждого сенсора
-|--> Automation.cpp - Класс, реализующий правила автоматизации устройств.
-|--> Scenarios.cpp  - Класс, реализующий обработку сценариев
-test.cpp - служит для проверки работоспособности классов без запуска на устройстве.
+====================================================================================================================================
 
-Для компиляции из консоли необходимо выполнить следующую команду:
-g++ -std=c++11 test.cpp Query.cpp Tools.cpp  -o test
+	сборка проекта:
+./esp-idf/install.sh
+./esp-idf/export.sh
+/firmware/idf.py build
 
-Комманда для чтения из Serial Monitor
-pio device monitor --port /dev/cu.SLAB_USBtoUART --baud 115200 --filter direct --echo
-
-IP адрес при старте в режиме точки доступа: 192.164.4.1
-
-Обновление espressif32 до -dev версии
-pio platform uninstall espressif32
-pio platform install https://github.com/platformio/platform-espressif32/archive/develop.zip

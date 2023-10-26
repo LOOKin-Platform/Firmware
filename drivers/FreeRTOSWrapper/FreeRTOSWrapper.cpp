@@ -35,9 +35,9 @@ TaskHandle_t FreeRTOS::StartTask(void task(void*), string taskName, void *param,
 	return TaskHandle;
 } // startTask
 
-TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), string taskName, void *param, int stackSize, uint8_t Core) {
+TaskHandle_t FreeRTOS::StartTaskPinnedToCore(void task(void*), string taskName, void *param, int stackSize, uint8_t Priority, uint8_t Core) {
 	TaskHandle_t TaskHandle = NULL;
-	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, 5, &TaskHandle, Core);
+	::xTaskCreatePinnedToCore(task, taskName.data(), stackSize, param, tskIDLE_PRIORITY + Priority, &TaskHandle, Core);
 	return TaskHandle;
 } // startTask
 
@@ -352,7 +352,7 @@ void FreeRTOS::Timer::ChangePeriod(TickType_t newPeriod, TickType_t blockTime) {
  * @return The name of the timer.
  */
 const char *FreeRTOS::Timer::GetName() {
-	return ::pcTimerGetTimerName(timerHandle);
+	return ::pcTimerGetName(timerHandle);
 } // getName
 
 
@@ -459,4 +459,64 @@ void FreeRTOS::RingBuffer::ReturnItem(RingbufHandle_t Handle, void* Item) {
 		::vRingbufferReturnItem(Handle, Item);
 }
 
+void FreeRTOS::GetRunTimeStats()
+{
+	TaskStatus_t *pxTaskStatusArray;
+	volatile UBaseType_t uxArraySize, x;
+    unsigned long ulStatsAsPercentage;
+    uint32_t ulTotalRunTime;
 
+	/* Take a snapshot of the number of tasks in case it changes while this
+	function is executing. */
+	uxArraySize = uxTaskGetNumberOfTasks();
+
+	/* Allocate a TaskStatus_t structure for each task.  An array could be
+	allocated statically at compile time. */
+	pxTaskStatusArray = (TaskStatus_t*)pvPortMalloc( uxArraySize * sizeof( TaskStatus_t ) );
+
+	if( pxTaskStatusArray != NULL )
+	{
+		/* Generate raw status information about each task. */
+		uxArraySize = uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, &ulTotalRunTime );
+
+		/* For percentage calculations. */
+		ulTotalRunTime /= 100UL;
+
+		/* Avoid divide by zero errors. */
+		if( ulTotalRunTime > 0 )
+		{
+			/* For each populated position in the pxTaskStatusArray array,
+			format the raw data as human readable ASCII data. */
+			for( x = 0; x < uxArraySize; x++ )
+			{
+				TaskStatus_t *fuckit;
+				void *tmp = &pxTaskStatusArray[x];
+				void *hmm = tmp + (4 * x);
+				fuckit = (TaskStatus_t*)hmm;
+
+				/* What percentage of the total run time has the task used?
+				This will always be rounded down to the nearest integer.
+				ulTotalRunTimeDiv100 has already been divided by 100. */
+				ulStatsAsPercentage = pxTaskStatusArray[ x ].ulRunTimeCounter / ulTotalRunTime;
+
+				if( ulStatsAsPercentage > 0UL )
+					printf("> %30s %" PRIu32 " %10lu%% %5d %5d\n",
+                                 fuckit->pcTaskName,
+                                 fuckit->ulRunTimeCounter,
+                                 ulStatsAsPercentage,
+                                *((int *)(&fuckit->usStackHighWaterMark)+1),
+                                fuckit->uxBasePriority);
+				else
+					printf("> %30s %" PRIu32 " %10s %" PRIu32 " %" PRIu32 "\n",
+                                 fuckit->pcTaskName,
+                                 fuckit->ulRunTimeCounter,
+                                 "<1%",
+                                 *((uint32_t *)(&fuckit->usStackHighWaterMark)+1),
+                                 (uint32_t)fuckit->uxBasePriority);
+			}
+		}
+
+      /* The array is no longer needed, free the memory it consumes. */
+      vPortFree( pxTaskStatusArray );
+   }
+}

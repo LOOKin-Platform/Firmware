@@ -175,7 +175,6 @@ void JSON::SetBoolItem(string Key, bool Value) {
 	cJSON_AddBoolToObject(Root, Key.c_str(), Value);
 }
 
-
 vector<string> JSON::GetKeys() {
 	vector<string> Result = vector<string>();
 

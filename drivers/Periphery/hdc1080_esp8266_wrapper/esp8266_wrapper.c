@@ -92,7 +92,7 @@ int i2c_slave_write (uint8_t bus, uint8_t addr, const uint8_t *reg,
     if (data)
         i2c_master_write(cmd, data, len, true);
     i2c_master_stop(cmd);
-    esp_err_t err = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    esp_err_t err = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
     
     return err;
@@ -120,7 +120,7 @@ int i2c_slave_read (uint8_t bus, uint8_t addr, const uint8_t *reg,
         i2c_master_read_byte(cmd, data + len-1, I2C_NACK_VAL);
         i2c_master_stop(cmd);
     }
-    esp_err_t err = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_RATE_MS);
+    esp_err_t err = i2c_master_cmd_begin(bus, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
 
     return err;

@@ -7,7 +7,7 @@
 #ifndef COMPONENTS_BME280_BME280_H_
 #define COMPONENTS_BME280_BME280_H_
 
-#include "../I2C/I2C.h"
+#include "I2C.h"
 
 /*=========================================================================
 I2C ADDRESS/BITS

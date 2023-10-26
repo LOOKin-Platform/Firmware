@@ -5,9 +5,15 @@
 */
 
 #include "OTA.h"
-#include "Globals.h"
+#include "Settings.h"
 #include "HTTPClient.h"
 #include "esp_https_ota.h"
+
+#include "Log.h"
+#include "PowerManagement.h"
+#include "Device.h"
+
+extern Device_t				Device;
 
 static char tag[] = "OTA";
 
@@ -97,7 +103,11 @@ esp_err_t OTA::PerformUpdate(string URL) {
 
 	PowerManagement::AddLock("OTA");
 
-	esp_err_t ret = esp_https_ota(&Config);
+	esp_https_ota_config_t OTAConfig;
+	memset(&OTAConfig,0,sizeof(OTAConfig));
+	OTAConfig.http_config = &Config;
+
+	esp_err_t ret = esp_https_ota(&OTAConfig);
 
     if (ret == ESP_OK)
     {
@@ -182,7 +192,7 @@ void OTA::ReadStarted(char IP[]) {
 	const esp_partition_t *partition = NULL;
 	partition = esp_ota_get_next_update_partition(NULL);
 
-    ESP_LOGI(tag, "Writing to partition subtype %d at offset 0x%x", partition->subtype, partition->address);
+    ESP_LOGI(tag, "Writing to partition subtype %d at offset 0x%lx", partition->subtype, partition->address);
     assert(partition != NULL);
 
 	err = esp_ota_begin( partition, OTA_SIZE_UNKNOWN, &OutHandle);

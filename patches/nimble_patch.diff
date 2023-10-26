@@ -1,0 +1,27 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index ae10819..e539e00 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -25,6 +25,7 @@ idf_component_register(
+     "esp32"
+     "esp32s3"
+     "esp32c3"
++    "esp32c6"
+   INCLUDE_DIRS
+     "src"
+   SRCS
+diff --git a/src/NimBLEHIDDevice.cpp b/src/NimBLEHIDDevice.cpp
+index a2310eb..70c2a28 100644
+--- a/src/NimBLEHIDDevice.cpp
++++ b/src/NimBLEHIDDevice.cpp
+@@ -126,8 +126,8 @@ void NimBLEHIDDevice::hidInfo(uint8_t country, uint8_t flags) {
+  * @return pointer to new input report characteristic
+  */
+ NimBLECharacteristic* NimBLEHIDDevice::inputReport(uint8_t reportID) {
+-	NimBLECharacteristic* inputReportCharacteristic = m_hidService->createCharacteristic((uint16_t) 0x2a4d, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ_ENC);
+-	NimBLEDescriptor* inputReportDescriptor = inputReportCharacteristic->createDescriptor((uint16_t) 0x2908, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::READ_ENC);
++	NimBLECharacteristic* inputReportCharacteristic = m_hidService->createCharacteristic((uint16_t) 0x2a4d, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::NOTIFY | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE);
++	NimBLEDescriptor* inputReportDescriptor = inputReportCharacteristic->createDescriptor((uint16_t) 0x2908, NIMBLE_PROPERTY::READ | NIMBLE_PROPERTY::READ_ENC | NIMBLE_PROPERTY::WRITE);
+ 
+ 	uint8_t desc1_val[] = { reportID, 0x01 };
+ 	inputReportDescriptor->setValue((uint8_t*) desc1_val, 2);

@@ -5,7 +5,7 @@
 */
 
 #include "HTTPClient.h"
-#include "Globals.h"
+#include "Settings.h"
 
 static char tag[] = "HTTPClient";
 
@@ -76,11 +76,13 @@ void HTTPClient::Query(HTTPClientData_t Query, bool ToFront, bool IsSystem) {
 	if (ThreadsCounter <= 0) {
 		ThreadsCounter = 1;
 		FreeRTOS::StartTask(HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.SystemThreadStackSize);
+		ESP_LOGE("HTTPClientTask","System task started");
 	}
 
 	if (!IsSystem && FreeRTOS::Queue::Count(Queue) >= Settings.HTTPClient.NewThreadStep && ThreadsCounter < Settings.HTTPClient.ThreadsMax) {
 		ThreadsCounter++;
 		FreeRTOS::StartTask(HTTPClient::HTTPClientTask, "HTTPClientTask", (void *)(uint32_t)ThreadsCounter, Settings.HTTPClient.ThreadStackSize);
+		ESP_LOGE("HTTPClientTask","Not system task started");
 	}
 }
 
@@ -116,6 +118,9 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
 
         case HTTP_EVENT_DISCONNECTED:
             break;
+
+		case HTTP_EVENT_REDIRECT:
+			break;
     }
 
     return ESP_OK;
@@ -128,7 +133,7 @@ esp_err_t HTTPClient::QueryHandler(esp_http_client_event_t *event)
  */
 
 void HTTPClient::HTTPClientTask(void *TaskData) {
-	ESP_LOGD(tag, "Task %u created", (uint32_t)TaskData);
+	ESP_LOGD(tag, "Task %lu created", (uint32_t)TaskData);
 
 	uint32_t HashID;
 	uint32_t ThreadNumber = (uint32_t)TaskData;
@@ -227,7 +232,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 	}
 	while (IsItemReceived || ThreadNumber == 1);
 
-	ESP_LOGD(tag, "Task %u removed", (uint32_t)TaskData);
+	ESP_LOGD(tag, "Task %lu removed", (uint32_t)TaskData);
     HTTPClient::ThreadsCounter--;
     FreeRTOS::DeleteTask();
 }

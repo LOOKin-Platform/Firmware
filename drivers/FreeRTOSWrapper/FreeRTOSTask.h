@@ -54,13 +54,13 @@ class Task {
 		void Delay(int ms);
 
 	private:
-		xTaskHandle m_handle;
-		void*       m_taskData;
-		static void RunTask(void *data);
-		std::string m_taskName;
-		uint16_t    m_stackSize;
-		uint8_t     m_priority;
-		BaseType_t  m_coreId;
+		TaskHandle_t	m_handle;
+		void*       	m_taskData;
+		static void 	RunTask(void *data);
+		std::string 	m_taskName;
+		uint16_t    	m_stackSize;
+		uint8_t     	m_priority;
+		BaseType_t  	m_coreId;
 };
 
 #endif /* DRIVERS_FREERTOS_TASK_H_ */

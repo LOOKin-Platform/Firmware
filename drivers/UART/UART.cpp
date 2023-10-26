@@ -19,7 +19,7 @@ void UART::Setup(int BaudRate, uart_port_t UARTPort, UARTReadCallback Callback, 
         .stop_bits 				= UART_STOP_BITS_1,
         .flow_ctrl 				= UART_HW_FLOWCTRL_DISABLE,
 		.rx_flow_ctrl_thresh 	= 120,
-		.use_ref_tick			= false
+//		.use_ref_tick			= false
     };
 
     uart_param_config(UARTPort, &uart_config);
@@ -61,7 +61,7 @@ void UART::ReadTask(void *TaskData) {
 	uint8_t *data = (uint8_t *) malloc(Item.BufferSize);
 
     while (1) {
-        int len = uart_read_bytes(Port, data, Item.BufferSize, 20 / portTICK_RATE_MS);
+        int len = uart_read_bytes(Port, data, Item.BufferSize, 20 / portTICK_PERIOD_MS);
 
         if (len > 0) {
         		ESP_LOGI("tada","callback issued");
@@ -76,7 +76,11 @@ uint8_t UART::UARTPort(uart_port_t UARTPort) {
 	switch (UARTPort) {
 		case UART_NUM_0 : return 0;
 		case UART_NUM_1 : return 1;
-		case UART_NUM_2 : return 2;
+
+#if CONFIG_IDF_TARGET_ESP32
+        case UART_NUM_2 : return 2;
+#endif
+
 		default: return 3;
 	}
 }
@@ -85,7 +89,11 @@ uart_port_t UART::UARTPort(uint8_t UARTPortNum) {
 	switch (UARTPortNum) {
 		case 0 : return UART_NUM_0;
 		case 1 : return UART_NUM_1;
-		case 2 : return UART_NUM_2;
+
+#if CONFIG_IDF_TARGET_ESP32
+        case UART_NUM_2 : return 2;
+#endif
+
 		default: return UART_NUM_MAX;
 	}
 }

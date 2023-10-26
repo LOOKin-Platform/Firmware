@@ -45,10 +45,19 @@ void WiFiEventHandler::EventHandler(void *event_handler_arg, esp_event_base_t ev
 
 	if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
 		ip_event_got_ip_t* IPInfo = (ip_event_got_ip_t*) event_data;
-		pWiFiEventHandler->staGotIp(*IPInfo);
+		pWiFiEventHandler->staGotIPv4(*IPInfo);
 	}
 
-    if (event_base == WIFI_EVENT && event_id == SYSTEM_EVENT_STA_DISCONNECTED) {
+	if (event_base == IP_EVENT && event_id == IP_EVENT_GOT_IP6) {
+		ip_event_got_ip6_t* IPInfo = (ip_event_got_ip6_t*) event_data;
+		pWiFiEventHandler->staGotIPv6(*IPInfo);
+	}
+
+	if (event_base == IP_EVENT && event_id == IP_EVENT_STA_LOST_IP) {
+		pWiFiEventHandler->staLostIp();
+	}
+
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
 		wifi_event_sta_disconnected_t* DisconnectedInfo = (wifi_event_sta_disconnected_t*) event_data;
 		pWiFiEventHandler->staDisconnected(*DisconnectedInfo);
 	}
@@ -72,6 +81,8 @@ void WiFiEventHandler::EventHandler(void *event_handler_arg, esp_event_base_t ev
 	} else {
 		//printf("NOT Found a next handler\n");
 	}
+
+	pWiFiEventHandler->Generic(event_handler_arg, event_base, event_id, event_data);
 }
 
 WiFiEventHandler::WiFiEventHandler() {}
@@ -93,10 +104,21 @@ esp_event_handler_t WiFiEventHandler::getEventHandler() {
  * @param [in] event_sta_got_ip The Station Got IP event.
  * @return An indication of whether or not we processed the event successfully.
  */
-esp_err_t WiFiEventHandler::staGotIp(system_event_sta_got_ip_t event_sta_got_ip) {
-	ESP_LOGD(tag, "default staGotIp");
+esp_err_t WiFiEventHandler::staGotIPv4(ip_event_got_ip_t GotIPv4Info) {
+	ESP_LOGD(tag, "default staGotIPv4");
 	return ESP_OK;
-} // staGotIp
+} // staGotIPv4
+
+/**
+ * @brief Handle the Station Got IPv6 event.
+ * Handle having received/assigned an IP address when we are a station.
+ * @param [in] event_sta_got_ip The Station Got IP event.
+ * @return An indication of whether or not we processed the event successfully.
+ */
+esp_err_t WiFiEventHandler::staGotIPv6(ip_event_got_ip6_t GotIPv6Info) {
+	ESP_LOGD(tag, "default staGotIPv6");
+	return ESP_OK;
+} // staGotIPv6
 
 /**
  * @brief Handle the Access Point started event.
@@ -138,7 +160,7 @@ esp_err_t WiFiEventHandler::staConnected() {
 	return ESP_OK;
 } // staConnected
 
-esp_err_t WiFiEventHandler::staDisconnected(system_event_sta_disconnected_t DisconnectedInfo) {
+esp_err_t WiFiEventHandler::staDisconnected(wifi_event_sta_disconnected_t DisconnectedInfo) {
 	ESP_LOGD(tag, "default staDisconnected");
 	return ESP_OK;
 } // staDisconnected
@@ -156,7 +178,17 @@ esp_err_t WiFiEventHandler::apStaDisconnected() {
 esp_err_t WiFiEventHandler::ConnectionTimeout() {
 	ESP_LOGD(tag, "default ConnectionTimeout");
 	return ESP_OK;
-} // apStaDisconnected
+} // ConnectionTimeout
+
+esp_err_t WiFiEventHandler::staLostIp() {
+	ESP_LOGD(tag, "default staLostIp");
+	return ESP_OK;
+} // staLostIp
+
+
+void WiFiEventHandler::Generic(void * arg, esp_event_base_t eventBase, int32_t eventId, void * eventData) {
+}
+
 
 WiFiEventHandler::~WiFiEventHandler() {
 	if (nextHandler != nullptr) {
