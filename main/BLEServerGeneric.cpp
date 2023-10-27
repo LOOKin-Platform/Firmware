@@ -265,7 +265,6 @@ void BLEServerGeneric_t::StartAdvertisingAsHID() {
 	BLEDevice::setSecurityRespKey(BLE_SM_PAIR_KEY_DIST_ENC | BLE_SM_PAIR_KEY_DIST_ID);
 	//BLEDevice::setSecurityAuth(BLE_SM_PAIR_AUTHREQ_BOND);
 	BLEDevice::setSecurityAuth(true, true, true);
-	BLEDevice::setSecurityPasskey(345139);
 
 	HIDDevice->reportMap((uint8_t*)_hidReportDescriptor, sizeof(_hidReportDescriptor));
 	HIDDevice->startServices();
@@ -718,7 +717,6 @@ size_t BLEServerGeneric_t::Write(size_t size, const uint8_t *buffer) {
 }
 
 void BLEServerGeneric_t::onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) {
-    return;
 	if (!(pServer->getAdvertising()->isAdvertising()))
 		BLEDevice::startAdvertising();
 
