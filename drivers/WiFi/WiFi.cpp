@@ -243,8 +243,8 @@ vector<WiFiAPRecord> WiFi_t::Scan() {
 	memset(&conf, 0, sizeof(conf));
 	conf.show_hidden 			= 1;
 	conf.scan_type 				= WIFI_SCAN_TYPE_ACTIVE;
-	conf.scan_time.active.min 	= 500;
-	conf.scan_time.active.max 	= 1000;
+	conf.scan_time.active.min 	= 0;
+	conf.scan_time.active.max 	= 0;
 	conf.channel = 0;
 
 	m_scanFinished.Take("ScanFinished");

@@ -33,7 +33,7 @@ class CommandBLE_t : public Command_t {
 
 		bool 	GetIsBLEPairingCodeSkiped(); //const;
 
-		bool Execute(uint8_t EventCode, const char* StringOperand) override;
+		bool 	Execute(uint8_t EventCode, const char* StringOperand) override;
 
 		/*
 		void TriggerStateChange(IRLib &Signal) {

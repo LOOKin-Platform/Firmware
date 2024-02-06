@@ -68,7 +68,6 @@ class Matter {
 
 		static void				CreateAccessories(intptr_t context);
 		static void				CreateRemoteBridge();
-		static void				CreateWindowOpener();
 
 		static void				Task(void *);
 

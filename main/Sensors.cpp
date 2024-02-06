@@ -26,7 +26,10 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 		break;
 #else
 		case Settings.Devices.Plug:
-			Sensors = { new SensorSwitch_t() };
+			Sensors = { 
+				new SensorSwitch_t(),
+				new SensorTouch_t() 
+			};
 			break;
 		case Settings.Devices.Duo:
 			Sensors = {

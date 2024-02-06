@@ -43,6 +43,9 @@
 #include "Thermostat.h"
 #include "VideoPlayer.h"
 
+
+#include "SingleDeviceAppTask.h"
+
 #if CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
 #include <platform/ESP32/ESP32FactoryDataProvider.h>
 #endif // CONFIG_ENABLE_ESP32_FACTORY_DATA_PROVIDER
@@ -184,9 +187,9 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(onOffAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedLightClusters)
-    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs, onOffIncomingCommands, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs                , ZAP_CLUSTER_MASK(SERVER)  , onOffIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs           , ZAP_CLUSTER_MASK(SERVER)  , nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs   , ZAP_CLUSTER_MASK(SERVER)  , nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Light endpoint
@@ -200,9 +203,9 @@ DECLARE_DYNAMIC_ENDPOINT(bridgedLightEndpoint, bridgedLightClusters);
 //   - Bridged Device Basic
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedOutletClusters)
-    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs, onOffIncomingCommands, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs                , ZAP_CLUSTER_MASK(SERVER), onOffIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs           , ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs   , ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Light endpoint
@@ -224,9 +227,9 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(tempSensorAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedTempSensorClusters)
-	DECLARE_DYNAMIC_CLUSTER(TemperatureMeasurement::Id			, tempSensorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+	DECLARE_DYNAMIC_CLUSTER(TemperatureMeasurement::Id			, tempSensorAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Temp sensor endpoint
@@ -247,9 +250,9 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(humiditySensorAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedHumiditySensorClusters)
-	DECLARE_DYNAMIC_CLUSTER(RelativeHumidityMeasurement::Id		, humiditySensorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+	DECLARE_DYNAMIC_CLUSTER(RelativeHumidityMeasurement::Id		, humiditySensorAttrs   , ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs       , ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs,ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Temp sensor endpoint
@@ -287,9 +290,9 @@ constexpr chip::CommandId ThermostatIncomingCommands[] = {
 };
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedThermostatClusters)
-	DECLARE_DYNAMIC_CLUSTER(Thermostat::Id						, thermostatAttrs, ThermostatIncomingCommands, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+	DECLARE_DYNAMIC_CLUSTER(Thermostat::Id						, thermostatAttrs, ZAP_CLUSTER_MASK(SERVER), ThermostatIncomingCommands, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Thermostat endpoint
@@ -314,9 +317,9 @@ DECLARE_DYNAMIC_ATTRIBUTE_LIST_BEGIN(fanControlAttrs)
 DECLARE_DYNAMIC_ATTRIBUTE_LIST_END();
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedFanClusters)
-	DECLARE_DYNAMIC_CLUSTER(FanControl::Id						, fanControlAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, nullptr, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, nullptr, nullptr)
+	DECLARE_DYNAMIC_CLUSTER(FanControl::Id						, fanControlAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Thermostat endpoint
@@ -342,15 +345,16 @@ constexpr chip::CommandId KeypadInputIncomingCommands[] = {
 };
 
 DECLARE_DYNAMIC_CLUSTER_LIST_BEGIN(bridgedVideoPlayerClusters)
-    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs				, onOffIncomingCommands			, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(KeypadInput::Id						, KeypadInputAttrs			, KeypadInputIncomingCommands	, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs			, nullptr						, nullptr),
-    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs	, nullptr						, nullptr)
+    DECLARE_DYNAMIC_CLUSTER(OnOff::Id							, onOffAttrs            , ZAP_CLUSTER_MASK(SERVER) , onOffIncomingCommands			, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(KeypadInput::Id						, KeypadInputAttrs      , ZAP_CLUSTER_MASK(SERVER) , KeypadInputIncomingCommands	, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(Descriptor::Id						, descriptorAttrs       , ZAP_CLUSTER_MASK(SERVER) , nullptr						, nullptr),
+    DECLARE_DYNAMIC_CLUSTER(BridgedDeviceBasicInformation::Id	, bridgedDeviceBasicAttrs, ZAP_CLUSTER_MASK(SERVER), nullptr						, nullptr)
 DECLARE_DYNAMIC_CLUSTER_LIST_END;
 
 // Declare Bridged Thermostat endpoint
 DECLARE_DYNAMIC_ENDPOINT(bridgedVideoPlayerEndpoint, bridgedVideoPlayerClusters);
 
+TaskHandle_t sAppTaskHandle;
 
 /*
 Matter::AccessoryData_t(string sName, string sModel, string sID) {
@@ -970,17 +974,23 @@ int Matter::WriteCallback(hap_write_data_t write_data[], int count, void *serv_p
 */
 
 void Matter::CreateAccessories(intptr_t context) {
+	if (Settings.eFuse.Type == Settings_t::Devices_t::Remote)
+	{
+		return CreateRemoteBridge();
+	}
+	else 
+	{
+        return;     
 
-	switch (Settings.eFuse.Type) {
-		case Settings_t::Devices_t::Remote:
-			return CreateRemoteBridge();
-			break;
-		case Settings_t::Devices_t::WindowOpener:
-			return CreateWindowOpener();
-			break;
+		ESP_LOGE(Tag, "Create Single Accessory");
+
+    	CHIP_ERROR error = GetAppTask().StartAppTask();
+    	if (error != CHIP_NO_ERROR)
+    	{
+        	ESP_LOGE(Tag, "GetAppTask().StartAppTask() failed : %" CHIP_ERROR_FORMAT, error.Format());
+    	}
 	}
 }
-
 
 int Matter::AddDeviceEndpoint(MatterGenericDevice * dev, EmberAfEndpointType * ep, const Span<const EmberAfDeviceType> & deviceTypeList, chip::EndpointId parentEndpointId)
 {
@@ -1176,73 +1186,6 @@ void Matter::CreateRemoteBridge() {
 		((MatterHumiditySensor *)HumiditySensorToAdd)->SetHumidity(MeteoSensorData.Humidity, false);
 		AddDeviceEndpoint(HumiditySensorToAdd, &bridgedHumiditySensorEndpoint, Span<const EmberAfDeviceType>(gBridgedHumiditySensorDeviceTypes), 1);
 	}
-}
-
-void Matter::CreateWindowOpener() {
-
-	/*
-	string 		NameString 	=  "";
-	uint16_t 	UUID 		= 0;
-	uint16_t	Status		= 0;
-
-	hap_acc_t* ExistedAccessory = hap_get_first_acc();
-
-	if (ExistedAccessory == NULL)
-	{
-		NameString = Converter::CutMultibyteString(NameString, 16);
-
-		if (NameString == "")
-			NameString = Device.TypeToString() + " " + Device.IDToString();
-
-		static AccessoryData_t AccessoryData(NameString, Device.ModelToString(), Device.IDToString());
-
-		hap_acc_cfg_t cfg = {
-			.name 				= AccessoryData.Name,
-			.model 				= AccessoryData.Model,
-			.manufacturer 		= "LOOKin",
-			.serial_num 		= AccessoryData.ID,
-			.fw_rev 			= strdup(Settings.Firmware.ToString().c_str()),
-			.hw_rev 			= NULL,
-			.pv 				= "1.1.0",
-			.cid 				= HAP_CID_WINDOW,
-			.identify_routine 	= BridgeIdentify,
-		};
-
-		Accessory = hap_acc_create(&cfg);
-
-		ACOperand Operand((uint32_t)Status);
-
-		hap_serv_t *ServiceWindowOpener;
-
-		uint8_t CurrentPos = 0;
-		if (Sensor_t::GetSensorByID(0x90) != nullptr)
-			CurrentPos = (uint8_t)Sensor_t::GetSensorByID(0x90)->GetValue("Position");
-
-		if (CurrentPos > 100)
-			CurrentPos = 100;
-
-		ServiceWindowOpener = hap_serv_window_create(CurrentPos, CurrentPos, 2);
-		hap_serv_add_char(ServiceWindowOpener, hap_char_name_create("Window Opener"));
-		hap_serv_set_priv(ServiceWindowOpener, (void *)(uint32_t)UUID);
-		hap_serv_set_write_cb(ServiceWindowOpener, WriteCallback);
-		hap_acc_add_serv(Accessory, ServiceWindowOpener);
-
-		uint8_t product_data[] = {0x4D, 0x7E, 0xC5, 0x46, 0x80, 0x79, 0x26, 0x54};
-		hap_acc_add_product_data(Accessory, product_data, sizeof(product_data));
-
-		hap_acc_add_wifi_transport_service(Accessory, 0);
-
-		hap_add_accessory(Accessory);
-	}
-	else
-	{
-		hap_serv_t *ServiceWindowOpener = hap_acc_get_serv_by_uuid(ExistedAccessory, HAP_SERV_UUID_HEATER_COOLER);
-		if (ServiceWindowOpener != NULL)
-			hap_serv_set_priv(ServiceWindowOpener, (void *)(uint32_t)UUID);
-	}
-
-	return HAP_CID_WINDOW;
-	*/
 }
 
 void Matter::Task(void *) {

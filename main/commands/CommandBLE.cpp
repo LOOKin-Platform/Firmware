@@ -108,11 +108,16 @@ bool CommandBLE_t::Execute(uint8_t EventCode, const char* StringOperand) {
 		size_t Result = 0;
 
 
-		vector<string> OperandVector = Converter::StringToVector(Operand, ":");
-		uint8_t Delay = 0;
+		vector<string> OperandVector = Converter::StringToVector(Operand, ";");
+		uint16_t Delay = 0;
 
-		if (OperandVector.size() == 2)
-			Delay = Converter::ToUint16(OperandVector.at(1));
+		if (OperandVector.size() == 2) {
+			string DelayStr = OperandVector.at(1);
+			Delay = Converter::ToUint16(DelayStr);
+
+			Operand = Operand.substr(0, Operand.size() - DelayStr.size() - 1);
+			ESP_LOGE("OPERAND", "%s", Operand.c_str());
+		}
 
 		if 		(Operand == "MEDIA_NEXT_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_NEXT_TRACK, Delay) 		;}
 		else if (Operand == "MEDIA_PREV_TRACK") 	{ Result = MyBLEServer.Write(MyBLEServer.KEY_MEDIA_PREVIOUS_TRACK, Delay)	;}

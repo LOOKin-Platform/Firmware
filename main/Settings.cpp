@@ -21,6 +21,8 @@ void FillDevices() {
 			DeviceHardware.Indicator.Type					= Settings_t::GPIOData_t::Indicator_t::ws2812;
 			DeviceHardware.Indicator.Alternative.GPIO		= GPIO_NUM_26;
 			DeviceHardware.Indicator.SwitchLedOn.GPIO		= GPIO_NUM_16;
+
+			DeviceHardware.Touch.GPIO						= {GPIO_NUM_0};
 			break;
 
 		case Settings_t::Devices_t::Duo:

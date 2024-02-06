@@ -4,7 +4,14 @@
 *
 */
 
+#include "Sensors.h"
+#include "Commands.h"
+
 #include "SensorTouch.h"
+#include "SensorSwitch.h"
+
+#include "CommandSwitch.h"
+
 #include "ISR.h"
 
 #include "Automation.h"
@@ -19,10 +26,9 @@ void SensorTouch_t::SensorTouchTask(void *) {
 	    	vector<gpio_num_t>::iterator it = find(SensorTouchGPIOS.begin(), SensorTouchGPIOS.end(), Item.first);
 
 	    	if (it == SensorTouchGPIOS.cend())
-	    		continue;
+	    		{continue;}
 
 	    	uint8_t ChannelNum = distance(SensorTouchGPIOS.begin(), it);
-
 	    	uint8_t Status = (Item.second > OperatedTime) ? 1 : 0;
 
 	    	Sensor_t::GetSensorByID(SensorTouchID)->SetValue(Status, "channel" + Converter::ToString(ChannelNum));
@@ -41,6 +47,20 @@ void SensorTouch_t::Callback(void* arg) {
 		SensorTouchStatusMap[ActiveGPIO] = Time::UptimeU();
 	else
 		SensorTouchStatusMap.insert(pair<gpio_num_t, uint64_t>(ActiveGPIO, Time::UptimeU()));
+
+	if (Settings.eFuse.Type == Settings.Devices.Plug) {
+		SensorSwitch_t* SensorSwitchItem  	= (SensorSwitch_t*)Sensor_t::GetSensorByID(0x81);
+		CommandSwitch_t* CommandSwitchItem 	= (CommandSwitch_t*)Command_t::GetCommandByID(0x01);
+
+		if (CommandSwitchItem != nullptr && SensorSwitchItem != nullptr) {			
+			uint8_t Status = SensorSwitchItem->ReceiveValue();
+			Status = (Status == 0) ? 1 : 2;
+
+			ESP_EARLY_LOGE("Status", "%d", Status);
+
+			CommandSwitchItem->Execute(Status, "");
+		} 
+	}
 }
 
 SensorTouch_t::SensorTouch_t() {
@@ -53,8 +73,8 @@ SensorTouch_t::SensorTouch_t() {
 	SensorTouchGPIOS = Settings.GPIOData.GetCurrent().Touch.GPIO;
 
 	for (int i=0; i < SensorTouchGPIOS.size(); i++) {
-		if (SensorTouchGPIOS[i] != GPIO_NUM_0) {
-			ISR::AddInterrupt(SensorTouchGPIOS[i], GPIO_INTR_ANYEDGE, &Callback);
+		if (SensorTouchGPIOS[i] != GPIO_NUM_MAX) {
+			ISR::AddInterrupt(SensorTouchGPIOS[i], GPIO_INTR_NEGEDGE, &Callback);
 
 			EventCodes.push_back((i+1)*16);
 			EventCodes.push_back(((i+1)*16)+1);
@@ -89,7 +109,7 @@ uint32_t SensorTouch_t::ReceiveValue(string Key) {
 		return (GPIO::Read(CurrentSettings.GPIO) == true) ? 1 : 0;
 	else
 		return 0;
-		*/
+	*/
 
 	return 0;
 };

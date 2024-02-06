@@ -1,17 +1,17 @@
 /*
-*    SensorSwitch.cpp
-*    SensorSwitch_t implementation
+*    SensorButton.cpp
+*    SensorButton_t implementation
 *
 */
 
-#include "SensorSwitch.h"
+#include "SensorButton.h"
 
 #include "HardwareIO.h"
 
 #include "Wireless.h"
 #include "Automation.h"
 
-SensorSwitch_t::SensorSwitch_t() {
+SensorButton_t::SensorButton_t() {
 	if (GetIsInited()) return;
 
 	ID          = 0x81;
@@ -21,15 +21,15 @@ SensorSwitch_t::SensorSwitch_t() {
 	SetIsInited(true);
 }
 
-void SensorSwitch_t::Update() {
+void SensorButton_t::Update() {
 	if (SetValue(ReceiveValue(), "Primary"), 0) {
 		Wireless_t::SendBroadcastUpdated(ID, Converter::ToString(GetValue()));
 		Automation_t::SensorChanged(ID);
 	}
 }
 
-uint32_t SensorSwitch_t::ReceiveValue(string Key) {
-	if (Settings.GPIOData.GetCurrent().Switch.GPIO == GPIO_NUM_MAX)
+uint32_t SensorButton_t::ReceiveValue(string Key) {
+	if (Settings.GPIOData.GetCurrent().Switch.GPIO == GPIO_NUM_0)
 	{
 		return 0;
 	}
@@ -37,7 +37,7 @@ uint32_t SensorSwitch_t::ReceiveValue(string Key) {
 	return (GPIO::Read(Settings.GPIOData.GetCurrent().Switch.GPIO) == true) ? 1 : 0;
 }
 
-bool SensorSwitch_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
+bool SensorButton_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOperand) {
 	uint32_t ValueItem = GetValue();
 
 	if (SceneEventCode == 0x01 && ValueItem == 1) return true;
@@ -45,4 +45,3 @@ bool SensorSwitch_t::CheckOperand(uint8_t SceneEventCode, uint8_t SceneEventOper
 
 	return false;
 }
-

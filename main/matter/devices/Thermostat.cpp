@@ -48,17 +48,17 @@ void MatterThermostat::SetLocalTemperature (float Value) {
         HandleStatusChanged(this, kChanged_MeasurementValue);
 }
 
-chip::app::Clusters::Thermostat::ThermostatSystemMode MatterThermostat::GetMode() {
+chip::app::Clusters::Thermostat::SystemModeEnum MatterThermostat::GetMode() {
     DataRemote_t::IRDeviceCacheItem_t IRDeviceItem = ((DataRemote_t*)Data)->GetDeviceFromCache(BridgedUUID);
     uint8_t CurrentMode = ((DataRemote_t*)Data)->DevicesHelper.GetDeviceForType(0xEF)->GetStatusByte(IRDeviceItem.Status , 0);
 
     if (CurrentMode > 1)
         CurrentMode++;
 
-    return (chip::app::Clusters::Thermostat::ThermostatSystemMode)CurrentMode;
+    return (chip::app::Clusters::Thermostat::SystemModeEnum)CurrentMode;
 }
 
-void MatterThermostat::SetMode(chip::app::Clusters::Thermostat::ThermostatSystemMode ModeToSet) {
+void MatterThermostat::SetMode(chip::app::Clusters::Thermostat::SystemModeEnum ModeToSet) {
     //CurrentMode = (uint8_t)ModeToSet;
     //! Проорать о значении в HomeKit
 }

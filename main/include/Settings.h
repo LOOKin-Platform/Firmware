@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(3, 0, 128);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(3, 0, 312);
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";

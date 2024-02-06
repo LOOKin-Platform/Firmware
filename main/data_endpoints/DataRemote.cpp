@@ -1466,7 +1466,7 @@ void DataRemote_t::HomeKitStatusTriggerUpdated(string DeviceID, uint8_t DeviceTy
 			MatterThermostat* Thermostat = (MatterThermostat*)Matter::GetBridgedAccessoryByType(MatterGenericDevice::Thermostat, DeviceID);
 			if (Thermostat != nullptr) 
 			{
-				bool isACUnitOn = (Thermostat->GetMode() != chip::app::Clusters::Thermostat::ThermostatSystemMode::kOff);
+				bool isACUnitOn = (Thermostat->GetMode() != chip::app::Clusters::Thermostat::SystemModeEnum::kOff);
 
 				if (isACUnitOn) 
 					Thermostat->SetACTemperature(Value);

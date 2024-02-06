@@ -12,11 +12,11 @@ dependencies:
       type: service
     version: 1.0.1
   espressif/esp_diagnostics:
-    component_hash: 83c3fdf56caba06846017ece7002b0498476a3af15d0d5a3d86bd944443fd7b9
+    component_hash: fe19f5ee7f0145f406d36a4d5310e4ae0c6ee1afa47f2681ada8a2ea8582d390
     source:
       service_url: https://api.components.espressif.com/
       type: service
-    version: 1.0.1
+    version: 1.0.2
   espressif/esp_encrypted_img:
     component_hash: 1c34d5b0e70a3878e63fe2bedb00824bcf83c30d9b020029c38400d0d14fe182
     source:
@@ -30,28 +30,28 @@ dependencies:
       type: service
     version: 1.0.1
   espressif/esp_secure_cert_mgr:
-    component_hash: 4a9586b0804c6853a4b59e26b5f23e38126d4838156ca2c14087cc4a6d232b35
+    component_hash: a20007d67e65a000670ab77e45d7554c943eb8dcb0abeada0a57dd9adac3a703
     source:
       service_url: https://api.components.espressif.com/
       type: service
-    version: 2.4.0
+    version: 2.4.1
   espressif/mdns:
-    component_hash: d6665090cf41eb399c184aab6f34234251a773e052fb53ca044dcb576264c646
+    component_hash: 090826401d30f756037f91d91068f470ba8d0ef04fe507d3aa8761305cecd7ca
     source:
       service_url: https://api.components.espressif.com/
       type: service
-    version: 1.2.1
+    version: 1.2.3
   espressif/rmaker_common:
-    component_hash: ed9257c3e6d9af5a945e9fcc4e7b9235a56816d53fd42de95b523fe53a4b9b98
+    component_hash: f2616edceccfb48d75da490563809ed332f5c7a9c3e66ed40837f458fac4eaeb
     source:
       service_url: https://api.components.espressif.com/
       type: service
-    version: 1.4.3
+    version: 1.4.4
   idf:
     component_hash: null
     source:
       type: idf
-    version: 5.1.1
-manifest_hash: 0b3f611f70ce6dbcdaa68ef8b3217afecc1040ee3df762b000cd456fcd44c2d0
+    version: 5.1.2
+manifest_hash: b771482537b6de59e976bc574956515218972a7610cdc1d11f5f7caa5e686ca9
 target: esp32
 version: 1.0.0

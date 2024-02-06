@@ -165,16 +165,25 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 		Config.auth_type 				= HTTP_AUTH_TYPE_NONE;
 
 		Config.path						= "/";
+		Config.url						= NULL;
 		Config.host						= NULL;
 		Config.query					= NULL;
 		Config.username					= NULL;
 		Config.password					= NULL;
 
 		Config.cert_pem					= NULL;
+		Config.cert_len					= 0;
 		Config.client_cert_pem			= NULL;
+		Config.client_cert_len			= 0;
 		Config.client_key_pem			= NULL;
+		Config.client_key_len			= 0;
 		Config.use_global_ca_store		= false;
 		Config.crt_bundle_attach		= NULL;
+		Config.client_key_password		= NULL;
+		Config.client_key_password_len	= 0;
+		Config.max_authorization_retries= 0;
+		Config.skip_cert_common_name_check = true;
+		Config.common_name				= NULL;
 
 		Config.transport_type 			= HTTP_TRANSPORT_UNKNOWN;
 
@@ -202,7 +211,17 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 
 	    Config.if_name 					= NULL;
 
+		Config.keep_alive_enable		= false;
+		Config.keep_alive_idle			= 5;
+		Config.keep_alive_interval		= 5;
+		Config.keep_alive_count			= 3;
+
 		esp_http_client_handle_t Handle = esp_http_client_init(&Config);
+
+		if (Handle == NULL) {
+			ESP_LOGE(tag, "Error during HTTP client init");
+			goto result;
+		}
 
 		if (ClientData.POSTData != "" && ClientData.Method == POST)
 			::esp_http_client_set_post_field(Handle, ClientData.POSTData.c_str(), ClientData.POSTData.size());
@@ -232,6 +251,7 @@ void HTTPClient::HTTPClientTask(void *TaskData) {
 	}
 	while (IsItemReceived || ThreadNumber == 1);
 
+result:
 	ESP_LOGD(tag, "Task %lu removed", (uint32_t)TaskData);
     HTTPClient::ThreadsCounter--;
     FreeRTOS::DeleteTask();

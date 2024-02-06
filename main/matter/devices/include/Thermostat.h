@@ -46,8 +46,8 @@ class MatterThermostat : public MatterGenericDevice {
         int16_t         GetLocalTemperature();
         void            SetLocalTemperature (float Value);
 
-        chip::app::Clusters::Thermostat::ThermostatSystemMode GetMode();
-        void            SetMode(chip::app::Clusters::Thermostat::ThermostatSystemMode ModeToSet);
+        chip::app::Clusters::Thermostat::SystemModeEnum GetMode();
+        void            SetMode(chip::app::Clusters::Thermostat::SystemModeEnum ModeToSet);
 
         float           GetACTemperature();
         void            SetACTemperature(float Value);

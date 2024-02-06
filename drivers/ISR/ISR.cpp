@@ -33,13 +33,15 @@ void ISR::RemoveInterrupt(gpio_num_t GPIO) {
 void ISR::Install() {
 	::gpio_uninstall_isr_service();
 
-    gpio_config_t  io_conf;
+    gpio_config_t io_conf = {};
 
     for (std::pair<gpio_num_t, InterruptData_t> Item : ISR::Interrupts) {
-	    io_conf.intr_type    = Item.second.Type;
-	    io_conf.pin_bit_mask = (1ULL << Item.first);
-	    io_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
-	    io_conf.pull_up_en   = GPIO_PULLUP_DISABLE;
+	    io_conf.intr_type    	= Item.second.Type;
+		io_conf.mode			= GPIO_MODE_INPUT;
+	    io_conf.pin_bit_mask 	= (1ULL << Item.first);
+	    io_conf.pull_down_en 	= GPIO_PULLDOWN_ENABLE;
+	    io_conf.pull_up_en   	= GPIO_PULLUP_ENABLE;
+
 	    gpio_config( &io_conf);
 	}
 

@@ -9,13 +9,26 @@
 
 #include "Commands.h"
 
+
+#define	NVSCommandsSwitchArea   "CommandSwitch"
+#define NVSSwitchSaveStatus 	  "SaveStatus"
+#define NVSSwitchLastStatus 	  "LastStatus"
+
 class CommandSwitch_t : public Command_t {
   public:
     CommandSwitch_t();
     
-    void Overheated() override;
+    void    Overheated() override;
 
-    bool Execute(uint8_t EventCode, const char* StringOperand) override;
+    bool    Execute(uint8_t EventCode, const char* StringOperand) override;
+
+    void    InitSettings() override;
+    string  GetSettings() override;
+    void    SetSettings(WebServer_t::Response &Result, Query_t &Query) override;
+
+    bool    GetSaveStatus();
+    void    SaveStatus(bool);
+    bool    GetStatus();
 };
 
 #endif
