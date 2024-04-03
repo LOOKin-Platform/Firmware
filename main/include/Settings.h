@@ -38,7 +38,7 @@ typedef struct FirmwareVersionStruct {
 
 class Settings_t {
 	public:
-		FirmwareVersion 					Firmware 		= FirmwareVersion(3, 0, 312);
+		FirmwareVersion 					Firmware 		= FirmwareVersion(3, 01, 0016);
 
 		struct {
 			const string					APIUrl 			= "http://download.look-in.club/firmwares/";
@@ -153,7 +153,9 @@ class Settings_t {
 		} Log;
 
 		struct {
-			const uint16_t					Interval 				= 1000;
+			const uint16_t					Interval 				= 100;
+
+			const uint8_t 					ActionsQueueSize		= 4;
 
 			const uint32_t					MQTTInterval			= 90*1000; 		// 90 секунд
 			const uint32_t					ServerPingInterval		= 30*60*1000; 	// 30 минут

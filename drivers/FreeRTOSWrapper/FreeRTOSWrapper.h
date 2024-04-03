@@ -104,7 +104,7 @@ class FreeRTOS {
 				static uint8_t				SpaceAvaliable		(QueueHandle_t QueueHandle);
 				static void					Reset				(QueueHandle_t QueueHandle);
 
-				static BaseType_t			SendToBackFromISR	(QueueHandle_t QueueHandle, void *Item, bool IsHighPriorityTask = true);
+				static BaseType_t			SendToBackFromISR	(QueueHandle_t QueueHandle, void *Item, bool IsHighPriorityTask = false);
 				static bool					IsQueueFullFromISR	(QueueHandle_t QueueHandle);
 				static uint8_t 				CountFromISR		(QueueHandle_t QueueHandle);
 

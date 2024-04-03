@@ -10,7 +10,7 @@
 #include "SensorIR.h"
 #include "SensorMultiSwitch.h"
 #include "SensorSwitch.h"
-#include "SensorTouch.h"
+#include "SensorButton.h"
 #include "SensorMeteo.h"
 #include "SensorWindowOpener.h"
 
@@ -28,13 +28,13 @@ vector<Sensor_t*> Sensor_t::GetSensorsForDevice() {
 		case Settings.Devices.Plug:
 			Sensors = { 
 				new SensorSwitch_t(),
-				new SensorTouch_t() 
+				new SensorButton_t() 
 			};
 			break;
 		case Settings.Devices.Duo:
 			Sensors = {
 				new SensorMultiSwitch_t(),
-				new SensorTouch_t()
+				new SensorButton_t()
 			};
 			break;
 

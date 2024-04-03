@@ -26,7 +26,7 @@ class CommandSwitch_t : public Command_t {
     string  GetSettings() override;
     void    SetSettings(WebServer_t::Response &Result, Query_t &Query) override;
 
-    bool    GetSaveStatus();
+    bool    SaveStatusEnabled();
     void    SaveStatus(bool);
     bool    GetStatus();
 };

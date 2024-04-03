@@ -1,4 +1,5 @@
 #include "HandlersPooling.h"
+#include "CommandSwitch.h"
 
 void HandlersPooling_t::BARCheck() {
 	EnergyPeriodicHandler::InnerHandler(true);
@@ -27,6 +28,33 @@ uint8_t HandlersPooling_t::RegisterHandler(PoolingHandler_fn Handler, uint32_t P
 	return Index;
 }
 
+void HandlersPooling_t::CheckActionsQueue() {
+	if (ExecuteQueueHandler == NULL)
+		ExecuteQueueHandler = FreeRTOS::Queue::Create(Settings.Pooling.ActionsQueueSize, sizeof( ExecuteQueueItem_t ));
+
+	if (ExecuteQueueHandler == 0)
+		return;
+	if (FreeRTOS::Queue::Count(ExecuteQueueHandler) == 0)
+		return;
+
+	ExecuteQueueItem_t Data;
+	while (FreeRTOS::Queue::Receive(ExecuteQueueHandler, &Data))
+	{
+
+		if (Data.ActorID < 0x80) { // Commands
+			ESP_LOGE("HandlersPooling_t",">>>>>>");
+			ESP_LOGE("Data", "ActorID: %d", Data.ActorID);
+			ESP_LOGE("Data", "EventID: %d", Data.EventID);
+			ESP_LOGE("HandlersPooling_t","<<<<<<");
+
+			CommandSwitch_t* CommandSwitchItem 	= (CommandSwitch_t*)Command_t::GetCommandByID(Data.ActorID);
+			if (CommandSwitchItem != nullptr)
+			{
+				CommandSwitchItem->Execute(Data.EventID, "");
+			}
+		}
+	}
+}
 
 void HandlersPooling_t::CheckHandlers() {
 	uint64_t UptimeU = Time::UptimeU();
@@ -63,17 +91,18 @@ void HandlersPooling_t::Pool () {
 	RegisterHandler(&HandlersPooling_t::RemoteControlPeriodicHandler::Pool	, 500);
 	RegisterHandler(&HandlersPooling_t::PingPeriodicHandler::Pool			, 1000); // Once a second
 	RegisterHandler(&HandlersPooling_t::NetworkMapHandler::Pool				, 2000); // Once a 2 seconds
+	
+	RegisterHandler(&HandlersPooling_t::MemoryCheckHandler::Pool			, 10000);// Every 10 seconds
 
 	RegisterHandler(&Automation_t::TimeChangedPool							, 1000); // Once a second
 	RegisterHandler(&Scenario_t::ExecuteCommandsPool						, 76); 
-	
+
+
 	// Bluetooth handler switched off
 
 	while (1) 
 	{
-		if (Time::Uptime() % 10 == 0)
-			ESP_LOGI("Pooling","RAM left %d bytes", xPortGetFreeHeapSize());//esp_get_free_heap_size());
-
+		CheckActionsQueue();
 		CheckHandlers();
 
 		FreeRTOS::Sleep(Settings.Pooling.Interval);
@@ -84,3 +113,17 @@ void HandlersPooling_t::Pool () {
 		*/
 	}
 }
+
+void HandlersPooling_t::ExecuteQueueAddFromISR( uint8_t ActorID, uint8_t EventID) {
+	if (ExecuteQueueHandler == NULL)
+		return;
+
+	static ExecuteQueueItem_t Data;
+	Data.ActorID = ActorID;
+	Data.EventID = EventID;
+
+	FreeRTOS::Queue::SendToBackFromISR(ExecuteQueueHandler, &Data);
+
+	ESP_EARLY_LOGE("HandlersPooling_t::ExecuteQueueAddFromISR", "QUEUE ITEM ADDED, COUNT %d", FreeRTOS::Queue::CountFromISR(ExecuteQueueHandler));
+}
+

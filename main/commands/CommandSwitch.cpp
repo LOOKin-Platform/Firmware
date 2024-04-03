@@ -60,15 +60,21 @@ void CommandSwitch_t::InitSettings() {
 		Memory.SetInt8Bit(NVSSwitchSaveStatus, 1);
 	else 
 	{
-
+		if (SaveStatusEnabled()) {
+			uint8_t EventID = (GetStatus() == 0) ? 2 : 1;
+			ESP_LOGE("EVENTID", "%d", EventID);
+			if (EventID == 1) { // нужно включить при запуске
+				Execute(EventID,"");
+			}
+		}
 	}
 }
 
 string CommandSwitch_t::GetSettings(){
-	string SaveStatusString = GetSaveStatus() ? "true": "false";
+	string SaveStatusString = SaveStatusEnabled() ? "true": "false";
 	string LastStatusString = GetStatus() ? "1" : "0";
 	return  
-	"{\"SaveStatus\": " + SaveStatusString + "\"LastStatus:\":" + LastStatusString + "}";
+	"{\"SaveStatus\": " + SaveStatusString + ", \"LastStatus:\":" + LastStatusString + "}";
 }
 
 void CommandSwitch_t::SetSettings(WebServer_t::Response &Result, Query_t &Query) {
@@ -100,14 +106,18 @@ void CommandSwitch_t::SetSettings(WebServer_t::Response &Result, Query_t &Query)
 		Result.SetInvalid();
 }
 
-bool CommandSwitch_t::GetSaveStatus() {
+bool CommandSwitch_t::SaveStatusEnabled() {
 	NVS Memory(NVSCommandsSwitchArea);
 	return (Memory.GetInt8Bit(NVSSwitchSaveStatus) == 0) ? false : true;
 }
 
 void CommandSwitch_t::SaveStatus(bool Status) {
-	if (GetSaveStatus()) 
+	ESP_LOGE("CommandSwitch_t::SaveStatus", "%d", (Status) ? 1 : 0);
+	
+	if (SaveStatusEnabled()) 
 	{
+		ESP_LOGE("CommandSwitch_t::SaveStatus ->>","!");
+
 		NVS Memory(NVSCommandsSwitchArea);
 		return (Memory.SetInt8Bit(NVSSwitchLastStatus, Status ? 1 : 0));
 		Memory.Commit();

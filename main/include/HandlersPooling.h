@@ -19,30 +19,41 @@ class HandlersPooling_t {
 				uint32_t			Priority 	= 5;
 		};
 
-		static inline vector<HandlerItem_t> Handlers = vector<HandlerItem_t>();
-		static inline uint64_t LastHandlerFired = 0;
+		static inline 	vector<HandlerItem_t> 	Handlers 			= vector<HandlerItem_t>();
+		static inline 	uint64_t 				LastHandlerFired 	= 0;
+		static inline	QueueHandle_t 			ExecuteQueueHandler = NULL;
 
 	public:
+		class ExecuteQueueItem_t 
+		{
+			public:
+				uint8_t					ActorID;
+				uint8_t					EventID;
+		};
+
 		static void BARCheck();
 
 		static uint8_t RegisterHandler(PoolingHandler_fn Handler, uint32_t PeriodU, uint32_t Priority=5);
 
+		static void CheckActionsQueue();
 		static void CheckHandlers();
 
 		static void Pool ();
+
+		static void ExecuteQueueAddFromISR(uint8_t ActorID, uint8_t EventID);
 
 		class PingPeriodicHandler {
 			public:
 				static void Pool();
 
-				static void FirmwareCheckStarted(const char *IP);
-				static bool FirmwareCheckReadBody(char Data[], int DataLen, const char *IP);
-				static void FirmwareCheckFinished(const char *IP);
-				static void FirmwareCheckFailed(const char *IP);
+				static void FirmwareCheckStarted	(const char *IP);
+				static bool FirmwareCheckReadBody	(char Data[], int DataLen, const char *IP);
+				static void FirmwareCheckFinished	(const char *IP);
+				static void FirmwareCheckFailed		(const char *IP);
 
 			private:
-				static void PerformLocalPing();
-				static void RouterPingFinished(esp_ping_handle_t hdl, void *args);
+				static void PerformLocalPing		();
+				static void RouterPingFinished		(esp_ping_handle_t hdl, void *args);
 				static void CheckForPeriodicalyReboot();
 	
 				static inline uint32_t 	RemotePingRestartCounter 		= 0;
@@ -69,8 +80,6 @@ class HandlersPooling_t {
 		};
 
 	private:
-
-
 		class NetworkMapHandler {
 			public:
 				static void 	Pool();
@@ -113,10 +122,14 @@ class HandlersPooling_t {
 				static void Pool();
 		};
 
-
 		class WirelessPriorityHandler {
 			public:
 				static void 	Pool();
+		};
+
+		class MemoryCheckHandler {
+			public:
+				static void Pool();
 		};
 };
 
