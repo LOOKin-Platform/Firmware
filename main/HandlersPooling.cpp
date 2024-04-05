@@ -57,7 +57,7 @@ void HandlersPooling_t::CheckActionsQueue() {
 }
 
 void HandlersPooling_t::CheckHandlers() {
-	uint64_t UptimeU = Time::UptimeU();
+	uint64_t UptimeU = ::Time::UptimeU();
 
 	if (LastHandlerFired == 0) {
 		LastHandlerFired = UptimeU;

@@ -32,7 +32,7 @@ class MatterVideoPlayer : public MatterGenericDevice {
         MatterVideoPlayer(string szDeviceName, string szLocation = "");
 
         static void     HandleStatusChanged(MatterVideoPlayer * dev, MatterVideoPlayer::Changed_t itemChangedMask);
-        EmberAfStatus   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
+        Protocols::InteractionModel::Status   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
 
     private:
         DeviceCallback_fn mChanged_CB;

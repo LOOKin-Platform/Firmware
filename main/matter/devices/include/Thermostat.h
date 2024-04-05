@@ -53,8 +53,8 @@ class MatterThermostat : public MatterGenericDevice {
         void            SetACTemperature(float Value);
 
         static void     HandleStatusChanged(MatterThermostat * dev, MatterThermostat::Changed_t itemChangedMask);
-        EmberAfStatus   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * Buffer, uint16_t maxReadLength) override;
-        EmberAfStatus   HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override;
+        Protocols::InteractionModel::Status   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * Buffer, uint16_t maxReadLength) override;
+        Protocols::InteractionModel::Status   HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override;
 
     private:
         const int16_t   mLocalTempMin           = 100;

@@ -80,6 +80,8 @@ using namespace ::chip::DeviceLayer;
 using namespace ::chip::Platform;
 using namespace ::chip::Credentials;
 using namespace ::chip::app::Clusters;
+using namespace Protocols::InteractionModel;
+
 
 static AppDeviceCallbacks AppCallback;
 //static AppDeviceCallbacksDelegate sAppDeviceCallbacksDelegate;
@@ -374,7 +376,7 @@ Matter::AccessoryData_t(string sName, string sModel, string sID) {
 
 /* Ember Handlers */
 
-EmberAfStatus HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, chip::AttributeId attributeId, uint8_t * buffer,
+Status HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, chip::AttributeId attributeId, uint8_t * buffer,
                                                     uint16_t maxReadLength)
 {
     ChipLogProgress(DeviceLayer, "HandleReadBridgedDeviceBasicAttribute: attrId=%08lX, maxReadLength=%d", attributeId, maxReadLength);
@@ -394,13 +396,13 @@ EmberAfStatus HandleReadBridgedDeviceBasicAttribute(MatterGenericDevice * dev, c
     }
     else
     {
-        return EMBER_ZCL_STATUS_FAILURE;
+        return Status::Failure;
     }
 
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
-EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterId clusterId,
+Status emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterId clusterId,
                                                    const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer,
                                                    uint16_t maxReadLength)
 {
@@ -422,10 +424,10 @@ EmberAfStatus emberAfExternalAttributeReadCallback(EndpointId endpoint, ClusterI
 		return FindedDevice->HandleReadAttribute(clusterId, attributeMetadata->attributeId, buffer, maxReadLength);
     }
 
-    return EMBER_ZCL_STATUS_FAILURE;
+    return Status::Failure;
 }
 
-EmberAfStatus emberAfExternalAttributeWriteCallback(EndpointId endpoint, ClusterId ClusterID, const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer)
+Status emberAfExternalAttributeWriteCallback(EndpointId endpoint, ClusterId ClusterID, const EmberAfAttributeMetadata * attributeMetadata, uint8_t * buffer)
 {
 	ESP_LOGE(Tag, "emberAfExternalAttributeWriteCallback, EndpointID %d, ClusterID %04lX", endpoint, ClusterID);
 
@@ -437,7 +439,7 @@ EmberAfStatus emberAfExternalAttributeWriteCallback(EndpointId endpoint, Cluster
 		if ((dev->IsReachable()))
 			return dev->HandleWriteAttribute(ClusterID, attributeMetadata->attributeId, buffer);
 
-    return EMBER_ZCL_STATUS_FAILURE;
+    return Status::Failure;
 }
 
 bool emberAfActionsClusterInstantActionCallback(app::CommandHandler * commandObj, const app::ConcreteCommandPath & commandPath,
@@ -446,7 +448,7 @@ bool emberAfActionsClusterInstantActionCallback(app::CommandHandler * commandObj
     // No actions are implemented, just return status NotFound.
 	ESP_LOGE(Tag, "emberAfActionsClusterInstantActionCallback");
 
-    commandObj->AddStatus(commandPath, Protocols::InteractionModel::Status::NotFound);
+    commandObj->AddStatus(commandPath, Status::NotFound);
     return true;
 }
 
@@ -1007,20 +1009,20 @@ int Matter::AddDeviceEndpoint(MatterGenericDevice * dev, EmberAfEndpointType * e
 			dev->DynamicIndex = index;
             MatterDevices.push_back(dev);
 
-            EmberAfStatus ret;
+            CHIP_ERROR ret;
             while (1)
             {
 				MatterDevices.back()->SetEndpointID(gCurrentEndpointId);
                 
 				ret = emberAfSetDynamicEndpoint(index, gCurrentEndpointId, ep, Span<DataVersion>(dev->dataVersions), deviceTypeList, parentEndpointId);
 
-				if (ret == EMBER_ZCL_STATUS_SUCCESS)
+				if (ret == CHIP_NO_ERROR)
                 {
                     ChipLogProgress(DeviceLayer, "Added device %s to dynamic endpoint %d (index=%d)", dev->GetName(),
                                     gCurrentEndpointId, index);
                     return index;
                 }
-                else if (ret != EMBER_ZCL_STATUS_DUPLICATE_EXISTS)
+                else if (ret != CHIP_ERROR_ENDPOINT_EXISTS)
                 {
 					ESP_LOGE("!", "!= EMBER_ZCL_STATUS_DUPLICATE_EXISTS");
                     return -1;
@@ -1049,9 +1051,7 @@ CHIP_ERROR Matter::RemoveDeviceEndpoint(MatterGenericDevice * dev)
             MatterDevices.erase(MatterDevices.begin()+i);
 
             ChipLogProgress(DeviceLayer, "Removed device %s from dynamic endpoint %d (index=%d)", dev->GetName(), ep, Index);
-            // Silence complaints about unused ep when progress logging
-            // disabled.
-            UNUSED_VAR(ep);
+
             return CHIP_NO_ERROR;
         }
     }

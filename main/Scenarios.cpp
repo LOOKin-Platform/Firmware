@@ -545,12 +545,13 @@ void CalendarData_t::ExecuteCommands(uint32_t ScenarioID) {
 };
 
 bool CalendarData_t::TimeUpdatedIsTriggered() {
-	DateTime_t CurrentDateTime = Time::DateTime();
+	DateTime_t CurrentDateTime = ::Time::DateTime();
 
 	if (	CurrentDateTime.Hours 	== DateTime.Hours 	&&
 			CurrentDateTime.Minutes == DateTime.Minutes &&
 			CurrentDateTime.Seconds == DateTime.Seconds) {
-		if (IsScheduled) {
+		if (IsScheduled) 
+		{
 			return (bool)ScheduledDays[7-CurrentDateTime.DayOfWeek];
         }
         else if (	CurrentDateTime.Day  	== DateTime.Day 	&&

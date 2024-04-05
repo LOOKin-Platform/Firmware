@@ -99,8 +99,8 @@ void Device_t::HandleHTTPRequest(WebServer_t::Response &Result, Query_t &Query) 
 			if (Query.CheckURLPart("status"				, 1))	Result.Body = StatusToString();
 			if (Query.CheckURLPart("id"					, 1))	Result.Body = IDToString();
 			if (Query.CheckURLPart("name"				, 1))	Result.Body = NameToString();
-			if (Query.CheckURLPart("time"				, 1))	Result.Body = Time::UnixtimeString();
-			if (Query.CheckURLPart("timezone"			, 1))	Result.Body = Time::TimezoneStr();
+			if (Query.CheckURLPart("time"				, 1))	Result.Body = ::Time::UnixtimeString();
+			if (Query.CheckURLPart("timezone"			, 1))	Result.Body = ::Time::TimezoneStr();
 			if (Query.CheckURLPart("powermode"			, 1))	Result.Body = PowerModeToString();
 			if (Query.CheckURLPart("currentvoltage"		, 1))	Result.Body = CurrentVoltageToString();
 			if (Query.CheckURLPart("firmware"			, 1))	Result.Body = FirmwareVersionToString();
@@ -259,8 +259,8 @@ JSON Device_t::RootInfo() {
 		make_pair("Status"				, StatusToString()),
 		make_pair("ID"					, IDToString()),
 		make_pair("Name"				, NameToString()),
-		make_pair("Time"				, Time::UnixtimeString()),
-		make_pair("Timezone"			, Time::TimezoneStr()),
+		make_pair("Time"				, ::Time::UnixtimeString()),
+		make_pair("Timezone"			, ::Time::TimezoneStr()),
 		make_pair("PowerMode"			, PowerModeToString()),
 		make_pair("CurrentVoltage"		, CurrentVoltageToString()),
 		make_pair("Firmware"			, FirmwareVersionToString()),
@@ -357,7 +357,7 @@ bool Device_t::POSTName(map<string,string> Params) {
 
 bool Device_t::POSTTime(map<string,string> Params) {
 	if (Params.count("time") > 0) {
-		Time::SetTime(Params["time"]);
+		::Time::SetTime(Params["time"]);
 		return true;
 	}
 
@@ -366,7 +366,7 @@ bool Device_t::POSTTime(map<string,string> Params) {
 
 bool Device_t::POSTTimezone(map<string,string> Params) {
 	if (Params.count("timezone") > 0) {
-		Time::SetTimezone(Params["timezone"]);
+		::Time::SetTimezone(Params["timezone"]);
 		return true;
 	}
 

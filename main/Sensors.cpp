@@ -174,7 +174,7 @@ bool Sensor_t::SetValue(uint32_t Value, string Key, uint32_t UpdatedTime) {
 	bool IsChanged = SetValue(Value, Key);
 
 	if (IsChanged)
-		Updated = (UpdatedTime > 0) ? UpdatedTime : Time::Unixtime();
+		Updated = (UpdatedTime > 0) ? UpdatedTime : ::Time::Unixtime();
 
 	return IsChanged;
 }

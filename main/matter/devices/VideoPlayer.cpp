@@ -2,6 +2,8 @@
 
 #define Tag "MatterVideoPlayer"
 
+using namespace Protocols::InteractionModel;
+
 
 MatterVideoPlayer:: MatterVideoPlayer(string szDeviceName, string szLocation):MatterGenericDevice(szDeviceName, szLocation)
 {
@@ -16,7 +18,7 @@ void MatterVideoPlayer::HandleStatusChanged(MatterVideoPlayer * dev, MatterVideo
     ESP_LOGE("MatterVideoPlayer", "MatterVideoPlayer");
 }
 
-EmberAfStatus MatterVideoPlayer::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)
+Protocols::InteractionModel::Status MatterVideoPlayer::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)
 {
     ESP_LOGE("MatterVideoPlayer", "HandleReadAttribute, ClusterID: %lu, attributeID: 0x%lx, MaxReadLength: %d", ClusterID, AttributeID, maxReadLength);
 
@@ -34,7 +36,7 @@ EmberAfStatus MatterVideoPlayer::HandleReadAttribute(chip::ClusterId ClusterID, 
         }
         else
         {
-            return EMBER_ZCL_STATUS_FAILURE; 
+            return Status::Failure; 
         }
     }
     
@@ -53,12 +55,12 @@ EmberAfStatus MatterVideoPlayer::HandleReadAttribute(chip::ClusterId ClusterID, 
         }
         else
         {
-            return EMBER_ZCL_STATUS_FAILURE; 
+            return Status::Failure; 
         }
     }
 
     ESP_LOGE("VideoPlayer", "EMBER_ZCL_STATUS_SUCCESS");
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
 void MatterVideoPlayer::HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask)

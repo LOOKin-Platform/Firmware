@@ -36,7 +36,7 @@ void HandlersPooling_t::PingPeriodicHandler::FirmwareCheckFailed(const char *IP)
 }
 
 void HandlersPooling_t::PingPeriodicHandler::CheckForPeriodicalyReboot() {
-	if (Time::Uptime() > 26*60*60)
+	if (::Time::Uptime() > 26*60*60)
 		BootAndRestore::Reboot(false);
 }
 
@@ -67,11 +67,11 @@ void HandlersPooling_t::PingPeriodicHandler::Pool() {
 		RemotePingRestartCounter = 0;
 		RouterPingRestartCounter = 0;
 
-		if (Time::IsUptime(Time::Unixtime()))
-			Time::ServerSync(Settings.ServerUrls.SyncTime);
+		if (::Time::IsUptime(::Time::Unixtime()))
+			::Time::ServerSync(Settings.ServerUrls.SyncTime);
 		else
 		{
-			DateTime_t CurrentTime = Time::DateTime();
+			DateTime_t CurrentTime = ::Time::DateTime();
 
 			if (CurrentTime.Hours == 3 && CurrentTime.Minutes < (Settings.Pooling.ServerPingInterval / 60*1000) && Device_t::IsAutoUpdate == true)
 				HTTPClient::Query(Settings.ServerUrls.FirmwareCheck, QueryType::GET, true, true, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckStarted, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckReadBody, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckFinished, &HandlersPooling_t::PingPeriodicHandler::FirmwareCheckFailed);
@@ -79,7 +79,7 @@ void HandlersPooling_t::PingPeriodicHandler::Pool() {
 			{
 				JSON TelemetryData;
 
-				TelemetryData.SetItem("Uptime"		, Converter::ToString<uint32_t>(Time::Uptime()));
+				TelemetryData.SetItem("Uptime"		, Converter::ToString<uint32_t>(::Time::Uptime()));
 				TelemetryData.SetItem("IsBattery"	, (Device.PowerMode == DevicePowerMode::BATTERY) ? "1" : "0");
 				TelemetryData.SetItem("RCStatus"	, RemoteControl.GetStatusString());
 				TelemetryData.SetItem("Memory"		, Converter::ToString(::esp_get_free_heap_size()));

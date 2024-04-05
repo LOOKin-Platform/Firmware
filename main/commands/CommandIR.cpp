@@ -769,7 +769,7 @@ void CommandIR_t::CommandIRTXTask(void *TaskData) {
 				CommandIRTXDataMap.erase(HashID);
 				HashID = 0;
 
-				CommandsIRLastSignalTime = Time::UptimeU();
+				CommandsIRLastSignalTime = ::Time::UptimeU();
 			}
 
 			Memory->Commit();

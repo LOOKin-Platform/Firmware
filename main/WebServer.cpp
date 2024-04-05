@@ -302,7 +302,7 @@ void WebServer_t::UDPSendBroadcastFromQueue() {
 
 	if (UDPBroadcastQueue != 0)
 		while (FreeRTOS::Queue::Receive(UDPBroadcastQueue, &ItemToSend, (TickType_t) Settings.WiFi.UDPBroadcastQueue.BlockTicks)) {
-			if (ItemToSend.Updated + Settings.WiFi.UDPBroadcastQueue.CheckGap >= Time::Uptime()) {
+			if (ItemToSend.Updated + Settings.WiFi.UDPBroadcastQueue.CheckGap >= ::Time::Uptime()) {
 				for (int i=0; i<3; i++) {
 					UDPSendBroadcast(string(ItemToSend.Message));
 					FreeRTOS::Sleep(Settings.WiFi.UDPBroadcastQueue.Pause);
@@ -316,7 +316,7 @@ void WebServer_t::UDPSendBroadcastQueueAdd(string Message) {
 		Message = Message.substr(0, Settings.WiFi.UDPBroadcastQueue.MaxMessageSize);
 
 	UDPBroacastQueueItem ItemToSend;
-	ItemToSend.Updated = Time::Uptime();
+	ItemToSend.Updated = ::Time::Uptime();
 	strcpy(ItemToSend.Message, Message.c_str());
 
 	FreeRTOS::Queue::SendToBack(UDPBroadcastQueue, &ItemToSend, (TickType_t) Settings.HTTPClient.BlockTicks );

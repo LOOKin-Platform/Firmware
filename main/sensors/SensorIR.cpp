@@ -59,10 +59,10 @@ bool SensorIR_t::ShouldUpdateInMainLoop() {
 void SensorIR_t::Update() {
 	Values.clear();
 
-	uint32_t SignalDetectionTime = Time::UptimeToUnixTime(SignalDetectedTime);
+	uint32_t SignalDetectionTime = ::Time::UptimeToUnixTime(SignalDetectedTime);
 
-	if (Time::IsUptime(SignalDetectionTime) && Time::Offset > 0)
-		SignalDetectionTime = Time::Unixtime() - (Time::Uptime() - SignalDetectionTime);
+	if (::Time::IsUptime(SignalDetectionTime) && ::Time::Offset > 0)
+		SignalDetectionTime = ::Time::Unixtime() - (::Time::Uptime() - SignalDetectionTime);
 
 	SetValue(LastSignal.Protocol				    , "Protocol");
 	SetValue(LastSignal.Uint32Data				, "Signal");
@@ -142,7 +142,7 @@ void SensorIR_t::MessageStart() {
 		return;
 	}
 
-	IRSensorItem->SignalDetectedTime = Time::Uptime();
+	IRSensorItem->SignalDetectedTime = ::Time::Uptime();
 	SensorIRCurrentMessage.clear();
 };
 

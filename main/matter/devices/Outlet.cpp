@@ -4,7 +4,7 @@
 
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;
-
+using namespace Protocols::InteractionModel;
 
 MatterOutlet::MatterOutlet(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation) {
     DeviceType = MatterGenericDevice::Light;
@@ -13,7 +13,7 @@ MatterOutlet::MatterOutlet(string szDeviceName, string szLocation) : MatterGener
     mChanged_CB = &MatterOutlet::HandleStatusChanged;
 };
 
-EmberAfStatus MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
+Protocols::InteractionModel::Status MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
 {
     ESP_LOGI(Tag, "HandleReadOnOffAttribute: attrId=%lu, maxReadLength=%d", AttributeID, maxReadLength);
 
@@ -30,13 +30,13 @@ EmberAfStatus MatterOutlet::HandleReadAttribute(chip::ClusterId ClusterID, chip:
     }
     else
     {
-        return EMBER_ZCL_STATUS_FAILURE;
+        return Status::Failure;
     }
 
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
-EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
+Protocols::InteractionModel::Status MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Outlet cluster: clusterID=0x%lx attrId=0x%lx with value %d", ClusterID, AttributeID, *Value);
 
@@ -57,7 +57,7 @@ EmberAfStatus MatterOutlet::HandleWriteAttribute(chip::ClusterId ClusterID, chip
         ESP_LOGE(Tag, "Wrong ClusterID: %lu", ClusterID);
     }
 
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
 bool MatterOutlet::GetOnOff()

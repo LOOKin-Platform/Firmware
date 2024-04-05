@@ -11,6 +11,8 @@
 
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;
+using namespace Protocols::InteractionModel;
+
 
 MatterThermostat::MatterThermostat(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation)
 {
@@ -91,7 +93,7 @@ void MatterThermostat::HandleStatusChanged(MatterThermostat * dev, MatterThermos
         ScheduleReportingCallback(dev, chip::app::Clusters::Thermostat::Id, chip::app::Clusters::Thermostat::Attributes::LocalTemperature::Id);
 }
 
-EmberAfStatus MatterThermostat::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * Buffer, uint16_t maxReadLength)
+Protocols::InteractionModel::Status MatterThermostat::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId attributeId, uint8_t * Buffer, uint16_t maxReadLength)
 {
     ESP_LOGE("MatterThermostat", "HandleReadAttribute, ClusterID: %lu, attributeID: 0x%lx, MaxReadLength: %d", ClusterID, attributeId, maxReadLength);
 
@@ -146,7 +148,7 @@ EmberAfStatus MatterThermostat::HandleReadAttribute(chip::ClusterId ClusterID, c
         }
         else
         {
-            return EMBER_ZCL_STATUS_FAILURE; 
+            return Status::Failure; 
         }
     }
     
@@ -201,15 +203,15 @@ EmberAfStatus MatterThermostat::HandleReadAttribute(chip::ClusterId ClusterID, c
         }                
         else
         {
-            return EMBER_ZCL_STATUS_FAILURE; 
+            return Status::Failure; 
         }
     }
 
     ESP_LOGE("Thermostat", "EMBER_ZCL_STATUS_SUCCESS");
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
-EmberAfStatus MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value)
+Protocols::InteractionModel::Status MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value)
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Thermostat: clusterID=%lu attrId=0x%lx", ClusterID, AttributeID);
 
@@ -243,7 +245,7 @@ EmberAfStatus MatterThermostat::HandleWriteAttribute(chip::ClusterId ClusterID, 
     if (ClusterID == 0x201 && AttributeID == 0x1C)
         Result = HandleModeChange(*Value);
 
-    return Result ? EMBER_ZCL_STATUS_SUCCESS : EMBER_ZCL_STATUS_FAILURE;
+    return Result ? Status::Success : Status::Failure;
 }
 
 void MatterThermostat::HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask)

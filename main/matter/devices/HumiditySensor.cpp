@@ -58,7 +58,7 @@ void MatterHumiditySensor::HandleStatusChanged(MatterHumiditySensor * dev, Matte
 }
 
 
-EmberAfStatus MatterHumiditySensor::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)
+Protocols::InteractionModel::Status MatterHumiditySensor::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)
 {
     if ((AttributeID == RelativeHumidityMeasurement::Attributes::MeasuredValue::Id) && (maxReadLength == 2))
     {
@@ -87,10 +87,10 @@ EmberAfStatus MatterHumiditySensor::HandleReadAttribute(chip::ClusterId ClusterI
     }
     else
     {
-        return EMBER_ZCL_STATUS_FAILURE;
+        return Protocols::InteractionModel::Status::Failure;
     }
 
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Protocols::InteractionModel::Status::Success;
 }
 
 void MatterHumiditySensor::HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask)

@@ -22,7 +22,7 @@
 void SensorButton_t::SensorButtonTask(void *) {
 	while (1)
 	{
-		uint64_t OperatedTime = Time::UptimeU() - Settings.SensorsConfig.TouchSensor.TaskDelay * 1000;
+		uint64_t OperatedTime = ::Time::UptimeU() - Settings.SensorsConfig.TouchSensor.TaskDelay * 1000;
 
 	    for (pair<gpio_num_t, uint64_t> Item : SensorButtonStatusMap) {
 	    	vector<gpio_num_t>::iterator it = find(SensorButtonGPIOS.begin(), SensorButtonGPIOS.end(), Item.first);
@@ -46,9 +46,9 @@ void SensorButton_t::Callback(void* arg) {
 	gpio_num_t ActiveGPIO = static_cast<gpio_num_t>((uint32_t) arg);
 
 	if (SensorButtonStatusMap.find(ActiveGPIO) != SensorButtonStatusMap.end())
-		SensorButtonStatusMap[ActiveGPIO] = Time::UptimeU();
+		SensorButtonStatusMap[ActiveGPIO] = ::Time::UptimeU();
 	else
-		SensorButtonStatusMap.insert(pair<gpio_num_t, uint64_t>(ActiveGPIO, Time::UptimeU()));
+		SensorButtonStatusMap.insert(pair<gpio_num_t, uint64_t>(ActiveGPIO, ::Time::UptimeU()));
 
 
 	if (Settings.eFuse.Type == Settings.Devices.Plug) {

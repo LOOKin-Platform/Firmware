@@ -19,7 +19,7 @@ void HandlersPooling_t::EnergyPeriodicHandler::InnerHandler(bool SkipTimeCheck) 
 	if (Device.Type.Hex != Settings.Devices.Remote && Settings.eFuse.Type != Settings.Devices.Remote)
 		return;
 
-	if (Time::Uptime() %5 == 0 || SkipTimeCheck) {
+	if (::Time::Uptime() %5 == 0 || SkipTimeCheck) {
 	    uint16_t ConstValueSrc		= 0;
 	    uint16_t BatteryValueSrc	= 0;
 

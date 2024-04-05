@@ -33,7 +33,7 @@ class MatterTempSensor : public MatterGenericDevice
         int16_t         GetMax();
 
         static void     HandleStatusChanged(MatterTempSensor * dev, MatterTempSensor::Changed_t itemChangedMask);
-        EmberAfStatus   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
+        Protocols::InteractionModel::Status   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
 
     private:
         int16_t         mMeasurement = 0;

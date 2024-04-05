@@ -83,5 +83,5 @@ uint8_t SensorColor_t::ToBrightness(uint32_t Color) {
 }
 
 uint8_t SensorColor_t::ToBrightness(uint8_t Red, uint8_t Green, uint8_t Blue) {
-	return max(max(Red,Green), Blue);
+	return std::max(std::max(Red,Green), Blue);
 }

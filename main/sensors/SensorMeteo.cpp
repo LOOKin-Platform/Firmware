@@ -59,7 +59,7 @@ string SensorMeteo_t::FormatValue(string Key) {
 }
 
 void SensorMeteo_t::Pool() {
-	if (Time::Uptime() %5 != 0) // read temp only in 5 seconds interval
+	if (::Time::Uptime() %5 != 0) // read temp only in 5 seconds interval
 		return;
 
 	if (Settings.eFuse.Type != Settings.Devices.Remote)
@@ -130,14 +130,14 @@ bool SensorMeteo_t::UpdateTempValue(float Temperature) {
 
 	if (OldValue != numeric_limits<uint32_t>::max()) {
 		uint32_t DeltaTemp = (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
-		uint32_t DeltaTime = Time::Uptime() - PreviousTempTime;
+		uint32_t DeltaTime = ::Time::Uptime() - PreviousTempTime;
 
 		if (DeltaTemp < 2 && DeltaTime < 60)
 			ShouldUpdate = false;
 	}
 
 	if (ShouldUpdate) {
-		PreviousTempTime 	= Time::Uptime();
+		PreviousTempTime 	= ::Time::Uptime();
 		PreviousTempValue 	= OldValue;
 		SetValue(NewValue, "Temperature");
 		return true;
@@ -154,14 +154,14 @@ bool SensorMeteo_t::UpdateHumidityValue(float Humidity) {
 
 	if (OldValue != numeric_limits<uint32_t>::max()) {
 		uint32_t DeltaHumidity 	= (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
-		uint32_t DeltaTime 		= Time::Uptime() - PreviousHumidityTime;
+		uint32_t DeltaTime 		= ::Time::Uptime() - PreviousHumidityTime;
 
 		if (DeltaHumidity < 4 && DeltaTime < 60)
 			ShouldUpdate = false;
 	}
 
 	if (ShouldUpdate) {
-		PreviousHumidityTime	= Time::Uptime();
+		PreviousHumidityTime	= ::Time::Uptime();
 		PreviousHumidityValue 	= OldValue;
 		SetValue(NewValue, "Humidity");
 		return true;
@@ -178,14 +178,14 @@ void SensorMeteo_t::UpdatePressureValue(float Pressure) {
 
 	if (OldValue != numeric_limits<uint32_t>::max()) {
 		uint32_t Delta 		= (uint32_t)abs((int64_t)NewValue - (int64_t)OldValue);
-		uint32_t DeltaTime 	= Time::Uptime() - PreviousPressureTime;
+		uint32_t DeltaTime 	= ::Time::Uptime() - PreviousPressureTime;
 
 		if (Delta < 50 && DeltaTime < 60)
 			ShouldUpdate = false;
 	}
 
 	if (ShouldUpdate) {
-		PreviousPressureTime	= Time::Uptime();
+		PreviousPressureTime	= ::Time::Uptime();
 		PreviousPressureValue 	= OldValue;
 		SetValue(NewValue, "Pressure");
 	}
@@ -252,8 +252,8 @@ SensorMeteo_t::SensorData SensorMeteo_t::GetValueFromSensor() {
 				if (PowerManagement::GetPMType() == PowerManagement::PowerManagementType::NONE)
 				{
 					float TempCorrection = 4.3;
-					if (Time::Uptime() < 1800)
-						TempCorrection = 1.015 * log10(Time::Uptime());
+					if (::Time::Uptime() < 1800)
+						TempCorrection = 1.015 * log10(::Time::Uptime());
 
 					Result.Temperature -= TempCorrection;
 				}
@@ -270,8 +270,8 @@ SensorMeteo_t::SensorData SensorMeteo_t::GetValueFromSensor() {
 				if (PowerManagement::GetPMType() == PowerManagement::PowerManagementType::NONE)
 				{
 					float TempCorrection = 4.76; // 1.5
-					if (Time::Uptime() < 1800)
-						TempCorrection = 0.85 * log10(Time::Uptime());
+					if (::Time::Uptime() < 1800)
+						TempCorrection = 0.85 * log10(::Time::Uptime());
 
 					Result.Temperature -= TempCorrection;
 				}
@@ -395,7 +395,7 @@ uint32_t SensorMeteo_t::ReceiveValue(string Key) {
 };
 
 void SensorMeteo_t::Update() {
-	Updated = Time::Unixtime();
+	Updated = ::Time::Unixtime();
 
 	string NewStatus = Converter::ToHexString(GetValue("Temperature"),4) + Converter::ToHexString(GetValue("Humidity"),4);
 

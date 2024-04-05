@@ -34,7 +34,7 @@ class MatterHumiditySensor : public MatterGenericDevice {
         uint16_t GetMax();
         
         static void     HandleStatusChanged(MatterHumiditySensor * dev, MatterHumiditySensor::Changed_t itemChangedMask);
-        EmberAfStatus   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
+        Protocols::InteractionModel::Status   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
     
     private:
         const uint16_t   mMin;

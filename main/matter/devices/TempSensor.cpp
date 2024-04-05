@@ -2,6 +2,8 @@
 
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;
+using namespace Protocols::InteractionModel;
+
 
 MatterTempSensor::MatterTempSensor(string szDeviceName, string szLocation, int16_t measuredValue, int16_t min, int16_t max) 
     : MatterGenericDevice(szDeviceName, szLocation), mMeasurement(measuredValue), mMin(min), mMax(max)
@@ -46,7 +48,7 @@ void MatterTempSensor::HandleStatusChanged(MatterTempSensor * dev, MatterTempSen
         ScheduleReportingCallback(dev, chip::app::Clusters::TemperatureMeasurement::Id, chip::app::Clusters::TemperatureMeasurement::Attributes::MeasuredValue::Id);
 }
 
-EmberAfStatus MatterTempSensor::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)
+Protocols::InteractionModel::Status MatterTempSensor::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)
 {
     ESP_LOGE("HandleReadAttribute TEMP SENSOR", "%lu 0x%lx %d", ClusterID, AttributeID, maxReadLength);
 
@@ -80,10 +82,10 @@ EmberAfStatus MatterTempSensor::HandleReadAttribute(chip::ClusterId ClusterID, c
     }
     else
     {
-        return EMBER_ZCL_STATUS_FAILURE;
+        return Status::Failure;
     }
 
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
 void MatterTempSensor::HandleDeviceChange(MatterGenericDevice * device, MatterGenericDevice::Changed_t changeMask)

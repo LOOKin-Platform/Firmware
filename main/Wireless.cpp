@@ -90,7 +90,7 @@ void Wireless_t::SendBroadcastUpdated(string SensorOrServiceID, string EventID, 
 }
 
 bool Wireless_t::IsPeriodicPool() {
-	uint16_t SecondsInHour	= (uint16_t)(Time::Unixtime() % 3600);
+	uint16_t SecondsInHour	= (uint16_t)(::Time::Unixtime() % 3600);
 
 	uint16_t SleepInterval	= (uint16_t)Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].first;
 	uint16_t WakeupInterval	= (uint16_t)Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second;

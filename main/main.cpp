@@ -120,7 +120,7 @@ extern "C" void app_main()
 		Matter::Init();
 
 
-    Time::SetTimezone();
+    ::Time::SetTimezone();
 
 	Network.Init();
 	Automation.Init();

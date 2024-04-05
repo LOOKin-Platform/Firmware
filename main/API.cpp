@@ -12,7 +12,7 @@ uint32_t API::LastAPQueryTime = 0;
 void API::Handle(WebServer_t::Response &Response, Query_t &Query) {
 
 	if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
-		API::LastAPQueryTime = Time::Unixtime();
+		API::LastAPQueryTime = ::Time::Unixtime();
 
 	//if (WiFi_t::GetMode() == WIFI_MODE_AP_STR)
 	//	WiFiUptimeHandler::LastAPQueryTime();

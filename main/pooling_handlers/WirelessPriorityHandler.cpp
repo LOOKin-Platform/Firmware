@@ -9,7 +9,7 @@ void HandlersPooling_t::WirelessPriorityHandler::Pool() {
 
 #if CONFIG_IDF_TARGET_ESP32
 	if (PowerManagement::GetWirelessPriority() == ESP_COEX_PREFER_BALANCE
-		&& (Time::UptimeU() - PowerManagement::GetWirelessPriorityChangeTime()) > 9 * 1000000) {
+		&& (::Time::UptimeU() - PowerManagement::GetWirelessPriorityChangeTime()) > 9 * 1000000) {
 		PowerManagement::SetWirelessPriority(ESP_COEX_PREFER_WIFI);
 	}
 #endif

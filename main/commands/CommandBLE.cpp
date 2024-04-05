@@ -163,7 +163,7 @@ bool CommandBLE_t::Execute(uint8_t EventCode, const char* StringOperand) {
 		{
 			Log::Add(Log::Events::Commands::BLEExecuted);
 			CommandBLELastKBDSignalSended = StringOperand;
-			CommandBLELastTimeSended = Time::UptimeU();
+			CommandBLELastTimeSended = ::Time::UptimeU();
 		}
 		else
 			Log::Add(Log::Events::Commands::BLEFailed);
@@ -180,7 +180,7 @@ bool CommandBLE_t::Execute(uint8_t EventCode, const char* StringOperand) {
 	}
 
 	if (EventCode == 0x90) { // Blocked kbd_key
-		if ((Time::UptimeU() - CommandBLELastTimeSended < Settings.CommandsConfig.BLE.BLEKbdBlockedDelayU)
+		if ((::Time::UptimeU() - CommandBLELastTimeSended < Settings.CommandsConfig.BLE.BLEKbdBlockedDelayU)
 			&& (StringOperand == CommandBLELastKBDSignalSended))
 			return false;
 

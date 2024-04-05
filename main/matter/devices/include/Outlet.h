@@ -27,8 +27,8 @@ class MatterOutlet : public MatterGenericDevice {
 
         MatterOutlet(string szDeviceName, string szLocation = "");
 
-        EmberAfStatus HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
-        EmberAfStatus HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override;
+        Protocols::InteractionModel::Status HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) override;
+        Protocols::InteractionModel::Status HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) override;
 
         bool GetOnOff() override;
         void SetOnOff(bool aOn) override;

@@ -19,11 +19,11 @@ static bool					IsEventDrivenStart	= false;
 static uint32_t				LastAPQueryTime 	= 0;
 
 void HandlersPooling_t::WiFiUptimeHandler::SetClientModeNextTime(uint32_t Value) {
-	ClientModeNextTime = Time::Unixtime() + Value;
+	ClientModeNextTime = ::Time::Unixtime() + Value;
 }
 
 void HandlersPooling_t::WiFiUptimeHandler::SetLastAPQueryTime() {
-	LastAPQueryTime = Time::Unixtime();
+	LastAPQueryTime = ::Time::Unixtime();
 }
 
 void HandlersPooling_t::WiFiUptimeHandler::Start() {
@@ -41,7 +41,7 @@ void HandlersPooling_t::WiFiUptimeHandler::Pool() {
 	   (Device.PowerMode == DevicePowerMode::BATTERY && !Device.SensorMode)) {
 		BatteryUptime = Settings.WiFi.BatteryUptime;
 
-		if (Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_APSTA_STR && ClientModeNextTime > 0)
+		if (::Time::Unixtime() > ClientModeNextTime && WiFi_t::GetMode() == WIFI_MODE_APSTA_STR && ClientModeNextTime > 0)
 		{
 			MyWiFiEventHandler::IsConnectedBefore = false;
 			ClientModeNextTime = 0;
@@ -66,7 +66,7 @@ void HandlersPooling_t::WiFiUptimeHandler::Pool() {
 
 	if (WiFi.IsRunning()) {
 		if (WiFiStartedTime == 0)
-			WiFiStartedTime = Time::UptimeU();
+			WiFiStartedTime = ::Time::UptimeU();
 
 		if (Network.KeepWiFiTimer > 0) 	{
 			Network.KeepWiFiTimer -= Settings.Pooling.Interval;
@@ -75,14 +75,14 @@ void HandlersPooling_t::WiFiUptimeHandler::Pool() {
 		}
 
 		if (BatteryUptime > 0) {
-			if (Time::UptimeU() >= WiFiStartedTime + BatteryUptime * 1000 && Network.KeepWiFiTimer <= 0) {
+			if (::Time::UptimeU() >= WiFiStartedTime + BatteryUptime * 1000 && Network.KeepWiFiTimer <= 0) {
 				WiFiStartedTime = 0;
 				BatteryUptime = 0;
 				WiFi.Stop();
 			}
 		}
 		else {
-			if (Time::UptimeU() >= WiFiStartedTime + Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second * 1000000
+			if (::Time::UptimeU() >= WiFiStartedTime + Settings.Wireless.AliveIntervals[Settings.Wireless.IntervalID].second * 1000000
 					&& Network.KeepWiFiTimer <= 0) {
 				ESP_LOGI("WiFiHandler", "WiFi uptime for battery device expired. Stopping wifi");
 				WiFiStartedTime = 0;

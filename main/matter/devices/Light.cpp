@@ -4,6 +4,7 @@
 
 using namespace ::chip::app::Clusters;
 using namespace ::chip::app::Clusters::Globals::Attributes;
+using namespace Protocols::InteractionModel;
 
 MatterLight::MatterLight(string szDeviceName, string szLocation) : MatterGenericDevice(szDeviceName, szLocation)
 {
@@ -13,7 +14,7 @@ MatterLight::MatterLight(string szDeviceName, string szLocation) : MatterGeneric
     mChanged_CB = &MatterLight::HandleStatusChanged;
 }
 
-EmberAfStatus MatterLight::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
+Protocols::InteractionModel::Status MatterLight::HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength) 
 {
     ESP_LOGE("Light", "HandleReadOnOffAttribute: attrId=%lu, maxReadLength=%d", AttributeID, maxReadLength);
 
@@ -27,17 +28,17 @@ EmberAfStatus MatterLight::HandleReadAttribute(chip::ClusterId ClusterID, chip::
     }
     else
     {
-        return EMBER_ZCL_STATUS_FAILURE;
+        return Status::Failure;
     }
 
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
-EmberAfStatus MatterLight::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
+Protocols::InteractionModel::Status MatterLight::HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value) 
 {
     ChipLogProgress(DeviceLayer, "HandleWriteAttribute for Light cluster: clusterID=%lu attrId=0x%lx", ClusterID, AttributeID);
 
-    ReturnErrorCodeIf((AttributeID != OnOff::Attributes::OnOff::Id) || (!IsReachable()), EMBER_ZCL_STATUS_FAILURE);
+    ReturnErrorCodeIf((AttributeID != OnOff::Attributes::OnOff::Id) || (!IsReachable()), Status::Failure);
 
 
     ESP_LOGE(">>>>>>>>>>>>>>>>>>>>>>>MatterLight", "AttributeID: %lu, ClusterId: %lu", AttributeID, ClusterID);
@@ -68,7 +69,7 @@ EmberAfStatus MatterLight::HandleWriteAttribute(chip::ClusterId ClusterID, chip:
     }
 
     SetOnOff(*Value == 1);
-    return EMBER_ZCL_STATUS_SUCCESS;
+    return Status::Success;
 }
 
 bool MatterLight::GetOnOff()

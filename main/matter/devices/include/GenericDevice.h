@@ -17,6 +17,7 @@
 #include "esp_log.h"
 
 using namespace std;
+using namespace chip;
 using namespace chip::Platform;
 
 #define ZCL_ON_OFF_CLUSTER_REVISION (4u)
@@ -67,8 +68,8 @@ class MatterGenericDevice {
         inline char *           GetLocation()                       { return mLocation; };
         inline DeviceTypeEnum   GetTypeName()                       { return DeviceType; };
 
-        virtual EmberAfStatus   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)   { return EMBER_ZCL_STATUS_SUCCESS; }
-        virtual EmberAfStatus   HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value)                           { return EMBER_ZCL_STATUS_SUCCESS; }
+        virtual Protocols::InteractionModel::Status   HandleReadAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Buffer, uint16_t maxReadLength)   { return Protocols::InteractionModel::Status::Success;   }
+        virtual Protocols::InteractionModel::Status   HandleWriteAttribute(chip::ClusterId ClusterID, chip::AttributeId AttributeID, uint8_t * Value)                           { return Protocols::InteractionModel::Status::Success;   }
 
         virtual bool            GetOnOff()                          { ESP_LOGE("GetOnOff Generic", "Invoked"); return false;}
         virtual void            SetOnOff(bool Value)                { ESP_LOGE("SetOnOff Generic", "Invoked"); }
